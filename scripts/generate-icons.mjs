@@ -1,13 +1,12 @@
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
-import { checkIconAssets, iconSource, iconOutputs } from "./assets/icon-assets.mjs";
-import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
-// Generates web, desktop, and Apple platform icon assets from the selected master in Asset Library
+import { checkIconAssets, iconSource } from "./assets/icon-assets.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-sources.mjs";
+// Generates web, desktop, and Apple platform icon assets from the selected repository master
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { computeOutputHash } from "./assets/asset-manifest-cache.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -41,12 +40,7 @@ function createIco(images) {
 }
 
 async function generate() {
-  const iconSettings = { generatorHash: await computeOutputHash(path.join(root, "scripts/generate-icons.mjs")) };
-  await requireAssetSources([{ source: iconSource, target: "public/favicon-16x16.png" }], {
-    manifestPath: path.join(root, "desktop/icons/.asset-hashes.json"),
-    settingsFor: () => iconSettings,
-    selectionFor: () => ({ source: iconSource, outputs: iconOutputs }),
-  });
+  await requireAssetSources([{ source: iconSource }]);
   const masterPath = resolveAssetSource(iconSource);
   fs.mkdirSync(publicDir, { recursive: true });
   fs.mkdirSync(desktopIconsDir, { recursive: true });

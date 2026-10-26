@@ -6,6 +6,7 @@ own illustration style and importing.
 
 ## Improve on what exists
 
+- Apply [UI copy conventions](./UI.md#show-dont-tell).
 - Identify a concrete visible or interaction defect before changing the design.
   Repeated cards, small artwork or empty space alone do not establish a problem.
   Understand what the current screen does well and preserve those strengths.
@@ -28,22 +29,48 @@ own illustration style and importing.
   candidate convincingly improves the original, keep the original and report
   the unsuccessful attempt. Discard rejected directions rather than polish them.
 
-Screenshots establish what rendered. Tests establish protected behavior. Neither
-establishes aesthetic quality. Keep review findings brief and concrete; no visual
-receipt, score, mandatory pilot, reference registry or per-text-block report is required.
-Temporary captures belong in ignored reports/output; do not create design archives.
+Use screenshots to inspect rendering and tests to protect behavior; assess visual
+quality through the comparison itself. Report concrete improvements, affected
+interaction checks and any missing validation briefly. Keep temporary captures
+in ignored reports/output.
 
 ## Browser authorization
 
-Player-facing UI/UX, layout, visual polish and artwork tasks authorize the bounded
-local rendered review and focused browser checks needed for the affected flows,
-including starting a development preview. Use `npm run agent:browser` under
-[managed preview ownership](../CONTRIBUTING.md#agent-preview-ownership); reuse a
-suitable preview and preserve other tasks' servers, browsers and occupied lanes.
-Broad browser suites, Electron, production builds, profiling, coverage and
-publication retain their separate execution permissions.
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution permissions. Use its [managed preview workflow](../CONTRIBUTING.md#agent-preview-ownership), reusing a suitable preview and preserving other tasks' servers, browsers and occupied lanes.
 
-Visual work needs rendered review before it can be called complete. If rendering
-is blocked, report the missing review and its limits; do not claim visual
-validation from source or passing tests. Ordinary local checks do not require
-visual receipts or nonvisual declarations for source changes.
+Complete rendered review for visible changes. If rendering is blocked, report
+that limitation; source inspection and passing tests establish only their own
+scope. Other source changes follow the ordinary task gate.
+
+## Reproducible scenarios
+
+Use `npm run visual:scenario -- --list` to discover seeded browser checkpoints:
+menu, Options, Homestead, Battle, card inspection and card rewards. For example:
+
+```sh
+npm run visual:scenario -- battle --label before
+npm run visual:scenario -- battle --label after
+npm run visual:scenario -- options --label after --locale de --viewport 1280x720
+```
+
+Run the original capture before editing, then repeat the same scenario, seed,
+locale, edition, viewport and mode after editing. Use the same OS and installed
+Chromium version. The default seed is 42, viewport 1920 × 1080, and language English.
+The command starts its own current-source development server on port 4179; use
+`--port <free-port>` for concurrent checkouts. Occupied ports fail without reusing
+or terminating another server. `--mode preview` requires a fresh web build.
+`--headed` shows the temporary browser; its profile is isolated from player data.
+
+Each invocation writes a unique directory under `reports/visual-review/<label>/`
+with `screen.png`, seeded browser `storage.json`, `capture.json` recording the
+actual browser version and headings, and `scenario.json` identifying
+settings, commit, dirty paths and success/failure. Failed runs retain available
+diagnostics and must not be used as accepted captures. Task finishing preserves this
+review evidence. These are opt-in captures, not new automatic pixel baselines.
+
+The runner uses existing save fixtures, seeded cosmetic randomness, a fixed clock,
+muted audio, reduced motion and disabled battle animations. It waits for settled
+layout before capture. Compare the images, then exercise affected interactions;
+a settled capture does not establish real animation timing or visual quality.
+Add new checkpoints to the existing scenario owner with explicit readiness rather
+than duplicating save bootstrapping or adding production-only debug routes.

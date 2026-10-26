@@ -25,7 +25,7 @@ export async function validateMusicRegistry(files) {
   return files;
 }
 
-// Explicit selection keeps the shared library independent of this game's soundtrack.
+// Explicit selection defines this game's soundtrack independently of external libraries.
 export const musicAssets = [
   ...assetGroup({ folder: "Sounds/Game Sources/Music", settings: {} }, ["Battle 1.mp3"]),
   ...assetGroup({ folder: "Sounds/Game Sources/Projects/Alchemy/Music", settings: {} }, ["Battle 2.mp3"]),
@@ -38,8 +38,11 @@ export const musicAssets = [
     "Menu 3.mp3",
     "Menu 4.mp3",
     "The Blight Treant.mp3",
+    "The Blood Countess - Boss Track.mp3",
     "The Forge Golem.mp3",
     "The Frostwarden.mp3",
     "The Iron Bear.mp3",
+    "The Seraph - Be Not Afraid - Boss Song.mp3",
+    "The Stone Titan - Stone Reclaims - Boss Song.mp3",
   ]),
 ];

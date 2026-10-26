@@ -86,8 +86,9 @@ const trinketDefinitions = [
   defineTrinket(
     "cutpurse-knife",
     "Cutpurse Knife",
-    { cutpurseGoldOnBleed: 1 },
-    (effects) => `Gain ${effects.cutpurseGoldOnBleed} Gold when you deal Bleed damage`,
+    { cutpurseGoldChance: 10 },
+    (effects) =>
+      `Bleed damage has a ${effects.cutpurseGoldChance}% chance to also grant Gold equal to enemy Health lost`,
   ),
   defineTrinket(
     "wishing-well-coin",

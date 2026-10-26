@@ -3,9 +3,8 @@ import {
   type ActiveRunProgressFields,
 } from "@/features/alchemy/shared/stores/session/run-state-init";
 import {
-  createEmptyRewardState,
   type LabyrinthPendingNodeId,
-  type RewardState,
+  type DestinationActivityData,
   type RunActivity,
   type RunObtainedItem,
   type RunRecap,
@@ -38,7 +37,7 @@ export function createInitialSessionFields(): RunSessionFields {
     activeLabyrinthPendingNode: null,
     selectedLabyrinthNodeId: null,
     runEndLabyrinthFloor: null,
-    rewardFlow: { state: createEmptyRewardState(), companionCards: null, claim: { kind: "idle" } },
+    progressClaim: { kind: "idle" },
     runEndMaterials: emptyInventory(),
     runEndCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
     runEndTalentXP: {},
@@ -69,7 +68,7 @@ export interface RunSessionFields {
   activeLabyrinthPendingNode: LabyrinthPendingNodeId | null;
   selectedLabyrinthNodeId: string | null;
   runEndLabyrinthFloor: number | null;
-  rewardFlow: RunRewardFlow;
+  progressClaim: ProgressClaim;
   runEndMaterials: MaterialInventory;
   runEndCurrencies: Record<CraftingCurrencyId, number>;
   runEndTalentXP: TalentXP;
@@ -83,8 +82,8 @@ export interface RunSessionFields {
   starterDraftChoices: BattleCard[] | null;
 }
 
-export interface RunRewardFlow {
-  state: RewardState;
-  companionCards: BattleCard[] | null;
-  claim: { kind: "idle" } | { kind: "reward" } | { kind: "destination"; destination: Destination };
-}
+/** Claim authority outlives activity replacement until navigation finishes. */
+type ProgressClaim =
+  | { kind: "idle" }
+  | { kind: "reward" }
+  | { kind: "destination"; destination: Destination; offer: DestinationActivityData };

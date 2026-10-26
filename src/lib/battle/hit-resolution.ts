@@ -1,5 +1,10 @@
 import { rollBattleChance } from "./chance-roll";
-import { applyBleedDamageDraw, applyElementalDamageManaRestore, applyHitHealth } from "./player-hit-core";
+import {
+  applyBleedDamageDraw,
+  applyElementalDamageManaRestore,
+  applyHitHealth,
+  reportEnemyHitDamage,
+} from "./player-hit-core";
 import type { CardHitRequest, HitFacts, HitRequest } from "./player-hit-core";
 import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyHitEpilogue } from "./player-rewards";
@@ -139,6 +144,14 @@ function resolveCardHit(
   nextState = applyIronGuardReward(nextState, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage, combatTexts);
 
+  if (isPlayerDefeated(nextState)) {
+    // Bloodrush can invoke an Emergency Wish whose retaliation is fatal.
+    // Retain feedback for the landed hit without starting its later riders.
+    nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
+    reportEnemyHitDamage(facts, effect.damageType, combatTexts, request.feedback);
+    return nextState;
+  }
+
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
 
   nextState = applyCardHitReactions(nextState, request, facts, combatTexts);
@@ -167,16 +180,7 @@ function resolveCardHit(
 
   nextState = applyElementalDamageManaRestore(nextState, effect.damageType, facts.healthDamage, combatTexts);
 
-  if (modifiedDamage > 0) {
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: effect.damageType,
-      amount: modifiedDamage,
-      ...(facts.healthDamage !== modifiedDamage ? { healthLost: facts.healthDamage } : {}),
-      ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
-    });
-  }
+  reportEnemyHitDamage(facts, effect.damageType, combatTexts, request.feedback);
 
   if (
     modifiedDamage > 0 &&

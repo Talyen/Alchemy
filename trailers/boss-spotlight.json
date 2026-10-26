@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "id": "forge-golem-spotlight",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 2,
+    "fps": 60
+  },
+  "music": {
+    "boss": "forge-golem",
+    "offset": 30,
+    "lyrics": true
+  },
+  "clips": [
+    {
+      "id": "forge-golem",
+      "scene": "boss",
+      "boss": "forge-golem",
+      "hero": "knight",
+      "duration": 16,
+      "actions": [
+        {
+          "at": 1,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "play-card",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 3,
+          "kind": "move-away"
+        },
+        {
+          "at": 4.5,
+          "kind": "play-card",
+          "target": {
+            "role": "button",
+            "name": "Play Shield Bash"
+          }
+        },
+        {
+          "at": 6,
+          "kind": "move-away"
+        },
+        {
+          "at": 8,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 14,
+          "kind": "play-card"
+        },
+        {
+          "at": 15,
+          "kind": "move-away"
+        }
+      ]
+    },
+    {
+      "id": "forge-golem-return",
+      "scene": "boss",
+      "boss": "forge-golem",
+      "hero": "knight",
+      "duration": 16,
+      "actions": [
+        {
+          "at": 1,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "play-card",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 3,
+          "kind": "move-away"
+        },
+        {
+          "at": 4.5,
+          "kind": "play-card",
+          "target": {
+            "role": "button",
+            "name": "Play Shield Bash"
+          }
+        },
+        {
+          "at": 6,
+          "kind": "move-away"
+        },
+        {
+          "at": 8,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 14,
+          "kind": "play-card"
+        },
+        {
+          "at": 15,
+          "kind": "move-away"
+        }
+      ]
+    },
+    {
+      "id": "heroes",
+      "scene": "heroes",
+      "duration": 4
+    }
+  ],
+  "shots": [
+    {
+      "clip": "forge-golem",
+      "in": 0,
+      "duration": 4
+    },
+    {
+      "clip": "forge-golem",
+      "in": 4,
+      "duration": 4,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.7,
+            "y": 0.36,
+            "zoom": 1.15
+          },
+          "to": {
+            "x": 0.73,
+            "y": 0.34,
+            "zoom": 1.65
+          }
+        }
+      }
+    },
+    {
+      "clip": "heroes",
+      "duration": 3,
+      "transition": {
+        "kind": "dissolve",
+        "duration": 0.35
+      }
+    },
+    {
+      "clip": "forge-golem-return",
+      "in": 8,
+      "duration": 8,
+      "transition": {
+        "kind": "wipe",
+        "duration": 0.25
+      }
+    }
+  ],
+  "endCard": {
+    "duration": 3,
+    "text": "Wishlist on Steam"
+  }
+}

@@ -3,7 +3,7 @@ import type { CombatTextEvent } from "@/lib/battle";
 import type { CombatTextBurst } from "@/features/alchemy/shared/types";
 import { prepareCombatFeedback } from "@/features/alchemy/run-loop/battle/combat-feedback-model";
 import { consolidateCombatBursts } from "@/features/alchemy/run-loop/battle/combat-feedback-merge";
-import { COMBAT_TEXT_MAX_BURSTS_PER_RAIL } from "@/lib/game-constants";
+import { combatTextLane } from "@/features/alchemy/run-loop/battle/combat-feedback-motion";
 
 function burst(id: number, events: CombatTextEvent[], now = 0): CombatTextBurst {
   return prepareCombatFeedback(events, id, now, 1100).bursts[0]!;
@@ -38,27 +38,26 @@ describe("combat feedback preparation and merging", () => {
     expect({ current, incoming }).toEqual(snapshot);
   });
 
-  it("retries after rail eviction so damage merged into an evicted burst is still shown", () => {
-    const current = Array.from({ length: COMBAT_TEXT_MAX_BURSTS_PER_RAIL }, (_, index) =>
+  it("retains receipts until the entry queue admits or evicts their pending text", () => {
+    const current = Array.from({ length: 3 }, (_, index) =>
       burst(index, [index === 0 ? hit : { ...heal, additive: false }]),
     );
     const snapshot = structuredClone(current);
     const incoming = burst(100, [hit, { ...heal, additive: false }], 10);
     const result = consolidateCombatBursts(current, [incoming], 10);
-    expect(result.bursts).toEqual([...current.slice(1), incoming]);
-    expect(result.added).toEqual([incoming]);
+    expect(result.bursts).toHaveLength(4);
+    expect(result.bursts[0]!.entries[0]).toMatchObject({ amount: 10, displayText: "-10" });
+    expect(result.added[0]!.entries).toEqual([incoming.entries[1]]);
     expect(current).toEqual(snapshot);
   });
 
-  it("drops expired bursts and preserves the other rail when making space", () => {
+  it("drops expired receipts while preserving live entries on both targets", () => {
     const player = burst(200, [{ ...hit, target: "player" }]);
-    const enemy = Array.from({ length: COMBAT_TEXT_MAX_BURSTS_PER_RAIL }, (_, index) =>
-      burst(index, [{ ...hit, additive: false }]),
-    );
+    const enemy = Array.from({ length: 3 }, (_, index) => burst(index, [{ ...hit, additive: false }]));
     const expired = burst(300, [heal], -1100);
     const incoming = burst(400, [{ ...hit, additive: false }], 10);
     const result = consolidateCombatBursts([expired, player, ...enemy], [incoming], 10);
-    expect(result.bursts).toEqual([player, ...enemy.slice(1), incoming]);
+    expect(result.bursts).toEqual([player, ...enemy, incoming]);
   });
 
   it("retains priority and target order, hides zero events, and uses one zero fallback", () => {
@@ -87,6 +86,30 @@ describe("combat feedback preparation and merging", () => {
     expect(zero.bursts[0]!.entries[0]).toMatchObject({ ...hit, amount: 0, displayText: "0" });
     expect(prepareCombatFeedback([], 3, 20, 1100)).toEqual({ bursts: [], impacts: {}, reactions: [] });
   });
+});
+
+it("preserves primary/corner intent through display totals and rapid burst merging", () => {
+  const direct: CombatTextEvent = { target: "player", kind: "status", stat: "block", amount: 5, feedback: "primary" };
+  const proc: CombatTextEvent = { ...direct, amount: 2, feedback: "secondary" };
+  const current = burst(1, [direct, proc]);
+  expect(current.entries).toHaveLength(2);
+  expect(current.entries.map(combatTextLane)).toEqual(["impact", "benefit"]);
+  const merged = consolidateCombatBursts([current], [burst(2, [proc], 10)], 10);
+  expect(merged.bursts[0]!.entries).toMatchObject([
+    { amount: 5, feedback: "primary" },
+    { amount: 4, feedback: "secondary" },
+  ]);
+  const damage = prepareCombatFeedback(
+    [
+      { ...hit, feedback: "primary" },
+      { ...hit, amount: 3, feedback: "secondary" },
+    ],
+    3,
+    0,
+    1100,
+  ).bursts[0]!;
+  expect(damage.entries).toHaveLength(2);
+  expect(damage.entries.map(combatTextLane)).toEqual(["impact", "setback"]);
 });
 
 it("totals reaction damage for display while retaining packet facts for impacts and input events", () => {

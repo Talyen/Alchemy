@@ -1,6 +1,6 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { applyEnemyHealingWithCombatText, processContagion } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { scaleByRoomMultiplier } from "./amount-helpers";
@@ -9,6 +9,8 @@ import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
+import { applyBlockReward } from "./player-rewards";
+import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import { getEnemyTraitSet, hasEnemyTrait } from "./encounter-trait-state";
 
 import { applyBlockedAttackRetaliation, applyPlayerDefensiveReactions } from "./player-defensive-reactions";
@@ -115,6 +117,7 @@ function resolveEnemyDamageEffectCore(
     combatTexts,
     resolvePendingBattleReactions,
   );
+  nextState = processContagion(nextState, effect.damageType, outcome.attemptedDamage, combatTexts);
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
@@ -182,9 +185,29 @@ function resolvePendingEmberwakeDamage(state: BattleState, combatTexts: CombatTe
 
 export function resolvePendingBattleReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  while (nextState.flags.pendingCinderSkinReaction || nextState.flags.pendingEmberwakeDamage) {
+  while (
+    nextState.flags.pendingCinderSkinReaction ||
+    nextState.flags.pendingEmberwakeDamage ||
+    nextState.flags.pendingDeathgripBlock ||
+    nextState.flags.pendingDisruptingPurge
+  ) {
+    if (nextState.flags.pendingDeathgripBlock) {
+      nextState = { ...nextState, flags: { ...nextState.flags, pendingDeathgripBlock: false } };
+      if (!isPlayerDefeated(nextState))
+        nextState = applyBlockReward(nextState, nextState.gearEffects.blockOnDeathsDoorEntry, combatTexts);
+    }
     nextState = resolvePendingCinderSkinReaction(nextState, combatTexts);
     nextState = resolvePendingEmberwakeDamage(nextState, combatTexts);
+    if (nextState.flags.pendingDisruptingPurge) {
+      nextState = {
+        ...nextState,
+        flags: { ...nextState.flags, pendingDisruptingPurge: false },
+      };
+      if (!isPlayerDefeated(nextState)) {
+        const purged = purgeEnemyBenefits(nextState, 1, combatTexts);
+        nextState = applyPurgeGearRewards(purged.state, purged.removed, combatTexts);
+      }
+    }
   }
   return nextState;
 }

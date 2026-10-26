@@ -13,17 +13,24 @@ export function rangeBoundsError(kind: string): Error {
 }
 
 export const SIMPLE_HANDLERS = {
-  "random-draw": (state, _card, effect, potionMult, combatTexts) => {
+  "random-draw": (state, _card, effect, potionMult, combatTexts, context) => {
     if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
     const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
     const scaledAmount = applyPotionMultiplier(amount, potionMult);
-    const next = applyDrawResult(state, drawFromState(state, scaledAmount), combatTexts);
+    const next = applyDrawResult(state, drawFromState(state, scaledAmount), combatTexts, context?.feedback);
     return applyEmergencyWishForEmptyDraw(next, scaledAmount, combatTexts);
   },
-  wish: (state, card, effect, potionMult, combatTexts) => {
+  wish: (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.companionIfAbsent && state.activeCompanion) return state;
     const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
-    if (adjustedWish > 0) mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "wish", text: "" });
+    if (adjustedWish > 0)
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "notice",
+        stat: "wish",
+        text: "",
+        ...(context?.feedback ? { feedback: context.feedback } : {}),
+      });
     return applyWishEffect(
       state,
       card,
@@ -36,9 +43,9 @@ export const SIMPLE_HANDLERS = {
       effect.companionIfAbsent === true,
     );
   },
-  "draw-cards": (state, _card, effect, potionMult, combatTexts) => {
+  "draw-cards": (state, _card, effect, potionMult, combatTexts, context) => {
     const amount = applyPotionMultiplier(effect.amount, potionMult);
-    const next = applyDrawResult(state, drawFromState(state, amount), combatTexts);
+    const next = applyDrawResult(state, drawFromState(state, amount), combatTexts, context?.feedback);
     return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
   },
 } satisfies Partial<EffectHandlers>;

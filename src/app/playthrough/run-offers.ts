@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { selectTransmutation, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/run-loop/battle/playable-hand";
@@ -114,7 +115,7 @@ export function offerRunChoices(
       break;
     }
     case "rewards": {
-      const reward = session.rewardFlow.state;
+      const reward = readRewardActivity(session.activity).state;
       reward.choices.forEach((choice, index) =>
         offer(
           "reward",
@@ -134,7 +135,7 @@ export function offerRunChoices(
       break;
     }
     case "destination":
-      session.rewardFlow.state.destinations.forEach((destination) =>
+      readRewardActivity(session.activity).state.destinations.forEach((destination) =>
         offer(
           "destination",
           destination,

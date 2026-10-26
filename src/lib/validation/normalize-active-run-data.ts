@@ -1,15 +1,17 @@
 import { repairShopOfferings } from "@/lib/active-run-session/shop-offering-repair";
-import { createCampfirePotionOffers } from "@/lib/alchemist/brewing";
+import { createStarterDraftChoices } from "../starter-draft";
+import { createAlchemistBrewOffers, createCampfirePotionOffers } from "@/lib/alchemist/brewing";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
   cardHasKeyword,
   characters,
   cloneBattleCard,
+  getOfferableCardPool,
+  isStandardPotionCard,
   selectRewardCards,
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
-import { getOfferableCardPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
 import { filterLiveCards, isRecoverableCard } from "./normalize-persisted-battle-state";
 import type { ValidatedActiveRunData } from "./save-schemas/active-run";
@@ -83,7 +85,12 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
   };
   const starterDraftChoices =
     data.contentSystemType !== "wildwood" && data.starterDraftChoices
-      ? repairChoices(data.starterDraftChoices, { canPick: drafting, stream: "rewards" })
+      ? (() => {
+          const choices = filterLiveCards(data.starterDraftChoices);
+          return choices.length > 0 || !drafting
+            ? choices
+            : createStarterDraftChoices(runDeck, createRunStateRng(rngState, "rewards")).map(cloneBattleCard);
+        })()
       : null;
   const visit = data.activity.kind === "mystery" ? data.activity.data : null;
   const cardChoice = visit?.chosenChoice?.effects.find((effect) => effect.kind === "chooseCard");
@@ -121,9 +128,21 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
   }
   if (activity.kind === "alchemist") {
     const repaired = repairShopOfferings(activity.data.potions, activity.data.purchasedSlotKeys, isRecoverableCard);
+    const brewOffers = filterLiveCards(activity.data.brewOffers).filter(isStandardPotionCard);
     activity = {
       ...activity,
-      data: { ...activity.data, potions: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys },
+      data: {
+        ...activity.data,
+        potions: repaired.items,
+        brewOffers:
+          brewOffers.length > 0 || activity.data.brewUsed
+            ? brewOffers
+            : createAlchemistBrewOffers(
+                createRunStateRng(rngState, "shops"),
+                data.contentSystemType === "labyrinth" ? data.activeLabyrinthRewardModifiers : [],
+              ),
+        purchasedSlotKeys: repaired.purchasedSlotKeys,
+      },
     };
   }
   if (activity.kind === "mystery" && mysteryVisit) activity = { ...activity, data: mysteryVisit };

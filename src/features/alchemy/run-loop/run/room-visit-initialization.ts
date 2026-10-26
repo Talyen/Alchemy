@@ -84,7 +84,14 @@ export function initializeAlchemyVisitInTransaction(draft: RunTransaction, kind:
     ...(kind === "transmutation"
       ? {
           transmutation: {
-            choices: createTransmutationOffers(snapshotTransactionValue(draft.run.activeRun.runDeck), rng),
+            choices: createTransmutationOffers(
+              snapshotTransactionValue(draft.run.activeRun.runDeck),
+              rng,
+              activeLabyrinthBenefits(
+                draft.run.activeRun.contentSystemType,
+                draft.session.activeLabyrinthRewardModifiers,
+              ),
+            ),
             sourceIndex: null,
             source: null,
             keyword: null,

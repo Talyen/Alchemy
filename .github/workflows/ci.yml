@@ -44,6 +44,7 @@ jobs:
               - "scripts/build-verified.mjs"
               - "scripts/check-bundle-budget.mjs"
               - "scripts/lib/verification/bundle-budget.mjs"
+              - "scripts/lib/storage-footprint*"
               - "scripts/lib/command-invocation.mjs"
               - "scripts/lib/run-command.mjs"
               - "scripts/lib/script-run.mjs"
@@ -71,6 +72,8 @@ jobs:
               - "vite.config.ts"
               - "tsconfig*.json"
               - "steam/**"
+              - "scripts/ensure-steamworks*"
+              - "scripts/steamworks/*.patch"
               - "scripts/dist-desktop*"
               - "scripts/lib/release/desktop-artifact*"
               - "scripts/lib/release/game-edition.mjs"
@@ -85,6 +88,7 @@ jobs:
               - "scripts/build-verified.mjs"
               - "scripts/check-bundle-budget.mjs"
               - "scripts/lib/verification/bundle-budget.mjs"
+              - "scripts/lib/storage-footprint*"
               - "scripts/lib/command-invocation.mjs"
               - "scripts/lib/run-command.mjs"
               - "scripts/lib/script-run.mjs"
@@ -147,6 +151,7 @@ jobs:
               - "scripts/lib/release/release-checks.mjs"
               - "scripts/smoke-desktop*"
             assets:
+              - "assets/sources/**"
               - ".node-version"
               - ".npmrc"
               - ".github/**"
@@ -160,6 +165,7 @@ jobs:
               - "scripts/optimize-assets.mjs"
               - "scripts/optimize-sounds.mjs"
               - "scripts/optimize-music.mjs"
+              - "scripts/optimize-boss-idles.mjs"
               - "scripts/sync-generated.mjs"
               - "scripts/sync-art-barrels.mjs"
               - "scripts/assets.mjs"
@@ -171,6 +177,7 @@ jobs:
               - "scripts/lib/script-run.mjs"
               - "scripts/lib/write-text-if-changed.mjs"
               - "src/assets/optimized/**"
+              - "src/assets/boss-idles/**"
               - "public/sounds/**"
               - "public/favicon*"
               - "public/icon-*"
@@ -458,8 +465,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - uses: ./.github/actions/setup
-      - name: Assert committed outputs match preparation
-        run: npm run assets:check:outputs
+      - name: Assert repository sources and committed outputs match preparation
+        run: npm run assets:check
 
   desktop-build:
     needs: [changes, ship-gate]
@@ -480,6 +487,8 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
+        with:
+          native-steamworks: "true"
 
       - name: Cache Electron binary
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -525,6 +534,14 @@ jobs:
           name: release-desktop-win
           path: release-desktop/
           retention-days: 3
+
+      - name: Retain package size measurements
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: package-storage-ci
+          path: reports/storage/
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Retain build failure diagnostics
         if: failure()

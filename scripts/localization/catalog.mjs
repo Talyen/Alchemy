@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import languages from "../../src/lib/localization/locales/languages.json" with { type: "json" };
 
-export const INSTRUCTIONS =
+const INSTRUCTIONS =
   "alchemy-localization-v1: translate complete messages; preserve meaning, negation, conditions, named parameters and semantic tags; use glossary consistently with grammatical inflection; review before apply";
 export const TARGETS = Object.keys(languages).filter((locale) => locale !== "en");
 export const digest = (value) => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -125,6 +125,150 @@ export function validateResults({ messages, glossary, locale, results, previous 
   return ordered(
     Object.fromEntries(Object.entries(next).filter(([id]) => Object.hasOwn(messages, id) && !messages[id].aliasOf)),
   );
+}
+
+export function translationPackets({ messages, glossary, catalogs }, drafts = []) {
+  const saved = new Map();
+  for (const packet of Array.isArray(drafts) ? drafts : [drafts]) {
+    if (!packet || !TARGETS.includes(packet.locale) || saved.has(packet.locale))
+      throw new Error("Invalid or duplicate draft locale; existing packet preserved");
+    if (!packet.results || typeof packet.results !== "object" || Array.isArray(packet.results))
+      throw new Error("Expected draft results keyed by message ID; existing packet preserved");
+    saved.set(
+      packet.locale,
+      Object.fromEntries(
+        Object.entries(packet.results).map(([id, result]) => [
+          id,
+          typeof result === "string" || (result && !Object.hasOwn(result, "sourceHash"))
+            ? {
+                ...(typeof result === "string"
+                  ? { text: result }
+                  : { ...result, text: result.text ?? result.forms?.other }),
+                sourceHash: packet.messages?.[id]?.sourceHash,
+                reviewed: false,
+              }
+            : result,
+        ]),
+      ),
+    );
+  }
+  return TARGETS.flatMap((locale) => {
+    const previous = catalogs[locale] ?? {};
+    const pending = Object.entries(messages).filter(
+      ([id, message]) =>
+        !message.aliasOf &&
+        (previous[id]?.sourceHash !== sourceHash(message, glossary[locale], locale) || previous[id]?.reviewed !== true),
+    );
+    if (!pending.length) return [];
+    return [
+      {
+        locale,
+        instructions: INSTRUCTIONS,
+        glossary: glossary[locale],
+        messages: Object.fromEntries(
+          pending.map(([id, message]) => [
+            id,
+            {
+              ...message,
+              sourceHash: sourceHash(message, glossary[locale], locale),
+              previous: previous[id]?.text ?? null,
+            },
+          ]),
+        ),
+        results: Object.fromEntries(
+          pending.map(([id, message]) => {
+            const draft = saved.get(locale)?.[id];
+            const result = {
+              text: draft?.text ?? previous[id]?.text ?? "",
+              sourceHash: sourceHash(message, glossary[locale], locale),
+              reviewed: false,
+              ...(message.plural
+                ? {
+                    forms: Object.fromEntries(
+                      new Intl.PluralRules(locale)
+                        .resolvedOptions()
+                        .pluralCategories.map((category) => [
+                          category,
+                          (draft ? draft.forms?.[category] : previous[id]?.forms?.[category]) ?? "",
+                        ]),
+                    ),
+                  }
+                : {}),
+            };
+            // Restore mechanical metadata, never carry review across changed
+            // English/glossary or incomplete plural forms. Translation stays editable.
+            if (message.plural) {
+              if (!result.text) result.text = result.forms.other;
+              if (!result.forms.other) result.forms.other = result.text;
+            }
+            if (draft?.sourceHash === result.sourceHash && draft.reviewed === true) {
+              try {
+                validateTranslation(message, result.text);
+                validatePluralForms(message, result, locale);
+                result.reviewed = true;
+              } catch {
+                // Preserve the draft for repair without claiming it is reviewed.
+              }
+            }
+            return [id, result];
+          }),
+        ),
+      },
+    ];
+  });
+}
+
+// Editable packets carry freshness in their generated message context. Authors
+// edit only strings/forms; the explicit reviewed option attests the separate
+// semantic pass, never a machine assessment of translation quality.
+export function editableTranslationPackets(packets) {
+  return packets.map((packet) => ({
+    ...packet,
+    glossary: Object.fromEntries(
+      Object.entries(packet.glossary).filter(([term]) =>
+        Object.values(packet.messages).some((message) => message.terms?.includes(term)),
+      ),
+    ),
+    results: Object.fromEntries(
+      Object.entries(packet.results).map(([id, result]) => [id, result.forms ? { forms: result.forms } : result.text]),
+    ),
+  }));
+}
+
+export function validateBatch(input, { messages, glossary, catalogs }, { reviewed = false } = {}) {
+  const packets = Array.isArray(input) ? input : [input];
+  const next = {};
+  for (const packet of packets) {
+    if (!packet || typeof packet !== "object" || !TARGETS.includes(packet.locale))
+      throw new Error("Unsupported translation locale");
+    const { locale, results } = packet;
+    if (Object.hasOwn(next, locale)) throw new Error(`Duplicate translation locale: ${locale}`);
+    if (!results || typeof results !== "object" || Array.isArray(results))
+      throw new Error("Expected results keyed by message ID");
+    next[locale] = validateResults({
+      messages,
+      glossary: glossary[locale],
+      locale,
+      results: Object.fromEntries(
+        Object.entries(results).map(([id, result]) => {
+          const editable = typeof result === "string" || (result && !Object.hasOwn(result, "sourceHash"));
+          if (editable && !packet.messages?.[id]?.sourceHash) throw new Error(`Missing prepared source context: ${id}`);
+          return [
+            id,
+            {
+              ...(typeof result === "string"
+                ? { text: result }
+                : { ...result, text: result?.text ?? result?.forms?.other }),
+              ...(editable ? { sourceHash: packet.messages[id].sourceHash } : {}),
+              ...(reviewed ? { reviewed: true } : {}),
+            },
+          ];
+        }),
+      ),
+      previous: catalogs[locale],
+    });
+  }
+  return next;
 }
 
 export function resolveAliases(messages, entries, glossary, locale) {

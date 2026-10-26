@@ -6,89 +6,138 @@ authoring source.
 
 ## Shared asset requirements
 
-Edit raw sources and their owning manifests; generated barrels and optimized
-outputs are committed build products. Import art through the curated maps in
+Edit raw sources and their owning manifests. Import art through the curated maps in
 `src/lib/game-data/assets.ts`, never directly from optimized files. Full
 preparation runs through `node scripts/assets.mjs --prepare`; operation-specific
 commands below support narrower iteration. Review generated changes and run the
 read-only freshness check before handoff. Pipeline maintenance must also preserve the
 failure and freshness contracts below.
 
-## Local library and CI
+## Repository sources and CI
 
-Both games default to `~/Documents/Asset Library`; set `ASSET_LIBRARY_ROOT` for a different local location. Sources are library-relative paths beneath `2d Assets/Game Sources`, `Sounds/Game Sources`, or `Video/Game Sources`. Artwork is organized by subject under Characters, Actions, Items, Places, Interface, Animation, and Branding. Alternate versions share a subject folder with descriptive filenames; each game's manifests select the version it uses. Audio and video retain their existing organization. New approved revisions use distinct filenames and are adopted explicitly through each game's selection manifest.
+Alchemy's selected [source masters](../assets/sources/README.md) are committed under `assets/sources/`. Preparation,
+source checks, icon generation, development and builds need no external asset library.
+The folder retains the selected `2d Assets/Game Sources` and `Sounds/Game Sources`
+paths so existing selections and transform receipts keep their identities. The
+source resolver is checkout-relative, ignores `ASSET_LIBRARY_ROOT`, and rejects
+source references or resolved symlinks escaping the repository source directory.
+Moving the repository requires no path configuration.
 
-Run `npm run assets` after source/selection edits, then `npm run assets:check`. App icons retain their focused `npm run generate:icons` command; source and output checks include its preparation record. Narrow optimizers remain available. Download selected files in Finder when iCloud has offloaded them. Full preparation reads all selected sources before publishing or pruning anything; missing sources preserve existing outputs. Asset-related pushes require a local source check.
+To adopt an asset from any external library, explicitly copy the chosen master into
+`assets/sources/`, update its owning selection manifest if needed, then run
+`npm run assets` and `npm run assets:check`. Review and commit the master, selection,
+and prepared outputs together. App icons retain `npm run generate:icons`; source
+and output checks include its preparation record. Narrow optimizers remain available.
+External edits, moves, renames and deletions never update Alchemy's copies. Do not
+use symlinks to import masters. Renaming a repository source requires updating its
+selection; missing selected sources fail before full preparation publishes or prunes.
 
 `generate:icons` accepts only `--help`/`-h`; unsupported arguments fail before source
 reads or output writes. Use `assets:check` for read-only icon validation.
 
-Selected files may be moved between folders or renamed within the configured library without updating manifests. Preparation, narrow optimizers, local source checks, and icon generation automatically search for missing paths and resolve the original bytes using the existing preparation receipt. Same-name alternatives never substitute for the recorded revision; byte-identical duplicates use a deterministic path. Recovery does not move files, rewrite selections, or change prepared outputs. Searches stay inside `ASSET_LIBRARY_ROOT` and do not follow symlinks. Unreadable or iCloud-offloaded files still need downloading; deleted or changed sources, missing receipts, and changed selections/recipes fail safely. Moving the entire library still requires updating `ASSET_LIBRARY_ROOT`.
+Ordinary development and builds use committed prepared outputs. `predev` runs
+`npm run assets:check:outputs`; asset CI runs `npm run assets:check` against the
+committed source masters without regenerating media. Output-only checks remain
+available for packaging. Receipts retain source/settings hashes, selection
+fingerprints and output hashes.
 
-Ordinary development and builds use committed outputs. `predev` and hosted CI run `npm run assets:check:outputs`; this deliberately does not establish raw-source freshness. CI neither downloads the library nor regenerates media. Prepared manifests retain independent source/settings hashes, selection fingerprints, and output hashes.
+The optional Sound desk browses replacement candidates only when given an explicit
+`--library <Sounds directory>`; it does not install production assets. See the
+[Sound desk guide](../scripts/audio-review/README.md). Existing snapshots can reopen
+without a library. No preparation command reads a default library in Documents.
+
+## Preparation memory
+
+`ALCHEMY_ASSET_PROFILE=low-memory npm run assets` runs the media pipelines
+sequentially, caps art jobs at two, gives Sharp one thread per image and a 16 MB
+operation cache, and interpolates one boss master at a time. Normal preparation
+keeps its existing parallelism. `ALCHEMY_ASSET_CONCURRENCY` can lower low-memory
+parallelism further but cannot raise its cap. Profiles change scheduling only:
+image dimensions, quality, transparency, video codec/frame cadence and audio
+settings remain the canonical settings below. Keep heavy production within the
+shared host lane; this preset does not authorize a local build or profiling run.
+
+## Boss battle idle clips
+
+Selected MP4 masters live in `assets/sources/Animations/Bosses/` and are listed in
+`scripts/assets/boss-idle-assets.mjs`. Run `node scripts/optimize-boss-idles.mjs`
+for narrow preparation, or add `--check` for read-only source/output freshness.
+The ordinary asset preparation and checks include this pipeline too. Preparation
+uses the bundled FFmpeg and a system `ffprobe` (install FFmpeg to supply it).
+Source/output freshness checks do not invoke `ffprobe` or encode video. Use
+`--boss blood-countess` to prepare one boss in a bounded media-production job;
+completed masters are checkpointed so later jobs reuse them. On the shared Mac,
+wrap preparation with the host lane described in [trailers](./TRAILERS.md).
+
+Preparation computes motion-compensated 60 fps once at the master's native
+1920×1080 resolution, then area-filters 1280×720 and 640×360 variants from that
+uncompressed stream. H.264 CRF 17, 4:2:0, no audio and fast-start MP4 metadata keep
+normal hardware video playback available. Tail padding supplies interpolation's
+lookahead, while output trimming preserves the source duration rounded to the nearest
+60 fps frame. Original masters stay untouched. Review hair, hands and seams in
+motion: interpolation synthesizes frames and can introduce distortion. Commit masters, prepared files
+under `src/assets/boss-idles/`, and their hash manifest together.
+
+`src/lib/game-data/boss-idle-assets.ts` explicitly maps prepared URLs to boss IDs.
+Battle presentation alone consumes this map. Videos never join `allGameArt` or
+startup image loading; only the current boss's two playback buffers load clips.
+Each clip lists ascending resolution variants. Battle presentation selects by the
+transformed frame size and display density, changing quality at a clip boundary.
+Other views continue using the normal static catalog artwork.
 
 ## Art style and generation prompts
 
-Compare artwork changes with the current asset at the destination display size, crop and surrounding UI under [visual review](./UI_VISUAL_REVIEW.md). Use the canonical style references below for illustration treatment; they do not establish screen layout. Keep the current asset when the replacement does not improve the result in the game.
+Compare changes at their destination size, crop and surrounding UI under
+[visual review](./UI_VISUAL_REVIEW.md). Keep the current asset when a replacement
+does not improve the game. Style references include Knight, Wizard and Fireball
+in `src/assets/optimized/`, plus Discordant Dice and Ascension Seal.
 
-Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
-Canonical style reference images in the repository include `Knight` (`src/assets/optimized/knight.webp`), `Wizard` (`src/assets/optimized/wizard.webp`), and `Fireball` (`src/assets/optimized/fireball.webp`), as well as approved crafting currencies `Discordant Dice` and `Ascension Seal`.
+Compose one prompt from the shared foundation and the applicable subject block.
+References guide illustration treatment; screen composition follows the UI owners.
+
+```text
+Illustrated in a bold, high-energy action-anime style in the visual tradition of kinetic modern action-anime studios. Sharp, angular exaggeration and dynamic motion implied by diagonal shadow shapes, never literal speed lines. Thick, confident near-black outlines of varying weight, saturated punchy colors, and two or three hard-edged flat shading steps. Minimal blending, no gradients or painterly subtlety. Dramatic perspective, sharp graphic highlight flares, and high-contrast graphic color blocking.
+```
 
 ### Master prompt (Playable Heroes, Bosses, and Enemy encounters)
 
-Use strictly for playable character portraits, boss encounters, and bestiary entries (figures with identity):
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration in the pose, with dynamic motion implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective and slightly elongated limbs for maximum visual energy, sharp graphic highlight flares, and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety. The environment itself carries the same bold graphic treatment as the character, filling the full frame — this is not a character on a flat backdrop.
+A figure with a clear identity, an exaggerated dynamic pose and slightly elongated limbs. The environment carries the same bold graphic treatment and fills the frame; never place the character on a flat backdrop.
 ```
 
 ### Card Ability Artwork (Skills, Spells, Attacks, and Defenses)
 
-Use for playable battle cards (`Slash`, `Stab`, `Block`, `Shadowstep`, `Haste`, `Feint`). Keeps the full **Master Action-Anime Art Style** foundation verbatim, while enforcing abstract composition and strictly forbidding specific characters, identifiable faces, or environmental rooms:
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration, with dynamic motion implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective for maximum visual energy, sharp graphic highlight flares, and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety.
-
-SUBJECT & COMPOSITION CONSTRAINTS FOR CARDS: Highly stylized, clean, and abstract composition focused on a single iconic action motif or focal subject — NEVER depict specific characters, identifiable faces, pupils, or detailed humanoid bodies. No multi-character narrative fight scenes. If humanoid motion is required, render it strictly as an anonymous, faceless, sharp black ink silhouette or stylized energy figure with zero facial features (as seen in Shadowstep and Haste). Alternatively, focus entirely on an iconic weapon, talisman, shield, or kinetic element (as in Slash, Stab, or Block). The background must be completely abstract, made of sharp diagonal color wedges, geometric light shards, and dynamic energy ribbons filling the frame — no realistic environmental rooms, stone brick walls, floors, or dungeons. Powerful graphic silhouette readability at small card thumbnail sizes.
+A clean abstract composition with one iconic action motif or focal subject, readable at small card thumbnail sizes. No specific characters, identifiable faces, pupils, detailed humanoid bodies or multi-character narrative fights. Render necessary humanoid motion as an anonymous faceless black ink silhouette or stylized energy figure with no facial features. Otherwise focus on a weapon, talisman, shield or kinetic element. Fill the background with diagonal color wedges, geometric light shards and energy ribbons; no realistic rooms, walls, floors or dungeons.
 ```
 
 ### Landscapes, Destinations & Labyrinth environments
 
-Use for full-frame environment artwork, mystery events, Labyrinth nodes, and destination scenes (no character focus):
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration with dynamic motion implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy color accents and minimal color blending. Shading is built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective and stretched architectural proportions create visual energy. Sharp graphic highlight flares on select structural edges and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety. The entire environment carries this bold graphic treatment and fills the frame.
+Full-frame environment with no character focus. Exaggerated perspective and stretched architectural proportions convey energy, with selective structural highlight flares. Render fog as broad overlapping opaque cel-shaded shapes with selective ink contours, never airbrushed clouds or smooth gradients.
 ```
-
-_Note on Labyrinth fog variants:_ Render mist/fog as broad, overlapping, opaque cel-shaded shapes with selective ink contours rather than soft airbrushed clouds or smooth gradients.
 
 ### Gear, Equipment & Weapons
 
-Use for weapon, body armor, accessory, and trinket illustrations (3:4 or square canvas, clear silhouette):
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration in the gear design, with dynamic weight and tension implied through sharply cut diagonal shadow shapes. Thick, confident black outlines of varying weight, with saturated, punchy material colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Dramatic three-quarter perspective with strong foreshortening, sharp graphic highlight flares on metal, gem, or leather edges, and a high-contrast, graphic-design sense of color blocking. Hand-drawn anime rendering with tactile physical depth, avoiding photorealism, 3D renders, or fine filigree.
+A clear weapon, armor, accessory or trinket silhouette on a 3:4 or square canvas. Dramatic three-quarter perspective and strong foreshortening, angular material design, weight and tension, with sharp highlights on metal, gems or leather. Tactile hand-drawn physical depth; no photorealism, 3D rendering or fine filigree.
 ```
 
 ### Crafting Currencies & Artifacts (Opaque background)
 
-Use for standalone crafting currencies, relics, and card backs with an illustrated dark background:
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration, with dynamic energy implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective for maximum visual energy, sharp graphic highlight flares, and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety. One big distinctive object occupying 80-88% of the square on a quiet opaque dark ink/charcoal background. Broad features, minimal decorative micro-texture, 2-3 major hard-edged shade steps. No text, runes, or realistic photography.
+One distinctive object occupying 80–88% of a square on a quiet opaque dark ink/charcoal background. Broad features, minimal decorative microtexture, two or three major shading steps. No text, runes or realistic photography.
 ```
 
 ### Inventory Resources, Mana & UI Icons (Transparent background)
 
-Use for small HUD icons, homestead resources, and battle Mana crystals requiring alpha transparency:
-
 ```text
-Create a single game inventory icon. Square composition, genuinely transparent background with alpha, no ground or backdrop. Subject occupies 80-88% of canvas with safe margin, instantly readable at small icon sizes (16px to 48px). Illustrated in a bold high-energy action anime style: thick confident near-black outlines of varying weight, sharp angular exaggeration, saturated punchy colors, two or three hard-edged flat shading steps, sharply cut diagonal shadow shapes, and one sharp graphic highlight flare. Clean graphic color blocking, no gradients, no photorealism, no painterly texture. Crisp black ink contours and angular cel-shaded planes with broad simple features. Standalone usable asset, not a presentation sheet.
+One standalone inventory icon on a square, genuinely transparent alpha background, with no ground or backdrop. Occupy 80–88% of the canvas with safe margins and an instantly readable silhouette at 16–48px. Broad simple angular cel-shaded planes, crisp ink contours and one sharp highlight flare. No photorealism, painterly texture or presentation sheet.
 ```
 
 ## Add or replace game art
 
-1. Put the raw master in the local Asset Library and use a library-relative source reference.
+1. Copy the approved raw master into `assets/sources/` and use a path relative to that folder.
 2. Register source, target, width, and quality in the topical manifest under
    `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/assets/asset-constants.mjs` (`ART_PRESETS`). Talent portraits belong in `talent-assets.mjs`.
 3. Run `npm run assets:optimize:art` followed by `npm run sync:art` for
@@ -109,7 +158,7 @@ Do not add exports to generated files by hand. The hash schema salt lives in
 
 ## Resource and battle UI masters
 
-Production authoring sources live in the iCloud-backed local Asset Library. Keep pending approval
+Production authoring sources are versioned under `assets/sources/`. Keep pending approval
 material only while its decision is open; once selected work is installed, remove
 superseded studies, approval transcripts and duplicate sources. Use ignored
 `output/` or `scratch/` for temporary experiments. Current tool inputs are listed
@@ -132,21 +181,30 @@ the [transfer motion contract](./UI_MOTION.md#battle-motion).
 (spent/dormant compass stack, leaning right) are distinct compositions, not
 mirrors; both retain transparent margins and a 3:4 canvas. Keep their source
 identities separate from the single-card master.
-The battle Mana display uses the separate full/empty crystal masters under
-`Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`, centered above
-Draw Pile. Its active outputs are `mana-dock-full.webp` and
-`mana-dock-empty.webp`; these are distinct from the playable Mana Crystals card
-artwork. The manifest also prepares `mana-dock-frame.webp`, which the current
-battle display does not render. Preserve alpha transparency and lossless
-preparation for these selected assets: the frame retains native detail up to
-3840px wide without enlargement, and crystals use 512px outputs. The selected
-Charcoal and Gold Stitched Leather frame has no baked-in sockets.
-[Display sizing](./UI.md#display-sizing) owns the dock layout and spent appearance;
-[battle feedback](./UI_BATTLE.md#battle-feedback) owns resource-change effects.
+The battle Mana display uses separate full/empty crystal masters under
+`Interface/Mana Dock`, selected in [core assets](../scripts/assets/core-assets.mjs),
+not the playable Mana Crystals card artwork. Keep transparent, losslessly prepared
+outputs; the selected frame has no baked-in sockets and is prepared but currently
+not rendered. The manifest owns output sizes and filenames.
+[Battle layout](./UI_BATTLE.md#battle-layout) owns placement and spent appearance;
+[display sizing](./UI.md#display-sizing) owns scale, and
+[battle feedback](./UI_BATTLE.md#battle-feedback) owns change effects.
+
+## Demo marketing artwork
+
+Localized promo masters sit beside the English original under `assets/sources/` as
+`Unlock Full Game Demo Promo - <locale>.png`; their prompt set is
+`Unlock Full Game Demo Promo - localization prompts.json`. Replace only the seven
+captions, preserving panels, framing, palette and gold lettering. Review spelling,
+accents, quantity, terminology and fit; reduce lettering within plaques for long
+captions. The asset manifest selects optimized WebP outputs. Runtime language
+selection and the caption freshness gate belong to
+[localization](./LOCALIZATION.md#qualification-and-steam); the selected image and
+containment contract belong to [Steam demo](./STEAM_DEMO.md#marketing-presentation).
 
 ## Add or replace Gear art
 
-1. Name source files `{Name} - {Basic|Astral}.jpeg` in Asset Library and select them in `scripts/assets/gear-assets.mjs` (PNG and
+1. Name source files `{Name} - {Basic|Astral}.jpeg` under `assets/sources/` and select them in `scripts/assets/gear-assets.mjs` (PNG and
    `.jpg` variants accepted by the optimizer; filename slugging lives in
    `scripts/assets/gear-filenames.mjs`).
 2. Run `npm run assets:optimize:art`.
@@ -171,17 +229,11 @@ and then referenced by `src/lib/audio/sound-registry.ts` or the owning audio mod
 - Curated files without a raw source must be listed in `curatedSoundFiles` in
   the same manifest. The optimizer owns the complete directory and removes
   files outside the declared OGG files, their MP3 fallbacks, and its hash manifest.
-- The generated hash manifest records generated versus curated ownership and
-  verifies both source identity and committed output bytes. Ownership tags and
-  MP3 fallback names come from the shared `soundEntryOwner()` /
-  `mp3FallbackName()` helpers in the same manifest so the optimizer and its
-  tests cannot drift.
-- Sound preparation includes generated OGGs, curated OGGs, and MP3 fallbacks in
-  its complete manifest. An unchanged run does not rewrite it. The OGG phase holds
-  manifest publication until MP3 fallbacks and curated entries are merged in, so a
-  mid-run failure never publishes a manifest missing its fallbacks. Failed OGG
-  processing skips fallbacks; manifest publication and retry follow the shared
-  [pipeline rules](#pipeline-overview).
+- The manifest's `soundEntryOwner()` and `mp3FallbackName()` helpers own
+  generated/curated tags and fallback names. Hashes verify source and output bytes.
+- One complete sound manifest includes generated/curated OGGs and MP3 fallbacks;
+  unchanged preparation does not rewrite it. OGG failure skips fallback processing;
+  publication waits for all entries under the shared [pipeline rules](#pipeline-overview).
 - MP3 fallbacks stay committed alongside their OGG source on purpose: Safari
   requests the `*.mp3` URL at runtime and offline/desktop packaging serves
   committed `public/sounds/` bytes, so generating them only at build time
@@ -193,7 +245,7 @@ preparation command before handoff.
 
 ## Add or replace music
 
-Select library-relative sources and stable output filenames in `scripts/assets/music-assets.mjs`, then run
+Select paths relative to `assets/sources/` and stable output filenames in `scripts/assets/music-assets.mjs`, then run
 `npm run assets:optimize:music`. Music is copied without transcoding into
 `public/Music/`. The optimizer removes files without a corresponding source;
 there is no curated-source exception for music. Filenames are validated for
@@ -223,7 +275,7 @@ outputs after source changes.
 Before handoff, run the read-only freshness check. It validates source/settings
 hashes, output bytes, manifest inventories, orphan files, and generated code,
 including version metadata. It never converts, copies, writes, or deletes assets.
-It requires the selected Asset Library sources locally. CI uses `npm run assets:check:outputs`, which checks selection/settings fingerprints, output bytes, inventories and generated code without reading raw sources. Regenerate stale outputs explicitly with `npm run assets`:
+It reads selected masters from `assets/sources/`; asset CI runs the same check. `npm run assets:check:outputs` checks selection/settings fingerprints, output bytes, inventories and generated code without reading masters. Regenerate stale outputs explicitly with `npm run assets`:
 
 ```sh
 npm run assets:check
@@ -254,16 +306,16 @@ git diff -- src/assets/optimized public/sounds public/Music \
   src/lib/game-data/assets.generated.ts src/lib/game-data/catalog-art.ts
 ```
 
-Commit the intended generated outputs and selection manifest changes. Raw masters stay outside Git.
+Commit the intended generated outputs and selection manifest changes. Raw masters are committed under `assets/sources/`.
 
 ## Pipeline overview
 
-| Asset kind    | Authoring source                       | Generated output                       | Registry / consumer                                   |
-| ------------- | -------------------------------------- | -------------------------------------- | ----------------------------------------------------- |
-| Game art      | Asset Library + `scripts/assets/*.mjs` | `src/assets/optimized/`                | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
-| Gear art      | Asset Library + `gear-assets.mjs`      | Optimized WebP                         | `catalog-art.ts` → Gear definitions by stable ID      |
-| Sound effects | Asset Library + sound manifest         | `public/sounds/` OGG and MP3 fallbacks | `src/lib/audio/sound-registry.ts`                     |
-| Music         | Asset Library + music selection        | `public/Music/`                        | Audio owners under `src/lib/audio/`                   |
+| Asset kind    | Authoring source                           | Generated output                       | Registry / consumer                                   |
+| ------------- | ------------------------------------------ | -------------------------------------- | ----------------------------------------------------- |
+| Game art      | `assets/sources/` + `scripts/assets/*.mjs` | `src/assets/optimized/`                | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
+| Gear art      | `assets/sources/` + `gear-assets.mjs`      | Optimized WebP                         | `catalog-art.ts` → Gear definitions by stable ID      |
+| Sound effects | `assets/sources/` + sound manifest         | `public/sounds/` OGG and MP3 fallbacks | `src/lib/audio/sound-registry.ts`                     |
+| Music         | `assets/sources/` + music selection        | `public/Music/`                        | Audio owners under `src/lib/audio/`                   |
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source. Full preparation refreshes it as an independent step alongside the art barrels, so a failed art sync never blocks the version stamp and vice versa — failures from either are reported together.
 
@@ -282,16 +334,16 @@ Each pipeline publishes its complete hash manifest only after all of its process
 succeeds. Discovery or processing failures preserve the previous manifest and skip
 orphan deletion. Successful output files may still advance during a failed run;
 output hashes are checked on retry. `assets:check` reports stale outputs without
-changing them. Unreadable selected sources fail before processing; their diagnostic identifies the library-relative path and retains the filesystem error as its cause.
+changing them. Unreadable selected sources fail before processing; their diagnostic identifies the source-relative path and retains the filesystem error as its cause.
 
 ## Authoring models
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Art manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename, optionalPresetOverride]` rows. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
-- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` expands each selected item into Basic and Astral art using the canonical Gear filename owner. Music and sound manifests use `assetGroup()` from `scripts/assets/asset-group.mjs`: string selections retain source basenames (sounds use `.ogg`), while tuples pin renamed targets. `artGroup()` uses that same expansion with art presets. Selections never scan directories. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Art manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename, optionalPresetOverride]` rows. Nested source paths are allowed; targets remain explicit basenames. Adding files to the source folder never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
+- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` expands each selected item into Basic and Astral art using the canonical Gear filename owner. Music and sound manifests use `assetGroup()` from `scripts/assets/asset-group.mjs`: string selections retain source basenames (sounds use `.ogg`), while tuples pin renamed targets. `artGroup()` uses that same expansion with art presets. Selections never scan directories. Adding files to `assets/sources/` does not change the selected inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live under `assets/sources/`; OGG masters are copied unchanged and receive MP3 fallbacks.
 
-- **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are external). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
+- **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (selected WAV and OGG masters) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are repo-local). Conversion and fallback behavior follow [sound preparation](#add-or-replace-sound). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
 
 ## Content freshness and filesystem failures
 
@@ -332,7 +384,7 @@ transactional rollback.
 
 The fast generated check requires every static target and all four Gear slot
 backgrounds, and checks that every referenced optimized asset is a regular file.
-It does not decode or hash media, run conversions, or require Asset Library.
+It does not decode or hash media, run conversions, or read source masters.
 Full preparation and `assets:check` remain responsible for raw-source freshness
 and the complete selected per-item Gear inventory. Filesystem failures retain
 their original errors; structural errors identify the manifest and offending

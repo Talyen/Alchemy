@@ -20,6 +20,7 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { observeAttackPower } from "./resolution-observer";
+import { isPlayerDefeated } from "./battle-outcome";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
@@ -27,15 +28,13 @@ interface AttackPacket {
   packet: DamageEffect;
   /** Opening joins a Physical hit or supplies a separate Physical follow-up. */
   physicalBonus: number;
+  stunBonus: number;
   applyPartingCut: boolean;
 }
 
 // Builds an immutable candidate; dealDamageToEnemy commits its flag changes
 // only after establishing a positive attack and passing Dodge.
-export function consumeAttackPacketFlags(
-  state: BattleState,
-  effect: DamageEffect,
-): { state: BattleState } & AttackPacket {
+function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { state: BattleState } & AttackPacket {
   const convertToPoison = readCombatFlag(state, "nextHitPoison");
   const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
@@ -47,6 +46,11 @@ export function consumeAttackPacketFlags(
   const packet = leechNext ? { ...poisonPacket, lifesteal: true as const } : poisonPacket;
   if (leechNext) {
     damageState = { ...damageState, flags: { ...damageState.flags, nextHitLeech: false } };
+  }
+
+  const stunBonus = packet.damageType === "stun" ? readCombatFlag(damageState, "nextStunAttackBonus") : 0;
+  if (stunBonus > 0) {
+    damageState = { ...damageState, flags: { ...damageState.flags, nextStunAttackBonus: 0 } };
   }
 
   let physicalBonus = 0;
@@ -62,7 +66,17 @@ export function consumeAttackPacketFlags(
   if (applyPartingCut) {
     damageState = { ...damageState, flags: { ...damageState.flags, nextPhysicalDealsBleed: false } };
   }
-  return { state: damageState, packet, physicalBonus, applyPartingCut };
+  return { state: damageState, packet, physicalBonus, stunBonus, applyPartingCut };
+}
+
+/** Shared immutable attack preparation; hosts retain their own admission and feedback. */
+export function prepareAttackPacket(state: BattleState, effect: DamageEffect, companionBonus = 0) {
+  const consumed = consumeAttackPacketFlags(state, effect);
+  return {
+    ...consumed,
+    baseDamageBonus:
+      companionBonus + consumed.stunBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0),
+  };
 }
 
 function applyAttackPacketFollowUps(
@@ -128,9 +142,9 @@ export function dealDamageToEnemy(
   // Attempt-scoped bonuses precede Dodge; next-hit bonuses are spent only on contact.
   const companionBonus = context?.companionAttackBonus?.amount ?? 0;
   if (context?.companionAttackBonus) context.companionAttackBonus.amount = 0;
-  const consumed = consumeAttackPacketFlags(state, resolvedEffect);
+  const consumed = prepareAttackPacket(state, resolvedEffect, companionBonus);
   const { packet, applyPartingCut } = consumed;
-  const baseDamageBonus = companionBonus + (packet.damageType === "physical" ? consumed.physicalBonus : 0);
+  const { baseDamageBonus } = consumed;
   const armorSuppliesDamage =
     packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0 && state.enemyMitigation.armor > 0;
   if (
@@ -144,7 +158,7 @@ export function dealDamageToEnemy(
     observeAttackPower(state, packet, 0);
     return state;
   }
-  const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
+  const dodged = tryDodgePlayerAttackPacket(state, combatTexts, context?.feedback);
   if (dodged) {
     // A dodge deals no damage, so dodged packets stay out of the resolved
     // damage that Unique repeats and Archery echoes replay. The attempt still
@@ -161,13 +175,20 @@ export function dealDamageToEnemy(
     canShatter(state) &&
     computeCardAttackPower(consumed.state, packet, card, { ...context, baseDamageBonus }).damage > 0;
   const shatterDamage = shatter ? state.reactions.shatterDamage : 0;
-  const damageState = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
+  const beforePurge = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
+  // Purge removes the defense before this hit can absorb into it. Its own
+  // damage and retaliation may also end combat before mitigation starts.
+  const damageState = resolvePendingBattleReactions(
+    resolvePlayerHit(beforePurge, { source: "attack-purge" }, combatTexts),
+    combatTexts,
+  );
+  if (damageState.enemyHealth <= 0 || isPlayerDefeated(damageState)) return damageState;
 
   if (state.observer) {
     const power = computeCardAttackPower(damageState, packet, card, { ...context, baseDamageBonus }, false).damage;
     const armorBonus =
       packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0
-        ? state.enemyMitigation.armor * (context?.damageMultiplier ?? 1)
+        ? damageState.enemyMitigation.armor * (context?.damageMultiplier ?? 1)
         : 0;
     observeAttackPower(state, packet, power + armorBonus);
     if (packet.damageType !== "physical" && consumed.physicalBonus > 0 && power + armorBonus > 0) {
@@ -207,6 +228,7 @@ export function dealDamageToEnemy(
       resolvedDamage: modifiedDamage,
       critical,
       origin: context?.origin,
+      ...(context?.feedback ? { feedback: context.feedback } : {}),
       ...(context?.forgeTriggers ? { forgeTriggers: context.forgeTriggers } : {}),
       onDamageDealt: (amount) => {
         healthDamage = amount;
@@ -216,6 +238,7 @@ export function dealDamageToEnemy(
     combatTexts,
     resolvePendingBattleReactions,
   );
+  if (isPlayerDefeated(result)) return result;
   const payoffs = reactionEligible ? getPostHitReactionPayoffs(state, result, packet.damageType, healthDamage) : [];
   if (
     reactionEligible &&

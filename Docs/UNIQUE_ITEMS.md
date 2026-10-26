@@ -8,7 +8,8 @@ Collection rules.
 
 ## Affix contract
 
-Every Unique has exactly one exclusive fixed signature and three fixed standard affixes at the current standard Unique/Astral maximum. No item-generation RNG chooses or rolls a Unique's affixes.
+Every Unique has exactly one exclusive fixed signature and three fixed standard affixes at the current standard Unique/Astral maximum. No item-generation RNG chooses or rolls a Unique's affixes. Crafting currencies
+cannot modify Uniques; salvage uses the normal crafting and Homestead definitions.
 
 Generation, inventory normalization, tooltips, and battle manifests use the same canonical affixes. Tooltip templates replace every occurrence of an affix value, including Saintfall's damage and healing. Existing owned items receive the corrected standard rolls without changing identity, ownership, or Collection discovery. A saved battle retains its captured manifest until normal live meta rebinding or a new battle.
 
@@ -44,7 +45,7 @@ Opportunities last until used or battle end unless the item says otherwise. Cost
 | The Final Spark      | Once per turn, a player-chosen Burn or Freeze card that spends positive Mana and empties the Mana pool repeats its damage effects. Block may cover a Mana shortfall through Winter’s Credit. Zero-cost cards do not qualify.                                                                                                                      |
 | Laughing Guard       | Block does not halve between turns. Each hero Dodge spends half the Block present before on-Dodge grants and deals that amount as a Physical follow-up hit, using normal damage modifiers.                                                                                                                                                        |
 | The Knight’s Answer  | An enemy attack must absorb positive damage with Block to prepare one free Physical card. The opportunity does not accumulate or increase mitigation. Spending Block on a card does not prepare it.                                                                                                                                               |
-| The Returning Flight | Before the next turn's draw can reshuffle discard, recover the existing last Archery card played on the prior turn if it remains in discard. Its next play this turn receives a 1 Mana discount. If the next hand is full, queue the recovered card with its discount until a hand slot opens. Do not create cards or recover Consumed cards.     |
+| The Returning Flight | At the next turn, recover the existing last Archery card played on the prior turn from discard or the refilled draw pile before ordinary draws. Its next play this turn receives a 1 Mana discount. If the next hand is full, queue the recovered card with its discount until a hand slot opens. Do not create cards or recover Consumed cards.  |
 | Threefold Grace      | Each positive Burn, Freeze, or Holy Health-damage packet caused by the player rolls the signature's 10% chance to restore 1 Mana, capped at maximum Mana. Card and Companion hits, follow-ups, reflected Holy damage, and Burn ticks qualify. Fully absorbed damage does not roll.                                                                |
 | Bloodember Pendant   | Burn and Bleed each receive both types' flat and applicable conditional damage bonuses. Count shared bonuses once. Enemy resistances remain type-specific. First Blood’s bonus also applies to Burn while the enemy is not already Bleeding.                                                                                                      |
 | Winter’s Credit      | For Freeze cards, pay available Mana first, then 3 Block per missing Mana. Reject the whole play if that combined payment cannot cover its full cost; other cards require Mana normally. Payment does not activate enemy-attack or Block-depletion rewards.                                                                                       |
@@ -57,21 +58,16 @@ tick. Rimeheart checks pre-hit Block when deciding whether Freeze damage grants
 Block. The Final Spark requires a card with damage effects; Smelling Salts does
 not spend its repeat opportunity.
 
+Wardbreaker resolves its Purge and any Purge retaliation before calculating the
+triggering hit's mitigation. Removed Armor and Block cannot absorb that hit;
+Dodge preserves the Purge opportunity.
+
 ## Verification ownership
 
-[Catalog tests](../tests/lib/gear/unique-catalog.test.ts) cover inventory repair,
-crafting restrictions, and salvage. [Shared content validation tests](../tests/lib/content-validation/gear-validation.test.ts)
-cover base-item coverage, exclusive signatures, fixed rolls, and distinct known
-supporting affixes. [Unique-effect tests](../tests/lib/battle/unique-effects.test.ts) and
-[damage bonus tests](../tests/lib/battle/unique-damage-bonuses.test.ts),
-[card repeat tests](../tests/lib/battle/unique-card-repeats.test.ts),
-[card opportunity tests](../tests/lib/battle/unique-card-opportunities.test.ts),
-and [combat persistence tests](../tests/lib/battle/battle-effect-persistence.test.ts)
-cover triggers, costs, damage repeats, delayed effects, resource preservation,
-Dodge, saves, and interactions. [Content audit](../src/lib/content-validation/validators-gear.ts)
-enforces those catalog invariants outside vitest (one Unique per base,
-exclusive `uniqueOnly` signatures, three distinct supporting affixes at unique-max).
-The combat-tuning
-prose test in the catalog tests keeps `UNIQUE_GEAR_COMBAT` magnitudes in sync
-with signature descriptions. Missing battle-local fields follow the
-[save default contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization).
+[Catalog tests](../tests/lib/gear/unique-catalog.test.ts) protect canonical rolls,
+repair, restrictions and salvage; [shared validation](../src/lib/content-validation/validators-gear.ts)
+protects base coverage, exclusive signatures, supporting affixes and art. The
+catalog prose check keeps authored signature magnitudes aligned with tuning.
+[Battle units](../tests/lib/battle/) protect triggers, costs, repeats, delayed
+opportunities and current-save persistence. Missing fields follow
+[save defaults](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization).

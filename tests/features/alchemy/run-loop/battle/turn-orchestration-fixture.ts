@@ -10,6 +10,12 @@ export function makeDrawSequenceDeps(overrides: Partial<HandDrawSequenceDeps> = 
         return lifetime.pendingDraws;
       },
       waitForFrame: async () => true,
+      waitForDelay: async (_id: number, ms: number) => {
+        await new Promise((resolve) => {
+          setTimeout(resolve, ms);
+        });
+        return true;
+      },
     },
     isSessionActive: () => true,
     animateDrawnHand: vi.fn(async () => {}),

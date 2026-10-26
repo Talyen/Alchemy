@@ -45,7 +45,7 @@ it("requires the offered hand position, card ID, and UID to match", () => {
 it.each([
   { cost: 2, mana: 5, remaining: 3 },
   { cost: 0, mana: 0, remaining: 0 },
-])("pays $cost Mana once and moves the played card to discard", ({ cost, mana, remaining }) => {
+])("pays $cost Mana once and refills the empty draw pile with the reusable card", ({ cost, mana, remaining }) => {
   const card = makeTestCard({
     id: "slash",
     corrupted: true,
@@ -56,7 +56,8 @@ it.each([
   const result = playBattleCardResolved(state, card.id, 0).state;
   expect(result.mana).toBe(remaining);
   expect(result.hand).toEqual([]);
-  expect(result.discard).toEqual([card]);
+  expect(result.deck).toEqual([card]);
+  expect(result.discard).toEqual([]);
   expect(result.enemyHealth).toBe(24);
   expect(state.hand).toEqual([card]);
   expect(state.mana).toBe(mana);
@@ -109,7 +110,7 @@ it("keeps next-hit Poison through a failed chance and spends it on only the firs
   const result = playBattleCardResolved(missed, attack.id, 0);
   expect(result.state.enemyStatuses.poison).toBe(2);
   expect(result.state.flags.nextHitPoison).toBe(false);
-  expect(result.combatTexts.filter((text) => text.kind === "damage").map((text) => text.stat)).toEqual([
+  expect(result.combatTexts.filter((text) => text.kind === "damage").map((text) => text.stat)).toMatchObject([
     "poison",
     "physical",
   ]);
@@ -164,12 +165,12 @@ it("holds Resonant Chime at full Mana and grants it only once after Mana is spen
   expect(playBattleCardResolved(restored, card.id, 0).state.mana).toBe(2);
 });
 
-it("permits explicit victory-grace plays and still pays and discards", () => {
+it("permits explicit victory-grace plays and still pays and refills the draw pile", () => {
   const card = makeTestCard({ cost: 1 });
   const result = playBattleCardResolved(makeState({ enemyHealth: 0, hand: [card], mana: 3 }), card.id, 0, {
     allowAfterEnemyDefeat: true,
   }).state;
-  expect(result).toMatchObject({ hand: [], discard: [card], mana: 2 });
+  expect(result).toMatchObject({ hand: [], deck: [card], discard: [], mana: 2 });
 });
 
 it("Hawk Eye crits the next packet when the first packet of a card Freezes", () => {
@@ -234,7 +235,8 @@ it("Distillation does not boost a Potion whose Consume was removed", () => {
   });
   const next = playBattleCardResolved(state, card.id, 0).state;
   expect(next.playerHealth).toBe(13);
-  expect(next.discard).toHaveLength(1);
+  expect(next.deck).toEqual([card]);
+  expect(next.discard).toEqual([]);
 });
 
 it("rejects an ineffective cleanse without spending, but allows a mixed-purpose cleanse", () => {
@@ -272,7 +274,8 @@ describe("reusable evasion", () => {
       state = playBattleCardResolved(state, card.id, index).state;
       expect(state.mana).toBe(before.mana - 1);
       expect(state.hand.map((entry) => entry.id).sort()).toEqual(["slash-0", "slash-1"]);
-      expect(state.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
+      expect(state.deck).toEqual([expect.objectContaining({ id: "feint" })]);
+      expect(state.discard).toEqual([]);
       expect(state.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
       expect(state.playerStatuses.forge).toBe(0);
       const dodged = applyEnemyAbility(state, cardById.slash!, []);
@@ -294,7 +297,8 @@ describe("reusable evasion", () => {
     expect(result.hand).toHaveLength(4);
     expect(result.flags.playNextCardTwice).toBe(false);
     expect(result.flags.dodgeNextAttack).toBe(true);
-    expect(result.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
+    expect(result.deck).toEqual([expect.objectContaining({ id: "feint" })]);
+    expect(result.discard).toEqual([]);
     expect(result.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
     const dodged = applyEnemyAbility({ ...result, rng: () => 0.99 }, cardById.slash!, []);
     expect(dodged.playerHealth).toBe(result.playerHealth);
@@ -394,7 +398,8 @@ describe("reusable evasion", () => {
     const next = playBattleCardResolved(state, card.id, 0).state;
     expect(next.playerHealth).toBe(0);
     expect(next.playerStatuses.forge).toBe(0);
-    expect(next.discard).toContainEqual(card);
+    expect(next.deck).toEqual([card]);
+    expect(next.discard).toEqual([]);
   });
 
   it.each(["block", "armor"] as const)("Rupture requires damage through enemy %s", (defense) => {
@@ -466,6 +471,7 @@ it.each(["remove-harmful-status", "remove-player-status"] as const)(
     expect(result.state.mana).toBe(state.mana - 1);
     expect(result.state.playerHealth).toBe(12);
     expect(result.state.playerStatuses.burn).toBe(0);
-    expect(result.state.discard).toContainEqual(card);
+    expect(result.state.deck).toEqual([card]);
+    expect(result.state.discard).toEqual([]);
   },
 );

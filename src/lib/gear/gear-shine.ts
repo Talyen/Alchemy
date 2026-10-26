@@ -1,4 +1,4 @@
-import { UI_GOLD } from "@/lib/game-constants/ui-colors";
+import { UI_GOLD } from "@/lib/game-constants";
 import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import type { KeywordId } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";

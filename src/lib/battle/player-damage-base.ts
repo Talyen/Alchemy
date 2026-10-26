@@ -6,7 +6,7 @@ import {
   type DamageType,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import { PERCENT_DENOMINATOR } from "../game-constants";
+import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { scalePercent } from "./amount-helpers";
 import { flatDamageBonus } from "./damage-modifiers";
 import {
@@ -127,6 +127,27 @@ function applyDamageTypeModifiers(state: BattleState, damageType: DamageType, ra
   }
 }
 
+function conditionalAttackBonus(
+  state: BattleState,
+  damageType: DamageType,
+  card: BattleCard | undefined,
+  companionAttack: boolean,
+): number {
+  if (companionAttack || !card) return 0;
+  const gear = state.gearEffects;
+  let bonus = state.enemyHealth === state.enemyMaxHealth ? gear.attackBonusVsFullHealth : 0;
+  if (state.enemyHealth * PERCENT_DENOMINATOR < state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT)
+    bonus += gear.attackBonusVsLowHealth;
+  if (state.enemyCC.stunSkipTurns > 0) bonus += gear.attackBonusVsStunned;
+  if (card.tags?.includes("archery") && state.enemyStatuses.poison > 0) bonus += gear.archeryAttackBonusVsPoisoned;
+  if (damageType === "holy" && state.enemyStatuses.burn > 0) bonus += gear.holyAttackBonusVsBurning;
+  if (damageType === "freeze") {
+    if (state.enemyStatuses.burn > 0) bonus += gear.freezeAttackBonusVsBurning;
+    if (state.playerStatuses.block > 0) bonus += gear.freezeAttackBonusWithBlock;
+  }
+  return bonus;
+}
+
 export function computeBaseDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -150,7 +171,12 @@ export function computeBaseDamage(
   const potionBonus =
     card && !companionAttack && isPotionCard(card) ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
   const rawAmount =
-    computeBaseRawAmount(state, effect, card) + bonus + poisonPotionBonus + consumeBurnBonus + potionBonus;
+    computeBaseRawAmount(state, effect, card) +
+    bonus +
+    poisonPotionBonus +
+    consumeBurnBonus +
+    potionBonus +
+    conditionalAttackBonus(state, effect.damageType, card, companionAttack);
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const isEqualTo = hasBlock || hasArmor;

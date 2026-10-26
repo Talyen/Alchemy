@@ -23,6 +23,7 @@ export interface EnemyDamageOptions {
   triggerBlockRetaliation?: boolean;
   amountMultiplier?: number;
   flatBonus?: number;
+  flatReduction?: number;
   ignorePlayerMitigation?: boolean;
   ignoreArmor?: boolean;
   ignoreBlock?: boolean;
@@ -82,9 +83,11 @@ export function prepareEnemyDamage(
       damage *= LABYRINTH_MODIFIER_CONFIG.double;
     return Math.round(paceCombatDamage(state, damage, "enemy"));
   };
-  const attemptedDamage = scale(baseDamage + elementalBonus);
+  const attemptedDamage = Math.max(0, scale(baseDamage + elementalBonus) - (options.flatReduction ?? 0));
   const manaMitigated = options.ignorePlayerMitigation ? attemptedDamage : reduceDamageByMana(state, attemptedDamage);
-  return { attemptedDamage, incomingDamage: manaMitigated };
+  const spentward =
+    !options.ignorePlayerMitigation && state.mana === 0 ? state.gearEffects.enemyAttackReductionWithoutMana : 0;
+  return { attemptedDamage, incomingDamage: Math.max(0, manaMitigated - spentward) };
 }
 
 export function calculateBlockAndArmorMitigation(

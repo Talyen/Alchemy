@@ -11,6 +11,10 @@ export interface CaseSelection {
 }
 
 export const REALISTIC_SCENARIOS: string[];
+export function isUsableDiscoveryResult(
+  caseSpec: Pick<CaseSelection, "exploratory">,
+  result: { status: string; error?: string },
+): boolean;
 export function chooseDiscoveryIndex(seed: number, label: string, count: number): number;
 export function selectDiscoverySeed(cycle: number, slot: number): number;
 export function selectCase(scenario: string, seed?: number): CaseSelection;

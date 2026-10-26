@@ -1,4 +1,3 @@
-import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
@@ -7,7 +6,7 @@ import { injectLabyrinthRun, withSavedGame } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { CorruptionPage } from "../../pages/corruption-page";
 
-const chamberDetails = "Chamber details";
+const encounterTooltip = '[role="tooltip"][data-visible]';
 
 test.describe("Labyrinth exploration", critical, () => {
   test("a new run opens twenty rooms, with hidden encounters and an inspectable distant boss", async ({ page }) => {
@@ -22,6 +21,8 @@ test.describe("Labyrinth exploration", critical, () => {
       "aria-current",
       "location",
     );
+    await page.getByRole("button", { name: "Entrance chamber, you are here", exact: true }).hover();
+    await expect(page.locator(encounterTooltip)).toHaveCount(0);
     const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ });
     expect(await hidden.count()).toBeGreaterThanOrEqual(15);
     await expect(hidden.first().locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
@@ -29,13 +30,15 @@ test.describe("Labyrinth exploration", critical, () => {
     await hidden.first().hover();
     await controllerInput(page).reach(hidden.first());
     await controllerInput(page).press("confirm");
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toHaveCount(0);
+    await expect(page.locator(encounterTooltip)).toHaveCount(0);
     await controllerInput(page).activate(page.getByRole("button", { name: /^Boss chamber/ }));
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
+    await expect(page.locator(encounterTooltip)).toBeVisible();
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toHaveCount(0);
     await expect(page.getByText("Move to an adjacent chamber to enter.")).toHaveCount(0);
-    await page.keyboard.press("Escape");
-    await expectUnfocused(page);
+    await controllerInput(page).reach(
+      page.getByRole("button", { name: "Entrance chamber, you are here", exact: true }),
+    );
+    await expect(page.locator(encounterTooltip)).toHaveCount(0);
   });
 
   test("completed branches remain accessible and discovery survives returning from another room", async ({ page }) => {
@@ -52,7 +55,6 @@ test.describe("Labyrinth exploration", critical, () => {
     await expect(diagonal).toHaveAttribute("data-state", "undiscovered");
     await expect(diagonal.locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
     await room.click();
-    await page.getByRole("button", { name: "Enter", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
     await page.getByRole("button", { name: /^Rest$/ }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
@@ -63,12 +65,11 @@ test.describe("Labyrinth exploration", critical, () => {
     await expect(diagonal.locator("img:not([aria-hidden])")).not.toHaveAttribute("src", /labyrinth-shrouded-/);
     const entrance = page.getByRole("button", { name: /^Entrance chamber/ });
     await entrance.click();
-    await expect(page.getByText("Floor 1", { exact: true })).toBeVisible();
+    await entrance.hover();
+    await expect(page.locator(encounterTooltip)).toContainText("Entrance");
     await expect(room).toHaveAttribute("aria-current", "location");
-    await page.keyboard.press("Escape");
     const otherBranch = page.locator('[data-labyrinth-node="labyrinth-floor-1-n3"] button');
     await otherBranch.click();
-    await page.getByRole("button", { name: "Enter", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
     await page.getByRole("button", { name: /^Rest$/ }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
@@ -102,7 +103,6 @@ test.describe("Labyrinth exploration", critical, () => {
     await injectLabyrinthRun(page, { labyrinthMap: map });
     const room = page.locator(`[data-labyrinth-node="${target.id}"] button`);
     await room.click();
-    await page.getByRole("button", { name: "Enter", exact: true }).click();
     const corruption = new CorruptionPage(page);
     await expect(corruption.altarHeading).toBeVisible();
     await corruption.leaveBtn.click();
@@ -123,8 +123,6 @@ test.describe("Labyrinth exploration", critical, () => {
     map.nodes["labyrinth-floor-1-n3"]!.cleared = false;
     await injectLabyrinthRun(page, { labyrinthMap: map });
     await page.locator('[data-labyrinth-node="labyrinth-floor-1-n14"] button').click();
-    await expect(page.getByText("Leave 1 unexplored chamber behind.")).toBeVisible();
-    await page.getByRole("button", { name: "Descend", exact: true }).click();
     await expect(page.getByRole("region", { name: "Labyrinth map" })).toHaveAttribute("aria-description", "Floor 2");
     await expect(page.locator('[data-labyrinth-node^="labyrinth-floor-1-"]')).toHaveCount(0);
     await expect(page.locator("[data-labyrinth-node]")).toHaveCount(20);
@@ -132,7 +130,7 @@ test.describe("Labyrinth exploration", critical, () => {
       "aria-current",
       "location",
     );
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toHaveCount(0);
+    await expect(page.locator(encounterTooltip)).toHaveCount(0);
   });
 });
 
@@ -142,7 +140,7 @@ for (const { width, height, gameSizePercent } of [
   { width: 1280, height: 480, gameSizePercent: 120 },
   { width: 600, height: 900, gameSizePercent: 100 },
 ]) {
-  test(`full grid and overlay fit ${width}×${height} at Game Size ${gameSizePercent}`, async ({ page }) => {
+  test(`full grid and tooltip fit ${width}×${height} at Game Size ${gameSizePercent}`, async ({ page }) => {
     await page.addInitScript((size) => {
       localStorage.setItem(
         "alchemy-device-display-v1",
@@ -177,48 +175,39 @@ for (const { width, height, gameSizePercent } of [
     await expect(page.getByRole("status")).toHaveCount(0);
     expect(await viewport.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     await expect(nodes.locator("button").filter({ hasText: /Combat|Campfire|Shop|Entrance/ })).toHaveCount(0);
-    await room.click();
-    const inspector = page.getByRole("complementary", { name: chamberDetails });
-    await expect(inspector).toBeVisible();
-    const panel = (await inspector.boundingBox())!;
-    expect(panel.x).toBeGreaterThanOrEqual(bounds.x);
-    expect(panel.y).toBeGreaterThanOrEqual(bounds.y);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
-    expect(panel.y + panel.height).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
-    await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeInViewport();
-    const art = page.getByTestId("chamber-art");
-    const image = art.locator("img");
-    await expect(image).toHaveJSProperty("complete", true);
-    const imageRatio = await image.evaluate((element: HTMLImageElement) => ({
-      natural: element.naturalWidth / element.naturalHeight,
-      rendered: element.getBoundingClientRect().width / element.getBoundingClientRect().height,
-    }));
-    expect(imageRatio.rendered).toBeCloseTo(imageRatio.natural, 2);
-    await expect(art.getByRole("heading", { name: "Goblin" })).toHaveCount(1);
-    await art.locator("..").hover();
-    await page.mouse.wheel(0, 1500);
-    await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeInViewport();
+    const tooltip = page.locator(encounterTooltip);
+    await expect(tooltip).toBeVisible();
+    const panel = (await tooltip.boundingBox())!;
+    const stage = (await page.getByTestId("vr-stage").boundingBox())!;
+    expect(panel.x).toBeGreaterThanOrEqual(stage.x);
+    expect(panel.y).toBeGreaterThanOrEqual(stage.y);
+    expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
+    expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
+    await expect(tooltip).toContainText("Goblin");
+    await expect(tooltip.locator('[data-trait="alchemist"]')).toBeVisible();
+    await expect(tooltip.locator("img, button")).toHaveCount(0);
     expect(await nodes.evaluateAll((elements) => elements.map((element) => element.getAttribute("style")))).toEqual(
       positions,
     );
-    await page.keyboard.press("Escape");
-    await expect(room).toBeFocused();
+    await page.mouse.move(0, 0);
+    await controllerInput(page).reach(room);
+    await expect(tooltip).toBeVisible();
+    await controllerInput(page).press("confirm");
+    await expect(page.getByTestId("battle-hand")).toBeVisible();
   });
 }
 
 test.describe("Labyrinth touch", () => {
   test.use({ hasTouch: true });
 
-  test("opens and dismisses room details", async ({ page }) => {
+  test("enters a room with one tap", async ({ page }) => {
     await page.setViewportSize({ width: 600, height: 900 });
-    await injectLabyrinthRun(page, {
-      labyrinthMap: gridLabyrinthMapFixture(),
-    });
-    const room = page.getByRole("button", { name: /Combat chamber, reachable/ }).first();
-    await room.tap();
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeInViewport();
-    await page.getByRole("heading", { name: "Labyrinth", exact: true }).tap();
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeHidden();
+    const map = gridLabyrinthMapFixture();
+    map.nodes["labyrinth-floor-1-n0"]!.type = "rest";
+    delete map.nodes["labyrinth-floor-1-n0"]!.enemyId;
+    await injectLabyrinthRun(page, { labyrinthMap: map });
+    await page.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button').tap();
+    await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
+    await expect(page.locator(encounterTooltip)).toHaveCount(0);
   });
 });

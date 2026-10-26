@@ -1,4 +1,10 @@
-import { isPotionCard, companionLibrary, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
+import {
+  isPotionCard,
+  companionLibrary,
+  type BattleCard,
+  type BattleCardEffect,
+  type PlayerStatusId,
+} from "@/lib/game-data";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPotionMultiplier, halveRounded } from "./amount-helpers";
 import { writeCombatFlag } from "./action-context";
@@ -8,21 +14,50 @@ import { hasCardHealing, type EffectHandlers, type EffectHandler } from "./effec
 import type { BattleState, CombatTextEvent } from "./types";
 
 type PlayerStatusEffect = Extract<BattleCardEffect, { kind: "player-status" }>;
+type Feedback = CombatTextEvent["feedback"];
 
 export interface CardUtilityPort {
-  heal: (state: BattleState, amount: number, texts: CombatTextEvent[], cardHealing: boolean) => BattleState;
-  mana: (state: BattleState, amount: number, texts: CombatTextEvent[], allowOverflow: boolean) => BattleState;
-  manaHealing: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
+  healingAmount: (
+    state: BattleState,
+    card: BattleCard,
+    effect: Extract<BattleCardEffect, { kind: "heal" }>,
+    potionMult: number,
+  ) => number;
+  heal: (
+    state: BattleState,
+    amount: number,
+    texts: CombatTextEvent[],
+    cardHealing: boolean,
+    feedback?: Feedback,
+  ) => BattleState;
+  mana: (
+    state: BattleState,
+    amount: number,
+    texts: CombatTextEvent[],
+    allowOverflow: boolean,
+    feedback?: Feedback,
+  ) => BattleState;
+  manaGainRewards: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
   healthCost: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
   crystalLoss: (state: BattleState, damage: number, texts: CombatTextEvent[]) => BattleState;
-  status: (state: BattleState, effect: PlayerStatusEffect, texts: CombatTextEvent[]) => BattleState;
+  status: (
+    state: BattleState,
+    effect: PlayerStatusEffect,
+    texts: CombatTextEvent[],
+    feedback?: Feedback,
+  ) => BattleState;
   chooseStatus: (
     pool: NonNullable<PlayerStatusEffect["statusPool"]>,
     state: BattleState,
   ) => PlayerStatusEffect["status"] | undefined;
-  cleanse: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
-  cleanseStatus: (state: BattleState, status: PlayerStatusId, texts: CombatTextEvent[]) => BattleState;
-  gold: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
+  cleanse: (state: BattleState, amount: number, texts: CombatTextEvent[], feedback?: Feedback) => BattleState;
+  cleanseStatus: (
+    state: BattleState,
+    status: PlayerStatusId,
+    texts: CombatTextEvent[],
+    feedback?: Feedback,
+  ) => BattleState;
+  gold: (state: BattleState, amount: number, texts: CombatTextEvent[], feedback?: Feedback) => BattleState;
   summon: (state: BattleState, texts: CombatTextEvent[]) => BattleState;
 }
 
@@ -43,9 +78,16 @@ const FLAG_EFFECTS = {
 
 type FlagEffectKind = keyof typeof FLAG_EFFECTS;
 
-const applyFlagEffect = ((state, _card, effect, _potionMult, combatTexts) => {
+const applyFlagEffect = ((state, _card, effect, _potionMult, combatTexts, context) => {
   const flag = FLAG_EFFECTS[effect.kind];
-  mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: flag, signal: "prepared", text: "" });
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "notice",
+    stat: flag,
+    signal: "prepared",
+    text: "",
+    ...(context?.feedback ? { feedback: context.feedback } : {}),
+  });
   return writeCombatFlag(state, flag, true);
 }) satisfies EffectHandler<FlagEffectKind>;
 
@@ -58,15 +100,32 @@ const FLAG_HANDLERS = {
   "dodge-next-attack": applyFlagEffect,
 } satisfies Pick<EffectHandlers, FlagEffectKind>;
 
+/** Card-specific healing modifiers belong to live resolution, not nominal autoplay utility. */
+export function cardHealingAmount(
+  state: BattleState,
+  card: BattleCard,
+  effect: Extract<BattleCardEffect, { kind: "heal" }>,
+  potionMult: number,
+): number {
+  const amount = applyPotionMultiplier(effect.amount, potionMult);
+  const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
+  const adjusted = Math.round(amount * (1 + (state.talentEffects.cardHealMultipliers[card.id] ?? 0))) + potionBonus;
+  const consumeBonus = card.consume
+    ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
+    : 0;
+  return Math.round(adjusted * (1 + consumeBonus));
+}
+
 /** Execute utility rules once; live combat and inspection supply reaction policies. */
 export function createCardUtilityHandlers(port: CardUtilityPort) {
   const handlers = {
-    "restore-mana": (state, _card, effect, potionMult, combatTexts) => {
+    "restore-mana": (state, _card, effect, potionMult, combatTexts, context) => {
       return port.mana(
         state,
         applyPotionMultiplier(effect.amount, potionMult),
         combatTexts,
         effect.allowOverflow ?? false,
+        context?.feedback,
       );
     },
     "lose-mana": (state, _card, effect, _potionMult, combatTexts) => {
@@ -82,10 +141,16 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
         });
       return { ...state, mana };
     },
-    "gain-max-mana": (state, _card, effect, _potionMult, combatTexts) => {
+    "gain-max-mana": (state, _card, effect, _potionMult, combatTexts, context) => {
       const amount = effect.amount;
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount });
-      return port.manaHealing(
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "mana",
+        amount,
+        ...(context?.feedback ? { feedback: context.feedback } : {}),
+      });
+      return port.manaGainRewards(
         { ...state, maxMana: state.maxMana + amount, mana: state.mana + amount },
         amount,
         combatTexts,
@@ -111,15 +176,8 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
         : { ...state, maxMana, mana: Math.min(maxMana, state.mana) };
     },
     heal: (state, card, effect, potionMult, combatTexts, context) => {
-      const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
-      const cardHealMultiplier = 1 + (state.talentEffects.cardHealMultipliers[card.id] ?? 0);
-      const adjustedHeal =
-        Math.round(applyPotionMultiplier(effect.amount, potionMult) * cardHealMultiplier) + potionBonus;
-      const consumeBonus = card.consume
-        ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
-        : 0;
-      const healAmount = Math.round(adjustedHeal * (1 + consumeBonus));
-      return port.heal(state, healAmount, combatTexts, hasCardHealing(context));
+      const healAmount = port.healingAmount(state, card, effect, potionMult);
+      return port.heal(state, healAmount, combatTexts, hasCardHealing(context), context?.feedback);
     },
     "lose-health": (state, _card, effect, _potionMult, combatTexts) => {
       return port.healthCost(state, effect.amount, combatTexts);
@@ -158,13 +216,19 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
               : adjustedAmount,
         },
         combatTexts,
+        context?.feedback,
       );
     },
-    "remove-harmful-status": (state, _card, effect, potionMult, texts) =>
-      port.cleanse(state, effect.removeAll ? Infinity : applyPotionMultiplier(effect.amount ?? 0, potionMult), texts),
-    "remove-player-status": (state, _card, effect, _multiplier, texts) =>
-      port.cleanseStatus(state, effect.status, texts),
-    "remove-enemy-armor": (state, _card, effect, potionMult, texts) => {
+    "remove-harmful-status": (state, _card, effect, potionMult, texts, context) =>
+      port.cleanse(
+        state,
+        effect.removeAll ? Infinity : applyPotionMultiplier(effect.amount ?? 0, potionMult),
+        texts,
+        context?.feedback,
+      ),
+    "remove-player-status": (state, _card, effect, _multiplier, texts, context) =>
+      port.cleanseStatus(state, effect.status, texts, context?.feedback),
+    "remove-enemy-armor": (state, _card, effect, potionMult, texts, context) => {
       const amount = effect.halve
         ? state.enemyMitigation.armor - halveRounded(state.enemyMitigation.armor)
         : effect.removeAll
@@ -173,20 +237,33 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
       const next = reduceEnemyArmor(state, amount);
       const removed = state.enemyMitigation.armor - next.enemyMitigation.armor;
       if (removed > 0)
-        mergeCombatText(texts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
+        mergeCombatText(texts, {
+          target: "enemy",
+          kind: "damage",
+          stat: "armor",
+          amount: removed,
+          impact: false,
+          ...(context?.feedback ? { feedback: context.feedback } : {}),
+        });
       return next;
     },
-    "summon-companion": (state, _card, effect, _potionMult, combatTexts) => {
-      mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "companion", text: "" });
+    "summon-companion": (state, _card, effect, _potionMult, combatTexts, context) => {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "notice",
+        stat: "companion",
+        text: "",
+        ...(context?.feedback ? { feedback: context.feedback } : {}),
+      });
       const summoned = { ...state, activeCompanion: companionLibrary[effect.companionId] };
       return port.summon(summoned, combatTexts);
     },
-    "gain-gold": (state, _card, effect, potionMult, combatTexts) => {
+    "gain-gold": (state, _card, effect, potionMult, combatTexts, context) => {
       if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {
         return state;
       }
       const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
-      return port.gold(state, adjustedGold, combatTexts);
+      return port.gold(state, adjustedGold, combatTexts, context?.feedback);
     },
     ...FLAG_HANDLERS,
   } satisfies Partial<EffectHandlers>;

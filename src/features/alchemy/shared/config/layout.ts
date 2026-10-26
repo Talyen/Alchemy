@@ -1,11 +1,20 @@
-export const battleCardWidthClass = "w-[calc(19.5075*var(--content-rem,1rem))]";
+// Share the hero's inner art height, allowing for the Surface's 1px border on each side.
+export const battleActorSizingStyle = {
+  "--battle-hero-width": "calc(19.5075 * var(--content-rem, 1rem))",
+  "--battle-portrait-height": "calc((var(--battle-hero-width) - 2px) * 4 / 3)",
+  "--battle-static-enemy-width": "calc(34.6815 * var(--content-rem, 1rem))",
+  "--battle-animated-enemy-width": "calc(var(--battle-portrait-height) * 16 / 9 + 2px)",
+};
+export const battleCardWidthClass = "w-[var(--battle-hero-width)]";
+export const battleAnimatedEnemyCardWidthClass = "w-[var(--battle-animated-enemy-width)]";
+export const battlePortraitHeightClass = "h-[var(--battle-portrait-height)]";
 
 export const battleCompanionWidthClass = "w-[calc(12.6225*var(--content-rem,1rem))]";
 
 export const battleCompanionCornerClass =
   "absolute bottom-0 left-full z-20 -translate-x-[42%] translate-y-[calc(1.08*var(--content-rem,1rem))]";
 
-export const battleEnemyCardWidthClass = "w-[calc(34.6815*var(--content-rem,1rem))]";
+export const battleEnemyCardWidthClass = "w-[var(--battle-static-enemy-width,calc(34.6815*var(--content-rem,1rem)))]";
 export const handCardWidthClass = "w-[var(--hand-card-width)]";
 
 export const collectionCardGridTileWidthClass = "mx-auto w-full max-w-[calc(15.282*var(--content-rem,1rem))]";
@@ -108,11 +117,13 @@ export const tooltipAnchorClassNames = {
   below: "top-full mt-4 bottom-auto",
 } as const;
 
+// The grid anchors the facing edges around the gap. A quarter of the width
+// difference balances the portrait centers, preserving their sizes and gap.
 export const battleActorSectionClass = {
   desktop:
-    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
+    "battle-actor-pair absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 translate-x-[calc((var(--battle-hero-width)_-_var(--battle-enemy-width))_/_4)] items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
   ultrawide:
-    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(12cqw,16cqw,20cqw)]",
+    "battle-actor-pair absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 translate-x-[calc((var(--battle-hero-width)_-_var(--battle-enemy-width))_/_4)] items-start px-4 gap-[clamp(12cqw,16cqw,20cqw)]",
 } as const;
 
 export const battleActorHeroCellClass =

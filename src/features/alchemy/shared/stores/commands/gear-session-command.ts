@@ -1,7 +1,19 @@
 import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import { assertSynchronousResult } from "./command-outcome";
-import { findGearEquippedCharacter, findGearInventoryOwner, gearDefinitions } from "@/lib/gear";
-import { abortGameplayCommand, dispatchGameplayCommand, type GameplayDraft } from "../session/gameplay-command";
+import {
+  findEmptyGearSlot,
+  findGearEquippedCharacter,
+  findGearInventoryOwner,
+  flattenGearInventories,
+  gearDefinitions,
+  type GearInstance,
+} from "@/lib/gear";
+import {
+  abortGameplayCommand,
+  dispatchGameplayCommand,
+  gameplayDraftRuntime,
+  type GameplayDraft,
+} from "../session/gameplay-command";
 import {
   addGearCurrencies,
   addGearInstance,
@@ -38,6 +50,38 @@ function isInstanceLocked(state: GameplayDraft, instanceId: string): boolean {
   if (owner && restrictions.characters[owner]) return true;
   const equippedBy = findGearEquippedCharacter(state.gear.loadouts, instanceId);
   return Boolean(equippedBy && restrictions.characters[equippedBy]);
+}
+
+export function acquireGearDuringRun(transaction: RunTransaction, instance: GearInstance): void {
+  const draft = transactionDraft(transaction);
+  const characterId = draft.run.activeRun.characterId;
+  const autoEquip = gameplayDraftRuntime(draft).settings.getState().autoEquip;
+  mutateGearWithRunHealthSync(transaction, {
+    mutate: (gear) => {
+      gear.addInstance(instance, characterId);
+      const definition = gearDefinitions[instance.definitionId];
+      if (!autoEquip || !definition) return;
+      const slot = findEmptyGearSlot(
+        definition,
+        draft.gear.loadouts[characterId],
+        flattenGearInventories(draft.gear.inventories),
+      );
+      if (slot) gear.equip(characterId, slot, instance);
+    },
+  });
+}
+
+export function acquireTrinketDuringRun(transaction: RunTransaction, trinketId: string): boolean {
+  const draft = transactionDraft(transaction);
+  const characterId = draft.run.activeRun.characterId;
+  const autoEquip = gameplayDraftRuntime(draft).settings.getState().autoEquip;
+  return mutateGearWithRunHealthSync(transaction, {
+    mutate: (gear) => {
+      const added = gear.addTrinket(trinketId);
+      if (added && autoEquip && !gear.equippedTrinkets[characterId]) gear.equipTrinket(characterId, trinketId);
+      return added;
+    },
+  });
 }
 
 function gearCommandView(state: GameplayDraft, markMutated: () => void, assertOpen: () => void): GearDraftView {

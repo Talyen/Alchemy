@@ -66,6 +66,20 @@ export function isGearCompatibleWithLoadoutSlot(
   return resolveLoadoutEquip(definition, slot, characterLoadout, inventory) !== "reject";
 }
 
+/** Automatic acquisition must neither replace a slot nor displace the other hand. */
+export function findEmptyGearSlot(
+  definition: GearDefinition,
+  characterLoadout: GearLoadouts[GearCharacterId],
+  inventory: GearInstance[],
+): GearSlot | null {
+  return (
+    GEAR_SLOTS.find(
+      (slot) =>
+        !characterLoadout[slot] && resolveLoadoutEquip(definition, slot, characterLoadout, inventory) === "compatible",
+    ) ?? null
+  );
+}
+
 export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
   const definitionById = new Map(inventory.map((item) => [item.instanceId, gearDefinitions[item.definitionId]]));
   const next = createEmptyGearLoadouts();

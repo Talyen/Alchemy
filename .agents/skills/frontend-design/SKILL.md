@@ -12,33 +12,12 @@ Modified for Alchemy: replaces general website direction with game-screen design
 existing UI ownership, and scoped visual verification. Review upstream updates
 manually against this pinned revision and Alchemy's current conventions.
 
-## Improve the existing game
+## Review the affected screen
 
-Read the relevant [UI owner](../../../Docs/UI.md) sections and
-[visual review](../../../Docs/UI_VISUAL_REVIEW.md). Inspect the current rendered
-screen before deciding what needs changing. Follow these rules:
+Follow [UI copy conventions](../../../Docs/UI.md#show-dont-tell).
 
-1. **Name the visible problem.** A different arrangement is not an improvement
-   by itself. Identify what already works and preserve its clarity, consistency
-   and useful grouping.
-2. **Simplify first.** Remove redundant copy and unnecessary visual weight before
-   adding emphasis, panels or effects. Judge information by how much attention it
-   consumes, not just whether new words were added. Preserve necessary mechanics,
-   accessible names and feedback; use existing inspection for secondary details.
-3. **Compare with the original throughout.** Use real content and matched capture
-   conditions. Judge the whole screen's restraint, cohesion and ease of use.
-   Reuse shared primitives. Use relevant references; illustration style cannot
-   substitute for a screen-composition reference. For art, read the applicable
-   [asset workflow](../../../Docs/WORKFLOWS-ASSETS.md#art-style-and-generation-prompts)
-   and inspect candidates at their actual display size and crop in the game.
-4. **Reject weak experiments yourself.** Explore alternatives when useful or
-   requested, but do not present two regressions as a successful choice. Discard
-   rejected directions. If improvement is not convincing, keep the original and
-   say the attempt failed.
-5. **Verify what changed.** Render and exercise the affected states and input
-   flows; check sizes and localized content where affected. Bounded browser
-   review is already authorized through [managed previews](../../../CONTRIBUTING.md#agent-preview-ownership).
-   Use [verifier](../verifier/SKILL.md) for code checks and localization for text
-   changes. Report missing visual review honestly. Screenshots and passing checks
-   do not establish design quality; no visual receipt or separate design report
-   is required.
+[Visual review](../../../Docs/UI_VISUAL_REVIEW.md) owns design quality and rendered comparison requirements. Read the relevant [UI owner](../../../Docs/UI.md) sections, then inspect the current screen before choosing a change.
+
+Use the existing primitives and compare the candidate in matched game states. For artwork, follow the [asset workflow](../../../Docs/WORKFLOWS-ASSETS.md#art-style-and-generation-prompts) and inspect its actual destination size and crop. Exercise affected interactions and localized layouts.
+
+Use [localization](../localization/SKILL.md) after finalizing changed text. [CONTRIBUTING](../../../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and execution permissions.

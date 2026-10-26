@@ -6,7 +6,7 @@ import { parseRichText, type RichTextNode } from "@/lib/localization/rich-text";
 import { renderCardDescription, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
-import { TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
+import { TRANSMUTATION_PREFIXES } from "@/lib/game-constants";
 
 import { tooltipBodyLineClass, tooltipHeaderClass } from "../../config/index";
 import { buildDescriptionMessage } from "@/lib/game-data";

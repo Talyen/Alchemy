@@ -459,7 +459,8 @@ describe("createBattleCardPlay", () => {
     clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
 
     expect(readBattle(defaultGameSession).battleState.hand.length).toBe(0);
-    expect(readBattle(defaultGameSession).battleState.discard).toHaveLength(1);
+    expect(readBattle(defaultGameSession).battleState.deck).toEqual([{ ...slash, uid: 4 }]);
+    expect(readBattle(defaultGameSession).battleState.discard).toEqual([]);
     expect(readBattle(defaultGameSession).battleState.mana).toBe(2);
     expectAwardedCard(awardCardXP, "slash");
     expect(onBattleVictory).toHaveBeenCalledOnce();
@@ -636,6 +637,27 @@ describe("createBattleCardPlay", () => {
       expect(awardCardXP).not.toHaveBeenCalled();
     },
   );
+
+  it("does not borrow a replacement generation when a preview observer restarts battle", async () => {
+    vi.mocked(shouldReduceMotion).mockReturnValue(false);
+    vi.useFakeTimers();
+    const slash = { ...slashCard(), uid: 7 };
+    givenBattle(makeTestBattleState({ hand: [slash], mana: 3, enemyHealth: 30 }));
+    const { ctx, handleAutoplayCard } = makeDeps();
+    const unsubscribe = useUiStore.subscribe((state, previous) => {
+      if (state.autoplayPreviewCardId && state.autoplayPreviewCardId !== previous.autoplayPreviewCardId)
+        ctx.playback.restart();
+    });
+    try {
+      const pending = handleAutoplayCard(slash, 0, autoplayControl, readBattle(defaultGameSession).battleState);
+      expect(ctx.playback.pendingTimers).toBe(0);
+      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+      await expect(pending).resolves.toBe(false);
+      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
+    } finally {
+      unsubscribe();
+    }
+  });
 
   it("does not grant a previewed Wish after cancellation without a generation change", async () => {
     vi.mocked(shouldReduceMotion).mockReturnValue(false);

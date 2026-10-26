@@ -184,6 +184,35 @@ describe("card inspection", () => {
     opener.remove();
   });
 
+  it("keeps overflow visible in arrival order even when the draw pile is empty", () => {
+    const collections = [{ id: "draw" as const, cards: [], overflowCards: [beta, alpha] }];
+    const view = render(<CardInspectionOverlay {...props} selected="draw" collections={collections} />);
+    const overflow = screen.getByRole("region", { name: "Hand Overflow" });
+    expect(
+      within(overflow)
+        .getAllByRole("img")
+        .map((image) => image.getAttribute("alt")),
+    ).toEqual(["Beta", "Alpha"]);
+    expect(screen.queryByRole("img", { name: "Empty Draw Pile" })).toBeNull();
+    view.rerender(<CardInspectionOverlay {...props} selected="draw" collections={[{ id: "draw", cards: [beta] }]} />);
+    expect(screen.queryByRole("region", { name: "Hand Overflow" })).toBeNull();
+  });
+
+  it("keeps overflow separate from the selected pile and out of discard inspection", () => {
+    const collections = [
+      { id: "draw" as const, cards: [alpha], overflowCards: [beta] },
+      { id: "discard" as const, cards: [alpha] },
+    ];
+    const view = render(<CardInspectionOverlay {...props} selected="draw" collections={collections} />);
+    expect(screen.getAllByTestId("card-selection-grid")).toHaveLength(2);
+    expect(
+      within(screen.getByRole("region", { name: "Hand Overflow" })).getByRole("img", { name: "Beta" }),
+    ).toBeTruthy();
+    view.rerender(<CardInspectionOverlay {...props} selected="discard" collections={collections} />);
+    expect(screen.queryByRole("region", { name: "Hand Overflow" })).toBeNull();
+    expect(screen.getAllByTestId("card-selection-grid")).toHaveLength(1);
+  });
+
   it("resets pagination on collection changes and reopen, and rejects closing-fade clicks", async () => {
     const many = Array.from({ length: 40 }, (_, uid) => ({ ...alpha, uid }));
     const collections = [

@@ -1,3 +1,5 @@
+import { rewardStateForTest, rewardActivityForTest } from "../../../../../helpers/run-domain-store-test";
+import { setRewardState } from "@/features/alchemy/shared/stores/commands/write/run-session";
 import { afterEach, describe, expect, it } from "vitest";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
 import { projectCampaignReward } from "@/features/alchemy/shared/stores/commands/campaign-reward";
@@ -38,12 +40,12 @@ function pendingBossReward() {
       draft.run.initialized = true;
       draft.run.activeRun.runDeck = getStartingDeck("knight");
       draft.run.activeRun.selectedDifficulty = "difficulty-1";
-      draft.session.rewardFlow.state = {
+      setRewardState(draft, {
         ...createEmptyRewardState(),
         choices: [cardById.slash!],
         lastVictoryContentSystem: "campaign",
         lastVictoryEnemyType: "boss",
-      };
+      });
       return acceptCommand();
     },
     undefined,
@@ -68,7 +70,7 @@ describe("Campaign first-boss Homestead grant", () => {
       const session = pendingBossReward();
       mutate(session, (draft) => {
         draft.runProfile.materialInventory = { ...emptyInventory(), ...stockpile };
-        draft.session.rewardFlow.state.materials = { ...emptyInventory(), ...reward };
+        rewardStateForTest(draft).materials = { ...emptyInventory(), ...reward };
         return acceptCommand();
       });
       const before = readGameplayState(session);
@@ -129,8 +131,8 @@ describe("Campaign first-boss Homestead grant", () => {
     mutate(session, (draft) => {
       draft.run.activeRun.contentSystemType = mode;
       draft.run.activeRun.currentAct = act;
-      draft.session.rewardFlow.state.lastVictoryContentSystem = mode;
-      draft.session.rewardFlow.state.lastVictoryEnemyType = enemy;
+      rewardStateForTest(draft).lastVictoryContentSystem = mode;
+      rewardStateForTest(draft).lastVictoryEnemyType = enemy;
       return acceptCommand();
     });
     expect(projectCampaignReward(readGameplayState(session))).toEqual({
@@ -165,7 +167,7 @@ describe("Campaign first-boss Homestead grant", () => {
   it("does not repeat the grant on a resumed Companion reward from the same boss", () => {
     const first = pendingBossReward();
     mutate(first, (draft) => {
-      draft.session.rewardFlow.companionCards = [cardById["wolf-companion"]!];
+      rewardActivityForTest(draft).companionCards = [cardById["wolf-companion"]!];
       return acceptCommand();
     });
     expect(claimRunReward("missing-choice", first)).toBeNull();
@@ -205,12 +207,12 @@ describe("Campaign first-boss Homestead grant", () => {
       setRunProgressActivity(draft, "rewards");
       draft.run.activeRun.currentAct = 1;
       draft.runProfile.materialInventory = emptyInventory();
-      draft.session.rewardFlow.state = {
+      setRewardState(draft, {
         ...createEmptyRewardState(),
         choices: [cardById.slash!],
         lastVictoryContentSystem: "campaign",
         lastVictoryEnemyType: "boss",
-      };
+      });
       return acceptCommand();
     });
     expect(projectCampaignReward(readGameplayState(later))).toMatchObject({

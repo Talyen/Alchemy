@@ -18,6 +18,7 @@ import { runAudits } from "../../scripts/audit-all.mjs";
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
 import { parseSyncArgs } from "../../scripts/sync-generated.mjs";
 import { parseAssetArgs } from "../../scripts/assets.mjs";
+import { isolatedTestResources } from "../helpers/isolated-test-resources";
 
 const ROOT = process.cwd();
 const temporary: string[] = [];
@@ -159,9 +160,8 @@ describe("script execution reliability", () => {
 
   it("fails the ship gate when its test process is interrupted", () => {
     const source = `import cp from 'node:child_process';
-      import net from 'node:net';
       import { syncBuiltinESMExports } from 'node:module';
-      net.createServer = () => ({once() {}, listen(_options, ready) { ready(); }, address() { return {port: 0}; }, close(done) { done(); }});
+      ${isolatedTestResources}
       cp.spawnSync = () => { console.log('interrupted test process'); return {status:null,signal:'SIGTERM'}; };
       syncBuiltinESMExports();
       process.argv.push('--live');
@@ -205,11 +205,20 @@ describe("script execution reliability", () => {
   });
 
   it.each(["-C", "--work-tree", "--config-env"])(
-    "backs up the selected checkout for %s without altering the caller",
+    "rejects destructive commands for %s without changing either checkout",
     (option) => {
       const caller = repository();
       const target = repository();
+      fs.writeFileSync(path.join(target, "game.ts"), "earlier work");
+      git(target, "stash", "push", "-m", "existing backup");
+      const stashes = git(target, "stash", "list");
+      const head = git(target, "rev-parse", "HEAD");
+      fs.writeFileSync(path.join(target, "game.ts"), "staged work");
+      git(target, "add", "game.ts");
+      const staged = git(target, "diff", "--cached");
+      const index = fs.readFileSync(path.join(target, ".git/index"));
       fs.writeFileSync(path.join(target, "game.ts"), "target work");
+      fs.writeFileSync(path.join(target, "unfinished.txt"), "untracked work");
       const prelude =
         option === "-C"
           ? ["-C", target, "-C", "."]
@@ -227,7 +236,12 @@ describe("script execution reliability", () => {
       );
       expect(result.status).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
-      expect(git(target, "show", "stash@{0}:game.ts")).toBe("target work");
+      expect(fs.readFileSync(path.join(target, "game.ts"), "utf8")).toBe("target work");
+      expect(git(target, "stash", "list")).toBe(stashes);
+      expect(git(target, "rev-parse", "HEAD")).toBe(head);
+      expect(fs.readFileSync(path.join(target, ".git/index"))).toEqual(index);
+      expect(git(target, "diff", "--cached")).toBe(staged);
+      expect(fs.readFileSync(path.join(target, "unfinished.txt"), "utf8")).toBe("untracked work");
       expect(git(caller, "stash", "list")).toBe("");
       expect(fs.readFileSync(path.join(caller, "game.ts"), "utf8")).toBe("original");
     },
@@ -252,8 +266,33 @@ describe("script execution reliability", () => {
     expect(result.stdout.trim()).toBe("preserved");
   });
 
+  it.each([
+    ["reset", "--h"],
+    ["checkout", "--f"],
+    ["switch", "--di"],
+  ])("preserves dirty work when rejecting abbreviated %s %s", (command, option) => {
+    const root = repository();
+    fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
+    fs.writeFileSync(path.join(root, "untracked.txt"), "unfinished source");
+    const operands = command === "reset" ? [] : [git(root, "branch", "--show-current")];
+    const result = spawnSync(
+      process.execPath,
+      [path.join(ROOT, "scripts/git-safety-guard.mjs"), command, option, ...operands],
+      {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, LEFTHOOK: "0" },
+      },
+    );
+    expect(result.status, result.stderr).toBe(1);
+    expect(result.stderr).toContain("blocked: destructive git command");
+    expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
+    expect(git(root, "stash", "list")).toBe("");
+    expect(fs.readFileSync(path.join(root, "untracked.txt"), "utf8")).toBe("unfinished source");
+  });
+
   it.each([["game.ts"], ["HEAD", "game.ts"]])(
-    "backs up checkout path restores without an explicit separator: %j",
+    "rejects checkout path restores without changing files: %j",
     (...operands) => {
       const root = repository();
       fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
@@ -268,7 +307,8 @@ describe("script execution reliability", () => {
       );
       expect(result.status, result.stderr).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
-      expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
+      expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
+      expect(git(root, "stash", "list")).toBe("");
     },
   );
 
@@ -289,7 +329,7 @@ describe("script execution reliability", () => {
   });
 
   it.skipIf(process.platform === "win32")(
-    "backs up work hidden by a stale filesystem monitor before blocking reset",
+    "preserves work hidden by a stale filesystem monitor when blocking reset",
     () => {
       const root = repository();
       const monitor = path.join(root, ".git", "silent-fsmonitor");
@@ -307,7 +347,8 @@ describe("script execution reliability", () => {
       });
       expect(result.status, result.stderr).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
-      expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
+      expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
+      expect(git(root, "stash", "list")).toBe("");
       expect(git(root, "config", "core.fsmonitor")).toBe(monitor);
       expect(git(root, "config", "core.untrackedCache")).toBe("true");
     },
@@ -444,7 +485,7 @@ describe("script execution reliability", () => {
   it("fails verification discovery explicitly when Git cannot read the repository", () => {
     const root = fixture();
     expect(changedGitPaths(root)).toBeNull();
-    expect(() => resolveSelectedPaths(root, { paths: [] })).toThrow("git status failed");
+    expect(() => resolveSelectedPaths(root, { paths: [] })).toThrow("git diff failed");
     expect(() => listRepositoryFiles(root)).toThrow("Could not list repository files");
     expect(() => resolvePushPaths(root, "")).toThrow("Could not inspect push revisions");
   });
@@ -464,17 +505,18 @@ describe("script execution reliability", () => {
     );
     git(root, "add", ".");
     commit(root);
-    // A clean tree falls back to the HEAD commit, never older history.
-    expect(resolveSelectedPaths(root, { flags: diff, paths: [] }).sort()).toEqual(
+    expect(resolveSelectedPaths(root, { flags: diff, paths: [] })).toEqual([]);
+    expect(resolveSelectedPaths(root, { flags: new Set(["committed"]), paths: [], revision: "HEAD" }).sort()).toEqual(
       ["game.ts", "staged.ts", "untracked.ts"].sort(),
     );
     const shallow = fixture();
     git(root, "clone", "--quiet", "--depth=1", pathToFileURL(root).href, shallow);
     expect(git(shallow, "rev-parse", "--is-shallow-repository")).toBe("true");
-    // Without parent history, the HEAD fallback conservatively selects its entire tree.
-    expect(resolveSelectedPaths(shallow, { flags: diff, paths: [] }).sort()).toEqual(
-      ["game.ts", "history.ts", "staged.ts", "untracked.ts"].sort(),
-    );
+    // An explicit shallow HEAD selection conservatively includes its entire tree.
+    expect(resolveSelectedPaths(shallow, { flags: diff, paths: [] })).toEqual([]);
+    expect(
+      resolveSelectedPaths(shallow, { flags: new Set(["committed"]), paths: [], revision: "HEAD" }).sort(),
+    ).toEqual(["game.ts", "history.ts", "staged.ts", "untracked.ts"].sort());
   });
 
   it("keeps deleted paths for verification while fallback search reads only surviving files", () => {
@@ -613,7 +655,7 @@ describe("script execution reliability", () => {
     const root = fixture();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
-    const source = path.join(root, "Raw Assets/Music/theme.ogg");
+    const source = path.join(root, "assets/sources/Music/theme.ogg");
     fs.mkdirSync(path.dirname(source), { recursive: true });
     fs.writeFileSync(source, "authored music");
     fs.writeFileSync(
@@ -624,7 +666,7 @@ describe("script execution reliability", () => {
       spawnSync(process.execPath, [path.join(root, "scripts", script), ...args], {
         cwd: root,
         encoding: "utf8",
-        env: { ...process.env, ASSET_LIBRARY_ROOT: path.join(root, "Raw Assets") },
+        env: { ...process.env, ASSET_LIBRARY_ROOT: path.join(root, "nonexistent external library") },
       });
 
     const stale = run("optimize-music.mjs", "--check");
@@ -641,7 +683,17 @@ describe("script execution reliability", () => {
     expect([output, manifest].map((file) => fs.readFileSync(file))).toEqual(before);
   });
 
-  it("generates icons from the selected library master and records outputs that verify without that library", async () => {
+  it("requires an explicit library for optional replacement sound auditions", () => {
+    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/audio-review.mjs"), "--check"], {
+      cwd: ROOT,
+      encoding: "utf8",
+      env: { ...process.env, ASSET_LIBRARY_ROOT: "/nonexistent/shared-library" },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("requires --library <Sounds directory>");
+  });
+
+  it("generates icons from the repository master and records outputs that verify without sources", async () => {
     const root = fixture();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
@@ -652,7 +704,7 @@ describe("script execution reliability", () => {
         .readFileSync(registry, "utf8")
         .replace(/export const iconSource = "[^"]+";/u, 'export const iconSource = "chosen/icon.png";'),
     );
-    const library = path.join(root, "external library");
+    const library = path.join(root, "assets/sources");
     fs.mkdirSync(path.join(library, "chosen"), { recursive: true });
     await sharp({ create: { width: 32, height: 32, channels: 4, background: "red" } })
       .png()
@@ -664,15 +716,7 @@ describe("script execution reliability", () => {
     });
     expect(generated.status, generated.stderr).toBe(0);
     const receipt = path.join(root, "desktop/icons/.asset-hashes.json");
-    const before = fs.readFileSync(receipt);
-    fs.renameSync(path.join(library, "chosen/icon.png"), path.join(library, "renamed.png"));
-    const recovered = spawnSync(process.execPath, [path.join(root, "scripts/generate-icons.mjs")], {
-      cwd: root,
-      encoding: "utf8",
-      env: { ...process.env, ASSET_LIBRARY_ROOT: library },
-    });
-    expect(recovered.status, recovered.stderr).toBe(0);
-    expect(fs.readFileSync(receipt)).toEqual(before);
+    expect(fs.existsSync(receipt)).toBe(true);
     fs.rmSync(library, { recursive: true });
     const checked = spawnSync(
       process.execPath,

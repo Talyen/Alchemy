@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 /** Remove stale local test, diagnostic, and report artifacts without touching source. */
 import fs from "node:fs";
+import { reportRetentionPlan, writeRetentionReview } from "./lib/report-retention.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { TRANSIENT_ARTIFACT_DIRS, formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
+import { formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
 import { withArtifactGuard } from "./lib/artifact-guard.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const TRANSIENT_DIRS = TRANSIENT_ARTIFACT_DIRS;
+// Only Git diff inventories are reproducible from the current checkout. Test,
+// performance, integration and visual evidence must survive age-based pruning.
+export const TRANSIENT_DIRS = Object.freeze(["reports/agent-diff"]);
 const DEFAULT_DAYS = 1;
 
 function parseDays(value) {
@@ -67,6 +70,7 @@ export function pruneExpiredArtifacts({
 } = {}) {
   if (!Number.isFinite(days) || days < 0) throw new Error("days must be non-negative");
   const cutoff = now - days * 86_400_000;
+  const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
   const consider = (pathname) => {
     const info = bundleInfo(pathname);
@@ -76,6 +80,14 @@ export function pruneExpiredArtifacts({
     }
   };
   for (const relative of transientDirs) {
+    const segments = relative.split("/");
+    if (
+      segments.slice(0, -1).some((_, index) => {
+        const parent = fs.lstatSync(path.join(rootDir, ...segments.slice(0, index + 1)), { throwIfNoEntry: false });
+        return !parent?.isDirectory() || parent.isSymbolicLink();
+      })
+    )
+      continue;
     const target = path.join(rootDir, relative);
     const stats = fs.lstatSync(target, { throwIfNoEntry: false });
     if (!stats?.isDirectory() || stats.isSymbolicLink()) continue;
@@ -91,7 +103,7 @@ export function pruneExpiredArtifacts({
   }
   const reportsStats = fs.lstatSync(path.join(rootDir, "reports"), { throwIfNoEntry: false });
   if (!transientDirs.includes("reports") || !reportsStats?.isDirectory() || reportsStats.isSymbolicLink())
-    return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false };
+    return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false, review };
   const pointer = path.join(rootDir, "reports/current-run.json");
   if (fs.lstatSync(pointer, { throwIfNoEntry: false })?.isFile()) {
     let run;
@@ -119,7 +131,7 @@ export function pruneExpiredArtifacts({
     const markdown = path.join(rootDir, "reports/current-run.md");
     if (fs.lstatSync(markdown, { throwIfNoEntry: false })) consider(markdown);
   }
-  return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false };
+  return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false, review };
 }
 
 export async function pruneTransientArtifacts(options = {}) {

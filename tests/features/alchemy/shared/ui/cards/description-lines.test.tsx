@@ -8,6 +8,8 @@ import { getEditableCorruptionTargets } from "@/lib/corruption";
 import { applyNumericCorruption } from "@/lib/corruption/numeric";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { DescriptionLines } from "@/features/alchemy/shared/ui/cards/card-description-ui";
+import { getBattleCardDescriptionInspection } from "@/lib/battle/card-damage-inspection";
+import { patchBattleState } from "../../../../../fixtures/battle";
 
 it("renders saved ingredient marks and removes them when the visible line no longer matches", () => {
   const acid = cardById["acid-potion"]!;
@@ -28,4 +30,13 @@ it("renders saved ingredient marks and removes them when the visible line no lon
   rerender(<DescriptionLines lines={card.descriptionLines.map(() => "Gain 7 Block")} idPrefix="changed" card={card} />);
   expect(container.querySelector(".text-destructive, .text-green-400")).toBeNull();
   expect(container.textContent).toBe("Gain 7 Block".repeat(card.descriptionLines.length));
+});
+
+it("renders the original scaling rule without extra preview text", () => {
+  const card = cardById["shield-bash"]!;
+  const view = getBattleCardDescriptionInspection(card, patchBattleState({ playerStatuses: { block: 16 } }));
+  const { container } = render(<DescriptionLines lines={view.descriptionLines} idPrefix="rules" card={view} />);
+  expect(container.textContent).toBe("Gain 2 BlockDeal Stun damage equal to half your Block");
+  expect(container.textContent).not.toContain("Attack power");
+  expect(container.textContent).not.toContain("Deal 9 Stun damage");
 });

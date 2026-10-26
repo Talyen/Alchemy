@@ -17,6 +17,17 @@ const HEROES = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "
 const MODES = ["campaign", "labyrinth", "wildwood"];
 const POLICIES = ["archetype", "random", "minimalist"];
 
+// Exploratory cases need a reachable prefix even when a legal deck exhausts
+// its combat turn budget. Other incomplete runs must still fail admission.
+export function isUsableDiscoveryResult(caseSpec, result) {
+  return (
+    result.status === "completed" ||
+    (caseSpec.exploratory &&
+      result.status === "incomplete" &&
+      result.error === "Incomplete: battle turn budget exhausted")
+  );
+}
+
 // Separate decision labels keep checkpoint and UI choices independent of one another.
 export function chooseDiscoveryIndex(seed, label, count) {
   if (!Number.isSafeInteger(count) || count < 1) throw new Error("Discovery choice requires candidates");

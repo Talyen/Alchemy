@@ -6,14 +6,14 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 
 /**
  * Single in-process orchestrator for explicit local asset preparation.
- * The three transform pipelines (art, sounds, music) are independent — they write
+ * The transform pipelines (art, sounds, music, boss idles) are independent — they write
  * to disjoint output directories — so they run concurrently via the shared
  * OPTIMIZE_PIPELINES table. Art must finish before the art barrels sync because
  * they regenerate from its manifest.
  *
- * Partial-failure rule: art barrels sync whenever art succeeds, even if sounds
- * or music fail (barrel output depends only on art). The aggregated error still
- * throws, so a failed run is never silent — but barrels may advance while sound
+ * Partial-failure rule: art barrels sync whenever art succeeds, even if another
+ * media pipeline fails (barrel output depends only on art). The aggregated error still
+ * throws, so a failed run is never silent — but barrels may advance while other media
  * outputs stay stale until the next green run.
  *
  * Build version metadata syncs independently of art: it is owned by the release

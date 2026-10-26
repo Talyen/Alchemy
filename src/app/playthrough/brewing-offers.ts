@@ -10,7 +10,7 @@ import type { createPlaythroughController } from "./controller";
 import type { CareerConfig } from "./types";
 
 export interface BrewingOpportunity {
-  kind: "mix" | "distill" | "purchase" | "refresh" | "campfire-new" | "campfire-mix";
+  kind: "brew" | "mix" | "distill" | "purchase" | "refresh" | "campfire-new" | "campfire-mix";
   eligible: number;
   affordable: number;
   beneficial: number;
@@ -81,10 +81,31 @@ export function offerBrewingChoices(
 
   const actions = controller.shop().alchemist;
   const price = actions.getMixPrice();
-  const serviceOpen = !activity.data.mixUsed;
-  const usefulService = serviceOpen && candidates.some((c) => c.improvement > 0);
+  const isServiceOpen = (kind: "mix" | "distill") =>
+    !(kind === "mix" ? activity.data.mixUsed : activity.data.distillUsed);
+  const usefulService = candidates.some((c) => isServiceOpen(c.kind) && c.improvement > 0);
   const reserve = enabled && usefulService ? price : 0;
+  const brewScores = activity.data.brewOffers.map((card) => potionPurchaseScore(card, run.runDeck));
+  opportunities.push({
+    kind: "brew",
+    eligible: brewScores.length,
+    affordable: !activity.data.brewUsed && profile.gold >= price ? brewScores.length : 0,
+    beneficial: brewScores.filter((score) => score > 0).length,
+    reason: !enabled
+      ? "disabled"
+      : activity.data.brewUsed
+        ? "service-exhausted"
+        : profile.gold < price
+          ? "insufficient-gold"
+          : "available",
+  });
+  if (enabled && !activity.data.brewUsed && profile.gold >= price)
+    activity.data.brewOffers.forEach((card, index) =>
+      offer("brew", card.id, brewScores[index]!, () => actions.brewPotion(index), index),
+    );
+
   for (const kind of ["mix", "distill"] as const) {
+    const serviceOpen = isServiceOpen(kind);
     const selected = candidates.filter((c) => c.kind === kind);
     opportunities.push({
       kind,

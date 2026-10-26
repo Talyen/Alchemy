@@ -3,6 +3,7 @@ import type languages from "@/lib/localization/locales/languages.json";
 import * as assetRefs from "./assets.generated";
 import { gearArtByDefinitionId } from "./catalog-art";
 export { gearArtByDefinitionId } from "./catalog-art";
+export { bossIdleClips, type BossIdleClip } from "./boss-idle-assets";
 
 export * from "./assets.generated";
 
@@ -25,6 +26,12 @@ export const demoFeatureShowcaseByLocale = {
   fr: assetRefs.demoFeatureShowcaseFr,
 } satisfies Record<keyof typeof languages, string>;
 export const armorySalvageArt = assetRefs.armorySalvage;
+
+export const potionBrewingArt = {
+  brew: assetRefs.potionBrew,
+  mix: assetRefs.potionMix,
+  distill: assetRefs.potionDistill,
+} as const;
 
 export const labyrinthShroudedArt = [
   assetRefs.labyrinthShroudedVeiledArch,

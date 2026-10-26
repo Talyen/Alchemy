@@ -3,6 +3,9 @@ import "../../../../helpers/mock-audio";
 import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 
 import { describe, expect, it } from "vitest";
+import { hydrateAlchemistState } from "@/lib/active-run-session/shop-persistence";
+import { snapshotRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { parseActiveRun } from "@/lib/validation/parse-active-run";
 import { shopItemSlotKey } from "@/lib/active-run-session";
 import { mutateGearForTest, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
@@ -198,7 +201,7 @@ describe("alchemist shop actions", () => {
       },
     );
   });
-  it("strengthening pays once and uses the same service slot as mixing", () => {
+  it("each preparation charges once, survives refresh and hydration, and leaves the other services available", () => {
     const originalDeck = [cardById["health-potion"]!, cardById["mana-potion"]!, cardById["stoneskin-potion"]!];
     setRunProgress({ gold: 0, runDeck: originalDeck });
     setAlchemistState(createInitialAlchemistState());
@@ -207,7 +210,7 @@ describe("alchemist shop actions", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(originalDeck);
     expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").mixUsed).toBe(false);
 
-    setRunProgress({ gold: 2 * ALCHEMIST_MIX_PRICE });
+    setRunProgress({ gold: 4 * ALCHEMIST_MIX_PRICE });
     const commits: number[] = [];
     using _unsubscribe = createCleanup(
       subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession),
@@ -216,15 +219,38 @@ describe("alchemist shop actions", () => {
     const strengthened = actions.alchemist.strengthenPotion(0);
     expect(strengthened).toMatchObject({ effects: [{ kind: "heal", amount: 9 }] });
     expect(readActiveRun(defaultGameSession).runDeck).toEqual([strengthened, ...originalDeck.slice(1)]);
-    expect(readRunProfile(defaultGameSession).gold).toBe(ALCHEMIST_MIX_PRICE);
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").mixUsed).toBe(true);
-    const after = readActiveRun(defaultGameSession);
-    expect(actions.alchemist.mixPotions(1, 2)).toBeNull();
+    expect(readRunProfile(defaultGameSession).gold).toBe(3 * ALCHEMIST_MIX_PRICE);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist")).toMatchObject({
+      distillUsed: true,
+      mixUsed: false,
+      brewUsed: false,
+    });
     expect(actions.alchemist.strengthenPotion(1)).toBeNull();
-    expect(readActiveRun(defaultGameSession)).toEqual(after);
+    const mixed = actions.alchemist.mixPotions(1, 2);
+    expect(mixed).not.toBeNull();
+    const visit = readActivityData(readRunSession(defaultGameSession).activity, "alchemist");
+    const offers = visit.brewOffers;
+    expect(actions.alchemist.brewPotion(-1)).toBeNull();
+    const brewed = actions.alchemist.brewPotion(0);
+    expect(brewed?.id).toBe(offers[0]!.id);
+    expect(actions.alchemist.brewPotion(1)).toBeNull();
     expect(readRunProfile(defaultGameSession).gold).toBe(ALCHEMIST_MIX_PRICE);
-    expect(commits).toHaveLength(1);
-    expect(playUISound).toHaveBeenCalledExactlyOnceWith("alchemistMix");
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual([strengthened, mixed, brewed]);
+    const restored = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))))!;
+    if (restored.activity.kind !== "alchemist") throw new Error("Expected Alchemist visit");
+    const saved = hydrateAlchemistState(restored.activity.data);
+    setAlchemistState(saved);
+    expect(actions.alchemist.refresh()).toBe(true);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist")).toMatchObject({
+      brewUsed: true,
+      mixUsed: true,
+      distillUsed: true,
+      brewOffers: offers,
+    });
+    expect(actions.alchemist.brewPotion(0)).toBeNull();
+    expect(actions.alchemist.strengthenPotion(0)).toBeNull();
+    expect(commits).toHaveLength(5);
+    expect(playUISound).toHaveBeenCalledWith("alchemistMix");
   });
 });
 
@@ -330,7 +356,7 @@ describe("equipment shop actions", () => {
     }
   });
   describe("equipment shop", () => {
-    it("persists gold, purchase slot, and gear inventory in one commit", () => {
+    it("persists the purchase, Auto Equip, and maximum Health in one commit", () => {
       const instance: GearInstance = {
         instanceId: "shop-armor",
         definitionId: "leather-armor-basic",
@@ -357,9 +383,10 @@ describe("equipment shop actions", () => {
         [instance.instanceId],
       );
       expect(readGearState(defaultGameSession).inventories.knight).toContainEqual(instance);
+      expect(readGearState(defaultGameSession).loadouts.knight.body).toBe(instance.instanceId);
       expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([{ kind: "gear", instance }]);
 
-      expect(readActiveRun(defaultGameSession).runMaxHealth).toBe(30);
+      expect(readActiveRun(defaultGameSession).runMaxHealth).toBe(37);
       expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
     });
 

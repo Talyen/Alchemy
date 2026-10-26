@@ -1,6 +1,6 @@
 # Alchemy privacy notice
 
-Effective: September 29, 2026
+Effective: October 23, 2026
 
 Alchemy stores game progress and settings locally on the player’s device. The
 desktop build may mirror saves to Steam Cloud when that service is available.
@@ -10,9 +10,13 @@ identity to diagnostic reports.
 ## Local and cloud saves
 
 Browser saves use local browser storage. Desktop saves use local files and may
-be mirrored to Steam Cloud. Save data contains gameplay progress, settings,
+be mirrored to Steam Cloud only while both the account and game Cloud settings
+are enabled. Save data contains gameplay progress, settings,
 decks, unlocks, and run state. Steam desktop saves also record the Steam account
-identifier to prevent importing another account's local demo progress. Demo and
+identifier. Local saves and import-initialization receipts are separated by
+Steam account; launches without a Steam identity use a separate offline profile.
+Existing account-stamped saves are copied only to their matching account, with
+original files preserved. Demo and
 full-game saves remain separate; a fresh full-game profile can automatically
 import earned demo progression through shared Steam Cloud or local Windows saves.
 The import excludes active runs and device preferences. A small initialization
@@ -21,8 +25,9 @@ progress and is not a diagnostic report. The [save contract](./src/features/alch
 describes technical recovery and deletion behavior.
 
 Options offers **Clear Save Data** to remove local save data and start fresh.
-On desktop, Alchemy also attempts to delete its Steam Cloud save copies;
-a failed Cloud deletion may leave a copy there. Device-local Game Size and
+On desktop, while Steam Cloud is enabled, Alchemy also attempts to delete its
+Steam Cloud save copies. Disabled Cloud or a failed deletion may leave a copy
+there. Device-local Game Size and
 Tooltip Size preferences remain until Reset to Default is used.
 
 ## Crash reporting
@@ -35,7 +40,7 @@ game version, operating system, Electron version, crash location, current
 screen label, and diagnostic context collected by Sentry’s Electron SDK.
 
 Alchemy configures Sentry with `sendDefaultPii: false`, disables performance
-tracing and continuous logs, and does not deliberately attach Steam identity or
+tracing, continuous logs and console breadcrumbs, and does not deliberately attach Steam identity or
 save data. Reports are processed and retained according to the configured
 Sentry project and Sentry’s privacy terms. Crash-reporting failure never blocks
 offline play, startup, saves, gameplay, or quit.

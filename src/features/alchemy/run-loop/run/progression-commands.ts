@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { restAtCampfireInDraft } from "./destination-commands";
 import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
@@ -23,7 +24,7 @@ import {
   setCorruptionResult,
   setCurrentAct,
   setDestinationIndexInAct,
-  setRewardState,
+  setDestinationState,
   setLabyrinthMap,
   setActiveLabyrinthPendingNode,
   setSelectedLabyrinthNodeId,
@@ -36,11 +37,11 @@ import { GAME_EDITION_POLICY, IS_DEMO } from "@/lib/game-edition";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 
 export function prepareDestinationInDraft(draft: RunTransaction): void {
-  const state = draft.session.rewardFlow.state;
+  const state = readRewardActivity(draft.session.activity).state;
   if (!isBossOnlyDestinationOffer(state.destinations)) {
-    if (state.selectedBossId) setRewardState(draft, (previous) => ({ ...previous, selectedBossId: null }));
+    if (state.selectedBossId) setDestinationState(draft, (previous) => ({ ...previous, selectedBossId: null }));
   } else if (!state.selectedBossId || !getBossById(state.selectedBossId)) {
-    setRewardState(draft, (previous) => ({
+    setDestinationState(draft, (previous) => ({
       ...previous,
       selectedBossId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
     }));

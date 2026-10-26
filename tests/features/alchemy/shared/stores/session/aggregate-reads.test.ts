@@ -133,4 +133,30 @@ describe("aggregate read ports", () => {
     expect(() => child.progress.push(2)).toThrow(TypeError);
     expect(deepFreeze(tree)).toBe(tree);
   });
+
+  it("preserves dictionary prototypes and every own data property when publishing unowned snapshots", () => {
+    const metadata = Symbol("metadata");
+    const dictionary = Object.create(null) as Record<string, unknown>;
+    const child = { values: [1] };
+    dictionary.visible = child;
+    Object.defineProperty(dictionary, "hidden", { value: child, enumerable: false });
+    Object.defineProperty(dictionary, metadata, { value: dictionary, enumerable: false });
+    const copied = deepFreeze(copyForPublication(dictionary));
+    expect(Object.getPrototypeOf(copied)).toBeNull();
+    expect(copied.hidden).toBe(copied.visible);
+    expect(Reflect.get(copied, metadata)).toBe(copied);
+    expect(Object.getOwnPropertyDescriptor(copied, "hidden")?.enumerable).toBe(false);
+    child.values.push(2);
+    expect(copied.visible).toEqual({ values: [1] });
+    expect(copyForPublication(copied)).toBe(copied);
+  });
+
+  it("rejects hidden accessors at publication without invoking them", () => {
+    const getter = vi.fn(() => ({ progress: 1 }));
+    for (const key of ["hidden", Symbol("hidden")]) {
+      const input = Object.defineProperty({}, key, { get: getter });
+      expect(() => deepFreeze(copyForPublication(input))).toThrow("accessors");
+    }
+    expect(getter).not.toHaveBeenCalled();
+  });
 });

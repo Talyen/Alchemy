@@ -111,7 +111,7 @@ async function injectLocalStorage(page: Page, save: Record<string, unknown>, mer
   );
 }
 
-function buildActiveRunSave(overrides: Record<string, unknown>) {
+export function buildActiveRunSave(overrides: Record<string, unknown>) {
   const {
     discoveredCardIds,
     encounteredEnemyIds,
@@ -186,6 +186,7 @@ export async function injectActiveBattle(
   page: Page,
   battleState: InjectedBattleState,
   overrides: Record<string, unknown> = {},
+  continueLabel = "Continue",
 ) {
   const loaded = await injectSaveState(page, {
     activity: savedActivityFixture("battle", {
@@ -196,7 +197,7 @@ export async function injectActiveBattle(
     ...overrides,
   });
   if (!loaded) await navigateToGame(page);
-  await resumeInjectedRun(page);
+  await resumeInjectedRun(page, continueLabel);
 }
 
 export async function enterPrimaryRewardScreen(page: Page, pending: Record<string, unknown>) {

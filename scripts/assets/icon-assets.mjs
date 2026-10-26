@@ -7,7 +7,7 @@ import {
   writeManifestIfChanged,
 } from "./asset-manifest-cache.mjs";
 import { ASSET_SCHEMA_VERSION } from "./asset-constants.mjs";
-import { requireAssetSources, resolveAssetSource } from "./asset-library.mjs";
+import { requireAssetSources, resolveAssetSource } from "./asset-sources.mjs";
 
 export const iconSource = "2d Assets/Game Sources/Branding/App Icons/Alchemy Icon Master.png";
 export const iconOutputs = [
@@ -34,11 +34,7 @@ export async function checkIconAssets(root, { outputsOnly = false, record = fals
   const fingerprint = selectionHash({ source: iconSource, outputs: iconOutputs }, settings);
   let sourceHash;
   if (!outputsOnly) {
-    await requireAssetSources([{ source: iconSource, target: iconOutputs[0] }], {
-      manifestPath: filename,
-      settingsFor: () => settings,
-      selectionFor: () => ({ source: iconSource, outputs: iconOutputs }),
-    });
+    await requireAssetSources([{ source: iconSource }]);
     sourceHash = await computeContentHash(resolveAssetSource(iconSource), settings, ASSET_SCHEMA_VERSION);
   }
   if (!record && JSON.stringify(Object.keys(manifest).sort()) !== JSON.stringify([...iconOutputs].sort())) {

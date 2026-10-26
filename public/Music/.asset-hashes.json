@@ -49,6 +49,11 @@
     "outputHash": "56464355707bea1b6932b1fe107345a4",
     "selectionHash": "a3113c7a36130cf7d58e8f54e9e8268d8e49d2df62e7d0c2d611b33b3cc0fddb"
   },
+  "The Blood Countess - Boss Track.mp3": {
+    "hash": "3ebd53e4d07b8cf95a942bb824dbecce",
+    "outputHash": "acfc64cba056fab100911b8fa805f60c",
+    "selectionHash": "0ba913db7918685279ecbabd819f40133f42805f57879f9b50cece261044e27f"
+  },
   "The Forge Golem.mp3": {
     "hash": "87ba00ec78e61bbe2d43723063d8249d",
     "outputHash": "9e25e4c4cf704232857ad71d86355330",
@@ -63,5 +68,15 @@
     "hash": "569b984dbdba73354d149448078c9db8",
     "outputHash": "f9b94ebc9aca6ee40e93a3d7935ef20d",
     "selectionHash": "b1c9deefa759404947e2a26447465e4cdef225e4090117dbb734b2cca2f5e81a"
+  },
+  "The Seraph - Be Not Afraid - Boss Song.mp3": {
+    "hash": "01ea8cc9126b95527004f0c2b9b91d7e",
+    "outputHash": "7e7e59ec118213c56651bf07b0563a96",
+    "selectionHash": "c0dbe848f913170dc3b52c882979730ed279aa920e94eaf8ddb5adb4b046b6e3"
+  },
+  "The Stone Titan - Stone Reclaims - Boss Song.mp3": {
+    "hash": "9dea44271b3aaf0bc3ed4d89f1a01556",
+    "outputHash": "43291e8614c58ed1fc0a525d364a79ac",
+    "selectionHash": "816ab471e23e0844c119a107cac8e2cbcd849cc832de7e5f0f0e2f5ba2a000a5"
   }
 }

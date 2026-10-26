@@ -63,6 +63,7 @@ export function resolveCardEffectChain(
   const reacted = resolvePendingBattleReactions(talentPlay, combatTexts);
   const damageEffects = options.damageEffects ?? [];
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
+  const concussion = reacted.flags.concussionReady;
   let nextState = reacted;
   let attackAttempted = false;
   let repeatAttackAttempted = false;
@@ -76,12 +77,14 @@ export function resolveCardEffectChain(
       origin: options.playedCard ? "played-card" : "triggered-card",
       damageEffects: copy === 0 ? damageEffects : repeatedDamageEffects,
       attackAttempted: attemptCell,
+      ...(concussion ? { damageMultiplier: 0.75 } : {}),
       manaAtStart: copy === 0 ? (options.manaAtStart ?? reacted.mana) : nextState.mana,
       ...(options.guaranteedCrit === undefined ? {} : { guaranteedCrit: options.guaranteedCrit }),
     });
     const attempted = (copy === 0 ? damageEffects : repeatedDamageEffects).length > 0 || attemptCell.value;
     if (copy === 0) attackAttempted = attempted;
     else repeatAttackAttempted = attempted;
+    if (concussion && attempted) nextState = { ...nextState, flags: { ...nextState.flags, concussionReady: false } };
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
   }
   // A full-card repeat repeats effects and Potion use, but rewards the play once.

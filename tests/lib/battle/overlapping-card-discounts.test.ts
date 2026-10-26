@@ -3,6 +3,30 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("overlapping card discounts", () => {
+  it("preserves The Knight's Answer when Wildheart already makes a Physical Nature card free", () => {
+    const nature = makeTestCard({
+      id: "physical-nature",
+      tags: ["nature"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+    });
+    const physical = makeTestCard({ id: "physical", effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    const state = patchBattleState({
+      mana: 0,
+      hand: [nature, physical],
+      gearEffects: { dodgeReadiesNatureCrit: 1, blockReadiesFreePhysical: 1 },
+      uniqueGear: { wildheartReady: true, knightsAnswerReady: true },
+      rng: () => 0.99,
+    });
+    const first = playBattleCardResolved(state, nature.id, 0).state;
+    expect(first.uniqueGear.wildheartReady).toBe(false);
+    expect(first.uniqueGear.knightsAnswerReady).toBe(true);
+    const second = playBattleCardResolved(first, physical.id, 0).state;
+    expect(second.cardsPlayedThisTurn).toBe(2);
+    expect(second.hand).toHaveLength(0);
+    expect(second.mana).toBe(0);
+    expect(second.uniqueGear.knightsAnswerReady).toBe(false);
+  });
+
   it("preserves a partial armed discount when a Holy allowance makes the card free", () => {
     const card = makeTestCard({ cost: 3, tags: ["holy"], effects: [] });
     const state = patchBattleState({

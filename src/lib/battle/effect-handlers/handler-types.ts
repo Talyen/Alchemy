@@ -5,6 +5,7 @@ export interface CardEffectResolutionContext {
   forgeTriggers?: Set<string>;
   manaAtStart: number;
   origin?: "played-card" | "triggered-card" | "companion";
+  feedback?: CombatTextEvent["feedback"];
   // Coordinated Strike applies to one Companion attack, including a dodged attempt.
   companionAttackBonus?: { amount: number };
   damageEffects?: Array<Extract<BattleCardEffect, { kind: "damage" }>>;

@@ -1,10 +1,18 @@
 import net from "node:net";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
-import { expect, it } from "vitest";
-import { acquireLocalTestLane, usesLocalTestLane } from "../../scripts/lib/verification/local-test-lane.mjs";
+import { expect, it, vi } from "vitest";
+import {
+  acquireLocalTestLane,
+  usesLocalTestLane,
+  acquireTestResources,
+  testResourceStatus,
+  testResourceClass,
+} from "../../scripts/lib/verification/local-test-lane.mjs";
 
 async function reclaimReleasedPort(port: number) {
   // A sibling fixture can receive this ephemeral port after release. Only
@@ -12,13 +20,9 @@ async function reclaimReleasedPort(port: number) {
   const deadline = Date.now() + 1_000;
   for (;;) {
     try {
-      return await acquireLocalTestLane(port);
+      return await acquireLocalTestLane(port, { timeoutMs: 0 });
     } catch (error) {
-      if (
-        !(error instanceof Error) ||
-        !error.message.startsWith("Local test lane is occupied") ||
-        Date.now() >= deadline
-      )
+      if (!(error instanceof Error) || !error.message.startsWith("Local test lane busy") || Date.now() >= deadline)
         throw error;
       await delay(10);
     }
@@ -28,8 +32,7 @@ async function reclaimReleasedPort(port: number) {
 it("rejects an overlapping run without disturbing its owner, then permits reuse after release", async () => {
   const first = await acquireLocalTestLane(0);
   try {
-    await expect(acquireLocalTestLane(first.port)).rejects.toThrow("no tests were started");
-    await expect(acquireLocalTestLane(first.port)).rejects.toThrow("no tests were started");
+    await expect(acquireLocalTestLane(first.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
   } finally {
     await first.release();
   }
@@ -45,7 +48,7 @@ it("preserves an unrelated listener instead of treating the occupied port as a s
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Expected TCP address");
   try {
-    await expect(acquireLocalTestLane(address.port)).rejects.toThrow("inspect the port owner");
+    await expect(acquireLocalTestLane(address.port, { timeoutMs: 0 })).rejects.toThrow("inspect the port owner");
     expect(server.listening).toBe(true);
   } finally {
     await new Promise<void>((resolve) => {
@@ -53,6 +56,96 @@ it("preserves an unrelated listener instead of treating the occupied port as a s
     });
   }
 });
+
+it("waits for release, then acquires the same lane without overlapping its owner", async () => {
+  const first = await acquireLocalTestLane(0);
+  const messages: string[] = [];
+  let waiting!: () => void;
+  const observed = new Promise<void>((resolve) => {
+    waiting = resolve;
+  });
+  const next = acquireLocalTestLane(first.port, {
+    timeoutMs: 2_000,
+    onWait: (message) => {
+      messages.push(message);
+      waiting();
+    },
+  });
+  try {
+    await observed;
+    await expect(acquireLocalTestLane(first.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+  } finally {
+    await first.release();
+  }
+  const acquired = await next;
+  expect(acquired.port).toBe(first.port);
+  expect(messages).toHaveLength(2);
+  await acquired.release();
+});
+
+it("cancels or times out a waiting run while preserving the owner's listener", async () => {
+  const owner = await acquireLocalTestLane(0);
+  const controller = new AbortController();
+  try {
+    await expect(
+      acquireLocalTestLane(owner.port, {
+        timeoutMs: 2_000,
+        signal: controller.signal,
+        onWait: () => controller.abort(),
+      }),
+    ).rejects.toThrow("abort");
+    await expect(acquireLocalTestLane(owner.port, { timeoutMs: 20, onWait: () => {} })).rejects.toThrow("timed out");
+    await expect(acquireLocalTestLane(owner.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+    vi.stubEnv("ALCHEMY_LOCK_WAIT_MS", undefined);
+    vi.stubEnv("GITHUB_ACTIONS", undefined);
+    const clock = vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(30_001);
+    try {
+      await expect(acquireLocalTestLane(owner.port, { onWait: () => {} })).rejects.toThrow("timed out after 30000ms");
+    } finally {
+      clock.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  } finally {
+    await owner.release();
+  }
+});
+
+it.each(["explicit unbounded", "hosted CI"] as const)(
+  "permits %s waits and reports progress until release",
+  async (mode) => {
+    vi.stubEnv("ALCHEMY_LOCK_WAIT_MS", undefined);
+    vi.stubEnv("GITHUB_ACTIONS", mode === "hosted CI" ? "true" : undefined);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const owner = await acquireLocalTestLane(0);
+    const messages: string[] = [];
+    let released: Promise<void> | undefined;
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 2_000);
+    try {
+      const next = await acquireLocalTestLane(owner.port, {
+        ...(mode === "explicit unbounded" ? { timeoutMs: null } : {}),
+        signal: controller.signal,
+        onWait: (message) => {
+          messages.push(message);
+          if (messages.length === 1) vi.setSystemTime(Date.now() + 61_000);
+          else if (message.includes("still waiting")) released = owner.release();
+        },
+      });
+      await released;
+      await next.release();
+      expect(messages).toEqual([
+        expect.stringContaining("waiting for release"),
+        expect.stringContaining("still waiting"),
+        expect.stringContaining("acquired"),
+      ]);
+    } finally {
+      clearTimeout(deadline);
+      if (!released) await owner.release();
+      vi.useRealTimers();
+      vi.unstubAllEnvs();
+    }
+  },
+);
 
 it("releases the lane after its owning process terminates without a cleanup hook", async () => {
   const moduleUrl = new URL("../../scripts/lib/verification/local-test-lane.mjs", import.meta.url).href;
@@ -70,7 +163,7 @@ const lane = await acquireLocalTestLane(0); console.log(lane.port);`,
   try {
     const [output] = await once(child.stdout, "data");
     const port = Number(String(output).trim());
-    await expect(acquireLocalTestLane(port)).rejects.toThrow("no tests were started");
+    await expect(acquireLocalTestLane(port, { timeoutMs: 0 })).rejects.toThrow("No work started");
     child.kill("SIGTERM");
     await exited;
     const replacement = await reclaimReleasedPort(port);
@@ -92,5 +185,90 @@ it("shares the lane between unit and browser commands while leaving small non-te
   }
   expect(usesLocalTestLane("vitest", ["--watch=false"])).toBe(true);
   const { scripts } = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+  expect(scripts["test:unit"]).toBe(scripts["test:full"]);
   expect(scripts["test:e2e:timings"]).toContain("node scripts/run-compact.mjs playwright test");
+});
+
+it("admits a focused unit alongside broad work, exposes a cancellable queue and retains the broad owner", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "test-resources-"));
+  const broad = await acquireTestResources("vitest", ["run"], process.cwd(), { directory, broadPort: 0 });
+  const focused = await acquireTestResources("vitest", ["run", "tests/example.test.ts"], process.cwd(), {
+    directory,
+    focusedPort: 0,
+  });
+  const controller = new AbortController();
+  const occupied = testResourceStatus(directory).find((record) => record.kind === "broad")!;
+  try {
+    expect(
+      testResourceStatus(directory)
+        .map((record) => record.kind)
+        .sort(),
+    ).toEqual(["broad", "focused"]);
+    await expect(
+      acquireTestResources("playwright", ["test"], process.cwd(), {
+        directory,
+        broadPort: occupied.port,
+        signal: controller.signal,
+        onWait: () => {
+          expect(testResourceStatus(directory).filter((record) => record.state === "waiting")).toHaveLength(1);
+          controller.abort();
+        },
+      }),
+    ).rejects.toThrow("abort");
+    expect(testResourceStatus(directory)).toHaveLength(2);
+    await expect(acquireLocalTestLane(occupied.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+    for (const args of [
+      ["run"],
+      ["related", "src/example.ts"],
+      ["run", "tests"],
+      ["run", "tests/a.test.ts", "--coverage"],
+    ])
+      expect(testResourceClass("vitest", args)).toBe("broad");
+    expect(testResourceClass("vitest", ["run", "tests/a.test.ts", "-t", "payment", "--reporter=dot"])).toBe("focused");
+    expect(testResourceClass("vitest", ["run", "tests/a.test.ts", "--maxWorkers", "4"])).toBe("focused");
+  } finally {
+    await focused.release();
+    await broad.release();
+    expect(testResourceStatus(directory)).toEqual([]);
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it("admits waiters in order, skips canceled and reused-PID tickets, and holds a batch until release", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "test-queue-"));
+  const owner = await acquireTestResources("playwright", ["test"], process.cwd(), { directory, broadPort: 0 });
+  const port = testResourceStatus(directory)[0]!.port;
+  const options = { directory, broadPort: port, timeoutMs: 3_000, onWait: () => {} };
+  const canceled = new AbortController();
+  const first = acquireTestResources("node", ["scripts/run-unit-batch.mjs"], process.cwd(), options);
+  const middle = acquireTestResources("playwright", ["test"], process.cwd(), { ...options, signal: canceled.signal });
+  const last = acquireTestResources("vitest", ["run"], process.cwd(), options);
+  fs.writeFileSync(
+    path.join(directory, "dead.json"),
+    JSON.stringify({
+      ...testResourceStatus(directory)[0],
+      pid: process.pid,
+      state: "waiting",
+      since: "2000-01-01",
+      ticket: "000000000000000000000000-dead",
+    }),
+  );
+  canceled.abort();
+  await expect(middle).rejects.toThrow("abort");
+  await owner.release();
+  const batch = await first;
+  fs.rmSync(path.join(directory, "dead.json"));
+  try {
+    expect(usesLocalTestLane(process.execPath, ["scripts/run-unit-batch.mjs", "{}"])).toBe(true);
+    expect(testResourceStatus(directory).filter((record) => record.state === "active")).toMatchObject([
+      { command: ["node", "scripts/run-unit-batch.mjs"] },
+    ]);
+    await expect(acquireLocalTestLane(port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+    expect(testResourceStatus(directory).filter((record) => record.state === "waiting")).toHaveLength(1);
+  } finally {
+    await batch.release();
+    await (await last).release();
+    expect(testResourceStatus(directory)).toEqual([]);
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });

@@ -1,6 +1,6 @@
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
-import { UI_GOLD } from "@/lib/game-constants/ui-colors";
+import { UI_GOLD } from "@/lib/game-constants";
 import { type ReactNode } from "react";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { BookOpen, Cog, Power, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
@@ -60,6 +60,7 @@ export function MenuScreen({
   logoSrc,
   hasUnspentTalents = false,
   hasAffordableHomestead = false,
+  hasNewArmoryEquipment = false,
   finishedRunCharacters,
 }: {
   onPlay: () => void;
@@ -74,6 +75,7 @@ export function MenuScreen({
   logoSrc: string;
   hasUnspentTalents?: boolean;
   hasAffordableHomestead?: boolean;
+  hasNewArmoryEquipment?: boolean;
   finishedRunCharacters: CharacterId[];
 }) {
   const i18n = useGameTranslation();
@@ -207,6 +209,9 @@ export function MenuScreen({
                 parts={{ part0: <Shield className="text-sky-300" /> }}
               />
             </Button>
+            {hasNewArmoryEquipment && (
+              <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
+            )}
           </MenuPlasmaHover>
         </div>
         {onQuit ? (

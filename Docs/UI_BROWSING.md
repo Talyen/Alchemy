@@ -2,7 +2,18 @@
 
 Shared conventions: [UI](./UI.md).
 
+## Main Menu
+
+Desktop pairs Quit on the bottom left with Options on the right. Quit uses a
+rose-colored Power icon; browser Options stays centered. Demo completion uses
+standard page gutters and [contains the complete marketing image](./STEAM_DEMO.md#marketing-presentation).
+
 ## Collection and Armory browsing
+
+Collection and Homestead center real items in wrapping rows without fillers.
+Reserve two rows and a pagination slot on every tab/page, keeping the complete
+group centered and its header, tabs and pagination stationary. Center shorter
+grids within that area; single-page tabs leave the pagination slot empty.
 
 Collection measures available grid width and scaled tile size. Page size is two
 rows times the resolved column count, capped at four columns for Heroes, Cards,
@@ -50,21 +61,18 @@ exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
 run-end items, also rest with the default border and show Shine only on hover or
 keyboard focus. Their existing Shine palettes and item-title colors are preserved.
 
-Hover-only Shine Borders and persistent Shine Borders render as a border only,
-with no outer glow, including their existing focus activation. `ShineBorder`
-owns the animated border; [component styles](../src/styles/components.css) own
-its opacity and transition.
-Wildcard uses the same static `ShineBorder` as every other hero. Keep the border
-outside artwork clips. The border replaces the ordinary gold hover glow without
-changing scale or press feedback. Selection alone retains its existing treatment.
-Purely persistent decoration, turn indicators, and Death’s Door borders render
-the same border-only treatment.
-`ShineBorder` is decorative (`aria-hidden`) and positioned `absolute` with
-`rounded-[inherit]`, so its parent must be `relative` with a rounded corner.
-An empty palette falls back to neutral shine rather than rendering black.
-`Progress` renders a bare progressbar: every call site must pass an accessible
-name (`aria-label`/`aria-labelledby`), and `value` owns the fill width —
-`fillStyle` carries only extra styling such as transitions.
+Shine Borders, neutral fallbacks and `Progress` semantics follow
+[shared components](./UI.md#component-conventions). Collection and reward borders
+keep their palette, scale and press feedback; selection retains its existing state.
+
+## Shop prices
+
+Prices use the shared [GoldCost](../src/features/alchemy/shared/ui/display-elements.tsx)
+coin/amount treatment and muted unaffordable state. Over artwork they float directly
+on the illustration with dark contour shadows, without containers or art fades;
+inside buttons they inherit button typography.
+[PurchasableShopTile](../src/features/alchemy/run-loop/shop/ui/purchasable-shop-tile.tsx)
+owns the over-art placement and shadow recipe.
 
 ## Mystery reward shelves
 
@@ -72,7 +80,8 @@ Each Mystery choice shows its rewards above its action button. Keep the event ar
 at the standard landscape size, cards at the standard inspection size, and Boons
 and Gear at the standard Collection size. Portrait rewards keep their 3:4 aspect
 ratio; shelves wrap instead of reducing artwork sizes. Resource pills and XP stay
-with their choice, including previewed Homestead bonuses.
+with their choice, including previewed Homestead bonuses. Reward boxes follow the
+[balanced-row layout](#run-journey-recap).
 
 Hover or keyboard focus inspects a reward without choosing the outcome. Only the
 choice button commits the original offer. Known cards and Boons show their normal
@@ -90,8 +99,18 @@ Tooltips contain no controls and receive no focus; Tab moves between gallery
 controls. Clicking the artwork or pressing Enter/Space on it directly builds,
 upgrades, or bonds the node.
 
-Stars beside the name show purchased levels or bonds. Unbuilt/unbonded nodes show
-only their name, empty stars, and purchase cost, without first-tier previews.
+Stars beside the name show purchased levels or bonds. Unbuilt nodes show
+their name, empty stars, first-tier benefits, and purchase cost. Preview benefits
+have partially muted text while retaining keyword hues; purchased benefits use full color.
+Each effect row starts with one icon aligned to its first line: 20px for effects
+and 24px for resources, matching the Build/Upgrade cost artwork. Icons reuse
+keyword shapes and colors, including damage-reduction effects; mixed effects use
+their first authored keyword. Potion potency uses a round flask in Herbs green,
+discounts use a Gold price tag, and Astral chance uses a wand in Gems blue.
+Material bonuses use their first resource's artwork in the same leading slot,
+with colored resource names in the text and no repeated artwork. Icons retain
+their color in preview states.
+Unbonded Companions show their name, empty stars, and bond cost.
 Purchased nodes show current bonuses and Find 10/20/30/40% more resource quantities,
 with uniform effect-row spacing and no section headers or next-tier comparisons.
 Completed nodes show current benefits without costs; undiscovered Companions show
@@ -99,18 +118,14 @@ their discovery requirement. The wallet stays in the gallery, which has no upgra
 arrows or separate detail screens.
 
 Build, Upgrade, or Bond costs appear as a plain row with material icons and
-quantities. Missing materials use red quantities without additional feedback text.
-A divider separates purchased bonuses from the next cost. Gold uses the same
-inline icon chip as Homestead materials. The artwork stays focusable for
+quantities. Build and Upgrade labels are one text size larger than the quantities.
+Missing materials use red quantities without additional feedback text.
+A divider separates purchased bonuses from the next cost. The artwork stays focusable for
 inspection but cannot purchase when more materials are needed. A visible Saving
 acknowledgment on the artwork precedes purchased artwork/progress and sound;
 synchronous tier guards reject repeated input. Dismissing the tooltip or changing
 tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
 and remain visible outside the tooltip.
-
-Purchase feedback and reduced-motion behavior follow
-[Homestead purchase motion](./UI_MOTION.md#homestead-purchases). Feedback belongs
-to the accepted purchase and never replays from hydrated levels.
 
 Reset Homestead uses the same circular-arrow header action and neutral
 confirmation as Reset Talents, immediately before the menu button. It resets
@@ -121,29 +136,103 @@ save acknowledgment, using shared Saving/Retry feedback. The current tab/page
 stays selected and cleared tiers can be purchased again.
 
 Homestead artwork keeps its native aspect ratio without cropping. Landscape
-nodes retain the larger Homestead-specific width and fixed two-row geometry,
-keeping headers, tabs, and pagination stationary. Artwork uses the shared 3px
-hover/focus outline and 103.5% scale with `card-interactive-no-glow`. Affordable
+nodes retain the larger Homestead-specific width and the
+[shared two-row reservation](#collection-and-armory-browsing). Artwork uses the shared
+hover/focus outline and scale with `card-interactive-no-glow`. Affordable
 nodes add only a tight, static outer gold halo at rest, retaining the neutral
 border until hover/focus, without pulse, shimmer, or shine. Affordability updates
 after spending and is suppressed while a purchase is saving. Nodes stay grayscale
 until their first purchase, then remain colored even when the next purchase is
 unaffordable. Undiscovered Companions remain grayscale.
 
+### Purchase motion
+
+Homestead purchases retain the old node while saving. Once acknowledged progress
+is available, tooltip sentences and icons remain steady. Changed values reveal
+with a slight rise; there is no whole-body fade or delayed swap.
+New/removed rows ease panel height with the same transition. The name stays mounted and the
+edge nearest the node stays anchored; passive tooltips retain their fixed row side.
+The tooltip celebrates acknowledged purchases with a scale bounce, originating at the edge nearest the artwork. It never
+remounts the content or replays on hover; dismissal or a newer purchase cancels
+its animation. The earned star pops with a soft gold highlight. First
+builds/bonds crossfade opacity layers into color without animating
+grayscale filters; later upgrades/bonds pulse an independent gold edge glow. There are no Built/Upgraded/Bonded labels over the artwork.
+Exact durations live in [`HOMESTEAD_FEEDBACK`](../src/lib/game-constants/ui-motion.ts);
+bounce geometry belongs to [node artwork](../src/features/alchemy/meta/screens/homestead/node-artwork.tsx)
+and [component styles](../src/styles/components.css).
+
+Feedback tokens belong to accepted purchases, never hydrated levels. Repeated
+valid purchases replace visual targets without waiting for motion. Tooltip
+dismissal settles content; tab/page changes, navigation, and reset cancel local
+animation without cancelling committed purchases. Existing unlock/bond sound
+plays once after acknowledged progress is available. Reduced/disabled motion
+updates values and filled stars immediately without decorative animation. Reset uses the
+standard confirmation/save feedback without a purchase celebration.
+
 ## Card-removal browsing
 
-Shop card removal reserves a fixed available-height card area between its header
-and pagination/actions. It shows two rows when they fit and one otherwise, keeping
+Shop card removal uses a centered, content-scaled maximum height and standard page
+gutters. Its fixed available-height card area sits between the header and
+pagination/actions; short windows shrink that area, while tall windows keep the
+footer with the content. It shows two rows when they fit and one otherwise, keeping
 card size readable and the header and actions stationary across pages. Only the
 card area scrolls if even one row cannot fit. The removal header replaces the shop
 header, gold counter, and instruction text; the Remove action retains its gold cost.
 
 ## Campaign destinations and Campfire
 
-Before choosing at Campfire, a heart in the Health keyword color and the actual
-recovery amount appear below Rest, including zero at full Health. Campaign
+Campfire shows current/max Health before choosing. A heart in the Health keyword
+color and the actual recovery amount appear below Rest, including zero at full Health. Campaign
 destination headers say Choose Destination without an act indicator. The named
 boss entrance keeps its existing title; reward screens say Victory.
+
+### Campfire and Transmutation
+
+[Brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+determine the available service. Campfire mixing lets the player choose two
+eligible instances, inspect the preview and Confirm Mix. With fewer than two,
+activating one of the three fixed offers grants it immediately. Screen and command
+enforce the same choice.
+
+Alchemist keeps shopping separate from Potion Brewing. Its Brew, Mix and Distill
+artwork tiles carry prices and matching label/icon hover borders; each service has
+its own spent state. The service name becomes the main screen heading. Mix shows
+equal-size ingredient choices and two Potion-icon slots leading to the result.
+Brew shows one Potion slot; clicking its empty or filled artwork opens a Wish-style
+recipe choice overlay. Choosing fills the slot, while cancelling preserves it.
+Distill keeps choices above its input slot and strengthened preview. Increased
+values use green in card hover tooltips, including after reload. Clicking or
+dragging fills ingredient slots. Empty and filled slots reserve identical portrait
+bounds, so selections cannot move the centered header or actions. Recipe choices,
+ingredient lists, slots, previews and purchase results share the standard collection
+card size. Brew's Back returns to the service menu even with a selected recipe. Preparation
+buttons show their Gold cost and icon beneath the button. Dragging lifts
+the mounted card from its original position, without a native ghost or copy;
+releasing outside a slot or cancelling returns it without selecting a Potion.
+Mix keeps its ingredient instances distinct. Mix and Distill Back first deselect
+the current choice. Pagination arrows flank the ingredient cards, keeping their side positions across
+page counts without reserving a row above the slots.
+Completing any service keeps its ingredients and result in place until Continue;
+the action row retains its bounds. Content remains compact and centered;
+necessary stack movement eases between heights, preserves an interrupted ease's
+position and respects reduced motion.
+
+Transmutation first shows the selected original card beside an empty, question-mark
+slot, using the same dashed frame as Potion Brewing. Up to three icon-only keyword
+buttons stay centered below the full comparison, with equal gaps above and below. No alteration is selected initially. Choosing a
+keyword fills the empty slot with its saved preview; the arrow centers on the card art,
+independent of titles and controls. Choosing a keyword colors the arrow and gives it
+a brief glow synchronized with the label fade. Keyword buttons keep translated accessible names
+and a visible selected state, without hover tooltips. Inspect the card for its effects.
+Switching keywords keeps preview artwork mounted and fades only its label. Back returns to the
+card picker without RNG or deck changes. Transmute is visible before a choice and
+stays disabled until a valid keyword is chosen. It stays enabled during label
+transitions and commits the latest selected alteration immediately.
+After a covering save, show its inspectable result, play the card-reward chime once and wait for Continue. Pending/failed saves lock
+choices under [Saving/Retry feedback](./UI.md#pending-saves-and-action-feedback).
+Completed resume shows the saved result and Continue without another alteration or
+chime. Continue never regrants the card. Visits with no valid alteration, or a
+completed visit missing its result, advance after offer initialization.
 
 ## Rewards and Wishes
 
@@ -163,6 +252,9 @@ keep the same spacing.
 
 ## Options
 
+Display groups Display Mode (desktop only), Brightness, Game Size and Tooltip
+Size. Background groups Background Glow and Background Particles.
+
 Gameplay Options contains Auto-End Turn and Remember Auto-Battle Preference. The former Controls instructions are removed. Failed local saves show the shared non-modal warning and Retry action; progression waits for local acknowledgement under [pending saves and action feedback](./UI.md#pending-saves-and-action-feedback).
 
 Options opened from either end-run outcome returns to that same recap through Back or Escape, including after changing Game Size.
@@ -177,7 +269,7 @@ fixed-width slider percentages. Slider and dropdown rows stack below 36
 content-scaled rem of panel width. Options centers a shared tab area sized by its tallest panel. Inactive panels
 remain in the same grid cell, invisible and inert, so switching tabs preserves
 the header and control positions. The page scrolls when the content exceeds the
-available height.
+available height. Error Log scroll caps use stage units.
 
 ## Armory crafting and salvage
 
@@ -200,6 +292,11 @@ Selecting an item for salvage immediately ends targeting and clears its cursor a
 Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change.
 
 ## Run journey recap
+
+Talents on the end-run screen and Mystery rewards use fixed-width boxes in centered,
+balanced rows. Use the fewest rows that fit, up to five boxes per row, with larger
+rows first and counts differing by at most one. Recalculate for available width
+or Game Size changes.
 
 Journey’s End focuses on earned rewards and progression, without a room trail or
 Act/node summary. Deck and Boon inspection retain their normal labels and shared

@@ -15,33 +15,33 @@ Fix confirmed ownership or quality defects across the complete rule → controll
 
 ## Investigation and evidence
 
-Trace who creates an effect, owns its state and lifetime, handles failure, and can repeat or cancel it. This audit owns misplaced or hidden effects and inconsistent orchestration; RuntimeCorrectness owns the resulting behavioral failures. Keep a connected repair together under one primary finding.
+This audit owns hidden/misplaced effects and inconsistent orchestration;
+RuntimeCorrectness owns resulting behavioral failures.
+Trace the creator, state/lifetime owner, failure handling, repetition and cancellation
+of each effect through real consumers. Use [run state](../RUN_STATE.md#run-state),
+[game rules](../GAME_RULES.md), [audio](../AUDIO.md) and storage/desktop contracts to
+establish permitted seams. A folder name or clean lint result does not establish
+semantic ownership.
 
-Use [RUN_STATE.md](../RUN_STATE.md#run-state), [GAME_RULES.md](../GAME_RULES.md), [AUDIO.md](../AUDIO.md), and the relevant storage/desktop owners to establish permitted seams. A folder name is neither proof of safety nor permission to perform every effect. Existing lint rules identify mechanical boundary violations; investigate the semantic assumptions they cannot enforce.
+Confirm hidden coupling, conflicting owners, an uncontrollable effect or a violated
+lifetime/failure contract before adding an adapter. Injection must serve a concrete
+consumer. Validate through teardown/re-entry, rollback, replay, error propagation or
+rejected external input as applicable, without mocking away the behavior. Keep a
+connected repair under one primary finding per the [shared contract](README.md#prioritize-and-remedy).
 
-Confirm hidden dependencies, conflicting owners, an uncontrolled effect that prevents meaningful testing, or a violated lifetime/failure contract before proposing an adapter. Injection is useful when it gives a concrete consumer control; do not create a universal effect framework.
+## Investigation leads
 
-Verify the original ownership or behavior problem is resolved through actual consumers. Depending on the effect, exercise teardown/re-entry, rollback, deterministic replay, error propagation, or rejected external input. Tests should control the seam without replacing the behavior they are meant to verify.
+| Signal                                                                   | Required ownership / question                                                                                                                                                  |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Date.now`, `new Date`, unseeded gameplay draws                          | Battle uses the command-bound `world` stream; other run outcomes use their persisted streams. Check seed/presentation exceptions, transactional counters and resume continuity |
+| Screen persist calls, duplicate writes/retries                           | Storage owners perform disk/localStorage I/O; domain commands mutate memory then delegate. Trace semantic events for duplicate persistence, emission or synchronization        |
+| `getState()` or Electron/Steam/browser/environment APIs in pure rules    | `src/lib` remains React-free with no ad-hoc I/O; inject state and keep effects at documented seams                                                                             |
+| Decorative entropy on render                                             | Initialize lazily with `useState(() => …)`; inspect entropy sources beyond `Math.random()`                                                                                     |
+| Renderer/preload/IPC, file, URL or clipboard adapters                    | Validate external inputs and restrict sources/operations before effects; use local fixtures rather than live probing                                                           |
+| Timers, observers, object URLs, subscriptions, global style/body changes | Does one creator own teardown? Are failures meaningful, repetition controlled, and required atomicity/order preserved?                                                         |
+| Effectful module initialization                                          | Does the entrypoint require it, or should an explicit lifecycle own it?                                                                                                        |
 
-## Domain rules
-
-- **Entropy:** battle rules consume the command-bound `world` stream; other run outcomes use their documented persisted streams. Follow current RNG owners for seed creation and presentation randomness. Being outside battle code does not make unseeded gameplay entropy safe.
-- **Persistence:** disk/localStorage writes route through storage owners; domain stores mutate memory then delegate; screens do not write saves directly.
-- **Pure lib:** `src/lib/**` stays free of React and of ad-hoc I/O; push effects to seams. Prefer injected state over `useXStore.getState()` inside pure rule handlers.
-- **UI:** decorative randomness must not re-roll every render — initialize lazily (`useState(() => …)`).
-- **Trust boundaries:** renderer/preload/IPC bridges and file, URL, clipboard, or environment adapters expose only intended capabilities and validate external inputs before effects. Check source/operation restrictions and error handling against current desktop contracts; use local fixtures, not live-service probing.
-- **Seam quality:** a documented owner still must surface meaningful failures, avoid duplicate work, clean up its lifetime, and preserve atomic or ordered behavior where required.
-- **Module initialization:** effectful work at import time must be required by the entrypoint contract; otherwise move it to an explicit owning lifecycle.
-
-## Known signals
-
-- **Unseeded entropy outside seams:** `Date.now` / `new Date(` / non-UI `Math.random` outside documented owners. `fetch(` under `src/lib` is `alchemy/no-lib-fetch`; `localStorage` / `sessionStorage` in `src` are `alchemy/no-unowned-web-storage`.
-- **Run entropy leaks:** draws outside the owning persisted stream, counters that advance without their outcome committing, or randomness that diverges after resume; use lint diagnostics for directly banned calls.
-- **Direct storage from screens:** remaining persist-call leaks that are not `localStorage` / `sessionStorage` identifiers (those are lint).
-- **Global mutable access in pure logic:** `getState()` inside `src/lib` rule handlers — prefer injected state.
-- **Desktop IPC in pure lib:** Electron/Steam APIs imported from `src/lib` battle/game-data paths.
-- **UI re-roll:** remaining render entropy that is not `Math.random()` (`alchemy/no-render-math-random` covers that call).
-- **Browser/global access:** `window`, `document`, clipboard, observers, visibility/focus, environment, or location APIs inside pure rules or unowned module initialization.
-- **Unowned lifetime:** timers, observers, object URLs, subscriptions, or global style/body mutations without a creator responsible for teardown.
-- **Duplicate effect orchestration:** multiple callers independently persist, emit, play, synchronize, or retry the same semantic event.
-- **Weak seam:** effect is in a documented owner but silently loses errors, repeats work, exposes partial mutation, or cannot be controlled in tests.
+Use existing diagnostics for banned calls: `alchemy/no-lib-fetch`,
+`alchemy/no-unowned-web-storage` and `alchemy/no-render-math-random`. An allowed
+folder does not prove seam quality; confirm lost errors, partial mutation,
+uncontrolled lifetime or hidden coupling through consumers.

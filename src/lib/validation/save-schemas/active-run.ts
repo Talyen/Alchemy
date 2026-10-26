@@ -1,5 +1,6 @@
 import type { PersistedPendingReward } from "@/lib/active-run-session/reward-types";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { TRANSMUTATION_KEYWORD_GROUPS } from "@/lib/game-constants";
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -135,7 +136,12 @@ const AlchemyVisitObjectSchema = z.object({
       sourceIndex: z.number().int().min(0).nullable(),
       source: BattleCardSchema.nullable(),
       keyword: KnownKeywordSchema.nullable(),
-      offerIndex: z.number().int().min(0).max(2).nullable(),
+      offerIndex: z
+        .number()
+        .int()
+        .min(0)
+        .max(TRANSMUTATION_KEYWORD_GROUPS.flat().length - 1)
+        .nullable(),
     })
     .optional()
     .catch(undefined),
@@ -155,7 +161,10 @@ const ShopObjectSchema = createShopObjectSchema({
 
 const AlchemistObjectSchema = createShopObjectSchema({
   potions: z.array(z.unknown()),
+  brewOffers: savedCardArraySchema("alchemistState.brewOffers").catch([]),
+  brewUsed: z.boolean().catch(false),
   mixUsed: z.boolean().catch(false),
+  distillUsed: z.boolean().catch(false),
 }).transform((state) => {
   const repaired = repairSavedShopCards(state.potions, state.purchasedSlotKeys, "alchemistState.potions");
   return { ...state, potions: repaired.cards, purchasedSlotKeys: repaired.purchasedSlotKeys };

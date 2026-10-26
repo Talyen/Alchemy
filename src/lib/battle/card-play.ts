@@ -14,7 +14,7 @@ import { countRemovableHarmfulStatuses } from "./status-player";
 import { isCcControlled } from "./status-cc";
 import { applyResonantChimeTrinket, resolveCardEffectChain, shouldElementalTalentRepeat } from "./card-play-effects";
 import { cardHasKeyword } from "./card-classification";
-import { gainManaWithCombatText } from "./player-rewards";
+import { applyBlockReward, gainManaWithCombatText } from "./player-rewards";
 import { handlePostPlayCardDestination } from "./card-consume";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
@@ -186,13 +186,16 @@ function resolveCardPlay(
   const manaSpent = Math.min(paymentState.mana, effectiveCost);
   if (blockCost > 0)
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost, impact: false });
-  const stripped: BattleState = {
+  let stripped: BattleState = {
     ...paymentState,
     hand: paymentState.hand.filter((_, handIndex) => handIndex !== index),
     flags: { ...paymentState.flags, playNextCardTwice: false },
     cardsPlayedThisTurn: paymentState.cardsPlayedThisTurn + 1,
     mana: Math.max(0, paymentState.mana - effectiveCost),
   };
+  if (manaSpent > 0 && state.playerStatuses.block === 0 && state.gearEffects.blockOnPaidCardWithoutBlock > 0) {
+    stripped = applyBlockReward(stripped, state.gearEffects.blockOnPaidCardWithoutBlock, combatTexts);
+  }
   const played = resolveCardEffectChain(deliverPendingHandCards(stripped), card, combatTexts, {
     eligibility: state,
     playedCard: true,
@@ -213,12 +216,17 @@ function resolveCardPlay(
     );
 
   if (!isPlayerDefeated(nextState) && state.talentEffects.wishCardRefundsMana && cardHasKeyword(card, "wish")) {
-    nextState = gainManaWithCombatText(nextState, manaSpent, combatTexts, { skipFightPacing: true });
+    nextState = resolvePendingBattleReactions(
+      gainManaWithCombatText(nextState, manaSpent, combatTexts, { skipFightPacing: true }),
+      combatTexts,
+    );
   }
+  if (!isPlayerDefeated(nextState) && enemyWasAlive) {
+    nextState = resolvePendingBattleReactions(applyResonantChimeTrinket(nextState, combatTexts), combatTexts);
+  }
+  // Mana restoration can retaliate through healing; settle it before Consume
+  // draws can grant an Emergency Wish that defeats the enemy and cancels that hit.
   const playerAlive = !isPlayerDefeated(nextState);
-  if (playerAlive && enemyWasAlive) {
-    nextState = applyResonantChimeTrinket(nextState, combatTexts);
-  }
   nextState = handlePostPlayCardDestination(nextState, card, {
     triggerConsumeRiders: playerAlive,
     combatTexts,
@@ -226,6 +234,9 @@ function resolveCardPlay(
     manaSpent,
   });
   const resolved = resolvePendingBattleReactions(nextState, combatTexts);
+  // Payment, pre-play talents and post-play rewards share this action's receipt,
+  // but only the effect interpreter can mark an intended card outcome as primary.
+  for (const event of combatTexts) event.feedback ??= "secondary";
   if (previousEmptyDraw) return { state: resolved, combatTexts };
   const { onEmptyDraw: _onEmptyDraw, ...completed } = resolved;
   return { state: completed, combatTexts };

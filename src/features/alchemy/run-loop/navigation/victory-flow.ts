@@ -14,7 +14,6 @@ import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/typ
 import {
   BOSS_GOLD_BONUS_FRACTION,
   ELITE_GOLD_BONUS_FRACTION,
-  ENEMY_TRAIT_IDS,
   GOLD_REWARD_MAX,
   GOLD_REWARD_MIN,
   GOLD_TROVE_REWARD_MULTIPLIER,
@@ -99,7 +98,7 @@ function rollVictoryGold(
   const baseGold = Math.floor(rng() * (GOLD_REWARD_MAX - GOLD_REWARD_MIN + 1) + GOLD_REWARD_MIN);
   let gold = Math.round(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
-  if (battleState.currentEnemy.traits?.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE)) {
+  if (battleState.currentEnemy.id === "mimic") {
     gold = Math.round(gold * GOLD_TROVE_REWARD_MULTIPLIER);
   }
 

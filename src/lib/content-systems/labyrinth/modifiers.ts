@@ -8,7 +8,9 @@ import {
   type EncounterRewardTraitId,
   type EncounterTraitId,
 } from "../encounter-traits";
-import { LABYRINTH_TRAITS } from "./trait-catalog";
+import { LABYRINTH_TRAITS, transmutationModifierKeyword } from "./trait-catalog";
+import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
+import type { BattleCard } from "@/lib/game-data";
 
 const INCOMPATIBLE_TRAITS: ReadonlyArray<readonly string[]> = [
   ["plated", "unbreakable", "iron-fortress"],
@@ -59,10 +61,14 @@ export function getRewardModifiersForNodeType(
   rng: () => number,
   type: LabyrinthNodeType = "combat",
   lootDepth = 1,
+  deck?: readonly BattleCard[],
 ): EncounterRewardTraitId[] {
   const pool = eligibleEncounterTraitIds("labyrinth", "reward").filter(
     (id) =>
       isLabyrinthTraitEligible(id, type) &&
+      (!deck ||
+        !transmutationModifierKeyword(id) ||
+        deck.some((card) => getTransmutationVariants(card, transmutationModifierKeyword(id)!, deck).length > 0)) &&
       ((id !== "masterwork" && id !== "astral-hoard") || isLootEligible("astral", lootDepth)) &&
       (id !== "trinket-hoard" || isLootEligible("trinket", lootDepth)) &&
       (id !== "unique-hoard" || isLootEligible("unique", lootDepth)),

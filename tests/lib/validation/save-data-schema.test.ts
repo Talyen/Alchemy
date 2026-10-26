@@ -116,6 +116,8 @@ describe("SaveDataSchema", () => {
       muteInBackground: false,
       bossLyricsEnabled: false,
       autoEndTurn: false,
+      autoEquip: false,
+      hasSeenArmory: true,
       brightness: 120,
       backgroundParticlesIntensity: 40,
       backgroundGlowIntensity: 60,
@@ -128,6 +130,8 @@ describe("SaveDataSchema", () => {
       expect(result.data.muteInBackground).toBe(false);
       expect(result.data.bossLyricsEnabled).toBe(false);
       expect(result.data.autoEndTurn).toBe(false);
+      expect(result.data.autoEquip).toBe(false);
+      expect(result.data.hasSeenArmory).toBe(true);
       expect(result.data.brightness).toBe(120);
       expect(result.data.backgroundParticlesIntensity).toBe(40);
       expect(result.data.backgroundGlowIntensity).toBe(60);

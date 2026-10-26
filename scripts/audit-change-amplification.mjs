@@ -79,7 +79,7 @@ export function dedupeCommits(commitsToDedupe) {
   return [...byHash.values()];
 }
 
-export const NOISE = /^(CHANGELOG\.md|Raw Assets\/|public\/sounds\/|src\/assets\/optimized\/)/;
+export const NOISE = /^(CHANGELOG\.md|assets\/sources\/|public\/sounds\/|src\/assets\/optimized\/)/;
 export const EXTNOISE = /\.(ogg|wav|mp3|webp|jpeg|jpg|png|svg)$/;
 // A single huge import dwarfs per-commit stats, so mega-commits are reported
 // separately from the clean signal. Test-only fix batches are excluded the

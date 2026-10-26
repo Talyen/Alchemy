@@ -1,22 +1,87 @@
 # Battle handlers for card effects
 
-Effect **schemas** live in [`src/lib/game-data/effects/`](./), grouped by concern into `<group>-schemas.ts` files. Primitives (`AmountSchema`, `DamageTypeSchema`, `EnemyStatusIdSchema`, `CompanionIdSchema`) are owned by [`shared-schemas.ts`](./shared-schemas.ts). Groups contain Zod schemas directly; each schema owns its literal `kind`, and the registry derives kind lists and effect types from those schemas. Domain definitions live in `damage-schemas.ts`, `status-schemas.ts`, `mana-health-schemas.ts`, and `simple-schemas.ts`. The unified registry is [`registry.ts`](./registry.ts) (kinds + schemas + recursive factories for `chance` and `repeat-over-turns`).
-
-Effect **runtime handlers** live in [`src/lib/battle/effect-handlers/`](../../battle/effect-handlers/), grouped by concern into `<group>-handlers.ts` (`damage-handlers.ts`, `status-handlers.ts`, `utility-handlers.ts`, `simple-handlers.ts`) plus `registry.ts` (kind table + `chance`/`repeat-over-turns` dispatch + `companion-action` handler) and `handler-types.ts` (context and handler types). Each group declares a table checked against `EffectHandlers`; the table key narrows the effect parameter without a runtime wrapper or separately named registration. `EFFECT_APPLY_BY_KIND` requires every non-recursive kind. `applyEffectByKind` derives its dispatch key from the effect itself and checks own keys before calling a handler, warning and returning unchanged state for unknown kinds. Dynamic table lookups check own keys before the narrow key/effect correlation cast. Potion scaling threads `potionMult` (from `isPotionCard` + `talentEffects.potionPotency` in `registry.ts`, suppressed for `action.source === "repeat"`) through every handler; each handler opts in via `applyPotionMultiplier` in `amount-helpers.ts` (roll-then-scale for `random-damage`/`random-draw`). `isPotionCard` is the explicit `POTION_CARD_IDS` list in [`card-pools.ts`](../cards/card-pools.ts) plus mixed potions — never a name rule. The rule is **benefits scale, costs don't**: damage/heal/mana/gold/wish/status gains scale, while `self-damage`, `lose-*`, and factor-based effects (`multiply-enemy-status`) ignore potency. Flag effects (`next-hit-crit`, `next-hit-leech`, `play-next-card-twice`, `next-hit-poison`, `next-archery-free`) share the `FLAG_EFFECTS` table and `FLAG_HANDLERS` map in `card-utility-resolution.ts`, spread into `EFFECT_APPLY_BY_KIND`. `companion-action` lives in `registry.ts` (not `simple-handlers.ts`) so `companion-effects` never imports back into the registry; non-card pulses use the `processCompanionTurnStart` binder in `battle/companion.ts`.
-
-The canonical kind list is [`BATTLE_CARD_EFFECT_KINDS`](./registry.ts). Template definitions aggregate in the same registry. Ordinary `BattleCardEffect` members derive from the grouped schemas; recursive members remain explicit in `types.ts`, and `isRecursiveBattleCardEffectKind()` is the single check for the recursive kinds. Per-kind dispatch is [`EFFECT_APPLY_BY_KIND`](../../battle/effect-handlers/registry.ts).
-
 ## Adding a kind
 
-Add a schema definition to the matching `<group>-schemas.ts` collection; ordinary effect types derive automatically. Add utility rules to `card-utility-resolution.ts`; other effects use the matching `<group>-handlers.ts` map (flag kinds use `FLAG_EFFECTS`). Add keyword metadata and description rendering together in `effect-metadata.ts`, extending the per-kind formatter or `describeCardEffects` for conditional, combined, and recursive clauses as needed.
+1. Add its schema to the matching `<group>-schemas.ts` under this directory.
+   Ordinary effect types and kind lists derive from the schemas.
+2. Add utility rules to `battle/card-utility-resolution.ts`, or use the matching
+   `<group>-handlers.ts` map under `battle/effect-handlers/`. Flag kinds use
+   `FLAG_EFFECTS` and `FLAG_HANDLERS` in the utility owner.
+3. Add keyword metadata and description rendering in `effect-metadata.ts`,
+   extending the formatter or `describeCardEffects` for combined/conditional clauses.
+4. For recursive shapes, also extend `types.ts`, recursive schema construction and
+   `effect-tree.ts` before cloning, mixing or Corruption can traverse them safely.
+   Child order is success effects followed by failure effects; it defines target paths.
+5. Update `INSPECTION_EFFECT_POLICY` under [inspection ownership](#battle-inspection-ownership).
+6. Verify consequential schema refinements, runtime behavior and independently
+   expected descriptions. [Tests](#tests) identify existing protection; the shared
+   formatter cannot serve as its own correctness oracle.
 
-The description parity checker compares authored mechanic lines with generated text, including summon summaries and additional effects. Custom phrasing must stay canonical; the mixed-potion template and Steal/Gain Gold alias have narrow exceptions. Missing keyword and Consume lines produce warnings. Unrenderable effects produce errors. Keep independent formatter/behavior assertions; the shared formatter is not its own correctness oracle.
+## Registry ownership
 
-New custom mechanics extend the canonical description rendering in `effect-metadata.ts` as needed. New recursive shapes additionally extend `types.ts`, recursive schema construction, and `effect-tree.ts`; its child order is success effects followed by failure effects, which defines corruption target paths. Cloning, corruption editing and potion scaling consume this traversal; each retains its own leaf behavior. The potion mixer traverses the registered recursive effect kinds and renders scaled effects through `describeCardEffects`. New nested effect kinds must extend the shared traversal before they can be mixed safely. The schema registry derives ordinary effect types; `tests/lib/game-data/effect-kind-coverage.test.ts` checks runtime handler coverage. Add schema tests for consequential refinements, not another per-kind template table. Outside battle, card previews show authored base amounts only, except summon lines recomputed with Bond/damage bonuses.
+| Concern                                             | Owner                                                                                                                                       |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared schema primitives                            | [`shared-schemas.ts`](./shared-schemas.ts)                                                                                                  |
+| Domain schemas                                      | `damage-schemas.ts`, `status-schemas.ts`, `mana-health-schemas.ts`, `simple-schemas.ts`                                                     |
+| Kind list, templates and recursive schema factories | [`registry.ts`](./registry.ts): `BATTLE_CARD_EFFECT_KINDS`                                                                                  |
+| Runtime dispatch and recursive/Companion actions    | [`battle/effect-handlers/registry.ts`](../../battle/effect-handlers/registry.ts): `EFFECT_APPLY_BY_KIND`                                    |
+| Grouped handlers and context                        | `damage-handlers.ts`, `status-handlers.ts`, `utility-handlers.ts`, `simple-handlers.ts`, `handler-types.ts` under `battle/effect-handlers/` |
 
-[`applyCardEffects`](../../battle/effect-handlers/registry.ts) is the single entry point exported from `@/lib/battle`. It walks each effect on a card, routes `chance` (via `rollChance` + `getBattleRng`) and `repeat-over-turns` (queue `pendingTurnStartEffects` with source card ID, Consume, and tags) before the registry, and otherwise delegates to `applyEffectByKind`. Dispatch details: `applySingleEffect` short-circuits when the hero is defeated; `applyEffectByKind` runs the handler, then (for `summon-companion` with Eager Pack) two immediate Companion pulses by design, then `resolvePendingBattleReactions` after every single effect. Companion turn-start and pending-turn-start pulses re-enter through synthetic cards under explicit `resolveSecondaryAction` scope (see `battle/companion-effects.ts`, `player-turn-transition.ts`); `resolveCardEffectChain` (`battle/card-play-effects.ts`) owns paid and Dodge-triggered full-card execution: prepare once, resolve each copy and Potion use, then settle card-play rewards and Twin Casting once; unique-card repeats run with `action.source === "repeat"` (which also suppresses potion scaling).
+Each schema owns its literal `kind`; ordinary `BattleCardEffect` members derive
+from the grouped schemas. Recursive members stay explicit in `types.ts`, with
+`isRecursiveBattleCardEffectKind()` as their shared classifier. Handler tables are
+checked against `EffectHandlers`, narrowing each parameter by its table key.
+Both registries reject duplicate kinds; the assembled runtime map covers every
+non-recursive kind. Ordinary additions need no central registry edit.
+`applyEffectByKind` checks own keys before dispatch or its narrow correlation cast;
+unknown kinds warn and return unchanged state.
 
-Snapshot semantics: normal card play freezes `manaAtStart` pre-payment (`card-play.ts`); companion pulses snapshot inside their action scope; pending-turn and unique-repeat pulses snapshot per-pulse. `convertCurrentMana` reads the frozen `manaAtStart`. Conditional Gold uses the checks documented under [Ordering and semantics](#ordering-and-semantics). Crowd control has two call sites (`multiply-enemy-status` freeze/stun triggers and enemy-side player CC) — see `status-handlers.ts` and `enemy-turn-attack.ts`. Card bonus eligibility is centralized in `action-context.ts` and `combat-flags.ts`; secondary actions never mask or restore gameplay flags. `battle-sequence.ts` owns step settlement and fatal cutoffs.
+`companion-action` stays in the runtime registry to avoid an import cycle with
+`companion-effects`. Non-card pulses use the `processCompanionTurnStart` binder in
+`battle/companion.ts`.
+
+## Description contract
+
+The parity checker compares authored mechanic lines with generated text, including
+summon summaries and added effects. Mixed Potion placeholders and Steal/Gain Gold
+have narrow wording exceptions. Missing keyword/Consume lines warn; unrenderable
+effects fail. Potion mixing renders traversed effects through `describeCardEffects`.
+Outside battle, previews use authored amounts except summon lines recomputed with
+Bond and damage bonuses.
+
+## Potion scaling
+
+Benefits scale; costs and factors do not. The runtime registry threads `potionMult`
+from `isPotionCard` and `talentEffects.potionPotency`; handlers opt in with
+`applyPotionMultiplier` in `amount-helpers.ts`. Damage, healing, Mana, Gold, Wish
+and status gains scale. `self-damage`, `lose-*` and factor-based effects such as
+`multiply-enemy-status` do not. Random damage/draw rolls before scaling.
+`action.source === "repeat"` suppresses potency. Potion identity comes from
+[`POTION_CARD_IDS`](../cards/card-pools.ts) plus Mixed Potions, independently of names.
+
+## Resolution sequence
+
+[`applyCardEffects`](../../battle/effect-handlers/registry.ts) is the single
+`@/lib/battle` apply entry. It walks effects, routing `chance` through
+`rollChance`/`getBattleRng` and queuing `repeat-over-turns` with source card ID,
+Consume and tags before ordinary dispatch.
+
+- `applySingleEffect` stops on hero defeat. Dispatch applies the handler, then
+  Eager Pack's two immediate pulses for a summon, then `resolvePendingBattleReactions`
+  after every effect.
+- Companion and pending-turn-start pulses use synthetic cards under
+  `resolveSecondaryAction` (`companion-effects.ts`, `player-turn-transition.ts`).
+- `resolveCardEffectChain` in `card-play-effects.ts` owns paid and Dodge-triggered
+  full-card execution: prepare once, resolve each copy/Potion use, then settle
+  card-play rewards and Twin Casting once. Unique repeats use source `repeat`.
+- Normal plays freeze `manaAtStart` before payment; Companion actions snapshot
+  inside their scope; pending-turn and Unique-repeat pulses snapshot per pulse.
+  `convertCurrentMana` reads that frozen value. Conditional Gold follows
+  [ordering and semantics](#ordering-and-semantics).
+- Crowd-control calls live in `status-handlers.ts` for multiplied enemy buildup
+  and `enemy-turn-attack.ts` for player control. `action-context.ts` and
+  `combat-flags.ts` own bonus eligibility; secondary actions never mask or restore
+  gameplay flags. `battle-sequence.ts` owns step settlement and fatal cutoffs.
 
 ## Card utility ownership
 
@@ -26,7 +91,7 @@ Health, Mana, Mana Crystals, Gold, player statuses, cleansing, Armor removal,
 Companion summoning/buffs, and armed action flags. It owns amount calculations,
 Potion potency, conditional eligibility, resource limits, and effect feedback.
 `effect-handlers/utility-handlers.ts` supplies live reactions and seeded status
-choices. Inspection calls the production action resolver with an isolated finite
+choices. Reaction scoring uses the same table with explicit nominal healing, suppressed reward callbacks, and pre-enumerated status choices; it retains probability-weighted correlated alternatives without drawing live RNG. `damage.ts` owns attack flag preparation for both combat and reaction scoring. Inspection calls the production action resolver with an isolated finite
 choice source; it does not assemble another utility or attack recipe.
 
 ## Battle inspection ownership
@@ -56,6 +121,18 @@ unsampled through the execution-only `sampleWishOptions` seam; their immediate
 rewards keep the production recipe and order. `battleSnapshot` removes observers,
 Wish samplers, RNG, and action callbacks. Inspection also strips borrowed execution
 capabilities before running; it cannot invoke a live empty-draw callback.
+
+Card-flight presentation uses these same observations through
+`battle/card-animation-target.ts`. Inspection captures authored numeric feedback
+per effect before display merging; costs and unmarked/secondary proc feedback
+are excluded. The largest single direct point/count magnitude wins, rather than
+the sum toward either recipient. Damage uses its first offensive packet before
+enemy defenses and Critical/Dodge rolls; healing uses adjusted power before its
+Health cap. Status multiplication compares gained stacks, never its factor;
+Haste/Phoenix Feather durations or charges and other nonnumeric actions do not
+compete. Ties, uncertain mixed-target branches and unresolved numeric outcomes
+retain the first non-cost authored recipient. The choice affects only the card
+travel ghost, never combat targeting, resolution, state or live RNG.
 
 Effect occurrence addresses, including both Chance branches, own observation and
 Corruption-mark mapping. Repeated references to one authored effect object still
@@ -138,14 +215,14 @@ retaining existing encounter exceptions. Selection and trait limits are owned by
 
 ## Tests
 
-- [`tests/lib/battle/apply-effects-*.test.ts`](../../../../tests/lib/battle/) — canonical apply-path coverage by concern (`apply-effects.test.ts`, `apply-effects-mana.test.ts`), plus focused `tests/lib/battle/` regression suites (card-play, damage, status, companion, wish, talents, gear, traits).
-- [`tests/lib/battle/effect-handlers.test.ts`](../../../../tests/lib/battle/effect-handlers.test.ts) — unknown-kind warn+return boundary (including inherited object keys), Death's Door, cleanse/multiply, `convertCurrentMana` Block-per-Mana semantics, `ifEnemyStunned` branches, prepared action flags, injected random damage rolls, and `repeat-over-turns`/`chance` queue/branch shapes.
-- [`tests/lib/game-data/effects-registry.test.ts`](../../../../tests/lib/game-data/effects-registry.test.ts) — schema refinements (conditional fields, bounds).
-- [`tests/lib/battle/inspection-resource-rewards.test.ts`](../../../../tests/lib/battle/inspection-resource-rewards.test.ts) — later packets include guaranteed resource rewards and shared chance outcomes; inspection agrees with real plays without mutating state or consuming RNG.
-- [`tests/lib/battle/inspection-utility-sequence.test.ts`](../../../../tests/lib/battle/inspection-utility-sequence.test.ts) — resource and flag ordering agrees with actual card plays without consuming RNG or mutating the inspected battle.
-- [`tests/types/battle-effect-handlers.test-d.ts`](../../../../tests/types/battle-effect-handlers.test-d.ts) — exhaustive typed registration and rejection of mismatched handlers and direct calls.
-- [`tests/lib/game-data/effect-kind-coverage.test.ts`](../../../../tests/lib/game-data/effect-kind-coverage.test.ts) — exact registration of non-recursive effect kinds in battle dispatch.
-- [`tests/lib/game-data/card-builders.test.ts`](../../../../tests/lib/game-data/card-builders.test.ts) — builder output (lines+effects+tags/consume), the explicit-lines escape hatch, and the catalog-wide 1-Mana rule; catalog-wide parity lives in `tests/lib/content-validation/` (`content-validation.test.ts`, `parity-negative.test.ts`).
+[Battle units](../../../../tests/lib/battle/) protect dispatch, runtime semantics
+and ordered resolution. [Registry tests](../../../../tests/lib/game-data/effects-registry.test.ts)
+protect schema refinements, and [kind coverage](../../../../tests/lib/game-data/effect-kind-coverage.test.ts)
+checks exhaustive dispatch. [Type tests](../../../../tests/types/battle-effect-handlers.test-d.ts)
+reject mismatched handlers. [Content validation](../../../../tests/lib/content-validation/)
+protects description parity; the formatter is not its own correctness oracle.
+Inspection tests compare independently expected packets with production plays,
+including uncertainty, resource changes and unchanged live RNG/state.
 
 ## Gear and trinket effects
 
@@ -180,7 +257,5 @@ combat events. Unsupported effects still warn without inventing a successful
 result. Numeric zero fallback is restricted to valid ineffective actions.
 Cross-action consolidation belongs exclusively to presentation; source events
 and battle snapshots remain immutable. See the canonical UI feedback policy.
-
-Central registries statically assemble schema collections and handler maps from the existing groups; ordinary new kinds do not require central registry edits. Both registries reject duplicate kinds before use, and the assembled handler map remains exhaustive. Recursive effects and the companion-action cycle boundary remain owned by their registries.
 
 `player-status.forgeAmount` overrides the Forge outcome of a Block/Forge/Armor `statusPool`; Avatar uses 5/2/5 with the existing uniform pool selection. Both amounts participate in typed descriptions, numeric upgrades and saved-card validation.

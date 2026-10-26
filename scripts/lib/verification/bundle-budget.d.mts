@@ -4,3 +4,4 @@ export declare const BUDGETS: Readonly<{
 }>;
 
 export declare const CHUNK_SIZE_WARNING_KB: number;
+export declare const STORAGE_BUDGETS: Readonly<Record<"renderer" | "video" | "music" | "images" | "sounds", number>>;

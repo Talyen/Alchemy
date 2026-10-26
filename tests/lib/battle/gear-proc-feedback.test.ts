@@ -13,12 +13,14 @@ describe("visible Gear and encounter procs", () => {
     const state = regressionBattle({ hand: [card], gearEffects: { physicalBleedChance: 100 } });
     const { state: next, combatTexts } = playBattleCardResolved(state, card.id, 0);
     expect(next.enemyStatuses.bleed).toBeGreaterThan(0);
-    expect(combatTexts).toContainEqual({
-      target: "enemy",
-      kind: "multiply",
-      stat: "bleed",
-      amount: next.enemyStatuses.bleed,
-    });
+    expect(combatTexts).toContainEqual(
+      expect.objectContaining({
+        target: "enemy",
+        kind: "multiply",
+        stat: "bleed",
+        amount: next.enemyStatuses.bleed,
+      }),
+    );
   });
 
   it("reports Corrosive's Armor removal in addition to normal Armor decay", () => {
@@ -30,7 +32,9 @@ describe("visible Gear and encounter procs", () => {
     });
     const { state: next, combatTexts } = playBattleCardResolved(state, card.id, 0);
     expect(next.enemyMitigation.armor).toBe(3);
-    expect(combatTexts).toContainEqual({ target: "enemy", kind: "damage", stat: "armor", amount: 6, impact: false });
+    expect(combatTexts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "armor", amount: 6, impact: false }),
+    );
   });
 
   it("reports the Armor explicitly stripped by Caustic", () => {
@@ -41,7 +45,9 @@ describe("visible Gear and encounter procs", () => {
     const texts: CombatTextEvent[] = [];
     const next = processEncounterTraitActionDamage(state, texts);
     expect(next.playerStatuses.armor).toBe(2);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "armor", amount: 1, impact: false });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "damage", stat: "armor", amount: 1, impact: false }),
+    );
   });
 
   it("shows when Forge arms Everkeen, without repeating an already armed cue", () => {

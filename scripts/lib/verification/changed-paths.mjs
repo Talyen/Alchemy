@@ -1,18 +1,21 @@
 import { expandRepositoryPaths, runGit } from "../repository-paths.mjs";
-import { readFileSync } from "node:fs";
-
-import { changedGitPaths } from "./current-run.mjs";
-import { isDocumentationPath, resolveRoutes, SHARED_BUILD_PATTERNS } from "./change-routes.mjs";
-import { globToRegExp } from "../glob-pattern.mjs";
-
-const COMPILED_SHARED_BUILD_PATTERNS = SHARED_BUILD_PATTERNS.map(globToRegExp);
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 
 export function parseChangedPathsArgs(argv, { usage } = {}) {
   const flags = new Set();
   const paths = [];
   let filePaths;
+  let revision;
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
+    if (arg === "--committed") {
+      revision = argv[++index];
+      if (!revision || revision.startsWith("-") || flags.has("committed"))
+        throw new Error("--committed requires one Git revision");
+      flags.add("committed");
+      continue;
+    }
     if (arg === "--paths-file") {
       const filename = argv[++index];
       if (!filename || filename.startsWith("--") || filePaths) throw new Error("--paths-file requires one filename");
@@ -25,14 +28,23 @@ export function parseChangedPathsArgs(argv, { usage } = {}) {
     if (arg.startsWith("--")) flags.add(arg.slice(2));
     else paths.push(arg);
   }
+  if (flags.has("committed") && (paths.length || filePaths || flags.has("diff")))
+    throw new Error("Choose explicit paths, --diff, or --committed <revision>");
+  if (flags.has("task") && (paths.length || filePaths || flags.has("diff") || flags.has("committed")))
+    throw new Error("Choose --task, explicit paths, --diff, or --committed <revision>");
+  if (
+    flags.has("all") &&
+    (paths.length || filePaths || flags.has("task") || flags.has("diff") || flags.has("committed"))
+  )
+    throw new Error("Choose --all or a task/path selection");
   if (filePaths && (paths.length || flags.has("diff")))
     throw new Error("Choose a path selection file, explicit paths, or --diff");
   if (filePaths) paths.push(...filePaths);
   if (paths.length > 0 && flags.has("diff")) throw new Error("Choose explicit paths or --diff, not both.");
-  if (paths.length === 0 && !flags.has("diff")) {
+  if (paths.length === 0 && !flags.has("diff") && !flags.has("committed") && !flags.has("task") && !flags.has("all")) {
     throw new Error(usage ?? "Provide paths or use --diff.");
   }
-  return { flags, paths };
+  return { flags, paths, revision };
 }
 
 /**
@@ -47,12 +59,44 @@ function diffHeadPaths(rootDir) {
   return [...new Set([...tracked.stdout.split("\0"), ...untracked.stdout.split("\0")].filter(Boolean))];
 }
 
-export function resolveSelectedPaths(rootDir, { flags, paths }) {
-  const useDiff = flags?.has("diff") ?? false;
-  let selected = paths.length > 0 ? paths : useDiff ? diffHeadPaths(rootDir) : changedGitPaths(rootDir);
-  if (!selected) throw new Error(useDiff ? "git diff failed" : "git status failed");
-  if (paths.length === 0 && selected.length === 0) {
-    const committed = runGit(rootDir, [
+function taskSelectionBase(rootDir) {
+  const branch = runGit(rootDir, ["symbolic-ref", "--quiet", "--short", "HEAD"]);
+  if (branch.status !== 0) throw new Error("--task requires a task branch, not detached HEAD");
+  const name = branch.stdout.trim();
+  if (name === "main") throw new Error("--task requires an isolated task checkout; use explicit paths on main");
+  const base = runGit(rootDir, ["config", "--local", "--get", `branch.${name}.alchemyTaskBase`]);
+  const commit = base.stdout.trim();
+  if (base.status !== 0 || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(commit))
+    throw new Error("No recorded task base. Use explicit paths, or create a task with agent-worktree.mjs create");
+  if (runGit(rootDir, ["merge-base", "--is-ancestor", commit, "HEAD"]).status !== 0)
+    throw new Error("Recorded task base is not an ancestor of HEAD; inspect branch history before checking");
+  return commit;
+}
+
+export function taskComparisonBase(rootDir) {
+  taskSelectionBase(rootDir); // Original provenance must remain valid after merges.
+  const base = runGit(rootDir, ["merge-base", "main", "HEAD"]);
+  if (base.status !== 0 || !base.stdout.trim()) throw new Error("Could not compare task with local main");
+  return base.stdout.trim();
+}
+
+export function resolveSelectedPaths(rootDir, { flags, paths, revision }) {
+  const committed = flags?.has("committed");
+  let selected;
+  if (flags?.has("all")) {
+    const inventory = runGit(rootDir, ["ls-files", "--cached", "--others", "--exclude-standard", "-z"]);
+    if (inventory.status !== 0) throw new Error("Could not inspect repository files");
+    selected = [...new Set(inventory.stdout.split("\0").filter(Boolean))].sort();
+  } else if (flags?.has("task")) {
+    const base = taskComparisonBase(rootDir);
+    const committedPaths = runGit(rootDir, ["diff", "--no-renames", "--name-only", "-z", base, "HEAD", "--"]);
+    const working = diffHeadPaths(rootDir);
+    if (committedPaths.status !== 0 || !working) throw new Error("Could not inspect complete task changes");
+    selected = [...new Set([...committedPaths.stdout.split("\0").filter(Boolean), ...working])].sort();
+  } else if (committed) {
+    const commit = runGit(rootDir, ["rev-parse", "--verify", "--end-of-options", `${revision}^{commit}`]);
+    if (commit.status !== 0) throw new Error(`Unknown commit: ${revision}`);
+    const result = runGit(rootDir, [
       "diff-tree",
       "--root",
       "-m",
@@ -61,12 +105,27 @@ export function resolveSelectedPaths(rootDir, { flags, paths }) {
       "--name-only",
       "-z",
       "-r",
-      "HEAD",
+      commit.stdout.trim(),
     ]);
-    if (committed.status !== 0) throw new Error("Could not inspect HEAD changes");
-    selected = [...new Set(committed.stdout.split("\0").filter(Boolean))];
+    if (result.status !== 0) throw new Error(`Could not inspect commit: ${revision}`);
+    selected = [...new Set(result.stdout.split("\0").filter(Boolean))];
+  } else {
+    selected = paths.length ? paths : diffHeadPaths(rootDir);
+    if (!selected) throw new Error("git diff failed");
   }
-  return expandRepositoryPaths(rootDir, selected);
+  const expanded = expandRepositoryPaths(rootDir, selected);
+  if (!committed)
+    for (const file of expanded) {
+      if (existsSync(path.join(rootDir, file))) continue;
+      // Deleted tracked files and committed deletions remain selectable. A typo
+      // has neither an index entry nor history and must never yield a green gate.
+      const tracked = runGit(rootDir, ["ls-files", "--error-unmatch", "--", `:(literal)${file}`]);
+      if (tracked.status === 0) continue;
+      const history = runGit(rootDir, ["log", "-1", "--format=%H", "--", `:(literal)${file}`]);
+      if (history.status !== 0 || !history.stdout.trim())
+        throw new Error(`Selected path does not exist and is not a known deletion: ${file}`);
+    }
+  return expanded;
 }
 
 /** Select the actual updates supplied by Git's pre-push hook, including deletions/renames. */
@@ -100,27 +159,4 @@ export function resolvePushPaths(rootDir, input) {
   // Expand through the shared path owner like the non-push selection so both
   // return normalized repo-relative paths (deleted paths are retained).
   return expandRepositoryPaths(rootDir, [...paths].sort());
-}
-
-export function classifyCheckPaths(rootDir, paths) {
-  const expanded = expandRepositoryPaths(rootDir, paths);
-  const codePaths = expanded.filter((filePath) => !isDocumentationPath(filePath));
-  const routes = resolveRoutes(codePaths.length > 0 ? codePaths : expanded);
-  const ids = new Set(routes.map((route) => route.id));
-  const needsCodeChecks = codePaths.length > 0;
-  const lockfile = codePaths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
-  const sharedBuild = codePaths.some((filePath) =>
-    COMPILED_SHARED_BUILD_PATTERNS.some((expression) => expression.test(filePath)),
-  );
-  const desktop = ids.has("desktop") || sharedBuild;
-  const web =
-    sharedBuild ||
-    ids.has("runtime") ||
-    ids.has("assets") ||
-    codePaths.some((filePath) =>
-      /^(src\/|public\/|index\.html$|vite\.config\.ts$|vercel\.json$|package\.json$|package-lock\.json$)/u.test(
-        filePath,
-      ),
-    );
-  return { needsCodeChecks, lockfile, desktop, web, routeIds: [...ids] };
 }

@@ -63,6 +63,52 @@ it("orders settings-only snapshots even when their gameplay revisions are equal"
   }
 });
 
+it("does not acknowledge newer settings with an older snapshot at the same gameplay revision", async () => {
+  const { session, persistence, writes } = fixture();
+  try {
+    persistence.trackProgress(() => {});
+    sessionRuntime(session).settings.getState().setMusicVolume(3);
+    const earlier = persistence.snapshot();
+    sessionRuntime(session).settings.getState().setMusicVolume(7);
+    const completed = vi.fn();
+    persistence.afterProgressSaved(completed);
+
+    expect(await persistence.write(earlier)).toBe("saved");
+    expect(JSON.parse(writes.at(-1)!).musicVolume).toBe(3);
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(completed).not.toHaveBeenCalled();
+    const latest = persistence.snapshot();
+    sessionRuntime(session).settings.getState().setMusicVolume(7);
+    expect(await persistence.write(latest)).toBe("saved");
+    expect(persistence.readProgress().kind).toBe("idle");
+    expect(completed).toHaveBeenCalledOnce();
+    expect(JSON.parse(writes.at(-1)!).musicVolume).toBe(7);
+  } finally {
+    await session.dispose();
+  }
+});
+
+it("publishes settings in order when a save-status observer changes them again", async () => {
+  const { session, persistence, writes } = fixture();
+  try {
+    persistence.trackProgress(() => {});
+    const settings = sessionRuntime(session).settings;
+    const observed: number[] = [];
+    settings.subscribe((state) => observed.push(state.musicVolume));
+    persistence.subscribeProgress(() => {
+      if (persistence.readProgress().kind === "saving") settings.getState().setMusicVolume(7);
+    });
+    settings.getState().setMusicVolume(3);
+
+    expect(observed).toEqual([3, 7]);
+    expect(await persistence.write(persistence.snapshot())).toBe("saved");
+    expect(persistence.readProgress().kind).toBe("idle");
+    expect(JSON.parse(writes.at(-1)!).musicVolume).toBe(7);
+  } finally {
+    await session.dispose();
+  }
+});
+
 it("rejects foreign, edited, and fabricated snapshots before storage can replace real progress", async () => {
   const { session, persistence, writes } = fixture();
   const other = fixture();

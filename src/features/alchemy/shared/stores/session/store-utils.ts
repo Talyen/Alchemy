@@ -6,6 +6,10 @@ export function deepFreeze<T>(value: T): T {
   const pending: object[] = [];
   function inspect(entry: unknown): void {
     if (typeof entry === "function") throw new Error("Gameplay state must contain only plain data, not functions");
+    if (typeof entry === "number" && !Number.isFinite(entry))
+      throw new Error("Gameplay state must contain only finite numbers");
+    if (typeof entry === "bigint" || typeof entry === "symbol")
+      throw new Error("Gameplay state must contain only plain data, not bigint or symbol values");
     if (entry === null || typeof entry !== "object" || deeplyFrozen.has(entry) || seen.has(entry)) return;
     const prototype = Object.getPrototypeOf(entry) as object | null;
     if (Array.isArray(entry) ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
@@ -37,14 +41,15 @@ export function copyForPublication<T>(value: T): T {
     const prototype = Object.getPrototypeOf(entry) as object | null;
     if (Array.isArray(entry) ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
       throw new Error("Published snapshots must contain only plain data records and arrays");
-    const result = Array.isArray(entry) ? new Array(entry.length) : {};
+    const result = Array.isArray(entry) ? new Array(entry.length) : (Object.create(prototype) as object);
     copies.set(entry, result);
-    for (const key of Object.keys(entry)) {
+    for (const key of Reflect.ownKeys(entry)) {
+      if (Array.isArray(entry) && key === "length") continue;
       const descriptor = Object.getOwnPropertyDescriptor(entry, key)!;
       if (!("value" in descriptor)) throw new Error("Published snapshots cannot contain data accessors");
       Object.defineProperty(result, key, {
         value: copy(descriptor.value),
-        enumerable: true,
+        enumerable: descriptor.enumerable ?? false,
         configurable: true,
         writable: true,
       });

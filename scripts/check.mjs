@@ -3,15 +3,14 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import {
-  classifyCheckPaths,
   parseChangedPathsArgs,
   resolveSelectedPaths,
   resolvePushPaths,
+  taskComparisonBase,
 } from "./lib/verification/changed-paths.mjs";
 import { registerArtifactSession } from "./lib/artifact-guard.mjs";
 import { pruneExpiredArtifacts } from "./prune-transient-artifacts.mjs";
@@ -19,10 +18,10 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 import { runGit, expandRepositoryPaths } from "./lib/repository-paths.mjs";
 import { LOCAL_CHECK_INPUTS } from "./lib/verification/test-commands.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
-import { closeTaskBrowsers, taskKey } from "./lib/agent-browser-session.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
-import { filterPrettierPaths } from "./lib/verification/prettier-paths.mjs";
-import { resolveRoutes } from "./lib/verification/change-routes.mjs";
+import { resolveCheckPlan } from "./lib/verification/check-plan.mjs";
+import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
+import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -81,18 +80,20 @@ export function captureSourceDigest({ paths: selected, rootDir = ROOT, inputs = 
 }
 
 export function parseCheckArgs(argv) {
+  if (argv.every((arg) => ["--plan", "--full"].includes(arg))) argv = ["--task", ...argv];
   if (argv.includes("--pre-push")) {
     if (argv.length !== 1) throw new Error("--pre-push cannot be combined with other selections");
     if (process.stdin.isTTY) throw new Error("--pre-push requires Git hook input on stdin");
     return resolvePushPaths(ROOT, fs.readFileSync(0, "utf8"));
   }
-  const { flags, paths } = parseChangedPathsArgs(argv, {
-    usage: "Provide paths or use --diff. Example: npm run check -- --diff",
+  const { flags, paths, revision } = parseChangedPathsArgs(argv, {
+    usage: "Provide --task, paths, --diff, or --committed <revision>. Example: npm run check:task",
   });
   for (const flag of flags) {
-    if (flag !== "diff" && flag !== "full") throw new Error(`Unknown check option: --${flag}`);
+    if (!["task", "diff", "committed", "full", "all", "plan"].includes(flag))
+      throw new Error(`Unknown check option: --${flag}`);
   }
-  return resolveSelectedPaths(ROOT, { flags, paths });
+  return resolveSelectedPaths(ROOT, { flags, paths, revision });
 }
 
 function defaultRunner(label, command, args, env) {
@@ -102,31 +103,45 @@ function defaultRunner(label, command, args, env) {
   return runCommandAsync(command, args, {
     cwd: ROOT,
     env,
-    // Localization checks the complete catalog even for a one-file task; its
-    // observed runtime can exceed the per-step smoke deadline on a busy host.
+    // Unit selections have their own test deadlines and may wait for the lane.
     timeout:
       env.ALCHEMY_CHECK_PROFILE === "local"
-        ? command === "npm" && args.includes("i18n:check")
-          ? 60_000
-          : 30_000
+        ? args[0] === "scripts/verify-changed.mjs"
+          ? undefined
+          : 60_000
         : undefined,
     logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${slug}.log`),
   });
 }
 
 export async function runCheck(argv = process.argv.slice(2), options = {}) {
+  if (argv.every((arg) => ["--plan", "--full"].includes(arg))) argv = ["--task", ...argv];
   const runner = options.runner ?? defaultRunner;
   const paths = parseCheckArgs(argv);
   const full = argv.includes("--full");
+  console.log(
+    `Scope: ${full ? "broad completion gate: selected tests, full static validation and applicable builds" : "lightweight task gate: localization, documentation, selected-file formatting and lint; tests and compilation deferred to CI"}.`,
+  );
   // Keep explicit directory selections unexpanded for the final membership scan.
   const raw = argv.includes("--pre-push") ? null : parseChangedPathsArgs(argv);
+  if (raw?.revision) console.log(`Selection: files changed by ${raw.revision}; execution uses the current checkout.`);
+  if (raw?.flags.has("task"))
+    console.log(`Selection: task delta since shared main ancestor ${taskComparisonBase(ROOT)}, plus working paths.`);
   const guardedPaths = !full && raw ? (raw.paths.length ? raw.paths : paths) : undefined;
-  const digestFn = options.captureDigest ?? (() => captureSourceDigest({ paths: guardedPaths }));
+  let selectionStable = true;
+  const digestFn =
+    options.captureDigest ??
+    (() => {
+      if (raw?.flags.has("task")) {
+        const currentPaths = resolveSelectedPaths(ROOT, raw);
+        if (JSON.stringify(currentPaths) !== JSON.stringify(paths)) selectionStable = false;
+      }
+      return captureSourceDigest({ paths: guardedPaths });
+    });
   if (paths.length === 0) {
     console.log("No changed source to check.");
     return 0;
   }
-  const selection = classifyCheckPaths(ROOT, paths);
   const runId = ensureRunId("check");
   const env = {
     ...process.env,
@@ -135,11 +150,12 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     ...(full
       ? {}
       : {
-          NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=512`.trim(),
           RAYON_NUM_THREADS: "1",
         }),
   };
-  const before = digestFn();
+  // Hooks export repository-local Git settings. Verification also initializes
+  // fixture repositories, which must never inherit the pushing checkout's paths.
+  for (const name of gitOutput(["rev-parse", "--local-env-vars"]).trim().split(/\s+/u)) delete env[name];
   let verifyArgs = [...paths];
   // Byte budget for inline CLI args before spilling the selection to paths.json.
   // Distinct from the related-test arg limit in change-routes.mjs (see
@@ -153,129 +169,41 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   // Static checks rerun docs:check via lint:ci, so verification skips its own
   // copy on executable changes; documentation-only changes keep it here.
   if (full) verifyArgs.push("--full");
-  if (full && selection.needsCodeChecks) verifyArgs.push("--skip-docs-check");
-  const skipBuilds = !full || process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
-  const ciReason = "CI-only in the default local gate";
-  const buildReason = !full
-    ? ciReason
-    : skipBuilds
-      ? "skipped via ALCHEMY_CHECK_SKIP_BUILD=1 (CI still builds)"
-      : undefined;
-  const webEnabled = selection.web && !skipBuilds;
-  const desktopEnabled = selection.desktop && !skipBuilds;
-  const formatPaths = filterPrettierPaths(paths).filter((file) =>
-    fs.statSync(path.join(ROOT, file), { throwIfNoEntry: false })?.isFile(),
-  );
-  const smallFormatBatch =
-    formatPaths.length > 0 &&
-    formatPaths.length <= 50 &&
-    formatPaths.every((file) => fs.statSync(path.join(ROOT, file)).size <= 256_000);
-  const assetPush = argv.includes("--pre-push") && resolveRoutes(paths).some((route) => route.id === "assets");
-  const definitions = [
-    {
-      key: "asset-sources",
-      label: assetPush ? "local asset source freshness" : "committed asset integrity",
-      command: "npm",
-      args: ["run", assetPush ? "assets:check" : "assets:check:outputs"],
-      enabled: argv.includes("--pre-push"),
-    },
-    {
-      key: "localization",
-      label: "localization freshness and contracts",
-      command: "npm",
-      args: ["run", "i18n:check"],
-      enabled: true,
-    },
-    {
-      key: "verification",
-      label: full ? "changed-path verification" : "fixed Node smoke selection",
-      command: "node",
-      args: ["scripts/verify-changed.mjs", ...verifyArgs],
-      enabled: true,
-    },
-    {
-      key: "local-format",
-      label: "selected-file format",
-      command: "node",
-      args: ["scripts/run-prettier.mjs", "--check", ...formatPaths],
-      enabled: !full && smallFormatBatch,
-      reason: full ? "included in full static checks" : "empty or large formatting batch deferred to CI",
-    },
-    {
-      key: "documentation-format",
-      label: "documentation format",
-      command: "npm",
-      args: ["run", "format:check"],
-      enabled: full && !selection.needsCodeChecks,
-      reason: !full ? ciReason : "included in static checks",
-    },
-    {
-      key: "ci-static",
-      label: "CI static checks",
-      command: "npm",
-      args: ["run", "lint:ci"],
-      enabled: full && selection.needsCodeChecks,
-      reason: !full ? ciReason : "documentation-only change",
-    },
-    {
-      key: "lockfile",
-      label: "lockfile consistency",
-      command: "npm",
-      args: ["ci", "--dry-run", "--ignore-scripts"],
-      enabled: full && selection.lockfile,
-      reason: !full ? ciReason : "package manifests unchanged",
-    },
-    {
-      key: "web-build",
-      label: "web build",
-      command: "npm",
-      args: ["run", "build"],
-      enabled: webEnabled,
-      reason: buildReason ?? "web runtime inputs unchanged",
-    },
-    {
-      key: "web-bundle-budget",
-      label: "web bundle budget",
-      command: "npm",
-      // Web and desktop renderer builds both write dist/ sequentially: each
-      // budget step checks dist/ immediately after its own build, so the same
-      // check:bundle command validates different outputs at different times.
-      args: ["run", "check:bundle"],
-      enabled: webEnabled,
-      reason: buildReason ?? "web build not required",
-    },
-    {
-      key: "preview-smoke",
-      label: "preview smoke",
-      command: "npm",
-      args: ["run", "smoke:preview"],
-      enabled: webEnabled,
-      reason: buildReason ?? "web build not required",
-    },
-    {
-      key: "desktop-build",
-      label: "desktop build",
-      command: "npm",
-      args: ["run", "build:desktop"],
-      enabled: desktopEnabled,
-      reason: buildReason ?? "desktop inputs unchanged",
-    },
-    {
-      key: "desktop-bundle-budget",
-      label: "desktop bundle budget",
-      command: "npm",
-      // Same dist/ path as web by design: runs after desktop-build, so it
-      // validates the desktop renderer output that just overwrote dist/.
-      args: ["run", "check:bundle"],
-      enabled: desktopEnabled,
-      reason: buildReason ?? "desktop build not required",
-    },
-  ];
+  if (argv.includes("--all")) verifyArgs.push("--all-units");
+  const plan = resolveCheckPlan(paths, {
+    rootDir: ROOT,
+    full,
+    prePush: argv.includes("--pre-push"),
+    skipBuilds: process.env.ALCHEMY_CHECK_SKIP_BUILD === "1",
+    verifyArgs,
+  });
+  verifyArgs = plan.verifyArgs;
+  const selection = plan.selection;
+  const definitions = plan.steps;
   const steps = [];
   const artifacts = [];
   const exposures = [];
   let failed = null;
 
+  if (argv.includes("--plan")) {
+    for (const definition of definitions) {
+      console.log(
+        `${definition.enabled ? "Run" : "Skip"}: ${definition.label}${definition.enabled ? ` — ${definition.command} ${definition.args.join(" ")}` : ` — ${definition.reason ?? "not applicable"}`}`,
+      );
+    }
+    const { main: verify } = await import("./verify-changed.mjs");
+    return verify([...verifyArgs, "--plan"]);
+  }
+  if (full && !options.runner) assertHeavyLocalAllowed("Full completion gate");
+  const before = digestFn();
+  const cache =
+    options.runner || !selection.needsCodeChecks
+      ? null
+      : createVerificationCache(
+          ROOT,
+          definitions.filter((step) => step.enabled),
+        );
+  const outcomes = [];
   console.log(`Check run: ${runId} (source ${before.hash}; guard: ${before.scope ?? "provided input identity"})`);
   for (const definition of definitions) {
     if (!definition.enabled) {
@@ -284,11 +212,12 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     }
     console.log(`\n== ${definition.label} ==`);
     const started = Date.now();
-    const runnerResult = await runner(definition.label, definition.command, definition.args, env);
+    const receipt = cache?.read(definition);
+    const runnerResult = receipt ? 0 : await runner(definition.label, definition.command, definition.args, env);
     if (definition.key === "verification" && !options.runner) {
       // Intentional nesting: verify owns its run record and selection policy;
       // check links verify/summary.json so reuse provenance survives handoff.
-      const verificationSummary = path.join(ROOT, "reports/runs", runId, "verify/summary.json");
+      const verificationSummary = path.join(ROOT, "reports/runs", receipt?.runId ?? runId, "verify/summary.json");
       if (fs.existsSync(verificationSummary)) artifacts.push({ path: verificationSummary, role: "secondary" });
     }
     const durationMs = Date.now() - started;
@@ -303,7 +232,13 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
           };
     const code = result.status ?? 1;
     const status = code === 0 ? "passed" : "failed";
-    steps.push({ label: definition.label, status, durationMs });
+    steps.push({
+      label: definition.label,
+      status,
+      durationMs,
+      ...(receipt ? { reason: `Reused passing run ${receipt.runId}; inputs unchanged` } : {}),
+    });
+    outcomes.push({ command: definition, passed: code === 0, result, ...(receipt ? { reused: receipt.runId } : {}) });
     if (code !== 0) {
       const reportsDir = path.join(ROOT, "reports", "runs", runId, "check");
       const evidence = summarizeAndReportFailure(reportsDir, definition, result, runId, steps.length - 1, ROOT);
@@ -314,14 +249,17 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     }
     const { exposure } = summarizeStepResult(definition, result);
     exposures.push(exposure);
-    console.log(`✓ ${definition.label} (${(durationMs / 1000).toFixed(1)}s)`);
+    console.log(
+      `✓ ${definition.label} (${receipt ? `reused passing run ${receipt.runId}; inputs unchanged` : `${(durationMs / 1000).toFixed(1)}s`})`,
+    );
   }
   for (const definition of definitions.slice(steps.length)) {
     steps.push({ label: definition.label, status: "skipped", durationMs: 0, reason: "earlier step failed" });
   }
 
   const after = digestFn();
-  if (!failed && after.hash !== before.hash) {
+  const stable = cache?.finish(outcomes, runId) ?? true;
+  if (!failed && (after.hash !== before.hash || !stable || !selectionStable)) {
     failed = { label: "source staleness", code: 1 };
     steps.push({
       label: "source staleness",
@@ -347,43 +285,26 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       ? `Check failed at ${failed.label}.`
       : full
         ? `${passed} steps passed; ${skipped} not applicable.`
-        : "Local check passed; full CI validation is required.",
+        : "Local verification complete; CI and platform acceptance are separate.",
   });
   if (failed) {
     console.error(`✗ check failed at ${failed.label} (exit ${failed.code}, run ${runId})`);
     return 1;
   }
   console.log(
-    `\n✓ ${full ? "full check passed" : "local check passed; full validation required in CI"} (run ${runId}, source ${before.hash})`,
+    `\n✓ ${full ? "full check passed" : "local verification complete; CI and platform acceptance are separate"} (run ${runId}, source ${before.hash})`,
   );
   return 0;
 }
 
 if (isMainModule(import.meta.url)) {
-  let cleanupFinished = false;
-  process.once("exit", () => {
-    if (cleanupFinished || !taskKey() || process.platform === "win32") return;
-    // Cancellation can exit from the command runner before promises settle.
-    // Finish cleanup here and expose a failure instead of abandoning a silent child.
-    const cleanup = spawnSync(process.execPath, [path.join(ROOT, "scripts/agent-browser.mjs"), "--cleanup-task"], {
-      stdio: "inherit",
-      timeout: 30_000,
-    });
-    if (cleanup.status !== 0) {
-      console.error("Browser cleanup failed; retained ownership records for recovery.");
-      process.exitCode = 2;
-    }
-  });
-  registerArtifactSession(ROOT, () => pruneExpiredArtifacts({ rootDir: ROOT }))
+  const planOnly = process.argv.includes("--plan");
+  (planOnly ? Promise.resolve() : registerArtifactSession(ROOT, () => pruneExpiredArtifacts({ rootDir: ROOT })))
     .then(() => runCheck())
-    .then(async (code) => {
-      await closeTaskBrowsers();
-      cleanupFinished = true;
+    .then((code) => {
       process.exitCode = code;
     })
-    .catch(async (error) => {
-      await closeTaskBrowsers().catch((cleanupError) => console.error(cleanupError.message));
-      cleanupFinished = true;
+    .catch((error) => {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 2;
     });

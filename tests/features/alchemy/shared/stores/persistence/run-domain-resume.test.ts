@@ -38,6 +38,8 @@ import {
   resetProgress as mutateResetProgress,
 } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { defaultGameSession } from "@/app/application-session";
+import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
+import { gridLabyrinthMapFixture } from "../../../../../fixtures/labyrinth-map";
 import { savedActivityFixture, savedActivityData } from "../../../../../fixtures/run-activity";
 const resetProgress = bindGameplayMutationForTest(mutateResetProgress);
 const setHasActiveRun = createGameplayCommand(
@@ -470,6 +472,31 @@ describe("session facade API", () => {
     ]);
     expect(readActiveRun(defaultGameSession).completedDestinations).toEqual([]);
     expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(0);
+  });
+
+  it("returns a missing Labyrinth Mystery to its uncleared room on the map", () => {
+    const map = gridLabyrinthMapFixture();
+    const node = Object.values(map.nodes).find((entry) => entry.type === "mystery")!;
+    map.currentNodeId = "labyrinth-floor-1-n4";
+    map.nodes[map.currentNodeId]!.cleared = true;
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(defaultGameSession),
+      contentSystemType: "labyrinth",
+      labyrinthMap: map,
+      labyrinthPendingNode: node.id,
+      activity: savedActivityFixture("mystery", null),
+    };
+
+    restoreRun(activeRun, {}, {}, defaultGameSession);
+
+    expect(readActiveRunScreen(defaultGameSession)).toBe("labyrinth-map");
+    const session = readRunSession(defaultGameSession);
+    expect(session.activity.kind).toBe("labyrinth-map");
+    expect(session.activeLabyrinthPendingNode).toBeNull();
+    expect(session.selectedLabyrinthNodeId).toBeNull();
+    expect(session.labyrinthMap?.nodes[node.id]?.cleared).toBe(false);
+    expect(canEnterLabyrinthNode(session.labyrinthMap!, node.id)).toBe(true);
+    expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(activeRun.destinationIndexInAct);
   });
 
   it("restores overgrown-temple random gear without introducing trinkets", () => {

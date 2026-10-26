@@ -101,12 +101,12 @@ export function resolveNatureManaReward(
 
 export function resolveBleedGoldReward(
   state: BattleState,
-  bleedAdded: number,
+  healthDamage: number,
   texts: CombatTextEvent[],
-  port: Pick<ResourceRewardPort, "gold">,
+  port: GoldRewardPort,
 ): BattleState {
-  return bleedAdded > 0 && state.trinketEffects.cutpurseGoldOnBleed > 0
-    ? port.gold(state, state.trinketEffects.cutpurseGoldOnBleed, texts)
+  return healthDamage > 0 && port.chance(state.trinketEffects.cutpurseGoldChance, state)
+    ? port.gold(state, healthDamage, texts)
     : state;
 }
 

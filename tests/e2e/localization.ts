@@ -11,8 +11,9 @@ const catalogs = unpackCatalogs(packed);
 
 export const acceptanceLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "ja", "fr", "en-XA"] as const;
 export type AcceptanceLocale = (typeof acceptanceLocales)[number];
-// One representative language per journey gates pushes; the full cross-product
-// remains available for nightly/release acceptance.
+// One representative language per journey gates pushes. Gameplay settlement
+// uses that representative plus expanded-English QA; shared presentation flows
+// retain every locale for switching, layout and font coverage.
 export function localizationCoverage(locale: AcceptanceLocale, representative: AcceptanceLocale) {
   return {
     tag: [

@@ -48,6 +48,7 @@ export function ArmoryScreen({
   equippedTrinkets,
   craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   finishedRunCharacters,
+  initialCharacterId = "knight",
   combatRestrictions,
   onEquip,
   onUnequip,
@@ -71,7 +72,7 @@ export function ArmoryScreen({
     [],
   );
   const salvageButtonRef = useRef<HTMLButtonElement>(null);
-  const [characterId, setCharacterId] = useState<CharacterId>("knight");
+  const [characterId, setCharacterId] = useState<CharacterId>(initialCharacterId);
   const [selectedSlot, setSelectedSlot] = useState<ArmorySlot>("main-hand");
   const [craftingResult, setCraftingResult] = useState<CraftingResult | null>(null);
   const [notice, setNotice] = useState<string | { item: string }>("");

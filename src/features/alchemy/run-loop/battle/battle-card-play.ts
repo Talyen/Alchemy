@@ -4,13 +4,13 @@ import {
   canPlayCard as canPlayCardInBattle,
   computeCardPayment,
   isAttackCard,
+  getBattleCardAnimationTarget,
   type BattleSnapshot,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
-import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
 import { playResolvedCardSound, presentCombatTexts } from "./controller-utils";
@@ -70,7 +70,7 @@ export function createBattleCardPlay(
     return (
       !isBattleInspectionOpen(useUiStore.getState()) &&
       ctx.screen === "battle" &&
-      ctx.playback.canAcceptInput(true) &&
+      ctx.playback.canPlayCard() &&
       state.turnPhase === "player" &&
       !state.wishOptions &&
       !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
@@ -82,6 +82,7 @@ export function createBattleCardPlay(
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
     handLength: number,
+    target: "player" | "enemy",
   ) {
     const centerOffset = index - (handLength - 1) / 2;
     animateCardActivation(
@@ -92,6 +93,7 @@ export function createBattleCardPlay(
       ctx.enemyPanelRef,
       ctx.battleSceneRef,
       getPresentation().spawnCardGhost,
+      target,
     );
   }
 
@@ -154,6 +156,7 @@ export function createBattleCardPlay(
       return false;
     }
     const sessionNum = ctx.playback.id;
+    const animationTarget = getBattleCardAnimationTarget(handCard, currentState);
     const played = ctx.battle.playCard(currentState, index, card.id);
     if (!played) {
       if (!options?.silentReject) playUISound("error");
@@ -169,7 +172,7 @@ export function createBattleCardPlay(
     } else {
       getPresentation().telegraphCast("player");
     }
-    animatePlayedCard(card, index, sourceRect, currentState.hand.length);
+    animatePlayedCard(card, index, sourceRect, currentState.hand.length, animationTarget);
     const focalSound = playResolvedCardSound(
       card.id,
       played.combatTexts,
@@ -210,23 +213,11 @@ export function createBattleCardPlay(
       }
     };
     if (!shouldReduceMotion()) {
-      const battleSignal = ctx.playback.signal;
+      const scope = ctx.playback.capture(ctx.playback.id);
       const ui = useUiStore.getState();
       ui.setAutoplayPreviewCardId(previewId);
       ui.maybeTriggerShimmer(previewId);
-      await new Promise<void>((resolve) => {
-        const finish = () => {
-          clearTimeout(timer);
-          control.signal.removeEventListener("abort", finish);
-          battleSignal.removeEventListener("abort", finish);
-          if (control.signal.aborted || battleSignal.aborted) clearPreview();
-          resolve();
-        };
-        const timer = setTimeout(finish, resolveGameDelay(AUTOPLAY_PREVIEW_MS));
-        control.signal.addEventListener("abort", finish, { once: true });
-        battleSignal.addEventListener("abort", finish, { once: true });
-        if (control.signal.aborted || battleSignal.aborted) finish();
-      });
+      if (!(await scope.wait(AUTOPLAY_PREVIEW_MS, control.signal, clearPreview))) clearPreview();
     }
     return clearPreview;
   }

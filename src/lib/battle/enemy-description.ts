@@ -89,7 +89,6 @@ export function getEncounterEnemyAbility(card: EnemyAbilityCard, context: EnemyD
 const ROOM_SCALED_TRAITS = new Set([
   "cinder-skin",
   "frost-elemental",
-  "ice-wraith",
   "pyromancer",
   "dire-wolf",
   "blood-cultist",
@@ -122,10 +121,9 @@ const TRAIT_DESCRIPTION_SCALERS: Record<
   (description: string, room: (n: number) => number, context: EnemyDescriptionContext) => string
 > = {
   "starting-block": (_description, room) => `Starts with ${room(ENEMY_STARTING_BLOCK)} Block`,
-  "living-armor": (description, room) =>
-    description.replace("with Armor", `with ${room(LIVING_ARMOR_STARTING_ARMOR)} Armor`),
+  "living-armor": (description, room) => description.replace("4 Armor", `${room(LIVING_ARMOR_STARTING_ARMOR)} Armor`),
   regeneration: (_description, room, context) =>
-    `Restores ${room(context.currentEnemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)} Health each turn`,
+    `Restores ${room(context.currentEnemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)} Health each turn.`,
   "stone-golem": (description, room) => description.replace("1 additional", `${room(1)} additional`),
   thorns: (description, room) => description.replace("deals 1 Physical", `deals ${room(1)} Physical`),
   "divine-aegis": (description, room) =>

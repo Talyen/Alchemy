@@ -1,12 +1,13 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import type { Immutable } from "immer";
 import type { GameplayState } from "../session/gameplay-state-reads";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { STARTER_HOMESTEAD_MATERIAL_TARGET } from "@/lib/game-constants/materials-economy";
+import { STARTER_HOMESTEAD_MATERIAL_TARGET } from "@/lib/game-constants";
 import { hasHomesteadPurchases } from "@/lib/homestead/purchases";
 
 /** Preview and claim share one calculation against the current stockpile. */
 export function projectCampaignReward(state: Pick<Immutable<GameplayState>, "run" | "runProfile" | "session">) {
-  const reward = state.session.rewardFlow.state;
+  const reward = readRewardActivity(state.session.activity).state;
   const campaignBoss =
     state.run.activeRun.contentSystemType === CONTENT_SYSTEMS.CAMPAIGN &&
     reward.lastVictoryContentSystem === CONTENT_SYSTEMS.CAMPAIGN &&

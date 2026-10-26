@@ -17,8 +17,11 @@ import {
   type DamageType,
   type KeywordId,
 } from "@/lib/game-data";
-import { CORRUPTION_MAX_EFFECT_LINES } from "@/lib/game-constants/corruption";
-import { TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
+import {
+  CORRUPTION_MAX_EFFECT_LINES,
+  TRANSMUTATION_KEYWORD_GROUPS,
+  TRANSMUTATION_PREFIXES,
+} from "@/lib/game-constants";
 import type {
   AlchemyVisit,
   TransmutationChoice,
@@ -27,6 +30,8 @@ import type {
 import { pickRandom, takeRandomItem } from "@/lib/rng";
 import { stableJson } from "@/lib/utils";
 import { appendPotionTrailer } from "./potion-mixer";
+import { transmutationModifierKeyword } from "@/lib/content-systems/labyrinth/trait-catalog";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 
 const DAMAGE_KEYWORDS: readonly KeywordId[] = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
@@ -274,7 +279,13 @@ export function getTransmutationVariants(
   return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects) }];
 }
 
-export function createTransmutationOffers(deck: readonly BattleCard[], rng: () => number): TransmutationChoice[] {
+export function createTransmutationOffers(
+  deck: readonly BattleCard[],
+  rng: () => number,
+  modifiers: readonly EncounterRewardTraitId[] = [],
+): TransmutationChoice[] {
+  const prismatic = modifiers.includes("prismatic-crucible");
+  const guaranteed = modifiers.map(transmutationModifierKeyword).find((keyword) => keyword !== undefined);
   const choices = new Map<KeywordId, TransmutationChoice>();
   deck.forEach((source, sourceIndex) => {
     // Roll against this card so unrelated cards cannot crowd out useful choices.
@@ -286,8 +297,10 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
         return result.length > 0;
       }),
     );
-    const keywords: KeywordId[] = [];
+    const keywords: KeywordId[] = prismatic ? pools.flat() : [];
+    if (!prismatic && guaranteed && pools.some((pool) => pool.includes(guaranteed))) keywords.push(guaranteed);
     for (const pool of pools) {
+      if (prismatic || pool.some((keyword) => keywords.includes(keyword))) continue;
       const keyword = pickRandom(pool, rng);
       if (keyword) keywords.push(keyword);
     }

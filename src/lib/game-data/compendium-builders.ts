@@ -3,14 +3,13 @@ import type { BestiaryEntry, TrinketEntry } from "./types";
 
 const ENEMY_SUBTITLES = { boss: "Boss", normal: "Normal", elite: "Elite" } as const;
 
-export function trait(id: string, title: string, description: string): BestiaryEntry["traits"][number] {
-  return { id, title, description };
-}
-
-export const poisonResistance = trait("poison-resistance", "Poison Resistance", "Receives 25% less Poison damage");
-
-export function regeneration(title: string): BestiaryEntry["traits"][number] {
-  return trait("regeneration", title, "Restores Health each turn");
+export function trait(
+  id: string,
+  title: string,
+  description: string,
+  polarity: "positive" | "negative" = "positive",
+): BestiaryEntry["traits"][number] {
+  return { id, title, description, polarity };
 }
 
 type EnemyDefinition = Omit<BestiaryEntry, "subtitle" | "descriptionLines" | "art"> & { art?: string };

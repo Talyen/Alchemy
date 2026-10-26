@@ -22,6 +22,8 @@ export function currentSchemaCampaignSave() {
     muteInBackground: false,
     bossLyricsEnabled: false,
     autoEndTurn: true,
+    autoEquip: false,
+    hasSeenArmory: true,
     brightness: 110,
     gold: 42,
     activeRun: {

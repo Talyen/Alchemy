@@ -5,7 +5,7 @@ import {
   acceptCommand,
   dispatchRunSessionCommand,
 } from "@/features/alchemy/shared/stores/commands/run-session-command";
-import { setRunDeck } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { setGold, setRunDeck } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { sessionClock, sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { sessionGameplayStore } from "@/features/alchemy/shared/stores/session/session-gameplay-store";
 import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
@@ -31,7 +31,23 @@ it.each([false, true])("releases scoped resources after failure, including early
 });
 
 describe("session architecture invariants", () => {
-  it.each([() => () => 1, () => new Date(), () => new Map([["gold", 1]])])(
+  it("rejects non-finite gameplay before it can corrupt persisted progress", async () => {
+    await using session = createGameSession();
+    const persistence = createSessionPersistence(session);
+    const before = readGameplayState(session);
+    const saved = persistence.snapshot();
+    const notify = vi.fn();
+    persistence.subscribe(notify);
+
+    expect(() =>
+      dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, Number.NaN)), undefined, session),
+    ).toThrow(/finite/);
+    expect(readGameplayState(session)).toBe(before);
+    expect(persistence.snapshot()).toEqual(saved);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it.each([() => () => 1, () => new Date(), () => new Map([["gold", 1]]), () => 1n, () => Symbol("metadata")])(
     "rejects non-data gameplay before publishing any revision",
     async (metadata) => {
       await using session = createGameSession();

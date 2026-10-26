@@ -16,6 +16,8 @@ import {
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { addGoldWithCombatText, payKillPayouts } from "./player-rewards";
+import { rollBattleChance } from "./chance-roll";
+import { resolveBleedGoldReward } from "./resource-reward-resolution";
 import { mergeCombatText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
@@ -56,7 +58,10 @@ export function applyEnemyDotDamage(
   const bleedHealthDamage = bleedIndex >= 0 ? pulseHealthDamage(pulses, bleedIndex, previousHealth) : 0;
   if (bleedHealthDamage > 0) {
     nextState = applyBleedDamageDraw(nextState, bleedHealthDamage, combatTexts);
-    nextState = addGoldWithCombatText(nextState, state.trinketEffects.cutpurseGoldOnBleed, combatTexts);
+    nextState = resolveBleedGoldReward(nextState, bleedHealthDamage, combatTexts, {
+      chance: rollBattleChance,
+      gold: addGoldWithCombatText,
+    });
   }
 
   let earlierDamage = 0;
@@ -110,7 +115,15 @@ export function projectEnemyDotDamage(
   if (amount <= 0) return 0;
   let finalDamage = 0;
   let stacks = amount;
-  const bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
+  const poisoned = state.enemyStatuses.poison > 0;
+  const bleedBonus =
+    (poisoned ? state.gearEffects.bleedTickBonusVsPoisoned : 0) +
+    (state.enemyStatuses.burn > 0 ? state.gearEffects.bleedTickBonusVsBurning : 0);
+  const burnBonus = poisoned ? state.gearEffects.burnTickBonusVsPoisoned : 0;
+  let bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
+  if (status === "bleed") bonus = bleedBonus;
+  if (status === "burn") bonus = burnBonus;
+  if (status !== "poison" && state.gearEffects.sharedBurnBleedBonuses > 0) bonus = bleedBonus + burnBonus;
   const multiplier =
     getEnemyDamageMultiplier(state, status) *
     (status === "burn" ? getBurnBonusToBleedingMultiplier(state) : 1) *

@@ -1,4 +1,4 @@
-import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-sources.mjs";
 import { execFile } from "node:child_process";
 import { copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -109,10 +109,7 @@ export async function optimizeSounds({ check = false } = {}) {
 
   await ensureOutputDir(outputDir, { check });
   await validateSoundAssetRegistry();
-  await requireAssetSources(generatedSoundAssets, {
-    manifestPath,
-    settingsFor: ({ source }) => soundTransformSettings(path.extname(source).toLowerCase()),
-  });
+  await requireAssetSources(generatedSoundAssets);
 
   const pipeline = await runManifestPipeline({
     entries: generatedSoundAssets,

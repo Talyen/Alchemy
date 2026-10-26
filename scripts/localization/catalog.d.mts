@@ -1,4 +1,4 @@
-interface Message {
+export interface Message {
   plural?: boolean;
   forms?: Record<string, string>;
   text: string;
@@ -7,17 +7,15 @@ interface Message {
   aliasOf?: string;
   values?: Record<string, string | number>;
 }
-interface Translation {
+export interface Translation {
   forms?: Record<string, string>;
   text: string;
   sourceHash: string;
   reviewed: boolean;
 }
-export const INSTRUCTIONS: string;
 export const TARGETS: string[];
 export function digest(value: unknown): string;
 export function ordered<T>(value: Record<string, T>): Record<string, T>;
-export function parameters(value: string): string[];
 export function tags(value: string): string[];
 export function sourceHash(message: Message, glossary: Record<string, string>, locale: string): string;
 export function validateTranslation(message: Pick<Message, "text">, value: string): void;
@@ -42,3 +40,31 @@ export function relatedTerms(
   terms: readonly string[],
   aliases?: ReadonlyArray<{ match: string; keywordId: string }>,
 ): string[];
+
+interface WorkflowInput {
+  messages: Record<string, Message>;
+  glossary: Record<string, Record<string, string>>;
+  catalogs: Record<string, Record<string, Translation>>;
+}
+export function translationPackets(
+  input: WorkflowInput,
+  drafts?: unknown,
+): Array<{
+  locale: string;
+  instructions: string;
+  glossary: Record<string, string>;
+  messages: Record<string, Message & { sourceHash: string; previous: string | null }>;
+  results: Record<string, Translation>;
+}>;
+export function editableTranslationPackets(packets: ReturnType<typeof translationPackets>): Array<{
+  locale: string;
+  instructions: string;
+  glossary: Record<string, string>;
+  messages: Record<string, Message & { sourceHash: string; previous: string | null }>;
+  results: Record<string, string | { forms: Record<string, string> }>;
+}>;
+export function validateBatch(
+  input: unknown,
+  context: WorkflowInput,
+  options?: { reviewed?: boolean },
+): Record<string, Record<string, Translation>>;

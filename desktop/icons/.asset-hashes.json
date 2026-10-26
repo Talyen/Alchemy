@@ -1,67 +1,67 @@
 {
   "desktop/icons/icon-1024.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "8c36cd6f23326ced3d0ce536e478f451",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "desktop/icons/icon.ico": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "4f37536652ff239f3e47426938747670",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "desktop/icons/icon.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "96534569e8043bb590a547d4b0d5e392",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/apple-touch-icon.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "4188c13cd608218dc507c0494a80edd4",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/favicon-16x16.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "34903dbcbb37bea1562960774e027562",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/favicon-32x32.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "9ced3437b90fb181b7d8cc848339e431",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/favicon-48x48.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "4fa5c53a7386b77ae3728ea806bc4241",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/favicon.ico": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "6f41f6f0193fbd7afb95f47995e437e8",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/icon-192.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "b70c64864812e17ac0b697fc1afba1e3",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/icon-512.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "96534569e8043bb590a547d4b0d5e392",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/icon-maskable-192.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "6a83176fb6a0b9ccb11dd9b0c1b0e294",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/icon-maskable-512.png": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "9a2f645ec23abe49ada060997947b427",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   },
   "public/site.webmanifest": {
-    "hash": "5cb952b2698a3ac7ac615d307b27e497",
+    "hash": "c1d6e4683030cd6417087a50fa7433dc",
     "outputHash": "14caa3c89b082311fabd332eca3d16d5",
-    "selectionHash": "4ca2cf4f6eac70484d7d83aea311cc354058208d730b8fb2c42b43824b8270ae"
+    "selectionHash": "73703ac398fe941c44e8dd44a83e0095f338a853451d8b1eb5717f346d9800a6"
   }
 }

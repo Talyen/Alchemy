@@ -134,7 +134,7 @@ describe("thematic card effects", () => {
     const base = battle({ roomScalingMultiplier: 2, enemyMitigation: { forge: 4 } });
     const enemy = applyEnemyAbility(base, cardById["burning-blade"]!, []);
     // The base is room-scaled once; the existing Forge is not scaled again.
-    expect(enemy.playerStatuses.burn).toBe(7);
+    expect(enemy.playerStatuses.burn).toBe(4);
     expect(enemy.enemyMitigation.forge).toBe(4);
   });
 
@@ -186,7 +186,7 @@ describe("thematic card effects", () => {
     const packTactics = cardById["pack-tactics"]!;
     expect(getCardKeywords(packTactics)).not.toContain("wish");
     const utility = play("pack-tactics", { activeCompanion: companionLibrary["golden-retriever"] });
-    expect(utility.gold).toBe(4);
+    expect(utility.gold).toBe(2);
     expect(utility.wishOptions).toBeNull();
     expect(utility.playerStatuses.block).toBe(4);
     const absent = play("pack-tactics");

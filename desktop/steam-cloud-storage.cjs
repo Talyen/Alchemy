@@ -1,3 +1,5 @@
+const { isSteamCloudEnabled } = require("./steam-context.cjs");
+
 /** Cloud transport belongs to the process, which survives renderer replacement. */
 function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOwner, maxPayloadBytes }) {
   let lane = Promise.resolve();
@@ -13,7 +15,7 @@ function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOw
   async function read(slot) {
     const { name } = resolveSlot(slot);
     const client = getSteam();
-    if (!client) return null;
+    if (!isSteamCloudEnabled(client)) return null;
     if (!client.cloud.fileExists(name)) return null;
     const buffer = await client.cloud.readFile(name);
     if (!buffer) throw new Error("Steam Cloud save could not be read");
@@ -24,7 +26,8 @@ function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOw
   async function write(data, slot) {
     const { name } = resolveSlot(slot);
     const client = getSteam();
-    if (!client || !isSavePayload(data)) return false;
+    if (!isSavePayload(data)) return false;
+    if (!isSteamCloudEnabled(client)) return true;
     const stamped = stampOwner(data, client);
     if (!isSavePayload(stamped)) return false;
     try {
@@ -38,7 +41,7 @@ function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOw
   async function remove(slot) {
     const { name } = resolveSlot(slot);
     const client = getSteam();
-    if (!client) return false;
+    if (!isSteamCloudEnabled(client)) return true;
     try {
       return client.cloud.fileExists(name) ? await client.cloud.deleteFile(name) : true;
     } catch (error) {

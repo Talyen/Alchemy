@@ -19,6 +19,7 @@ export function initializeRendererCrashReporting(): boolean {
     Sentry.init({
       enableLogs: false,
       sendDefaultPii: false,
+      beforeBreadcrumb: (breadcrumb) => (breadcrumb.category === "console" ? null : breadcrumb),
       tracesSampleRate: 0,
     });
     Sentry.setTags({

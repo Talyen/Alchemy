@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { projectCampaignReward } from "@/features/alchemy/shared/stores/commands/campaign-reward";
 import { applyAlchemistPotion } from "./alchemist-reward";
 import { canOfferWildwoodRemoval, enterWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
@@ -67,7 +68,7 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
       // Skipping is only permitted for card rewards (or when no choices are offered).
       // Non-card rewards (gear, trinket, boon) must be claimed with an explicit choice,
       // so a null claim there is rejected and the rewards screen stays put (matching the UI).
-      const rewardState = session.rewardFlow.state;
+      const rewardState = readRewardActivity(session.activity).state;
       if (
         choiceId === null
           ? rewardState.rewardType !== "card" && rewardState.choices.length > 0
@@ -90,12 +91,12 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
       const campaignReward = projectCampaignReward(draft);
       const result = finalizeRewardState({
         rewardState: {
-          ...snapshotTransactionValue(session.rewardFlow.state),
+          ...snapshotTransactionValue(readRewardActivity(session.activity).state),
           materials: campaignReward.materials,
           selectedId: choiceId,
         },
-        companionRewardCards: session.rewardFlow.companionCards
-          ? snapshotTransactionValue(session.rewardFlow.companionCards)
+        companionRewardCards: readRewardActivity(session.activity).companionCards
+          ? snapshotTransactionValue(readRewardActivity(session.activity).companionCards)
           : null,
       });
 

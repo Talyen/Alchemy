@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { projectCampaignReward } from "../commands/campaign-reward";
 import { readActivityData } from "@/lib/active-run-session";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
@@ -84,14 +85,16 @@ export const RUN_SCREEN_SELECTORS = {
   rewards: (state: GameplayState) => {
     const campaign = selectCampaignReward(state);
     return {
-      rewardState: state.session.rewardFlow.state,
-      rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
+      rewardState: readRewardActivity(state.session.activity).state,
+      rewardClaimInFlight: state.session.progressClaim.kind === "reward",
       rewardMaterials: campaign.materials,
     };
   },
   destination: (state: GameplayState) => ({
-    rewardState: state.session.rewardFlow.state,
+    rewardState: readRewardActivity(state.session.activity).state,
     currentAct: state.run.activeRun.currentAct,
+    destinationIndexInAct: state.run.activeRun.destinationIndexInAct,
+    completedDestinations: state.run.activeRun.completedDestinations,
   }),
   mystery: (state: GameplayState) => {
     const visit = readActivityData(state.session.activity, "mystery");

@@ -68,7 +68,7 @@ export const CONTEXT_TASKS = {
     entrypoints: ["src/lib/loot/policy.ts", "src/features/alchemy/run-loop/navigation/reward-flow.ts"],
   },
   assets: {
-    matches: /(?:assets|optimize-|sync-generated|public\/(?:Music|sounds)|Raw Assets)/,
+    matches: /(?:assets|optimize-|sync-generated|public\/(?:Music|sounds)|assets\/sources)/,
     docs: [owner("Docs/WORKFLOWS-ASSETS.md")],
     entrypoints: ["scripts/assets.mjs"],
   },
@@ -88,7 +88,7 @@ export const CONTEXT_TASKS = {
   playthrough: {
     matches:
       /^(?:src\/app\/playthrough\/|tests\/playthrough\/|scripts\/(?:run-playthrough(?:-worker)?\.mjs$|lib\/playthrough\/)|vitest\.playthrough\.config\.ts$)/,
-    docs: [owner("Docs/PLAYTHROUGH_SIMULATION.md")],
+    docs: [owner("Docs/SIMULATION.md", "Headless careers")],
     entrypoints: ["src/app/playthrough/career.ts", "scripts/run-playthrough.mjs"],
   },
   release: {

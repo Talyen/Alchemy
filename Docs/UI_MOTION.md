@@ -2,6 +2,21 @@
 
 Canonical detail linked from [UI.md](./UI.md).
 
+Screen-specific Homestead purchase feedback lives with its
+[gallery interaction](./UI_BROWSING.md#purchase-motion).
+
+Choose Destination's act/room toggle keeps its 36px circles at a fixed size while
+individual nodes travel over 420ms with a gentle start and settle. Movement starts
+together; only the room fades stagger outward, so circles separate before becoming
+visible. Closing lets rooms gather and fade before the act numeral returns.
+Neighboring acts and the connecting line follow the same easing. The line scales
+horizontally instead of animating its width; circles retain their round shape.
+The title and artwork stay fixed.
+Reversible CSS transitions retarget from the current pose on repeated input.
+Keyboard focus is painted on the focused circle, never the expanding transparent hit area.
+The shared reduced/disabled-motion preference settles both views immediately;
+the toggle only changes presentation and never commits room progress.
+
 ## Screen fade motion
 
 - **Route change** — `useRenderedScreenTransition` owns the opacity-only page fade. Save payloads follow the committed run activity; audio, battle playback, and presentation teardown follow committed `screen`, not `renderedScreen`.
@@ -12,7 +27,12 @@ Canonical detail linked from [UI.md](./UI.md).
 
 Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. While preparing a reveal, the gate also tracks artwork inserted after layout measurement and changed image sources; stale decode completions cannot reveal or hide the replacement. `FadeSlot` uses the initial-reveal mode: later artwork waits individually without hiding or making the already visible screen inert again. The observer continues to track replacement sources and removed images. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
 
-The pre-React splash uses the parser-blocking external script `public/startup-preferences.js` before its markup to apply preferences and scale. Localized phrase rotation starts in `src/app/startup-splash.ts` after catalogs and the selected language are ready. Keep startup scripts external for the packaged desktop policy, which blocks inline JavaScript.
+The pre-React splash uses the parser-blocking external script
+`public/startup-preferences.js` before its markup to apply preferences and scale.
+Localized phrase rotation starts in `src/app/startup-splash.ts` once catalogs and
+the selected language are ready. Its caption is 12px at the reference viewport
+and scales proportionally with the game. Startup scripts remain external under
+the packaged desktop policy, which blocks inline JavaScript.
 
 Startup preloading and mounted artwork share [image readiness](../src/lib/preload/image-readiness.ts), which owns load/decode completion, the timeout, and listener cleanup. The reveal gate retains each image's wait until its source changes or it leaves the screen; unrelated DOM changes do not restart its deadline.
 
@@ -44,14 +64,6 @@ that snapshot through the outgoing screen fade so applying the heal cannot resta
 the visible refill. Use `CAMPFIRE_ANIMATION_MS` from
 [ui-motion](../src/lib/game-constants/ui-motion.ts).
 
-Canvas decorations share [the canvas lifecycle](../src/lib/animation/canvas-lifecycle.ts):
-background particles, combatant status effects, and keyword plasma use its resize,
-frame pacing, and pause/resume policy. The canvas owns backing dimensions; unchanged
-sizes must not clear its drawing state. Disposal aborts event listeners, cancels
-the queued frame, and disconnects resize observation; late callbacks do nothing.
-Stun and Freeze presentation rebuilds when the shared motion preference changes,
-switching between a static overlay with no tilt and the animated effect.
-
 Hero Unlocked reveals the decoded portrait once per hero with a 560ms fade,
 small upward settle, and 98% to 100% scale. The name and Continue/Main Menu
 button remain immediately available; the reveal never delays navigation or
@@ -64,46 +76,23 @@ suppresses any hover shimmer; saving and the existing outgoing fade proceed
 independently, with no second shine or added wait. Each reward-choice identity
 starts fresh. Reduced or disabled motion keeps the selected frame and dimming.
 
-Transmutation keyword choices use opaque fills, 24px icons, hover/focus illumination,
+Transmutation keyword choices use opaque fills, hover/focus illumination,
 press feedback, and a selected 2px shine border in the keyword palette. The preview
-card and its title swap together through `FadeSlot`; the original stays steady.
-Transmute stays disabled until the current preview artwork is ready. Choices remain
-available during the swap. The saved result uses the reward settle/shine once on
-live completion and waits for Continue; resumed results skip that reveal effect. Reduced or
-disabled motion preserves selection emphasis without decorative animation.
-
-### Homestead purchases
-
-Interaction, purchase states, and reset behavior belong to the
-[Homestead gallery contract](./UI_BROWSING.md#homestead-gallery).
-
-Homestead purchases retain the old node while saving. Once acknowledged progress
-is available, tooltip sentences and icons remain steady. Changed values reveal
-over 180ms with a slight 2px rise; there is no whole-body fade or delayed swap.
-New/removed rows ease panel height over 180ms. The name stays mounted and the
-edge nearest the node stays anchored; passive tooltips retain their fixed row side.
-The tooltip celebrates acknowledged purchases with a 360ms scale bounce
-(1 → 1.045 → 0.995 → 1), originating at the edge nearest the artwork. It never
-remounts the content or replays on hover; dismissal or a newer purchase cancels
-its animation. The earned star pops to 1.65 scale with a soft gold highlight over 360ms. First
-builds/bonds crossfade opacity layers into color over 400ms without animating
-grayscale filters; later upgrades/bonds pulse an independent gold edge glow over
-450ms. There are no Built/Upgraded/Bonded labels over the artwork.
-Tuning lives in `HOMESTEAD_FEEDBACK` in the shared motion constants.
-
-Feedback tokens belong to accepted purchases, never hydrated levels. Repeated
-valid purchases replace visual targets without waiting for motion. Tooltip
-dismissal settles content; tab/page changes, navigation, and reset cancel local
-animation without cancelling committed purchases. Existing unlock/bond sound
-plays once after acknowledged progress is available. Reduced/disabled motion
-updates values and filled stars immediately without decorative animation. Reset uses the
-standard confirmation/save feedback without a purchase celebration.
+artwork stays mounted; only its title swaps through `FadeSlot`. An accepted keyword
+change colors the comparison arrow and emits a brief glow, rising during the
+label's exit and fading during its entry using the same motion token and easing.
+The arrow never scales. Another choice restarts the glow; rejected choices and
+saved-preview resume do not trigger it. Reduced or disabled motion keeps the
+keyword tint and selection emphasis without the glow. Transmute stays enabled
+between valid keyword choices and commits the latest selection independently of
+the label animation. The saved result uses the reward settle/shine once on live
+completion and waits for Continue; resumed results skip that reveal effect.
 
 ## Battle motion
 
-Living combatant artwork, including companions, scales to 103.5% during its active
-turn alongside the shine border. Standard hover scaling multiplies that size by
-1.035 again (about 107.1% total), with the shared 200ms ease-out transition.
+Living combatant artwork, including Companions, enlarges during its active turn
+alongside the shine border. Hover multiplies that active size. Exact scale and
+transition values belong to [component styles](../src/styles/components.css).
 
 This guide owns visible battle feedback; [the playback workflow](./WORKFLOWS.md#change-battle-playback)
 owns wiring and lifecycle. Battle VFX live in `run-loop/battle` (visual state in
@@ -123,9 +112,17 @@ target every 180ms. Every resolved impact still retains its flash, numbers, and
 sound. These effects never delay input. Each action requests each combat sound family
 at most once. Player and enemy deaths share the slice effect and battle-end delay;
 Death's Door is not defeat, and voluntary run exits remain immediate.
-The shared 1.25-second death effect uses a straight diagonal cut for both portrait
-halves and particle origins. A pointed white blade flash with a restrained warm
-halo sweeps across in 100ms and fades by 180ms. Dark shading and thin warm glints
+
+Player and enemy dodges use a mirrored, shallow dip and backward lean on the
+artwork frame, easing back over 460ms without hit recoil or an added effect.
+Health and statuses stay steady. Existing floating Dodge text and sounds remain
+unchanged. Dodge motion never delays input; another dodge replaces the previous
+motion, and reset, death, teardown or reduced/disabled motion cancels it.
+
+The shared death effect uses a straight diagonal cut for portrait halves and
+particle origins, with a pointed white blade flash and restrained warm halo.
+[Battle timing](../src/lib/game-constants/battle-timing.ts) and the effect's styles
+own durations. Dark shading and thin warm glints
 follow the cut edges as the halves separate and fade; a small directional spark
 burst accompanies the cut, followed by the existing border dissolve. Motion-disabled
 preferences skip the effect and its sound cue.
@@ -140,8 +137,9 @@ and prevents that preview from committing a card or Wish choice.
 
 Draws fly from the bottom-left Draw Pile into measured hand slots and flip from
 back to front. Discards leave right-to-left, flip onto the bottom-right Discard
-Pile, and scale to its top card. Both follow the earlier shallow curved path,
-with a 500ms base duration accelerated for larger batches. Flights run sequentially;
+Pile, and scale to its top card. Both follow the shallow curved path in
+[transfer motion](../src/features/alchemy/run-loop/battle/presentation/card-transfer-motion.ts),
+with batch-accelerated timing. Flights run sequentially;
 each departure starts its sound. The live card identity follows hand reflow.
 Tuning lives in `CARD_TRANSFER_CONFIG`.
 
@@ -155,8 +153,46 @@ committed card hidden. Played cards retain their travel, pop, and fade animation
 
 When equipping, unequipping, or replacing gear and trinkets:
 
-- **Transfer animation**: Artwork flies between its inventory tile and equipment slot across an unclipped, portaled overlay (`ArmoryTransferOverlay`) over 220ms with an ease-out curve (`easeOut`).
+- **Transfer animation**: Artwork flies between inventory and equipment through
+  the unclipped [ArmoryTransferOverlay](../src/features/alchemy/meta/screens/armory/armory-transfer-overlay.tsx),
+  which owns duration and easing.
 - **Artwork visibility**: During the in-flight transfer, destination artwork remains hidden (`opacity-0`) to prevent visual duplication until the animation completes and the transfer settles.
-- **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate smoothly to their new positions over 200ms using layout position transitions (`motion.div layout="position"`).
+- **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate to their new positions using layout position transitions (`motion.div layout="position"`).
 - **Interruption safety**: Any navigation, category switch, slot change, window resize, scroll, or unmount immediately settles all active in-flight transfers, restoring artwork visibility and removing portaled overlays without lingering visual artifacts.
 - **Reduced motion**: When reduced motion is preferred (`prefers-reduced-motion: reduce`), transfers settle immediately with zero travel duration and no portaled flight overlay.
+
+## Canvas rendering
+
+Canvas decorations share [the canvas lifecycle](../src/lib/animation/canvas-lifecycle.ts):
+background particles, combatant status effects, and keyword plasma use its resize,
+frame pacing, and pause/resume policy. The canvas owns backing dimensions; unchanged
+sizes must not clear its drawing state. Disposal aborts event listeners, cancels
+the queued frame, and disconnects resize observation; late callbacks do nothing.
+Stun and Freeze presentation rebuilds when the shared motion preference changes,
+switching between a static overlay with no tilt and the animated effect.
+
+Plasma uses [keyword-plasma.ts](../src/lib/animation/keyword-plasma.ts) as its
+single WebGL entry point. Context/shader failure or context loss shows a static
+CSS gradient matching interaction colors, focal offset, blending and intensity;
+hide it while WebGL works to avoid doubling glow. Restore rebuilds resources once,
+without polling or a second animated backend. Failed startup keeps the fallback
+and may retry on context restoration. Zero intensity hides both layers;
+motion-disabled preferences schedule no color-animation frames.
+
+Construction owns rollback until it returns its disposer.
+
+| Event                    | Resource guarantee                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Construction failure     | Roll back scheduled frames and observers/listeners; plasma also releases allocated shaders, buffers and programs |
+| Disposal                 | Idempotently attempt all cleanup, even if a wake adapter fails                                                   |
+| Context replacement      | Revoke the old renderer before host callbacks                                                                    |
+| Observer/adapter failure | Log startup, teardown and availability failures independently; no player-facing dialog                           |
+
+Hover/leave retarget colors immediately through a critically damped transition
+that retains momentum; object highlights remain immediate. Both renderers use
+clamped Background Glow times `GLOW_BRIGHTNESS` from
+[KeywordPlasmaBackground](../src/features/alchemy/shared/ui/keyword-plasma-background.tsx).
+[The WebGL implementation](../src/lib/animation/keyword-plasma-webgl.ts) owns frame
+pacing and backing-pixel limits. Preserve its single render pass and opacity
+dithering without a higher-resolution output pass. Banding depends on compositing
+and display; panel technology is not detected.

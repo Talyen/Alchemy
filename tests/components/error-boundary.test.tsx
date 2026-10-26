@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import * as errorLogger from "@/lib/error-logger";
 
@@ -21,28 +21,19 @@ describe("ErrorBoundary", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders children when no error occurs", () => {
-    render(
-      <ErrorBoundary>
-        <ThrowingComponent shouldThrow={false} />
-      </ErrorBoundary>,
-    );
-
-    expect(screen.getByText("Healthy Child")).toBeDefined();
-  });
-
   it("catches errors, calls logError and onError callback, and displays error UI", () => {
     const logSpy = vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
     const onError = vi.fn();
 
-    render(
+    const { container } = render(
       <ErrorBoundary label="battle-screen" onError={onError}>
         <ThrowingComponent shouldThrow={true} />
       </ErrorBoundary>,
     );
 
     expect(screen.getByText("Something went wrong")).toBeDefined();
-    expect(screen.getByRole("button", { name: "Reload" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Reload" }).tagName).toBe("BUTTON");
+    expect(container.querySelector("[class*='button-primary-bloom']")).toBeNull();
     expect(logSpy).toHaveBeenCalledWith(
       "ErrorBoundary (battle-screen): Test explosion",
       "react",
@@ -67,10 +58,9 @@ describe("ErrorBoundary", () => {
     expect(screen.queryByText("Something went wrong")).toBeNull();
   });
 
-  it("renders fallback render function with reset callback", () => {
+  it("keeps the error latched until the fallback's reset action recovers its children", () => {
     vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
-
-    render(
+    const view = (shouldThrow: boolean) => (
       <ErrorBoundary
         fallback={({ error, reset }) => (
           <div>
@@ -79,13 +69,16 @@ describe("ErrorBoundary", () => {
           </div>
         )}
       >
-        <ThrowingComponent shouldThrow={true} />
-      </ErrorBoundary>,
+        <ThrowingComponent shouldThrow={shouldThrow} />
+      </ErrorBoundary>
     );
-
+    const { rerender } = render(view(true));
+    rerender(view(false));
     expect(screen.getByText("Error: Test explosion")).toBeDefined();
-    const tryAgainBtn = screen.getByRole("button", { name: "Try Again" });
-    expect(tryAgainBtn).toBeDefined();
+    expect(screen.queryByText("Healthy Child")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Try Again" }));
+    expect(screen.getByText("Healthy Child")).toBeDefined();
+    expect(screen.queryByText("Error: Test explosion")).toBeNull();
   });
 
   it("clears a latched error when the screen label changes", () => {
@@ -104,18 +97,5 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
     expect(screen.getByText("Healthy Child")).toBeDefined();
-  });
-
-  it("renders the default fallback without the shared Button primitive", () => {
-    vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
-
-    const { container } = render(
-      <ErrorBoundary>
-        <ThrowingComponent shouldThrow={true} />
-      </ErrorBoundary>,
-    );
-    const reload = screen.getByRole("button", { name: "Reload" });
-    expect(reload.tagName).toBe("BUTTON");
-    expect(container.querySelector("[class*='button-primary-bloom']")).toBeNull();
   });
 });

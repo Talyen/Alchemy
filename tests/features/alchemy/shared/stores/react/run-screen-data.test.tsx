@@ -1,7 +1,6 @@
 import { readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   setRunProgressActivity,
-  setRewardState,
   setShopState,
   setScreen,
 } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
@@ -81,7 +80,7 @@ describe("screen-specific run data hooks", () => {
     });
 
     act(() => {
-      mutateRunForTest((draft) => setRewardState(draft, { ...readRunSession(defaultGameSession).rewardFlow.state }));
+      setRunSession({ selectedLabyrinthNodeId: "unrelated-map-preview" });
     });
 
     expect(renders).toBe(1);
@@ -97,7 +96,10 @@ describe("screen-specific run data hooks", () => {
     act(() => mutateRunForTest((draft) => setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })));
     const outgoing = result.current;
     act(() => mutateRunForTest((draft) => setRunProgressActivity(draft, "destination")));
-    expect(readRunSession(defaultGameSession).activity).toEqual({ kind: "destination" });
+    expect(readRunSession(defaultGameSession).activity).toMatchObject({
+      kind: "destination",
+      data: { destinations: [] },
+    });
     expect(result.current).toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(0);
     const inactiveRenders = renders;

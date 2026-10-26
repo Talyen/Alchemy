@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/hurt-spark-burst", () => ({
@@ -7,8 +7,12 @@ vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/hurt-spark-burst", (
   ),
 }));
 
+vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/boss-idle-art", () => ({
+  BossIdleArt: () => <video data-testid="boss-idle-visual" />,
+}));
+
 import { ArtPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/actor-panel";
-import type { BestiaryEntry } from "@/lib/game-data/index";
+import { enemyById, type BestiaryEntry } from "@/lib/game-data/index";
 import { installDisabledAnimationsForTests } from "../../../../../../helpers/animation-test";
 import { installFocusInputForTests } from "../../../../../../helpers/focus-input-test";
 
@@ -43,6 +47,38 @@ describe("ArtPanel hover motion", () => {
 
   afterEach(cleanup);
 
+  it("keeps the battlefield's width format in sync when reduced motion switches boss art", () => {
+    const { container } = render(
+      <ArtPanel {...baseProps} side="enemy" isBoss currentEnemy={enemyById["blood-countess"]!} />,
+    );
+    expect(container.querySelector('[data-battle-enemy-format="static"]')).toBeTruthy();
+    expect(container.querySelector("video")).toBeNull();
+    act(() => {
+      localStorage.removeItem("alchemy-disable-animations");
+      window.dispatchEvent(new StorageEvent("storage", { key: "alchemy-disable-animations" }));
+    });
+    expect(container.querySelector('[data-battle-enemy-format="animated"]')).toBeTruthy();
+    expect(container.querySelector("video")).toBeTruthy();
+    act(() => {
+      localStorage.setItem("alchemy-disable-animations", "true");
+      window.dispatchEvent(new StorageEvent("storage", { key: "alchemy-disable-animations" }));
+    });
+    expect(container.querySelector('[data-battle-enemy-format="static"]')).toBeTruthy();
+    expect(container.querySelector("video")).toBeNull();
+  });
+
+  it.each([
+    { id: "earth-elemental", side: "enemy", mirrored: true },
+    { id: "stone-titan", side: "enemy", mirrored: true },
+    { id: "goblin", side: "enemy", mirrored: false },
+    { id: "earth-elemental", side: "player", mirrored: false },
+  ] as const)("orients $id artwork on the $side side without mirroring its UI", ({ id, side, mirrored }) => {
+    render(<ArtPanel {...baseProps} side={side} title={enemy.title} currentEnemy={{ ...enemy, id }} />);
+    const image = screen.getByRole("img", { name: enemy.title });
+    expect(image.classList.contains("-scale-x-100")).toBe(mirrored);
+    expect(screen.getByTestId(`battle-${side}-art-panel`).classList.contains("-scale-x-100")).toBe(false);
+  });
+
   it("shows the remaining Death's Door protection and its survival rules", async () => {
     const { rerender } = render(<ArtPanel {...baseProps} deathsDoorActive deathsDoorGraceTurnsRemaining={3} />);
     fireEvent.focus(screen.getByRole("button", { name: "Death's Door: 3 protected turns remaining" }));
@@ -65,7 +101,7 @@ describe("ArtPanel hover motion", () => {
     expect(screen.queryByRole("button", { name: /Death's Door/ })).toBeNull();
   });
 
-  it("uses compact enemy traits and encounter modifiers while capitalizing description keywords", async () => {
+  it("shows enemy traits and encounter modifiers while capitalizing description keywords", async () => {
     const entry = {
       ...enemy,
       traits: [{ id: "thorns", title: "Thorns", description: "When hit, consume Thorns" }],
@@ -80,8 +116,8 @@ describe("ArtPanel hover motion", () => {
       const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
       expect(tooltip?.textContent).toContain("When hit, Consume Thorns");
       expect(tooltip?.textContent).not.toContain("consume");
-      expect(tooltip?.querySelector('[data-trait="thorns"]')?.getAttribute("data-trait-variant")).toBe("compact");
-      expect(tooltip?.querySelector('[data-trait="tempered"]')?.getAttribute("data-trait-variant")).toBe("compact");
+      expect(tooltip?.querySelector('[data-trait="thorns"]')).toBeTruthy();
+      expect(tooltip?.querySelector('[data-trait="tempered"]')).toBeTruthy();
     });
   });
 

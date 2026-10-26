@@ -143,6 +143,10 @@ function packagingFixture(edition: "full" | "demo", html = '<script type="module
     process.platform === "win32" ? "junction" : "dir",
   );
   const renderer = edition === "demo" ? "dist-demo" : "dist";
+  // The builder is stubbed below; represent its output for size accounting.
+  mkdirSync(join(root, edition === "demo" ? "release-desktop-demo" : "release-desktop", "win-unpacked"), {
+    recursive: true,
+  });
   mkdirSync(join(root, renderer, "assets"), { recursive: true });
   writeFileSync(join(root, renderer, "edition.json"), JSON.stringify({ edition }));
   const catalog = JSON.stringify(
@@ -245,6 +249,7 @@ it.each([
     .split("\n")
     .map((line) => JSON.parse(line));
   expect(commands[0].slice(1)).toEqual(["run", "check:bundle"]);
+  expect(commands[1]).toEqual(["scripts/ensure-steamworks.mjs", "--target", "win32-x64"]);
   const args = commands.find((command) => command.includes("--win"));
   expect(args).toEqual(expect.arrayContaining(["--win", "--dir", "--x64", "--publish", "never"]));
   const config = JSON.parse(readFileSync(join(root, "steam/build", `electron-${edition}.json`), "utf8"));

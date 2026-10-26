@@ -20,13 +20,40 @@ export const STARTUP_BAR_REVEAL_THRESHOLD = 0.995;
 export const SHIMMER_COOLDOWN_MS = 350;
 export const COMBAT_TEXT_MERGE_WINDOW_MS = 250;
 export const COMBAT_RECOIL_COOLDOWN_MS = 180;
+export const COMBAT_DODGE_DURATION_MS = 460;
 export const COMBAT_IMPACT_NORMAL_HEALTH_RATIO = 0.05;
 export const COMBAT_IMPACT_HEAVY_HEALTH_RATIO = 0.2;
 export const CARD_REJECTION_FEEDBACK_MS = 260;
-export const COMBAT_TEXT_LIFETIME_MS = 1100;
+export const COMBAT_TEXT_LIFETIME_MS = 1050;
 export const COMBAT_TEXT_MIN_LIFETIME_MS = 400;
-export const COMBAT_TEXT_MAX_BURSTS_PER_RAIL = 3;
-export const COMBAT_TEXT_BASE_SIZE_PX = 37.8;
+export const COMBAT_TEXT_BASE_SIZE_PX = 38.4;
+export const COMBAT_TEXT_MOTION = {
+  initialScale: 0.9,
+  peakScale: 1.85,
+  holdScale: 1.55,
+  finalScale: 1.2,
+  popMs: 85,
+  settleMs: 85,
+  riseStartMs: 240,
+  riseMs: 810,
+  risePx: 76,
+  reactionOffsetPx: 76,
+  shrinkMs: 760,
+  fadeMs: 280,
+  statusSize: 0.8,
+  reactionSize: 1.25,
+  minimumLaunchGapMs: 80,
+  maximumQueueDelayMs: 180,
+  nearbyLaunchWindowMs: 360,
+  fanStartPx: 16,
+  fanDriftPx: 20,
+  fanMs: 400,
+  reactionRowPx: 32,
+  impactRowPx: 24,
+  statusRowPx: 24,
+  clearancePx: 6,
+  sampleMs: 15,
+} as const;
 export const REACTION_TEXT_LIFETIME_MS = 1600;
 export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2;
 

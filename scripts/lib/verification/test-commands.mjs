@@ -1,4 +1,3 @@
-import { VITEST_MAX_WORKERS } from "./test-concurrency.mjs";
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
@@ -34,8 +33,7 @@ export const TEST_SUITES = Object.freeze({
   shipUnit: Object.freeze([...SAVE_CORE_SUITES, "tests/scripts", "tests/architecture"]),
 });
 
-// Conservative local harness inputs. Task selections add their own files and
-// directory membership; unrelated gameplay does not affect these fixed suites.
+// Task selections add their own files and directory membership.
 export const LOCAL_CHECK_INPUTS = Object.freeze([
   "scripts",
   "src/lib/localization",
@@ -49,6 +47,10 @@ export const LOCAL_CHECK_INPUTS = Object.freeze([
   "package.json",
   "package-lock.json",
   "vitest.local.config.ts",
+  "vitest.config.ts",
+  "oxlint.config.ts",
+  "lint",
+  "tsconfig.test.json",
   "tsconfig.json",
   ".prettierrc",
   ".prettierignore",
@@ -81,13 +83,14 @@ export const COMMANDS = Object.freeze({
     label: "complete unit suite",
     reason: "large selections use full coverage without exceeding platform argument limits",
     command: NPM,
-    args: ["run", "test:full"],
+    args: ["run", "test:unit"],
   },
   related: {
     label: "dependency-related unit tests",
     reason: "Vitest selects tests that import the changed implementation",
     command: process.execPath,
-    args: ["scripts/run-compact.mjs", "vitest", "related", `--maxWorkers=${VITEST_MAX_WORKERS}`],
+    // Related graphs can cover most of the app; bound JSDOM/subprocess memory like the full gate.
+    args: ["scripts/run-compact.mjs", "vitest", "related", "--maxWorkers=1"],
   },
   "unit-changed": {
     label: "changed unit tests",
@@ -99,13 +102,13 @@ export const COMMANDS = Object.freeze({
     label: "connected interaction progress",
     reason: "asynchronous flow changes preserve completion, cancellation and usable input",
     command: NPM,
-    args: ["run", "test:full", "--", "tests/interaction"],
+    args: ["run", "test:unit", "--", "tests/interaction"],
   },
   "unit-save": {
     label: "save/persistence unit tests",
     reason: "save changes preserve schema, storage, autosave, and hydration behavior",
     command: NPM,
-    args: ["run", "test:full", "--", ...TEST_SUITES.save],
+    args: ["run", "test:unit", "--", ...TEST_SUITES.save],
   },
   "unit-desktop": {
     label: "desktop boundary unit tests",
@@ -113,7 +116,7 @@ export const COMMANDS = Object.freeze({
     command: NPM,
     args: [
       "run",
-      "test:full",
+      "test:unit",
       "--",
       "tests/desktop/desktop-security.test.ts",
       "tests/desktop/desktop-sentry.test.ts",
@@ -124,13 +127,13 @@ export const COMMANDS = Object.freeze({
     label: "tooling and architecture unit tests",
     reason: "tooling checks read repository files and cannot be selected reliably from imports alone",
     command: NPM,
-    args: ["run", "test:full", "--", ...TEST_SUITES.tooling],
+    args: ["run", "test:unit", "--", ...TEST_SUITES.tooling],
   },
   "unit-performance": {
     label: "performance harness unit tests",
     reason: "performance harness and runtime marks share profiling contracts",
     command: NPM,
-    args: ["run", "test:full", "--", "tests/performance", "tests/lib/performance"],
+    args: ["run", "test:unit", "--", "tests/performance", "tests/lib/performance"],
   },
   "report-balance": {
     label: "balance report integration",

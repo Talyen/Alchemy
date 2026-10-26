@@ -113,6 +113,7 @@ function applyBleedStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   cardLeech: boolean,
+  healthDamage: number,
 ): BattleState {
   let nextState = addEnemyStatus(state, "bleed", actualDamage * BLEED_STATUS_MULTIPLIER);
   const bleedAmount = nextState.enemyStatuses.bleed - state.enemyStatuses.bleed;
@@ -139,7 +140,10 @@ function applyBleedStatusRider(
     combatTexts,
     state.enemyStatuses.burn > 0 && state.enemyStatuses.bleed > 0,
   );
-  return resolveBleedGoldReward(nextState, bleedAmount, combatTexts, { gold: addGoldWithCombatText });
+  return resolveBleedGoldReward(nextState, healthDamage, combatTexts, {
+    chance: rollBattleChance,
+    gold: addGoldWithCombatText,
+  });
 }
 
 function applyStunStatusRider(
@@ -267,7 +271,14 @@ export function applyDamageStatuses(
         options.onPoisonBleedConversion,
       );
     case "bleed":
-      return applyBleedStatusRider(state, effect, actualDamage, combatTexts, options.cardLeech === true);
+      return applyBleedStatusRider(
+        state,
+        effect,
+        actualDamage,
+        combatTexts,
+        options.cardLeech === true,
+        Math.min(actualDamage, Math.max(0, preHitHealth)),
+      );
     case "stun":
       return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth);
     case "freeze":

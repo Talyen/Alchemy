@@ -84,7 +84,8 @@ describe("reworked Gear triggers", () => {
       1,
     ).state;
     expect(repeated.hand.map((card) => card.id).sort()).toEqual([companionCard.id, secondCompanion.id].sort());
-    expect(repeated.deck).toHaveLength(0);
+    expect(repeated.deck).toEqual([arrow]);
+    expect(repeated.discard).toEqual([secondArrow]);
     expect(ordinary.hand).toHaveLength(0);
     expect(ordinary.deck).toHaveLength(2);
   });

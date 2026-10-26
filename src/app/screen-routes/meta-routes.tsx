@@ -22,9 +22,14 @@ import {
   useBondedCompanions,
   useHomesteadProgressSlice,
   useHasActiveRun,
+  useActiveRunCharacterId,
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/react/use-run-reads";
-import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchemy/shared/stores/react/use-gear-store";
+import {
+  useArmoryIntroductionPending,
+  useGearArmorySlice,
+  useGearCombatRestrictions,
+} from "@/features/alchemy/shared/stores/react/use-gear-store";
 import type { MetaRouteCtx } from "./route-ctx";
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
@@ -32,6 +37,7 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
   const commands = routeCommands.meta;
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const hasActiveRun = useHasActiveRun();
+  const hasNewArmoryEquipment = useArmoryIntroductionPending();
   const finishedRunCharacters = useFinishedRunCharacters();
   return (
     <MenuScreen
@@ -54,6 +60,7 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
       logoSrc={menuLogo}
       hasUnspentTalents={hasUnspentTalents}
       hasAffordableHomestead={hasAffordableHomestead}
+      hasNewArmoryEquipment={hasNewArmoryEquipment}
       finishedRunCharacters={finishedRunCharacters}
     />
   );
@@ -64,6 +71,7 @@ function ArmoryScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteC
   const commands = routeCommands.meta.armory;
   const gear = useGearArmorySlice();
   const combatRestrictions = useGearCombatRestrictions();
+  const characterId = useActiveRunCharacterId();
   const finishedRunCharacters = useFinishedRunCharacters();
 
   return (
@@ -71,6 +79,7 @@ function ArmoryScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteC
       {...gear}
       {...commands}
       combatRestrictions={combatRestrictions}
+      initialCharacterId={characterId}
       finishedRunCharacters={finishedRunCharacters}
       afterProgressSaved={routeCommands.progress.afterSaved}
       isProgressSavePending={routeCommands.progress.isPending}

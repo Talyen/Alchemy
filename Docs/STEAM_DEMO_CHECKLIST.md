@@ -1,7 +1,7 @@
 # Alchemy Steam demo checklist
 
-Use this checklist for each release candidate. Approved scope is recorded below;
-readiness requires evidence for the candidate being promoted. Earlier local passes
+Use this checklist for each release candidate under the
+[approved scope](./STEAM_DEMO.md). Readiness requires evidence for the candidate being promoted. Earlier local passes
 do not certify later gameplay, layouts, packages, or Steam configuration.
 
 Adapted from Marnix Wyns' [Steam Demo Checklist](https://app.notion.com/p/marnixwyns/Steam-Demo-Checklist-38fc5591ef1a803ca510f20ff3d9b1f7),
@@ -9,21 +9,14 @@ read on September 29, 2026. Steam configuration follows
 [Valve's demo guidance](https://partner.steamgames.com/doc/store/application/demos);
 recheck it before release. [Release](./RELEASE.md) and
 [release setup](./RELEASE_SETUP.md) own shipping procedures. This checklist does
-not authorize publishing or local browser, Electron, build, or profiling execution;
-follow [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
+not authorize publishing. Local execution follows
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## 1. Approved demo scope
 
-These are approved product decisions, not completed readiness checks.
-Implementation and transfer contracts are owned by [Steam demo](./STEAM_DEMO.md).
-
-- [x] Campaign only, ending after Act 1; Novice only; unlimited replay.
-- [x] Knight → Rogue → Ranger through the existing victory, defeat or abandonment unlock chain.
-- [x] Existing content pools, Talents, Homestead and Armory rules and costs; existing UI onboarding, without a separate tutorial.
-- [x] Excluded characters/modes retain their names and show bold red Requires Full Game tooltips. Victory recap leads to The Journey Continues with the selected promo image and wishlist CTA.
-- [x] Bundled languages follow [localization qualification](./LOCALIZATION.md#qualification-and-steam); Steam only; Windows x64; controller play through Steam Input and Deck through Proton, subject to the required hardware validation.
-- [x] Automatic one-time earned permanent-progress import through shared Steam Cloud, with local Windows fallback. Active runs and full-Campaign difficulty credit do not transfer.
-- [x] Demo remains available after full launch; demo and full candidates build from one source version.
+[Steam demo](./STEAM_DEMO.md) owns content limits, languages, edition identity,
+marketing, progress transfer and continued availability. Check against that contract;
+approved decisions are not completed readiness checks.
 
 In-game feedback/support links, a new tutorial, itch.io and a separate
 demo store page are outside the approved implementation. Use the base game's Steam
@@ -43,7 +36,7 @@ Steamworks. Demo user reviews require the deferred separate demo store page.
 
 Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 [run workflows](./RUN_WORKFLOWS.md) as behavior owners. Existing
-[headless careers](./PLAYTHROUGH_SIMULATION.md) and
+[headless careers](./SIMULATION.md#headless-careers) and
 [browser journeys](../tests/e2e/README.md) provide complementary evidence.
 
 - [ ] Exercise real Knight/Rogue/Ranger starters and genuinely earned unlocks without hangs or routes into Act 2. Label fixture grants separately from earned progress.
@@ -63,7 +56,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 - [ ] Quit opens no store/browser destination. Verify that native shutdown drains admitted file writes under the [write acknowledgement contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement); distinguish those writes from unfinished renderer work and already acknowledged progress.
 - [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
 - [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Preserve the native-binding blocker in [Steam demo](./STEAM_DEMO.md#input-and-release-evidence).
+- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep [native-binding qualification](./Plans/SteamDemo.md#outstanding-work) open until verified.
 
 ## 5. Readability, feedback, and Options
 
@@ -101,7 +94,7 @@ Use [audio](./AUDIO.md) and [performance](./PERFORMANCE.md).
 
 - [ ] Act 1 ends with Victory and then The Journey Continues; Main Menu exits normally. Defeat/abandonment show Journey's End.
 - [ ] Wishlist controls open exactly one usable full-game destination under the [wishlist contract](./STEAM_DEMO.md#input-and-release-evidence); Quit has no promotional side effect.
-- [ ] Review completion copy, full-game locks and the [pending copy approvals](./STEAM_DEMO_COPY_REVIEW.md#pending-copy-approvals).
+- [ ] Review completion copy, full-game locks and the [pending copy approvals](./Plans/SteamDemo.md#pending-copy-approvals).
 - [ ] Set the release date and event deadlines; prepare a gameplay-led trailer and announcement with checked links and the actual endpoint.
 - [ ] If outreach is approved, prepare the build, keys, concise pitch and known limitations. Sending outreach requires its own authorization.
 - [ ] Assign feedback/crash monitoring and hotfix/rollback ownership; retain a known-good build under the release procedure.
@@ -144,7 +137,11 @@ exclude human reading time and cannot certify comprehension or audio comfort.
 
 Automated controller tests send Steam Input's intended keyboard/pointer events;
 isolated Electron tests do not connect to Steamworks or real Cloud profiles.
-A fake two-device backend is not evidence of live synchronization.
+A fake two-device backend is not evidence of live synchronization. Browser input,
+mocked callbacks and workstation FPS cannot qualify mapping delivery, native
+controller/PlayStation support, Proton, suspend/resume, Deck ratings or public
+carryover claims. Keep those claims unqualified until the relevant device/service
+evidence below exists.
 
 For a Windows candidate launched through Steam, record package version/hash,
 Windows and Steam client versions, and published controller layout ID. Exercise
@@ -153,6 +150,10 @@ Confirm, reconnect the controller and switch between pointer/controller input.
 Open default and remapped overlay shortcuts during autoplay; require the native
 activation event, paused actions and a menu that stays open until the player resumes.
 
+Exercise Wishlist with the overlay enabled, disabled and not yet ready. Require
+exactly one usable full-game store destination and the game menu in each case.
+Record the shortcut/layout, native callback evidence and result with the package hash.
+
 Repeat after sleep/resume and Steam reconnection. With isolated acceptance accounts,
 verify newer saves across two devices, Cloud unavailable/reconnecting and demo-to-full
 import while preserving edition slots and initialization receipts.
@@ -160,4 +161,4 @@ import while preserving edition slots and initialization receipts.
 Deck evidence includes Proton startup/performance, physical Steam Input/overlay,
 1280×800 readability and suspend/resume. Keep those checks open when hardware is
 unavailable. Renderer geometry and virtual-display results do not establish a
-controller/Deck rating or close the [release blockers](./STEAM_DEMO.md#input-and-release-evidence).
+controller/Deck rating or close the [release blockers](./Plans/SteamDemo.md#outstanding-work).

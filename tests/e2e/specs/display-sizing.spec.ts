@@ -1,3 +1,4 @@
+import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import type { Locator } from "@playwright/test";
@@ -400,7 +401,7 @@ for (const deviceScaleFactor of [1.25, 2]) {
       await controllerInput(page).activate(inspect);
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.keyboard.press("Escape");
-      await expect(inspect).toBeFocused();
+      await expectUnfocused(page);
       await assertStageFitsViewport(page);
     });
   });

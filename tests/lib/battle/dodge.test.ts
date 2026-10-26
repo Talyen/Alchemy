@@ -76,7 +76,9 @@ describe("Dodge gear affixes", () => {
     const texts = makeCombatTexts();
     const result = enemyHit(state, 8, texts);
     expect(result.playerStatuses.armor).toBe(5);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: 5 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "status", stat: "armor", amount: 5 }),
+    );
   });
 
   it("deals Physical and Bleed damage on Dodge", () => {
@@ -211,18 +213,17 @@ describe("Dodge talent rewrites", () => {
     expect(result.enemyHealth).toBeLessThan(frozen.enemyHealth);
   });
 
-  it("Lucky Foot grants Gold when you Dodge", () => {
+  it.each([0.099, 0.1])("Lucky Foot grants 4 Gold only below its 10%% boundary at %s", (roll) => {
+    let calls = 0;
     const result = enemyHit(
       incomingPhysical({
-        rng: (() => {
-          let calls = 0;
-          return () => (++calls <= 2 ? 0.01 : 0.99);
-        })(),
+        rng: () => (++calls === 1 ? 0.01 : roll),
         gold: 10,
-        talentEffects: { goldOnDodge: 1 },
+        talentEffects: { goldOnDodge: 4 },
       }),
     );
-    expect(result.gold).toBe(11);
+    expect(result.playerDodgeCount).toBe(1);
+    expect(result.gold).toBe(roll < 0.1 ? 14 : 10);
   });
 
   it.each([
@@ -270,7 +271,7 @@ describe("enemy Dodge", () => {
       flags: state.flags,
       deck: state.deck,
     });
-    expect(texts).toEqual([{ target: "enemy", kind: "notice", stat: "dodge", text: "Dodge" }]);
+    expect(texts).toMatchObject([{ target: "enemy", kind: "notice", stat: "dodge", text: "Dodge" }]);
   });
 
   it("does not Dodge DoT ticks", () => {

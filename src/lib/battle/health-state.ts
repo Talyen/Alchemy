@@ -1,6 +1,6 @@
 import { isPlayerDefeated } from "./battle-outcome";
 import type { BattleState, CombatTextEvent } from "./types";
-import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS } from "../game-constants";
+import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS, HALF_DIVISOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { clamp } from "@/lib/math";
 import { flatDamageReduction, applyGearDamageResistance } from "./damage-modifiers";
@@ -34,13 +34,23 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
     hasEnemyTrait(state, "cinder-skin") &&
     state.turn % 2 === 1 &&
     !state.flags.cinderSkinUsedThisTurn;
+  const weakensAttack =
+    enemyHealth > 0 &&
+    enemyHealth < previousHealth &&
+    (hasEnemyTrait(state, "flickering") || hasEnemyTrait(state, "loose-rubble"));
   return {
     state: {
       ...state,
       enemyHealth,
+      ...(weakensAttack ? { flags: { ...state.flags, enemyAttackDamageReduction: 1 } } : {}),
       ...(triggersCinderSkin
         ? {
-            flags: { ...state.flags, cinderSkinUsedThisTurn: true, pendingCinderSkinReaction: true },
+            flags: {
+              ...state.flags,
+              ...(weakensAttack ? { enemyAttackDamageReduction: 1 } : {}),
+              cinderSkinUsedThisTurn: true,
+              pendingCinderSkinReaction: true,
+            },
           }
         : {}),
     },
@@ -122,8 +132,12 @@ export function applyPlayerCombatDamage(
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: state.turn,
       deathsDoorGraceTurnsRemaining: deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension),
-      flags:
-        state.gearEffects.burnOnDeathsDoorEntry > 0 ? { ...state.flags, pendingEmberwakeDamage: true } : state.flags,
+      // Entry rewards settle after the triggering hit commits its Block spending.
+      flags: {
+        ...state.flags,
+        pendingEmberwakeDamage: state.gearEffects.burnOnDeathsDoorEntry > 0 || state.flags.pendingEmberwakeDamage,
+        pendingDeathgripBlock: state.gearEffects.blockOnDeathsDoorEntry > 0 || state.flags.pendingDeathgripBlock,
+      },
     };
   }
   if (state.deathsDoorActive) {
@@ -142,9 +156,12 @@ export function playerHealthLostToDamage(before: BattleState, after: BattleState
 }
 
 export function effectivePlayerHealingAmount(state: BattleState, amount: number): number {
-  return Math.round(
-    (amount + (amount > 0 ? (state.talentEffects.homesteadHealing ?? 0) : 0)) * state.talentEffects.healMultiplier,
-  );
+  const bonus =
+    amount > 0
+      ? (state.talentEffects.homesteadHealing ?? 0) +
+        (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR ? state.gearEffects.healingBonusBelowHalfHealth : 0)
+      : 0;
+  return Math.round((amount + bonus) * state.talentEffects.healMultiplier);
 }
 
 export function applyPlayerHealing(state: BattleState, amount: number, allowOverhealBlock = false): BattleState {

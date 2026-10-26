@@ -1,6 +1,5 @@
 import type { DamageType } from "@/lib/game-data";
 import { applyHitEpilogue } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { applyIronGuardReward } from "./status-player";
@@ -8,9 +7,11 @@ import {
   applyBleedDamageDraw,
   applyElementalDamageManaRestore,
   applyHitHealth,
+  reportEnemyHitDamage,
   type HitFacts,
 } from "./player-hit-core";
 import { type BattleState, type CombatTextEvent } from "./types";
+import { isPlayerDefeated } from "./battle-outcome";
 
 export function resolveTypedEnemyHit(
   state: BattleState,
@@ -29,6 +30,11 @@ export function resolveTypedEnemyHit(
   const { state: damaged, facts } = applyHitHealth(state, resolvedDamage, eligibility, options.critical ?? false);
   let next = applyIronGuardReward(damaged, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") next = applyBleedDamageDraw(next, facts.healthDamage, combatTexts);
+  if (isPlayerDefeated(next)) {
+    next = decayArmorAfterDamage(next, resolvedDamage, "enemy", combatTexts);
+    reportEnemyHitDamage(facts, effect.damageType, combatTexts);
+    return { facts, state: next };
+  }
   next = decayArmorAfterDamage(next, resolvedDamage, "enemy", combatTexts);
   // Buildup can trigger another hit. Resolve it before thresholds and once-only kill rewards.
   next = applyDamageStatuses(next, effect, resolvedDamage, combatTexts, facts.previousHealth, {
@@ -39,16 +45,7 @@ export function resolveTypedEnemyHit(
     next = options.onPoisonDamage(next, resolvedDamage, combatTexts);
   }
   next = applyElementalDamageManaRestore(next, effect.damageType, facts.healthDamage, combatTexts);
-  if (resolvedDamage > 0) {
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: effect.damageType,
-      amount: resolvedDamage,
-      ...(facts.healthDamage !== resolvedDamage ? { healthLost: facts.healthDamage } : {}),
-      ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
-    });
-  }
+  reportEnemyHitDamage(facts, effect.damageType, combatTexts);
   // Shared closer: thresholds then kill payouts (same as other hit paths).
   next = applyHitEpilogue(
     next,

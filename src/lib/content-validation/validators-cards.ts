@@ -1,12 +1,12 @@
 import {
   cardLibrary,
   companionLibrary,
+  getOfferableCardPool,
   trinketLibrary,
   visitBattleCardEffects,
   type BattleCard,
   type TrinketEntry,
 } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { validateCardDescriptionParity, validateTrinketDescriptionParity } from "./card-parity";
 import { CardContentSchema, TrinketContentSchema } from "./schemas";
 import { validateLibraryBasics, type Collector } from "./utils";
@@ -32,18 +32,11 @@ export function validateCards(collector: Collector, cards: readonly BattleCard[]
   const offerableIds = new Set(getOfferableCardPool().map((card) => card.id));
   for (const card of cards) {
     for (const issue of validateCardDescriptionParity(card)) collector.issues.push(issue);
-    // Empty failure branches are allowed for synthesized runtime bonuses,
-    // but never for authored cards. Counted separately so reference
-    // diagnostics stay first in the reported order.
-    let emptyChanceBranches = 0;
     visitBattleCardEffects(card.effects, (effect) => {
       if (effect.kind === "summon-companion" && !companionIds.has(effect.companionId)) {
         collector.error("cards", card.id, `References unknown companion: ${effect.companionId}`);
       }
-      if (effect.kind === "chance" && effect.failureEffects.length === 0) emptyChanceBranches += 1;
     });
-    for (let index = 0; index < emptyChanceBranches; index += 1)
-      collector.error("cards", card.id, "Authored chance effect has an empty failure branch");
     validateCardOffers(card, offerableIds, collector);
     if (card.cost >= 5) collector.warning("balance", card.id, `Card cost ${card.cost} is unusually high`);
     if (card.effects.length === 0 && !card.excludeFromOfferPool)

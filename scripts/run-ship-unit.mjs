@@ -13,7 +13,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRouteCatalog } from "./lib/verification/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "./lib/verification/test-commands.mjs";
-import { acquireLocalTestLane } from "./lib/verification/local-test-lane.mjs";
+import { acquireTestResources } from "./lib/verification/local-test-lane.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 /** Resolve a dir/file path against the repo root. */
@@ -39,7 +39,7 @@ if (missing.length > 0) {
 }
 
 const live = process.argv.includes("--live") || process.argv.includes("--verbose");
-const lane = await acquireLocalTestLane();
+const lane = await acquireTestResources("vitest", ["run", ...SUITES], at());
 try {
   const result = await runTaskCommand("npx", ["vitest", "run", `--maxWorkers=${VITEST_MAX_WORKERS}`, ...SUITES], {
     cwd: at(),

@@ -2,7 +2,7 @@ import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 import { bindRunMutationForTest, resetAllTestStores, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
+import { createShopRefreshAction, runShopTransaction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { applyStrongSpiritsToPotions } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
@@ -15,7 +15,6 @@ import { cardById } from "@/lib/game-data";
 import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
-import { runShopTransaction } from "@/features/alchemy/run-loop/shop/shop-transactions";
 import { playGoldSpend, playUISound } from "@/lib/audio";
 import { defaultGameSession } from "@/app/application-session";
 const setShopState = bindRunMutationForTest(mutateShopState);

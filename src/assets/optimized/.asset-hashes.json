@@ -1304,6 +1304,21 @@
     "outputHash": "41f52a854937ca49fd6d5b26f87758e0",
     "selectionHash": "068d222492b79db7a27335a1538d746a07fce44f41175c4ad6da327c68ffcee0"
   },
+  "potion-brew.webp": {
+    "hash": "8286d22385271a00a38f6f8b90031be6",
+    "outputHash": "2eb756fe6eb4334c6ba9334d702a1bcb",
+    "selectionHash": "53fa57839bd1693198642b066add505bc9a60faae8089ff9924298980a6487db"
+  },
+  "potion-distill.webp": {
+    "hash": "f49ba2f0bf41a5a6085dcdef70985412",
+    "outputHash": "89588f9e110ac9a75e43130a551774de",
+    "selectionHash": "760f2c4585e686624e0637e68975f5b33ef309f60fb7378453fcaadfa2020a27"
+  },
+  "potion-mix.webp": {
+    "hash": "3197b0f386e13367d3ba185a6af5e35c",
+    "outputHash": "c1699bdb20c7d48bc80feda854d8d12c",
+    "selectionHash": "e496114dc6186da187d448caa0ec065125673ee6e392102da5a930ecc6aeca5b"
+  },
   "pounce.webp": {
     "hash": "023d5afd29284edddf924edff0f37aa7",
     "outputHash": "4bb7d1ac2f06a4d4c54f681bba11e58e",

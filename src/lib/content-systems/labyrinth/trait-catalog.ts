@@ -8,6 +8,7 @@ interface LabyrinthTraitInput {
   modes: ReadonlyArray<"labyrinth" | "wildwood">;
   labyrinthNodes: readonly LabyrinthNodeType[];
   keyword?: KeywordId;
+  transmutationKeyword?: KeywordId;
 }
 
 function benefit(
@@ -45,12 +46,51 @@ function room(
   node: LabyrinthNodeType,
   label: string,
   description: string,
-  keyword: KeywordId,
+  keyword?: KeywordId,
 ): LabyrinthTraitInput & { category: "reward" } {
   return { ...benefit(label, description, keyword), labyrinthNodes: [node] };
 }
 
+function crucible(keyword: KeywordId, label: string, description: string) {
+  return { ...room("transmutation", label, description, keyword), transmutationKeyword: keyword };
+}
+
+export function transmutationModifierKeyword(id: string): KeywordId | undefined {
+  const trait = (LABYRINTH_TRAITS as Record<string, LabyrinthTraitInput>)[id];
+  return trait?.transmutationKeyword;
+}
+
 export const LABYRINTH_TRAITS = {
+  "prismatic-crucible": room("transmutation", "Prismatic Crucible", "Offers every compatible alteration"),
+  "physical-crucible": crucible(
+    "physical",
+    "Physical Crucible",
+    "Guarantees a Physical alteration on compatible cards",
+  ),
+  "holy-crucible": crucible("holy", "Holy Crucible", "Guarantees a Holy alteration on compatible cards"),
+  "nature-crucible": crucible("nature", "Nature Crucible", "Guarantees a Nature alteration on compatible cards"),
+  "burn-crucible": crucible("burn", "Burn Crucible", "Guarantees a Burn alteration on compatible cards"),
+  "poison-crucible": crucible("poison", "Poison Crucible", "Guarantees a Poison alteration on compatible cards"),
+  "bleed-crucible": crucible("bleed", "Bleed Crucible", "Guarantees a Bleed alteration on compatible cards"),
+  "freeze-crucible": crucible("freeze", "Freeze Crucible", "Guarantees a Freeze alteration on compatible cards"),
+  "stun-crucible": crucible("stun", "Stun Crucible", "Guarantees a Stun alteration on compatible cards"),
+  "block-crucible": crucible("block", "Block Crucible", "Guarantees a Block alteration on compatible cards"),
+  "armor-crucible": crucible("armor", "Armor Crucible", "Guarantees an Armor alteration on compatible cards"),
+  "forge-crucible": crucible("forge", "Forge Crucible", "Guarantees a Forge alteration on compatible cards"),
+  "thorns-crucible": crucible("thorns", "Thorns Crucible", "Guarantees a Thorns alteration on compatible cards"),
+  "health-crucible": crucible("health", "Health Crucible", "Guarantees a Health alteration on compatible cards"),
+  "leech-crucible": crucible("leech", "Leech Crucible", "Guarantees a Leech alteration on compatible cards"),
+  "mana-crucible": crucible("mana", "Mana Crucible", "Guarantees a Mana alteration on compatible cards"),
+  "gold-crucible": crucible("gold", "Gold Crucible", "Guarantees a Gold alteration on compatible cards"),
+  "wish-crucible": crucible("wish", "Wish Crucible", "Guarantees a Wish alteration on compatible cards"),
+  "archery-crucible": crucible("archery", "Archery Crucible", "Guarantees an Archery alteration on compatible cards"),
+  "consume-crucible": crucible("consume", "Consume Crucible", "Guarantees a Consume alteration on compatible cards"),
+  "dodge-crucible": crucible("dodge", "Dodge Crucible", "Guarantees a Dodge alteration on compatible cards"),
+  "companion-crucible": crucible(
+    "companion",
+    "Companion Crucible",
+    "Guarantees a Companion alteration on compatible cards",
+  ),
   "heavy-hand": benefit("Heavy Hand", "Your first Physical attack each turn deals double damage", "physical"),
   thunderstruck: benefit("Thunderstruck", "Your attacks apply double Stun buildup", "stun"),
   unbroken: benefit("Unbroken", "Your Block no longer halves each turn", "block"),

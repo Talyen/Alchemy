@@ -4,12 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../scripts/optimize-assets.mjs", () => ({ optimizeAssets: vi.fn() }));
 vi.mock("../../scripts/optimize-sounds.mjs", () => ({ optimizeSounds: vi.fn() }));
 vi.mock("../../scripts/optimize-music.mjs", () => ({ optimizeMusic: vi.fn() }));
+vi.mock("../../scripts/optimize-boss-idles.mjs", () => ({ optimizeBossIdles: vi.fn() }));
 vi.mock("../../scripts/sync-art-barrels.mjs", () => ({ syncArtBarrels: vi.fn() }));
 vi.mock("../../scripts/sync-version-metadata.mjs", () => ({ syncVersionMetadata: vi.fn() }));
 
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
 const { optimizeSounds } = await import("../../scripts/optimize-sounds.mjs");
 const { optimizeMusic } = await import("../../scripts/optimize-music.mjs");
+const { optimizeBossIdles } = await import("../../scripts/optimize-boss-idles.mjs");
 const { syncArtBarrels } = await import("../../scripts/sync-art-barrels.mjs");
 const { syncVersionMetadata } = await import("../../scripts/sync-version-metadata.mjs");
 const { preflightSelectedSources } = await import("../../scripts/assets/check-asset-outputs.mjs");
@@ -23,6 +25,7 @@ describe("asset pipeline orchestration", () => {
     vi.mocked(optimizeAssets).mockReset().mockResolvedValue({ ok: true });
     vi.mocked(optimizeSounds).mockReset().mockResolvedValue({ ok: true });
     vi.mocked(optimizeMusic).mockReset().mockResolvedValue({ ok: true });
+    vi.mocked(optimizeBossIdles).mockReset().mockResolvedValue({ ok: true });
     vi.mocked(syncArtBarrels).mockReset().mockResolvedValue(undefined);
     vi.mocked(syncVersionMetadata).mockReset().mockResolvedValue(undefined);
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -35,7 +38,14 @@ describe("asset pipeline orchestration", () => {
     const failure = new Error("selected music source unavailable");
     vi.mocked(preflightSelectedSources).mockRejectedValue(failure);
     await expect(prepareAssets()).rejects.toBe(failure);
-    for (const work of [optimizeAssets, optimizeSounds, optimizeMusic, syncArtBarrels, syncVersionMetadata]) {
+    for (const work of [
+      optimizeAssets,
+      optimizeSounds,
+      optimizeMusic,
+      optimizeBossIdles,
+      syncArtBarrels,
+      syncVersionMetadata,
+    ]) {
       expect(work).not.toHaveBeenCalled();
     }
   });
@@ -86,6 +96,7 @@ describe("asset pipeline orchestration", () => {
     expect(optimizeAssets).not.toHaveBeenCalled();
     expect(optimizeSounds).not.toHaveBeenCalled();
     expect(optimizeMusic).not.toHaveBeenCalled();
+    expect(optimizeBossIdles).not.toHaveBeenCalled();
     expect(syncArtBarrels).not.toHaveBeenCalled();
     expect(syncVersionMetadata).not.toHaveBeenCalled();
   });

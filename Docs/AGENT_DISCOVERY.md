@@ -38,6 +38,9 @@ Use `rg -l '<pattern>' <owner-directory>` when only filenames are needed;
 `rg -n` is for matching lines. Narrow a truncated search rather than repeating it
 with a larger dump.
 
+Use explicit Markdown links for maintained file contracts. Inline code such as
+`proposed-future-module.ts` is explanatory text and does not promise that a file exists.
+
 No context session or separate search index needs maintaining. Use `npm --silent
 run <command>` to omit npm banners from discovery, review and verification.
 
@@ -73,13 +76,9 @@ checkouts; omit paths to review the whole dirty set. Review commands do not acce
 
 ## Verification
 
-[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution tiers.
-`verify` is fixed Node smoke, `verify:unit` selects relevant unit coverage, and
-`check` adds selected-file formatting. Full static, browser, build, and broader
-local verification remain explicit opt-ins. Owner lookup does not select tests.
+Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) directly for ordinary task checks. Owner lookup locates documentation; it does not select tests.
 
-[`runs:show`](./REFERENCE.md#failure-first-triage) includes primary evidence paths
+[`runs:show`](../scripts/VERIFICATION.md#failure-first-triage) includes primary evidence paths
 so a failed run's digest can be opened directly. Compact failure summaries
 collapse identical selected lines with occurrence counts and first/last log
-locations, preserving space for distinct causes. Passing local smoke is
-not evidence that edited gameplay or integration passed.
+locations, preserving space for distinct causes. Minimal environment smoke is not evidence that edited gameplay or integration passed.

@@ -29,7 +29,9 @@ describe("status multiplication and resource feedback", () => {
       const next = applyCardEffects(state, cardById["cold-snap"]!, texts);
       expect(next.enemyStatuses.freeze).toBe(expected);
       expect(next.enemyCC.freezeSkipTurns).toBe(0);
-      expect(texts).toContainEqual({ target: "enemy", kind: "multiply", stat: "freeze", amount: winterborn ? 3 : 7 });
+      expect(texts).toContainEqual(
+        expect.objectContaining({ target: "enemy", kind: "multiply", stat: "freeze", amount: winterborn ? 3 : 7 }),
+      );
       expect(state.enemyStatuses.freeze).toBe(5);
     },
   );
@@ -60,7 +62,9 @@ describe("status multiplication and resource feedback", () => {
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(3);
     expect(result.state.playerStatuses.block).toBe(10);
-    expect(result.combatTexts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 10 });
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "status", stat: "block", amount: 10 }),
+    );
     const next = playBattleCardResolved(result.state, attack.id, 0).state;
     expect(next.mana).toBe(2);
     expect(next.enemyHealth).toBeLessThan(state.enemyHealth);
@@ -91,7 +95,9 @@ describe("Block depletion outside enemy hits", () => {
               }).state;
       expect(next.playerStatuses.block).toBe(0);
       expect(next.playerHealth).toBe(15);
-      expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 5 });
+      expect(texts).toContainEqual(
+        expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 5 }),
+      );
     },
   );
 
@@ -113,7 +119,9 @@ describe("Block depletion outside enemy hits", () => {
             }).state;
     expect(next.playerStatuses.block).toBe(0);
     expect(next.playerStatuses.thorns).toBe(3);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "thorns", amount: 3 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "status", stat: "thorns", amount: 3 }),
+    );
   });
 
   it("partial depletion and Winter's Credit payment cannot pay depletion rewards", () => {

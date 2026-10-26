@@ -1,5 +1,5 @@
 import { harmfulPlayerStatusIds, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
-import { HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { HALF_DIVISOR, PERCENT_DENOMINATOR, SECOND_WIND_HEALTH_THRESHOLD_PERCENT } from "../game-constants";
 import { applyPercentBonus } from "./amount-helpers";
 import { mergeCombatText } from "./combat-text-events";
 import { blockAmountWithForge, setPlayerStatus, addPlayerStatus } from "./status-state";
@@ -17,6 +17,12 @@ interface PlayerResourceResolutionPort {
   forgeReady: (texts: CombatTextEvent[]) => void;
 }
 
+interface FeedbackOptions {
+  feedback?: CombatTextEvent["feedback"];
+}
+
+const feedbackIntent = (options?: FeedbackOptions) => (options?.feedback ? { feedback: options.feedback } : {});
+
 /** One reward interpreter for live combat and nonrandom inspection; ports own external reactions. */
 export function createPlayerResourceResolver(port: PlayerResourceResolutionPort) {
   function emitGainedStatusText(
@@ -24,10 +30,17 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     after: Pick<BattleState, "playerStatuses">,
     stat: "block" | "thorns",
     combatTexts: CombatTextEvent[],
+    options?: FeedbackOptions,
   ) {
     const gained = after.playerStatuses[stat] - before.playerStatuses[stat];
     if (gained <= 0) return;
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: gained });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat,
+      amount: gained,
+      ...feedbackIntent(options),
+    });
   }
 
   function resolveHealingWithFeedback(
@@ -35,13 +48,20 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     amount: number,
     combatTexts?: CombatTextEvent[],
     allowOverhealBlock = false,
+    options?: FeedbackOptions,
   ) {
     const healing = resolvePlayerHealing(state, amount, allowOverhealBlock);
     if (combatTexts) {
       if (healing.effective > 0) {
-        mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healing.effective });
+        mergeCombatText(combatTexts, {
+          target: "player",
+          kind: "heal",
+          stat: "health",
+          amount: healing.effective,
+          ...feedbackIntent(options),
+        });
       }
-      emitGainedStatusText(state, healing.state, "block", combatTexts);
+      emitGainedStatusText(state, healing.state, "block", combatTexts, options);
       emitGainedStatusText(state, healing.state, "thorns", combatTexts);
     }
     return healing;
@@ -51,11 +71,11 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     state: BattleState,
     amount: number,
     combatTexts?: CombatTextEvent[],
-    options?: { skipFightPacing?: boolean; allowOverhealBlock?: boolean },
+    options?: FeedbackOptions & { skipFightPacing?: boolean; allowOverhealBlock?: boolean },
   ): BattleState {
     if (amount <= 0) return state;
     const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
-    const healing = resolveHealingWithFeedback(state, healAmount, combatTexts, options?.allowOverhealBlock);
+    const healing = resolveHealingWithFeedback(state, healAmount, combatTexts, options?.allowOverhealBlock, options);
     const nextState = healing.state;
     const actualHeal = healing.restored;
     const reacted = applyBlockGainRewards(
@@ -79,28 +99,38 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
       : state;
   }
 
-  function applyHealOnManaGain(state: BattleState, gainAmount: number, combatTexts: CombatTextEvent[]): BattleState {
+  function applyManaGainRewards(state: BattleState, gainAmount: number, combatTexts: CombatTextEvent[]): BattleState {
     if (gainAmount <= 0) return state;
-    if (state.talentEffects.healthPerMana > 0) {
-      return applyHealingWithCombatText(state, gainAmount * state.talentEffects.healthPerMana, combatTexts);
+    const blocked =
+      state.playerStatuses.block === 0 && state.gearEffects.blockOnManaRestoreWithoutBlock > 0
+        ? applyBlockReward(state, state.gearEffects.blockOnManaRestoreWithoutBlock, combatTexts)
+        : state;
+    if (blocked.talentEffects.healthPerMana > 0) {
+      return applyHealingWithCombatText(blocked, gainAmount * blocked.talentEffects.healthPerMana, combatTexts);
     }
-    return state;
+    return blocked;
   }
 
   function gainManaWithCombatText(
     state: BattleState,
     amount: number,
     combatTexts?: CombatTextEvent[],
-    options?: { skipFightPacing?: boolean; allowOverflow?: boolean },
+    options?: FeedbackOptions & { skipFightPacing?: boolean; allowOverflow?: boolean },
   ): BattleState {
     if (amount <= 0) return state;
     const granted = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
     const nextState = gainMana(state, granted, options?.allowOverflow);
     const gained = nextState.mana - state.mana;
     if (gained > 0 && combatTexts) {
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "mana",
+        amount: gained,
+        ...feedbackIntent(options),
+      });
     }
-    return applyHealOnManaGain(nextState, gained, combatTexts ?? []);
+    return applyManaGainRewards(nextState, gained, combatTexts ?? []);
   }
 
   function addPlayerStatusWithCombatText(
@@ -108,7 +138,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     stat: PlayerStatusId,
     amount: number,
     combatTexts?: CombatTextEvent[],
-    options?: { skipFightPacing?: boolean },
+    options?: FeedbackOptions & { skipFightPacing?: boolean },
   ): BattleState {
     if (amount <= 0) return state;
     if (stat === "block") amount = blockAmountWithForge(state, amount);
@@ -121,7 +151,13 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     );
     const delta = nextState.playerStatuses[stat] - before;
     if (delta > 0 && combatTexts) {
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: delta });
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat,
+        amount: delta,
+        ...feedbackIntent(options),
+      });
     }
     if (stat === "block" && combatTexts) {
       emitGainedStatusText(previousState, nextState, "thorns", combatTexts);
@@ -129,7 +165,12 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     return stat === "block" ? applyBlockGainRewards(nextState, delta, combatTexts ?? []) : nextState;
   }
 
-  function addGoldWithCombatText(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]): BattleState {
+  function addGoldWithCombatText(
+    state: BattleState,
+    amount: number,
+    combatTexts?: CombatTextEvent[],
+    options?: FeedbackOptions,
+  ): BattleState {
     if (amount <= 0) return state;
 
     const gold = Math.min(Number.MAX_SAFE_INTEGER, state.gold + scaleGoldReward(amount, state.gearEffects));
@@ -142,26 +183,30 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
         kind: "status",
         stat: "gold",
         amount: scaledGold,
+        ...feedbackIntent(options),
       });
     }
     if (nextState.gearEffects.healOnCombatGoldGain > 0) {
       nextState = applyHealingWithCombatText(nextState, nextState.gearEffects.healOnCombatGoldGain, combatTexts ?? []);
     }
-    return state.gearEffects.goldGrantsForgeAndHoly > 0 && port.chance(25, nextState)
-      ? addForgeToPlayer(nextState, 1, combatTexts)
-      : nextState;
+    return state.gearEffects.goldGrantsForgeAndHoly > 0 ? addForgeToPlayer(nextState, 1, combatTexts) : nextState;
   }
 
   function applyBlockReward(
     state: BattleState,
     amount: number,
     combatTexts: CombatTextEvent[],
-    options?: { skipFightPacing?: boolean },
+    options?: FeedbackOptions & { skipFightPacing?: boolean },
   ): BattleState {
     return addPlayerStatusWithCombatText(state, "block", amount, combatTexts, options);
   }
 
-  function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
+  function addForgeToPlayer(
+    state: BattleState,
+    baseAmount: number,
+    combatTexts?: CombatTextEvent[],
+    options?: FeedbackOptions,
+  ): BattleState {
     if (baseAmount <= 0) return state;
     let amount = baseAmount;
     if (state.playerStatuses.burn > 0 && port.chance(state.talentEffects.forgeBurningBonusChance, state)) amount += 1;
@@ -184,6 +229,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
         kind: "status",
         stat: "forge",
         amount,
+        ...feedbackIntent(options),
       });
     }
     return nextState;
@@ -218,7 +264,12 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     return nextState;
   }
 
-  function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
+  function removeHarmfulPlayerStatuses(
+    state: BattleState,
+    amount: number,
+    combatTexts?: CombatTextEvent[],
+    options?: FeedbackOptions,
+  ) {
     const limit = Number.isFinite(amount) ? amount : harmfulPlayerStatusIds.length;
     let nextState = state;
     let removed = 0;
@@ -227,7 +278,14 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
       if (nextState.playerStatuses[statusId] <= 0) continue;
       nextState = setPlayerStatus(nextState, statusId, 0);
       if (combatTexts) {
-        mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: statusId, signal: "cleanse", text: "" });
+        mergeCombatText(combatTexts, {
+          target: "player",
+          kind: "notice",
+          stat: statusId,
+          signal: "cleanse",
+          text: "",
+          ...feedbackIntent(options),
+        });
       }
       removed++;
     }
@@ -235,7 +293,12 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     return applyCleanseHeals(nextState, combatTexts, removed);
   }
 
-  function applyArmorStatusEffect(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  function applyArmorStatusEffect(
+    state: BattleState,
+    amount: number,
+    combatTexts: CombatTextEvent[],
+    options?: FeedbackOptions,
+  ): BattleState {
     if (amount <= 0) return state;
     const armorBefore = state.playerStatuses.armor;
     if (state.gearEffects.flatArmorGained > 0 && !state.flags.layeredArmorUsedThisTurn) {
@@ -245,7 +308,13 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR)
       amount = applyPercentBonus(amount, state.talentEffects.armorLowHealthBonusPercent);
     if (port.chance(state.talentEffects.armorDoubleChance, state)) amount *= 2;
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "armor",
+      amount,
+      ...feedbackIntent(options),
+    });
     const nextState = addPlayerStatus(state, "armor", amount);
     const armorGained = nextState.playerStatuses.armor - armorBefore;
     if (armorGained <= 0) return nextState;
@@ -261,7 +330,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     state: BattleState,
     amount: number,
     combatTexts: CombatTextEvent[],
-    options?: { skipFightPacing?: boolean; allowOverhealBlock?: boolean },
+    options?: FeedbackOptions & { skipFightPacing?: boolean; allowOverhealBlock?: boolean },
   ): BattleState {
     const paced = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
     const overheals =
@@ -269,6 +338,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     const healed = applyHealingWithCombatText(state, paced, combatTexts, {
       skipFightPacing: true,
       allowOverhealBlock: options?.allowOverhealBlock ?? true,
+      ...feedbackIntent(options),
     });
     return overheals && state.talentEffects.cleanseOnCardOverheal
       ? removeHarmfulPlayerStatuses(healed, 1, combatTexts)
@@ -316,6 +386,18 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     let nextState = applyHealthThresholdCleanse(prevHealth, state, combatTexts, nextHealth);
     const maxHealth = state.playerMaxHealth;
 
+    if (
+      state.gearEffects.healOnFirstQuarterHealth > 0 &&
+      !state.flags.gearSecondWindUsed &&
+      crossedBelow(prevHealth, nextHealth, (maxHealth * SECOND_WIND_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR)
+    ) {
+      nextState = applyHealingWithCombatText(
+        setFlag(nextState, "gearSecondWindUsed", true),
+        state.gearEffects.healOnFirstQuarterHealth,
+        combatTexts,
+      );
+    }
+
     const once = state.talentEffects.healthThresholdBlockOnce;
     if (once && !readCombatFlag(nextState, "desperateGuardUsed")) {
       const thresholdHp = (maxHealth * once.threshold) / PERCENT_DENOMINATOR;
@@ -336,15 +418,19 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     state: BattleState,
     effect: Extract<BattleCardEffect, { kind: "player-status" }>,
     combatTexts: CombatTextEvent[],
+    options?: FeedbackOptions,
   ) {
-    if (effect.status === "armor") return applyArmorStatusEffect(state, effect.amount, combatTexts);
+    if (effect.status === "armor") return applyArmorStatusEffect(state, effect.amount, combatTexts, options);
     if (effect.status === "forge") {
-      return addForgeToPlayer(state, effect.amount, combatTexts);
+      return addForgeToPlayer(state, effect.amount, combatTexts, options);
     }
     if (effect.status === "block") {
-      return applyBlockReward(state, effect.amount, combatTexts);
+      return applyBlockReward(state, effect.amount, combatTexts, options);
     }
-    return addPlayerStatusWithCombatText(state, effect.status, effect.amount, combatTexts, { skipFightPacing: true });
+    return addPlayerStatusWithCombatText(state, effect.status, effect.amount, combatTexts, {
+      skipFightPacing: true,
+      ...feedbackIntent(options),
+    });
   }
 
   function applyArmorReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -362,7 +448,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     resolveHealingWithFeedback,
     applyHealingWithCombatText,
     applyRestorativeCleanse,
-    applyHealOnManaGain,
+    applyManaGainRewards,
     gainManaWithCombatText,
     addPlayerStatusWithCombatText,
     addGoldWithCombatText,

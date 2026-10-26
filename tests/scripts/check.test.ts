@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import { readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,6 +15,31 @@ vi.mock("../../scripts/lib/verification/changed-paths.mjs", async (importOrigina
 }));
 
 const runCheck = (...args: Parameters<typeof runFullCheck>) => runFullCheck([...(args[0] ?? []), "--full"], args[1]);
+
+it("leaves the interactive browser alone when the actual check CLI fails", () => {
+  const directory = mkdtempSync(join(tmpdir(), "alchemy-check-browser-"));
+  const marker = join(directory, "closed");
+  const browserModule = `import fs from 'node:fs'; export const taskKey = () => null; export const closeTaskBrowsers = async () => fs.writeFileSync(${JSON.stringify(marker)}, 'closed');`;
+  const loader = `import { registerHooks } from 'node:module'; registerHooks({ load(url, context, next) { return url.endsWith('/lib/agent-browser-session.mjs') ? { format: 'module', source: ${JSON.stringify(browserModule)}, shortCircuit: true } : next(url, context); } });`;
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        `data:text/javascript,${encodeURIComponent(loader)}`,
+        "scripts/check.mjs",
+        "scripts/check.mjs",
+        "--invalid",
+      ],
+      { encoding: "utf8" },
+    );
+    expect(result.status, result.stderr).toBe(2);
+    expect(result.stderr).toContain("Unknown check option");
+    expect(existsSync(marker)).toBe(false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 describe("full source-aware completion gate", () => {
   let runId: string;
@@ -54,10 +81,45 @@ describe("full source-aware completion gate", () => {
     }
   });
 
+  it("isolates verification children from the pushing repository's Git hook environment", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "alchemy-hook-environment-"));
+    const owner = join(directory, "owner");
+    const fixture = join(directory, "fixture");
+    try {
+      expect(spawnSync("git", ["init", "-q", owner]).status).toBe(0);
+      const config = join(owner, ".git/config");
+      const before = readFileSync(config, "utf8");
+      vi.stubEnv("GIT_DIR", join(owner, ".git"));
+      vi.stubEnv("GIT_COMMON_DIR", join(owner, ".git"));
+      vi.stubEnv("GIT_WORK_TREE", owner);
+      vi.stubEnv("GIT_IMPLICIT_WORK_TREE", "0");
+      vi.stubEnv("GIT_SSH_COMMAND", "ssh");
+      vi.spyOn(fs, "readFileSync").mockReturnValueOnce("");
+      vi.mocked(resolvePushPaths).mockReturnValueOnce(["Docs/SIMULATION.md"]);
+      const runner = vi.fn((_label, _command, _args, env: NodeJS.ProcessEnv) => {
+        for (const name of ["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE"])
+          expect(env[name]).toBeUndefined();
+        expect(env.GIT_SSH_COMMAND).toBe("ssh");
+        expect(spawnSync("git", ["init", "-q", fixture], { env }).status).toBe(0);
+        const root = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: fixture, env, encoding: "utf8" });
+        expect(fs.realpathSync(root.stdout.trim())).toBe(fs.realpathSync(fixture));
+        return 0;
+      });
+      expect(
+        await runFullCheck(["--pre-push"], { runner, captureDigest: () => ({ head: "test", hash: "same" }) }),
+      ).toBe(0);
+      expect(runner).toHaveBeenCalled();
+      expect(readFileSync(config, "utf8")).toBe(before);
+      expect(process.env.GIT_DIR).toBe(join(owner, ".git"));
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("runs documentation checks without unit, build, or browser work", async () => {
     const calls: string[] = [];
     const code = await runCheck(
-      ["Docs/REFERENCE.md", "scripts/README.md", "src/features/alchemy/shared/storage/MIGRATIONS.md"],
+      ["Docs/SIMULATION.md", "scripts/README.md", "src/features/alchemy/shared/storage/MIGRATIONS.md"],
       {
         runner: vi.fn((label: string) => {
           calls.push(label);
@@ -173,7 +235,7 @@ describe("full source-aware completion gate", () => {
 
   it("lets static checks own docs:check on executable changes only", async () => {
     const executable: unknown[][] = [];
-    await runCheck(["src/App.tsx", "Docs/guide.md"], {
+    await runCheck(["src/App.tsx", "Docs/SIMULATION.md"], {
       runner: vi.fn((...args: unknown[]) => {
         executable.push(args);
         return 0;
@@ -184,7 +246,7 @@ describe("full source-aware completion gate", () => {
     expect(verify?.[2]).toContain("--skip-docs-check");
 
     const docsOnly: unknown[][] = [];
-    await runCheck(["Docs/guide.md"], {
+    await runCheck(["Docs/SIMULATION.md"], {
       runner: vi.fn((...args: unknown[]) => {
         docsOnly.push(args);
         return 0;
@@ -196,7 +258,7 @@ describe("full source-aware completion gate", () => {
 
   it("fails when source inputs drift", async () => {
     let reads = 0;
-    const code = await runCheck(["Docs/REFERENCE.md"], {
+    const code = await runCheck(["Docs/SIMULATION.md"], {
       runner: vi.fn(() => 0),
       captureDigest: () => ({ head: "abc", hash: reads++ === 0 ? "before" : "after" }),
     });

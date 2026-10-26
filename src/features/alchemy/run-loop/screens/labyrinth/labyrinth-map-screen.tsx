@@ -2,13 +2,16 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import { playUISound } from "@/lib/audio";
 import { useEffect, useMemo } from "react";
-import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { ScreenShell, ScreenHeaderRow } from "../../../shared/ui/layout-components";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
-import { canInspectLabyrinthNode, floorNodes } from "@/lib/content-systems/labyrinth/map-state";
+import {
+  canDescendFromLabyrinthNode,
+  canEnterLabyrinthNode,
+  canInspectLabyrinthNode,
+  floorNodes,
+} from "@/lib/content-systems/labyrinth/map-state";
 import { LabyrinthMapViewport } from "./labyrinth-map-viewport";
-import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 import { usePlasmaBaseline } from "@/features/alchemy/shared/ui/use-plasma-source";
 
 interface Props {
@@ -35,7 +38,7 @@ export function LabyrinthMapScreen({
     labyrinthMap && selectedNodeId && canInspectLabyrinthNode(labyrinthMap, selectedNodeId)
       ? (labyrinthMap.nodes[selectedNodeId] ?? null)
       : null;
-  usePlasmaBaseline(selectedNode ? getLabyrinthNodePlasmaPair(selectedNode) : null);
+  usePlasmaBaseline(null);
   const nodes = useMemo(
     () => (labyrinthMap ? floorNodes(labyrinthMap, labyrinthMap.currentFloor) : []),
     [labyrinthMap],
@@ -44,20 +47,6 @@ export function LabyrinthMapScreen({
   useEffect(() => {
     if (selectedNodeId && !selectedNode) onNodeDeselect();
   }, [selectedNodeId, selectedNode, onNodeDeselect]);
-
-  useEffect(() => {
-    if (!selectedNode) return;
-    return pushEscapeHandler({
-      id: "labyrinth-inspector",
-      priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
-      onEscape: () => {
-        const menu = document.querySelector("[data-testid=game-menu]");
-        if (menu instanceof HTMLElement && !menu.closest(".pointer-events-none")) return false;
-        onNodeDeselect();
-        return true;
-      },
-    });
-  }, [selectedNode, onNodeDeselect]);
 
   return (
     <div className="h-full min-h-0 overflow-hidden">
@@ -75,17 +64,15 @@ export function LabyrinthMapScreen({
               map={labyrinthMap}
               heroArt={heroArt}
               nodes={nodes}
-              selectedNodeId={selectedNode?.id ?? null}
               onSelect={(id) => {
+                const descend = canDescendFromLabyrinthNode(labyrinthMap, id);
+                if (!descend && !canEnterLabyrinthNode(labyrinthMap, id)) return;
+                // Selection writes synchronously, so entry resolves the clicked room in this same activation.
                 onNodeSelect(id);
-                if (id !== selectedNodeId) playUISound("mapNode");
-              }}
-              onDeselect={onNodeDeselect}
-              onEnter={() => {
-                onNodeEnter();
+                if (descend) onDescend();
+                else onNodeEnter();
                 playUISound("mapNode");
               }}
-              onDescend={onDescend}
             />
           ) : null}
         </FadeSlot>

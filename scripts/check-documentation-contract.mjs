@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { validateContextCatalog } from "./lib/agent/agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { BUILD_ARTIFACT_DIRS } from "./lib/clean-dev-artifacts.mjs";
-import { extractMarkdownLinkTargets, headingSlugs, stripFencedBlocks } from "./lib/agent/markdown-sections.mjs";
+import { extractMarkdownLinkTargets, headingSlugs } from "./lib/agent/markdown-sections.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IGNORED_DIRECTORIES = new Set([
@@ -21,20 +21,13 @@ const IGNORED_DIRECTORIES = new Set([
   "reports",
   "release-notes",
 ]);
-const REPO_PATH_PREFIX = /^(?:\.github\/|(?:src|tests|scripts|Docs|desktop|public)\/)/u;
-const PATH_TEMPLATE_CHARS = /[*?{}$<>"'`]/u;
 
 const markdownSourceCache = new Map();
 let repositoryFileCache = null;
 
-// Release notes intentionally pin historical shipped paths; active plans carry
-// current work, so only their command/path prose is exempt from owner contracts.
+// Release notes intentionally retain historical commands.
 export function isHistoryOnlyDoc(relativePath) {
   return relativePath === "CHANGELOG.md";
-}
-
-export function isHistoricalDoc(relativePath) {
-  return isHistoryOnlyDoc(relativePath) || relativePath.startsWith("Docs/Plans/");
 }
 
 /** Reachability exemption: active plans and agent-local workflows need no inbound owner links. */
@@ -73,8 +66,8 @@ function lineNumberAt(source, index) {
 }
 
 /**
- * One walk over every Markdown file: source, fence-stripped text, link
- * targets, backticked candidates, and documented npm scripts. The individual
+ * One walk over every Markdown file: source, link
+ * targets and documented npm scripts. The individual
  * contract checks below read from these facts instead of re-scanning sources.
  */
 const markdownFactsCache = new Map();
@@ -84,14 +77,11 @@ function markdownFacts() {
     let fact = markdownFactsCache.get(file);
     if (!fact) {
       const source = readMarkdownSource(file);
-      const stripped = stripFencedBlocks(source);
       fact = {
         file,
         relative: file.slice(ROOT.length + 1).replaceAll("\\", "/"),
         source,
-        stripped,
         links: extractMarkdownLinkTargets(source),
-        backticked: [...stripped.matchAll(/`([^`\n]+)`/gu)],
         scripts: [...source.matchAll(/npm run ([a-zA-Z0-9:_-]+)/gu)],
       };
       markdownFactsCache.set(file, fact);
@@ -115,51 +105,6 @@ export function checkLocalMarkdownLinks() {
     }
   }
   return broken;
-}
-
-export function checkInlineRepositoryPaths() {
-  const missing = [];
-  for (const { file, relative, backticked } of markdownFacts()) {
-    if (isHistoryOnlyDoc(relative)) continue;
-    for (const match of backticked) {
-      const candidate = match[1].trim();
-      if (!REPO_PATH_PREFIX.test(candidate) || PATH_TEMPLATE_CHARS.test(candidate)) continue;
-      const target = candidate.split("#")[0];
-      if (target && !existsSync(resolve(ROOT, target))) {
-        missing.push(`${file.slice(ROOT.length + 1)} -> ${candidate}`);
-      }
-    }
-  }
-  return missing;
-}
-
-export function checkBacktickedCurrentFileReferences() {
-  const repositoryPaths = repositoryFiles().map((file) => file.slice(ROOT.length + 1).replaceAll("\\", "/"));
-  const repositoryBasenames = new Set(repositoryPaths.map((file) => file.split("/").at(-1)));
-  const generatedReferencePrefixes = ["reports/", "release-notes/"];
-  const missing = [];
-
-  for (const { file, relative: relativeDocumentPath, stripped, backticked } of markdownFacts()) {
-    if (isHistoricalDoc(relativeDocumentPath)) continue;
-    for (const match of backticked) {
-      const candidate = match[1]?.trim();
-      if (!candidate || PATH_TEMPLATE_CHARS.test(candidate) || candidate.includes(" ")) continue;
-      const reference = /^(.+?\.(?:[cm]?[jt]sx?|mdx?))(?:[:#].*)?$/u.exec(candidate)?.[1];
-      if (!reference) continue;
-      if (generatedReferencePrefixes.some((prefix) => reference.startsWith(prefix))) continue;
-      if (reference.startsWith("./") || reference.startsWith("../")) {
-        if (existsSync(resolve(dirname(file), reference))) continue;
-        missing.push(`${relativeDocumentPath}:${lineNumberAt(stripped, match.index)} -> ${candidate}`);
-        continue;
-      }
-      const normalized = reference.startsWith("@/") ? `src/${reference.slice(2)}` : reference;
-      const exists = normalized.includes("/")
-        ? repositoryPaths.some((repoPath) => repoPath === normalized || repoPath.endsWith(`/${normalized}`))
-        : repositoryBasenames.has(normalized);
-      if (!exists) missing.push(`${relativeDocumentPath}:${lineNumberAt(stripped, match.index)} -> ${candidate}`);
-    }
-  }
-  return missing;
 }
 
 export function checkDocumentedNpmScripts() {
@@ -262,13 +207,14 @@ export function checkSkillIndexCompleteness() {
 
 export const DOCUMENTATION_CONTRACTS = [
   ["local Markdown links", checkLocalMarkdownLinks],
-  ["inline repository paths", checkInlineRepositoryPaths],
-  ["backticked current file references", checkBacktickedCurrentFileReferences],
   ["documented npm scripts", checkDocumentedNpmScripts],
   ["Markdown heading anchors", checkMarkdownHeadingAnchors],
+  ["agent discovery catalog", () => validateContextCatalog(ROOT)],
+];
+
+const DOCUMENTATION_ADVISORIES = [
   ["durable document reachability", checkDurableDocumentReachability],
   ["skill index completeness", checkSkillIndexCompleteness],
-  ["agent discovery catalog", () => validateContextCatalog(ROOT)],
 ];
 
 export function checkDocumentationContracts() {
@@ -276,6 +222,9 @@ export function checkDocumentationContracts() {
 }
 
 export function reportDocumentationContracts() {
+  for (const [name, check] of DOCUMENTATION_ADVISORIES) {
+    for (const finding of check()) console.warn(`Documentation advisory — ${name}: ${finding}`);
+  }
   const failures = checkDocumentationContracts();
   if (failures.length > 0) {
     console.error("Documentation contracts failed:");

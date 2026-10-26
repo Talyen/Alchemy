@@ -13,6 +13,7 @@ import { readActivityData } from "@/lib/active-run-session";
 import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
 import { isValidDeckIndex } from "@/lib/utils";
 import {
+  runShopTransaction,
   cardSlotKeyOf,
   createGetRefreshPrice,
   createShopPurchaseActions,
@@ -20,7 +21,6 @@ import {
 } from "./shop-commands-core";
 import { computeRemoveCardPrice, draftShopDiscounts, getShopBuyPrice, readShopDiscounts } from "./shop-pricing";
 import { merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
-import { runShopTransaction } from "./shop-transactions";
 
 export function createMerchantShopCommands(gameSession: GameSession) {
   const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions(

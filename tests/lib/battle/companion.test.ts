@@ -232,7 +232,7 @@ describe("Companion Bond progression", () => {
     const skeleton = bondedState("skeleton", level);
     expect(processCompanionTurnStart(skeleton, []).enemyHealth).toBe(skeleton.enemyHealth - 1 - level);
     expect(processCompanionTurnStart(bondedState("shield-scarab", level), []).playerStatuses.block).toBe(2 + level);
-    expect(processCompanionTurnStart(bondedState("golden-retriever", level), []).gold).toBe(2 + level);
+    expect(processCompanionTurnStart(bondedState("golden-retriever", level), []).gold).toBe(1 + level);
     const pixie = { ...bondedState("pixie", level), playerHealth: 10 };
     expect(processCompanionTurnStart(pixie, []).playerHealth).toBe(11 + level);
     const wisp = { ...bondedState("will-o-wisp", level), playerHealth: 10 };
@@ -311,7 +311,7 @@ it("Eager Pack acknowledges an ineffective Wisp action after the summon notice",
   const result = playBattleCardResolved(state, card.id, 0);
   expect(result.state.activeCompanion).toEqual(companionLibrary["will-o-wisp"]);
   expect(result.state.playerStatuses).toEqual(state.playerStatuses);
-  expect(result.combatTexts).toEqual([
+  expect(result.combatTexts).toMatchObject([
     { target: "player", kind: "notice", stat: "companion", text: "" },
     { target: "player", kind: "notice", stat: "cleanse", text: "Nothing to Cleanse" },
   ]);
@@ -330,7 +330,7 @@ it("Kinbound rechecks Health after Companion damage and enemy Thorns", () => {
   const next = processCompanionTurnStart(state, texts);
   expect(next.enemyHealth).toBeLessThan(state.enemyHealth);
   expect(next.playerHealth).toBe(16);
-  expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+  expect(texts).toContainEqual(expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 2 }));
 });
 
 it("Kinbound checks low Health before Bone Charm's kill healing", () => {
@@ -384,7 +384,8 @@ it.each(["pack-tactics", "wolf-companion"])(
       0,
     ).state;
     expect(refreshed.hand).toEqual([expect.objectContaining({ id: "next-draw" })]);
-    expect(refreshed.deck).toEqual([]);
+    expect(refreshed.deck).toEqual(id === "pack-tactics" ? [card] : []);
+    expect(refreshed.discard).toEqual([]);
   },
 );
 

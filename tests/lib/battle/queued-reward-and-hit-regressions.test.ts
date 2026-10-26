@@ -17,7 +17,7 @@ describe("queued rewards and hit ordering", () => {
     const state = regressionBattle({
       currentEnemy: {
         traits: [
-          { id: "glacial-body", title: "Glacial Body", description: "" },
+          { id: "burn-vulnerability", title: "Thawing", description: "" },
           ENCOUNTER_TRAITS["burn-resistance"].enemyTrait,
         ],
       },
@@ -38,10 +38,11 @@ describe("queued rewards and hit ordering", () => {
       rng: () => 0,
     });
     const after = applyEnemyAbility(state, cardById.slash!, []);
-    expect(after.discard.filter((card) => card.id === burn.id)).toHaveLength(1);
+    expect(after.deck.map((card) => card.id)).toEqual([burn.id]);
+    expect(after.discard).toEqual([]);
     expect((repeat ? after.pendingHandCards : after.hand).map((card) => card.id)).toEqual([freeze.id]);
     if (repeat) expect(after.hand).toEqual(state.hand);
-    expect(after.deck).toHaveLength(0);
+    expect(after.deck).toHaveLength(1);
   });
 
   it.each([0, 1])("preserves hit-earned Forge alongside the original %i Forge", (forge) => {
@@ -55,7 +56,7 @@ describe("queued rewards and hit ordering", () => {
     });
     const after = playBattleCardResolved(state, card.id, 0).state;
     expect(after.gold).toBeGreaterThan(0);
-    expect(after.playerStatuses.forge).toBe(forge);
+    expect(after.playerStatuses.forge).toBe(forge + 1);
   });
 
   it("counts queued Companion cards when weighting Wish offers", () => {
@@ -116,7 +117,7 @@ describe("queued rewards and hit ordering", () => {
           ENCOUNTER_TRAITS["crimson-ward"].enemyTrait,
         ],
       },
-      trinketEffects: { cutpurseGoldOnBleed: 1 },
+      trinketEffects: { cutpurseGoldChance: 100 },
       gearEffects: { healOnCombatGoldGain: 1 },
     });
     const after = tickEnemyStatuses(state, []);

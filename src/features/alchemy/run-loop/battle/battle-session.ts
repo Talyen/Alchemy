@@ -38,10 +38,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
     return store.hasActiveBattle || ctx.playback.finishing;
   }
 
-  function getBattleAbortSignal(): AbortSignal {
-    return ctx.playback.signal;
-  }
-
   function runIfSessionActive<T>(session: number, fn: () => T, fallback: T): T;
   function runIfSessionActive<T>(session: number, fn: () => T): T | undefined;
   function runIfSessionActive<T>(session: number, fn: () => T, fallback?: T): T | undefined {
@@ -69,18 +65,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
       return true;
     }
     return false;
-  }
-
-  function registerTransferCancelCallback(callback: () => void) {
-    return ctx.playback.registerCancel(callback);
-  }
-
-  function clearTransferHandles() {
-    ctx.playback.cancelTransfers();
-  }
-
-  function clearAllBattleTimeouts(id: number) {
-    ctx.playback.clearTimers(id);
   }
 
   function stopBattleFeedback() {
@@ -124,13 +108,9 @@ export function createBattleSession(ctx: BattleControllerContext) {
   return {
     reconcile,
     isCurrentBattleSession,
-    getBattleAbortSignal,
     runIfSessionActive,
     handleVictoryDefeat,
     checkBattleEnd,
-    registerTransferCancelCallback,
-    clearTransferHandles,
-    clearAllBattleTimeouts,
     resetBattleSession,
   };
 }

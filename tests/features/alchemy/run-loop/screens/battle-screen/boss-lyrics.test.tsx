@@ -14,6 +14,13 @@ vi.mock("@/lib/audio", async (importOriginal) => ({
 }));
 
 beforeEach(() => {
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
   installCatalogs(catalogs);
   vi.useFakeTimers();
   useSettingsStore.getState().setBossLyricsEnabled(true);
@@ -22,6 +29,7 @@ beforeEach(() => {
 afterEach(async () => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
   useSettingsStore.getState().setBossLyricsEnabled(true);
   await localization.changeLanguage("en");
 });
@@ -101,6 +109,11 @@ it("switches each boss using media time and stops polling when disabled, unsuppo
   expect(screen.getByTestId("boss-lyrics").textContent).toBe("");
   at(31.1, MUSIC_KEYS.BOSS_IRON_BEAR);
   expect(screen.getByTestId("boss-lyrics").textContent).toBe("From");
+  rerender(<BossLyrics bossId="blood-countess" />);
+  at(20, MUSIC_KEYS.BOSS_BLOOD_COUNTESS);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("");
+  at(21, MUSIC_KEYS.BOSS_BLOOD_COUNTESS);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("I");
   rerender(<BossLyrics bossId="unknown-boss" />);
   expect(vi.getTimerCount()).toBe(0);
   rerender(<BossLyrics bossId="blight-treant" />);

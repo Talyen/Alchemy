@@ -12,11 +12,15 @@ import { defineScript } from "./lib/script-run.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
 import { selectContext } from "./lib/agent/agent-context.mjs";
+import { batchUnitCommands } from "./lib/verification/unit-batch.mjs";
+import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
 const VERIFY_FLAGS = new Set([
   "diff",
+  "task",
+  "committed",
   "plan",
   "verbose-plan",
   "verbose",
@@ -24,33 +28,45 @@ const VERIFY_FLAGS = new Set([
   "skip-docs-check",
   "full",
   "unit",
+  "all-units",
 ]);
 
 export function parseVerifyArgs(argv) {
-  const { flags, paths } = parseChangedPathsArgs(argv, {
-    usage: "Provide paths or use --diff. Example: npm run verify -- --diff --plan",
+  const { flags, paths, revision } = parseChangedPathsArgs(argv, {
+    usage: "Provide paths, --diff, or --committed <revision>. Example: npm run verify -- --diff --plan",
   });
   for (const flag of flags) {
     if (!VERIFY_FLAGS.has(flag)) throw new Error(`Unknown verify option: --${flag}`);
   }
   if (flags.has("unit") && flags.has("full")) throw new Error("Choose --unit or --full");
-  return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths }) };
+  return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths, revision }) };
 }
 
 export function filterPlanCommands(plan, flags) {
+  if (flags.has("all-units")) {
+    plan = {
+      ...plan,
+      commands: [
+        {
+          key: "unit-all",
+          ...COMMANDS["unit-all"],
+          args: [...COMMANDS["unit-all"].args, "--", "--maxWorkers=1"],
+          reason: "repository-wide checks run every unit once with one worker to bound host resource use",
+        },
+        ...plan.commands.filter((command) => command.key !== "related" && !command.key.startsWith("unit-")),
+      ],
+    };
+  }
   if (flags.has("unit"))
     return {
       ...plan,
       commands: plan.commands.filter((command) => command.key === "related" || command.key.startsWith("unit-")),
     };
-  if (!flags.has("full")) {
+  if (!flags.has("full"))
     return {
       ...plan,
-      commands: plan.paths.some((file) => !file.endsWith(".md"))
-        ? [{ key: "unit-local", ...COMMANDS["unit-local"] }]
-        : [],
+      commands: plan.commands.filter((command) => command.key === DOCS_CHECK_KEY),
     };
-  }
   if (flags.has("skip-docs-check")) {
     return { ...plan, commands: plan.commands.filter((command) => command.key !== DOCS_CHECK_KEY) };
   }
@@ -111,20 +127,21 @@ export function main(argv = process.argv.slice(2)) {
     const { flags, paths } = parseVerifyArgs(argv);
     // check.mjs passes --skip-docs-check when its CI-static stage will run
     // docs:check itself, so one gate never pays for documentation checks twice.
-    const plan = filterPlanCommands(resolveRoutePlan(paths), flags);
+    const plan = batchUnitCommands(filterPlanCommands(resolveRoutePlan(paths), flags));
     console.log(
-      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "focused units" : "fixed Node smoke"}`,
+      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "selected units" : "documentation only; unit tests deferred to CI"}`,
     );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
-    if (!flags.has("full"))
-      console.log(
-        "Pending: full static, builds, browser/Electron and CI integration validation." +
-          (flags.has("unit") ? "" : " Edited gameplay is not selected by fixed smoke."),
-      );
+    console.log(
+      "Scope: route-selected checks only. Use check for task completion; check:all includes every unit suite, full static validation and builds.",
+    );
     if (flags.has("plan")) return 0;
+    if (flags.has("full") || flags.has("unit")) assertHeavyLocalAllowed("Route-selected test verification");
 
-    // Local smoke does not need the full repository/dependency identity walk.
-    const cache = flags.has("full") ? createVerificationCache(ROOT, plan.commands) : null;
+    // The ordinary outer check caches this deterministic aggregate and guards
+    // its inputs once. Full verification includes artifact-producing commands,
+    // so it retains per-unit receipts instead of reusing the whole stage.
+    const cache = process.env.ALCHEMY_CHECK_PROFILE === "local" ? null : createVerificationCache(ROOT, plan.commands);
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
       const receipt = cache?.read(command);
@@ -185,10 +202,10 @@ export function main(argv = process.argv.slice(2)) {
           : flags.has("full")
             ? `${outcomes.length}/${outcomes.length} verification steps passed.`
             : outcomes.length === 0
-              ? "No executable tests selected; run documentation checks separately. Full CI validation is required."
+              ? "No applicable unit or documentation commands selected."
               : flags.has("unit")
-                ? "Focused units passed; full CI validation is required."
-                : "Fixed Node smoke passed; edited gameplay coverage and full CI validation remain pending.",
+                ? "Focused units passed; CI and platform acceptance are separate."
+                : "Task units and documentation passed; CI and platform acceptance are separate.",
     });
     return failed.length === 0 ? 0 : 1;
   } catch (error) {

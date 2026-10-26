@@ -17,7 +17,7 @@ function printHelp() {
                        default mode) this is the full read-only check, same as
                        npm run assets:check. With --optimize/--sync it checks
                        only that stage (per-stage { check: true }).
-  --outputs-only       With --check, validate committed outputs without Asset Library
+  --outputs-only       With --check, validate committed outputs without reading source masters
   --help               Show this help
   ALCHEMY_SKIP_ASSETS=1 skips mutating commands in this CLI (--check still
   verifies and therefore errors under the skip).`);

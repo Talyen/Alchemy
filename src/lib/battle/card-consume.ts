@@ -1,6 +1,6 @@
 import { rollBattleChance } from "./chance-roll";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { drawFromState, applyDrawResult } from "./draw";
+import { drawFromState, applyDrawResult, refillEmptyDrawPile } from "./draw";
 import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { isCompanionSummonCard, type BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -120,7 +120,7 @@ export function handlePostPlayCardDestination(
   if (!card.consume) {
     return isCompanionSummonCard(card)
       ? { ...state, exhausted: [...state.exhausted, card] }
-      : { ...state, discard: [...state.discard, card] };
+      : refillEmptyDrawPile({ ...state, discard: [...state.discard, card] });
   }
   let nextState = { ...state, exhausted: [...state.exhausted, card] };
   if (!triggerConsumeRiders) return nextState;

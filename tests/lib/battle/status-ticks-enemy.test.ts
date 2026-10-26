@@ -98,7 +98,7 @@ describe("tickEnemyStatuses", () => {
 
   it.each([
     { status: "burn", stacks: 40, trait: "burn-vulnerability", bonus: 25, frozen: 70, expected: 110 },
-    { status: "bleed", stacks: 8, trait: "living-armor", bonus: 20, frozen: 50, expected: 14 },
+    { status: "bleed", stacks: 8, trait: "living-armor", bonus: 20, frozen: 50, expected: 18 },
   ] as const)(
     "uses the same rounded $status damage for ticks and detonations",
     ({ status, stacks, trait, bonus, frozen, expected }) => {

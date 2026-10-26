@@ -173,6 +173,8 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
     <DestinationScreen
       rewardState={r.rewardState}
       currentAct={r.currentAct}
+      destinationIndexInAct={r.destinationIndexInAct}
+      completedDestinations={r.completedDestinations}
       onChoose={commands.choose}
       onPrepare={commands.prepare}
     />
@@ -237,7 +239,11 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       runDeck={r.runDeck}
       items={r.alchemistState.potions}
       refreshesLeft={r.alchemistState.refreshesLeft}
+      brewOffers={r.alchemistState.brewOffers}
+      brewUsed={r.alchemistState.brewUsed}
       mixUsed={r.alchemistState.mixUsed}
+      distillUsed={r.alchemistState.distillUsed}
+      onBrewPotion={commands.brewPotion}
       purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
       getPrice={commands.getPotionBuyPrice}
       mixPrice={commands.getMixPrice()}

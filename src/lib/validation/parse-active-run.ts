@@ -9,7 +9,14 @@ function hydrateActivity(activity: ParsedActiveRunData["activity"]): PersistedRu
     case "shop":
       return { ...activity, data: { ...activity.data, cards: activity.data.cards.map(hydrateCard) } };
     case "alchemist":
-      return { ...activity, data: { ...activity.data, potions: activity.data.potions.map(hydrateCard) } };
+      return {
+        ...activity,
+        data: {
+          ...activity.data,
+          potions: activity.data.potions.map(hydrateCard),
+          brewOffers: activity.data.brewOffers.map(hydrateCard),
+        },
+      };
     case "mystery":
       return { ...activity, data: hydratePersistedMysteryVisit(activity.data) };
     case "campfire":

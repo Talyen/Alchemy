@@ -10,6 +10,11 @@ const fixture = vi.hoisted(() => ({
   failedSource: "",
   transform: vi.fn<(source: string, target: string) => Promise<void>>(),
 }));
+vi.mock("../../scripts/lib/repository-paths.mjs", () => ({
+  get REPO_ROOT() {
+    return fixture.root;
+  },
+}));
 vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
   const { pathToFileURL } = await import("node:url");
@@ -72,7 +77,7 @@ fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-art-music-"));
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
 const { optimizeMusic } = await import("../../scripts/optimize-music.mjs");
 const { musicAssets } = await import("../../scripts/assets/music-assets.mjs");
-const rawDir = path.join(fixture.root, "Raw Assets");
+const rawDir = path.join(fixture.root, "assets/sources");
 const gearDir = path.join(rawDir, "Gear");
 const slotDir = path.join(gearDir, "Gear Slot Backgrounds");
 const musicDir = path.join(rawDir, "Music");
@@ -84,7 +89,6 @@ afterAll(() => rmSync(fixture.root, { recursive: true, force: true }));
 
 beforeEach(async () => {
   rmSync(fixture.root, { recursive: true, force: true });
-  vi.stubEnv("ASSET_LIBRARY_ROOT", rawDir);
   await mkdir(slotDir, { recursive: true });
   await mkdir(musicDir, { recursive: true });
   for (const slot of slots) await writeFile(path.join(slotDir, `${slot} Slot.png`), slot);
@@ -116,7 +120,7 @@ describe.each([
   const manifestPath = path.join(output, ".asset-hashes.json");
   const manifestWrites = () => vi.mocked(writeFile).mock.calls.filter(([file]) => file === manifestPath);
 
-  it("publishes a complete manifest and follows moved sources without writes or reprocessing", async () => {
+  it("reuses unchanged masters and preserves outputs when a selected source moves", async () => {
     await expect(optimize()).resolves.toEqual({ ok: true });
     expect(manifestWrites()).toHaveLength(1);
     const before = await readFile(manifestPath, "utf8");
@@ -126,8 +130,13 @@ describe.each([
     vi.mocked(writeFile).mockClear();
     vi.mocked(copyFile).mockClear();
     fixture.transform.mockClear();
-    await rename(path.join(source, `a.${input}`), path.join(source, `renamed.${input}`));
     await expect(optimize()).resolves.toEqual({ ok: true });
+    expect(await readFile(manifestPath, "utf8")).toBe(before);
+    expect(manifestWrites()).toHaveLength(0);
+    expect(copyFile).not.toHaveBeenCalled();
+    expect(fixture.transform).not.toHaveBeenCalled();
+    await rename(path.join(source, `a.${input}`), path.join(source, `renamed.${input}`));
+    await expect(optimize()).rejects.toThrow("Restore it under assets/sources");
     expect(await readFile(manifestPath, "utf8")).toBe(before);
     expect(manifestWrites()).toHaveLength(0);
     expect(copyFile).not.toHaveBeenCalled();
@@ -280,7 +289,7 @@ describe("explicit library selection", () => {
     const files = await readdir(output);
     const before = await Promise.all(files.map((file) => readFile(path.join(output, file))));
     await rm(source, { recursive: true });
-    await expect(optimize()).rejects.toThrow("Cannot read Asset Library source");
+    await expect(optimize()).rejects.toThrow("Cannot read repository asset source");
     expect(await readdir(output)).toEqual(files);
     expect(await Promise.all(files.map((file) => readFile(path.join(output, file))))).toEqual(before);
   });

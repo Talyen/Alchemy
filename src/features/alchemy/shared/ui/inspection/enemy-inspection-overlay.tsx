@@ -1,7 +1,7 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import {
-  getBattleDamageInspectionCard,
+  getBattleCardDescriptionInspection,
   getEncounterEnemyAbility,
   type BattleSnapshot,
   type EnemyDescriptionContext,
@@ -45,13 +45,16 @@ function EnemyInspectionContent({
   const cards = useMemo(
     () =>
       getEnemyAbilities(entry).map((card) =>
-        battleState
-          ? getBattleDamageInspectionCard(card, battleState, "enemy")
-          : enemyDescriptionContext
-            ? getEncounterEnemyAbility(card, enemyDescriptionContext)
-            : card,
+        battleState ? card : enemyDescriptionContext ? getEncounterEnemyAbility(card, enemyDescriptionContext) : card,
       ),
     [entry, enemyDescriptionContext, battleState],
+  );
+  const descriptionContext = useMemo<CardDescriptionContext>(
+    () =>
+      battleState
+        ? { inspectBattleCard: (card) => getBattleCardDescriptionInspection(card, battleState, "enemy") }
+        : EMPTY_DESCRIPTION_CONTEXT,
+    [battleState],
   );
   return (
     <div className="flex flex-col gap-5">
@@ -68,7 +71,7 @@ function EnemyInspectionContent({
         <h3 className="font-sans text-xl font-semibold">{i18n.text("ui.enemy-inspection-overlay.2", "Abilities")}</h3>
         <InspectionCardGrid
           cards={cards}
-          descriptionContext={EMPTY_DESCRIPTION_CONTEXT}
+          descriptionContext={descriptionContext}
           resetKey={`${entry.id}:${open}`}
           sort={false}
         />

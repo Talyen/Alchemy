@@ -38,7 +38,10 @@ export function hydrateShopState(data: PersistedShopState): ShopState {
 export function hydrateAlchemistState(data: PersistedAlchemistState): AlchemistState {
   return {
     potions: data.potions,
+    brewOffers: data.brewOffers ?? [],
+    brewUsed: data.brewUsed ?? false,
     mixUsed: data.mixUsed,
+    distillUsed: data.distillUsed ?? false,
     ...hydrateRefreshableFields(data),
   };
 }

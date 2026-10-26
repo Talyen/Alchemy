@@ -1,6 +1,6 @@
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import { mutateGearWithRunHealthSync } from "./gear-session-command";
+import { acquireGearDuringRun, acquireTrinketDuringRun } from "./gear-session-command";
 import { discoverCardIds, discoverTrinketIds } from "../session/profile-store";
 import type { RunTransaction } from "./run-session-command";
 import { recordRunObtainedItem, setRunDeck, setRunBoons } from "./run-session-write-port";
@@ -16,15 +16,12 @@ export function appendBoonToRunWithDiscovery(draft: RunTransaction, trinketId: s
 }
 
 export function grantGearToRunWithRecord(draft: RunTransaction, instance: GearInstance): void {
-  const characterId = draft.run.activeRun.characterId;
-  mutateGearWithRunHealthSync(draft, {
-    mutate: (gear) => gear.addInstance(instance, characterId),
-  });
+  acquireGearDuringRun(draft, instance);
   recordRunObtainedItem(draft, { kind: "gear", instance });
 }
 
 export function grantTrinketToRunWithRecord(draft: RunTransaction, trinketId: string): void {
-  const added = mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addTrinket(trinketId) });
+  const added = acquireTrinketDuringRun(draft, trinketId);
   if (!added) return;
   discoverTrinketIds(draft, [trinketId]);
   recordRunObtainedItem(draft, { kind: "trinket", trinketId });

@@ -28,20 +28,33 @@ describe("damage status riders", () => {
   });
 
   it.each([
-    ["bleed", 0, 2],
-    ["bleed", 50, 3],
-  ] as const)("%s rewards Gold and matching feedback with %i%% Gear scaling", (damageType, goldGainPercent, gold) => {
-    const state = patchBattleState({
-      trinketEffects: { cutpurseGoldOnBleed: 2 },
-      gearEffects: { goldGainPercent },
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyDamageStatuses(state, { kind: "damage", damageType, amount: 3 }, 3, texts, state.enemyHealth, {
-      critical: true,
-    });
-    expect(result.gold).toBe(gold);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: gold });
-  });
+    { health: 30, damage: 3, roll: 0.099, goldGainPercent: 0, gold: 3 },
+    { health: 30, damage: 3, roll: 0.099, goldGainPercent: 50, gold: 5 },
+    { health: 1, damage: 3, roll: 0.099, goldGainPercent: 0, gold: 1 },
+    { health: 30, damage: 3, roll: 0.1, goldGainPercent: 0, gold: 0 },
+    { health: 30, damage: 0, roll: 0.099, goldGainPercent: 0, gold: 0 },
+  ])(
+    "Cutpurse pays $gold Gold for $damage Bleed at $health Health and roll $roll",
+    ({ health, damage, roll, goldGainPercent, gold }) => {
+      const effect = { kind: "damage", damageType: "bleed", amount: 3 } as const;
+      const state = patchBattleState({
+        enemyHealth: health,
+        trinketEffects: { cutpurseGoldChance: 10 },
+        gearEffects: { goldGainPercent },
+        rng: () => roll,
+      });
+      const texts: CombatTextEvent[] = [];
+      const result = resolvePlayerHit(
+        state,
+        { source: "card-attack", card: makeTestCard({ effects: [effect] }), effect, resolvedDamage: damage },
+        texts,
+      );
+      expect(result.gold).toBe(gold);
+      expect(texts.filter((text) => text.stat === "gold")).toEqual(
+        gold > 0 ? [{ target: "player", kind: "status", stat: "gold", amount: gold }] : [],
+      );
+    },
+  );
 
   it("queues Bleed Leech healing for later ticks", () => {
     const state = patchBattleState();
@@ -60,7 +73,9 @@ describe("damage status riders", () => {
     const result = applyDamageStatuses(state, { kind: "damage", damageType: "stun", amount: 5 }, 5, texts);
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
-    expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" }),
+    );
   });
 
   it.each([
@@ -82,8 +97,13 @@ describe("damage status riders", () => {
       expect(result.enemyCC.freezeSkipTurns).toBe(turns);
       expect(result.enemyCC.cooldown).toBe(0);
       expect(result.enemyHealth).toBe(health);
-      expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" });
-      if (damage) expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: damage });
+      expect(texts).toContainEqual(
+        expect.objectContaining({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" }),
+      );
+      if (damage)
+        expect(texts).toContainEqual(
+          expect.objectContaining({ target: "enemy", kind: "damage", stat: "physical", amount: damage }),
+        );
     },
   );
 
@@ -101,16 +121,18 @@ describe("damage status riders", () => {
     expect(result.enemyCC.freezeSkipTurns).toBe(0);
     expect(result.enemyCC.cooldown).toBe(cooldown);
     expect(result.enemyHealth).toBe(30);
-    expect(texts).not.toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 6 });
+    expect(texts).not.toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "physical", amount: 6 }),
+    );
   });
 
-  it("still Freezes a Glacial Body enemy when its threshold is met", () => {
+  it("still Freezes a Frostbound Ward enemy when its threshold is met", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyStatuses: { freeze: 15 },
       currentEnemy: {
-        traits: [{ id: "glacial-body", title: "Glacial Body", description: "Receives half Freeze damage" }],
+        traits: [{ id: "frostbound-ward", title: "Frostbound Ward", description: "Receives half Freeze damage" }],
       },
     });
     const result = applyDamageStatuses(state, { kind: "damage", damageType: "freeze", amount: 10 }, 10, []);
@@ -160,7 +182,9 @@ describe("damage status riders", () => {
     });
     const texts: CombatTextEvent[] = [];
     expect(applyPoisonTalentRiders(state, 5, texts).playerHealth).toBe(21);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 3 }),
+    );
   });
 
   it.each<{ name: string; patch: BattleStatePatch; health: number; enemyHealth: number; gold: number }>([
@@ -206,12 +230,14 @@ describe("damage status riders", () => {
     expect(result.enemyHealth).toBe(enemyHealth);
     expect(result.playerHealth).toBe(health);
     expect(result.gold).toBe(gold);
-    expect(texts).toContainEqual({
-      target: "enemy",
-      kind: "damage",
-      stat: "bleed",
-      amount: 8,
-    });
+    expect(texts).toContainEqual(
+      expect.objectContaining({
+        target: "enemy",
+        kind: "damage",
+        stat: "bleed",
+        amount: 8,
+      }),
+    );
     const repeated = applyDamageStatuses(result, effect, 5, [], result.enemyHealth, { critical: true });
     expect(repeated.playerHealth).toBe(health);
     expect(repeated.gold).toBe(gold);

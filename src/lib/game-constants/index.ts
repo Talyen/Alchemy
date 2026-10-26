@@ -11,6 +11,8 @@ export * from "./progression";
 export * from "./run-rewards";
 export * from "./storage";
 export * from "./settings";
+export * from "./transmutation";
+export * from "./ui-colors";
 export * from "./ui-motion";
 export * from "./ui-layout";
 export * from "./labyrinth-modifiers";

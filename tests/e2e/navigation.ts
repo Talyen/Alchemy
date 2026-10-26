@@ -4,7 +4,9 @@ import { GAME_MODE_TITLES, type GameMode } from "./types";
 /** Electron pages have no Playwright baseURL; retain their renderer origin. */
 export async function navigateToGame(page: Page) {
   const current = page.url();
-  await page.goto(/^(https?:|alchemy:)/.test(current) ? new URL("/", current).href : "/");
+  await page.goto(/^(https?:|alchemy:)/.test(current) ? new URL("/", current).href : "/", {
+    waitUntil: "domcontentloaded",
+  });
 }
 
 export async function openGameModeSelect(page: Page) {

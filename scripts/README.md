@@ -12,6 +12,18 @@ helpers live together in `assets/`, with TypeScript declarations beside their
 modules. Sound desk mapping, media, server and board modules live in `audio-review/`;
 `audio-review.mjs` remains its command entry point. `lib/agent/`, `lib/release/`, `lib/verification/`, `lib/performance/`, and `lib/playthrough/` group subsystem implementations; general process and repository helpers remain directly in `lib/`.
 
+The standalone [combat feedback lab](./combat-feedback-lab/README.md) compares
+Alchemy, Trinket, and proposed animation presets with synchronized playback,
+individual controls, and portable settings. It runs without a game build.
+
+## Trailer production
+
+`trailer.mjs` owns automated media production. `trailers/` contains the strict edit
+model, offline capture runtime, FFmpeg encoding/mixing and isolated Remotion
+renderer/dependencies. `tests/trailers/scenarios.ts` reuses production content and
+the browser staging helpers. [Trailer production](../Docs/TRAILERS.md) owns recipes,
+quality targets, setup and retained bundles; these tools do not enter the game build.
+
 ## Assets
 
 [WORKFLOWS-ASSETS](../Docs/WORKFLOWS-ASSETS.md) owns authoring commands and the
@@ -94,54 +106,38 @@ and co-edit trends through the [Simplification audit](../Docs/Audits/Simplificat
 
 ## Test / E2E
 
-`npm run test:e2e:route -- <route> [extra Playwright arguments]`;
-`test:ship:unit`, `test:e2e:audit` (full timings), `perf`, `balance:sim`, `ci:summarize`.
-All `E2E_ROUTES` entries use the single `test:e2e:route` command; individual
-`test:e2e:<name>` scripts do not exist. `tests/scripts/run-e2e-route.test.ts`
-pins that interface. The route names `shop-screen` and `homestead-screen`
-remain accepted as aliases for `shop` and `homestead`.
-`ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
-workflows call it directly with the matching flag. A lone positional path is
-inferred from its filename (playwright-containing paths summarize Playwright).
-Report parsing lives in
-`lib/verification/vitest-summary.mjs` and `lib/verification/playwright-summary.mjs`; both share the
-`lib/verification/report-summary.mjs` skeleton (budgets, first-line truncation, runner-error
-and overflow sections, missing-report wording) via one table-driven publisher.
-`summarize*Report` headers are
-stats-authoritative while `collectPlaywrightTests` is the walked audit model
-for slowest-tables (`topSlowestTests` is shared with `analyze-e2e.mjs`) — on inconsistent reports the header and the tables can
-differ by design. Malformed reports must fail rather than appear to be
-successful zero-test runs. Supplied counters must be non-negative integers;
-unknown assertion outcomes also fail the summary and retain CI diagnostics.
+Invocation, fixtures and routes belong to the [E2E guide](../tests/e2e/README.md).
+[Performance](../Docs/PERFORMANCE.md) and [headless careers](../Docs/SIMULATION.md#headless-careers)
+own their respective workflows.
 
-`run-performance.mjs` delegates to `lib/performance/performance-runner.mjs`, which owns profiling options and validates them before builds
-or downloads. Measurements and interpretation follow [PERFORMANCE](../Docs/PERFORMANCE.md).
+| Concern                                    | Implementation owner                                                                                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Named browser routes and aliases           | `run-e2e-route.mjs`; all `E2E_ROUTES` use `test:e2e:route -- <name>`, including `shop-screen` → `shop` and `homestead-screen` → `homestead` aliases |
+| CI summary entry                           | `ci-summarize.mjs --vitest/--playwright/--all`; a positional filename containing `playwright` selects that format                                   |
+| Report parsing and bounded publication     | `lib/verification/vitest-summary.mjs`, `playwright-summary.mjs`, shared `report-summary.mjs`                                                        |
+| Frame profiling                            | `run-performance.mjs` → `lib/performance/performance-runner.mjs`                                                                                    |
+| Headless career CLI and worker             | `run-playthrough.mjs` → `lib/playthrough/playthrough-runner.mjs`; `run-playthrough-worker.mjs` → `lib/playthrough/career-worker.mjs`                |
+| Balance, loot and content-report bootstrap | `lib/vite-report-server.mjs` (middleware-mode Vite)                                                                                                 |
 
-Balance and loot reports share the middleware-mode Vite bootstrap in
-`lib/vite-report-server.mjs` (also used by `content-audit.mjs`, which is now an
-import-safe `defineScript` entry); both are import-safe `defineScript` entries and
-both leave a run receipt. Report paths resolve from the script root, not the
-invoking CWD. One-shot suite/build/profiling CLIs
-(`run-ship-unit`, `run-e2e-route`, `run-performance`, `build-verified`,
-`run-prettier`, `audit` dispatcher) use `runTaskCommand` to retain complete logs
-and print compact summaries. Supported `--live` / `--verbose` options select
-streaming output when needed.
+Summary headers use supplied stats; walked assertions supply slowest tables via
+`collectPlaywrightTests` and shared `topSlowestTests`, so inconsistent inputs may
+produce differing header/table totals. Malformed reports, negative/noninteger
+counters and unknown assertion outcomes fail with retained diagnostics.
 
-`run-playthrough.mjs` delegates to `lib/playthrough/playthrough-runner.mjs`;
-`run-playthrough-worker.mjs` delegates to `lib/playthrough/career-worker.mjs`.
-The entry points retain CLI lifecycle and artifact registration; implementations
-are import-safe. Performance comparison models and scenarios remain in `performance/`.
-
-Playthrough and performance-case workers use `runCommandAsync` so deadlines and
-cancellation stop their process trees. Interrupted playthroughs keep their
-journal prefix and starting-state evidence for replay.
+Command entries retain CLI lifecycle/artifact registration; their implementations
+are import-safe. Balance, loot and content-audit entries use `defineScript` and
+leave run receipts, resolving report paths from the script root. One-shot suite,
+build and profiling CLIs use [shared command execution](#command-execution-and-argument-handling)
+for compact summaries, full logs and supported streaming options. Profiling validates
+options before builds/downloads. Career/performance-case workers use `runCommandAsync`
+to stop process trees on deadline/cancellation; interrupted careers retain their
+journal prefix and starting-state evidence. Performance models/scenarios stay in `performance/`.
 
 ## Development
 
-`npm run dev` runs committed-output validation and port cleanup through `predev`.
-`npm run dev:checked` starts Vite with the live TypeScript 7 checker directly;
-run `npm run predev` first when using that command. Desktop development runs
-the same preparation and adds Steam App ID synchronization.
+[Local development](../Docs/COMMANDS.md#local-development) owns invocation,
+checkout selection, preparation and port settings. `dev.mjs` resolves the source
+checkout for browser development; desktop startup adds Steam App ID synchronization.
 Vite and Electron share a lifetime: exiting either process stops the other,
 and the first exit determines the command's status.
 Desktop startup waits for a successful HTTP response and releases the readiness
@@ -149,120 +145,168 @@ response body before launching Electron.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 
-`npm run clean` removes local reports and Vite cache; `--builds` adds rebuildable
-build outputs. `--processes` stops Alchemy-owned test listeners;
+`npm run clean` removes rebuildable Vite and trailer webpack caches. It preserves
+reports and test evidence by default. `--reports` explicitly selects those evidence
+roots; inspect them with `--dry-run` first. `--caches` also selects `.cache/` tool
+environments; stop their owners first. `--builds` selects rebuildable renderer and
+package outputs. `--processes` stops Alchemy-owned test listeners;
 `--include-dev-port` also selects the normal dev port, only with `--processes`.
-`--all` combines builds and processes. Use `--dry-run` to preview deletion.
-Cleanup preserves caches reached through a linked `node_modules` directory so
-an isolated worktree cannot remove the original checkout's shared cache.
-Listener ownership also excludes nested `.worktrees/` checkouts from the
-original checkout's process cleanup.
+`--all` combines all selectors, including evidence deletion. No command follows
+linked dependency ancestors into another checkout's shared caches.
 
-`npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity;
-`--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
-`agent-diff`, `performance` and test failure collections expire
-independently; other report directories expire as complete bundles. Fresh
-children preserve older siblings. Age uses the newest contained file (or an
-empty directory's timestamp), so copying or moving the checkout does not renew
-old evidence. Stale current-run pointers are removed when
-their run disappears. Roots and nested symlinks are never traversed.
+`npm run prune:transient` automatically expires only reproducible Git diff
+inventories in `reports/agent-diff/` after 24 hours of inactivity. It preserves
+verification, failure, performance, visual, integration and experimental evidence,
+including current-run pointers. At producer completion it also writes a bounded
+`reports/retention-review.json`: a 1 GiB review threshold, latest success/failure per
+command retained, pins/owners and referenced baselines protected, and at most 64
+exact historical run candidates. Dry runs return this plan without writing it.
+Candidates remain intact: unique diagnostics require explicit exact-batch approval;
+this threshold never authorizes irreversible age/size purges. Production footage,
+portable trailer bundles and release artifacts are outside this reviewer. Tool environments belong under `.cache/`, not
+inside reports. Legacy `reports/boss-lyrics/venv` remains usable in place until its
+owner stops; worktree finishing excludes that known rebuildable environment.
 
-Report-producing CLIs register process-owned guards and prune on normal idle
-exit. Pruning skips the transient tree while another participating tool is
-active; explicit cleanup refuses deletion. Registration and deletion share a
-short OS-released loopback mutex keyed by the checkout's real path. Separate
-checkouts do not share a fixed port; a port collision fails without deleting
-artifacts. The mutex remains held until its operation settles. Abandoned guards are recovered only after confirming
-the owner is dead; unreadable ownership remains protected. No processes are
-terminated for artifact cleanup. Raw tools launched outside the wrappers need
-manual coordination. Dry runs change no files.
+Report-producing CLIs register process-owned guards. Pruning skips while another
+participating tool is active; explicit cleanup refuses deletion. Registration and
+deletion share an OS-released loopback mutex keyed by the checkout's real path.
+Separate checkouts do not share a fixed port; a collision fails without deleting
+artifacts. Abandoned guards are recovered only after confirming the owner is dead;
+unreadable ownership stays protected. Raw tools require manual ownership inspection.
+No cleanup command authorizes terminating foreign work.
 
-Both commands share `lib/clean-dev-artifacts.mjs` roots. Build outputs, production
-sources, release packages and scratch/output experiments are outside automatic
-expiry. Inspect unfinished experiments before deleting them explicitly.
+Build outputs, production sources, retained release packages, saves and scratch/output
+experiments are outside automatic expiry. Never remove unfinished experiments or
+unique evidence to meet a disk target. Worktree finishing preserves evidence while
+excluding nested `node_modules/` and `.cache/` environments; it does not archive
+another copy of rebuildable dependencies. Retained files use independent copy-on-write
+copies where the filesystem supports them, with ordinary-copy fallback.
+
+`npm run storage:report -- --json reports/storage/baseline.json` records logical
+file sizes for shared Git/dependencies, checkout assets, reports and existing build
+outputs. It never builds or deletes anything. Shared roots are resolved explicitly;
+nested links are excluded. Areas overlap and APFS clones/compression can change
+physical disk use, so do not sum the rows or call them measured free space.
+`check:bundle` enforces shipping media and complete renderer budgets as well as
+JavaScript. Packaging records each output's bytes under `reports/storage/`.
 
 ## Worktree / git safety
 
-Use one isolated worktree per implementation chat, without polling other chats
-or negotiating ownership. Reuse the chat's existing suitable worktree.
-`node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`, from committed local `main` by default);
-`--detached` for verification-only runs. Creation links `node_modules` from
-the root checkout automatically when present; run `npm ci` only if package
-dependencies change.
-
-If `agent/<slug>` already exists, creation checks out that retained branch at its
-current commit; `--base` applies only when creating a new branch (or a detached
-checkout). Inspect the resulting branch and commit before reviewing or editing.
-Use a fresh slug for new work when the retained branch belongs to an earlier task;
-when intentionally continuing it, incorporate current `main` in the task worktree
-before relying on its documentation or source.
-
-Run worktree management commands from the original checkout. Removal validates
-the exact registered worktree; an unregistered directory requires inspection
-and explicit `--force`. An empty normalized task name is rejected.
-
-Task-scoped commits and local integration into `main` are authorized by
-[AGENTS.md](../AGENTS.md#working-style); pushes and PRs still require a request.
-Commit only reviewed task-owned changes with the required release trailer, then run:
+[AGENTS.md](../AGENTS.md) owns authorization and task isolation;
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns verification.
+The ordinary sequence, from the original workspace, is:
 
 ```sh
+node scripts/agent-worktree.mjs create --task <slug>
+# Implement, check and commit in .worktrees/<slug>.
 node scripts/agent-worktree.mjs integrate --task <slug>
+# Review the integrated result, then preserve evidence and close the task.
+node scripts/agent-worktree.mjs finish --task <slug>
 ```
 
-Integration uses an exclusive loopback port derived from the shared Git directory,
-so all worktrees share one OS-released lock. A busy lock fails immediately; retry
-later without messaging other chats. A port collision also fails closed. The command
-requires registered task and `main` checkouts with no dirty files or unfinished Git
-operations. Safety reads bypass Git's filesystem monitor and untracked cache
-without changing repository settings. While holding the lock, it merges current local `main` into the task,
-runs `npm run check -- <combined changed paths>` (including both sides of renames) and, for Markdown changes,
-`npm run docs:check`, then fast-forwards `main` only if verification succeeded and
-both checkouts remain clean at the expected commits. It never pushes or switches
-checkout branches. Verification uses the merged task's shared Node command launcher
-so npm runs without shell interpretation on Windows too. Additional task-required tests remain the task owner's responsibility.
-An active bisect in either checkout also blocks integration before either branch advances.
+Creation starts `agent/<slug>` from committed local main and links dependencies.
+The branch's `alchemyTaskBase` records original provenance; task checks compare
+against the latest shared ancestor with main. Existing branches resume their
+current commit. Use a new slug for new work, or incorporate main when deliberately
+resuming old work. `--base` selects a different starting point for a new branch;
+`--detached` creates a verification-only checkout. `integration` is reserved.
+Add `--code-only` at creation to avoid checking out `assets/sources/`; all committed
+prepared assets and static imports remain available for ordinary development and
+builds. Sparse settings apply only to that worktree. Run `git sparse-checkout disable`
+in it before editing masters, preparing assets or running source freshness checks.
+Other checkouts and committed masters are preserved. For a new independent clone,
+`git clone --filter=blob:none <repository-url>` avoids downloading historical file
+contents until needed; it does not shrink an existing clone or rewrite history.
+Commands locate the original workspace from the shared Git directory, including
+when invoked from a task. The original workspace's management entry point forwards
+to the dedicated main checkout so retained workspace source can stay unchanged.
 
-Resolve understood merge conflicts in the task worktree, commit the resolution,
-and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.
-Failures preserve task work and leave `main` unchanged. Never bypass serialization
-with a manual update to `main`. Keep unintegrated work committed and recoverable;
-cleanup must not discard work.
+### Dedicated integration checkout
 
-Successful integration automatically deletes and unregisters only the named task
-worktree while holding the integration lock. Cleanup rechecks its branch, commit,
-clean status, unfinished Git operations, registration and lock state; submodules
-block automatic cleanup. Failed verification never removes a worktree. A cleanup
-failure leaves the completed integration in place and reports the blocker.
+New task checkouts default to omitting `assets/sources/` when the target
+revision supports output-only development/build validation and has prepared art,
+music and sounds. Committed runtime media, generated code, test inputs and desktop
+icons remain present. Older/incomplete revisions use full assets. Use
+`create --task <slug> --full-assets` for asset production, or run
+`git sparse-checkout disable` in a task before source checks/preparation/authoring.
+`--code-only` remains an alias for automatic defaults; it cannot be combined with
+`--full-assets`. Missing-source preparation preserves outputs and prints restoration guidance.
 
-The checkout first moves atomically to a temporary directory under
-`~/.codex/worktree-archives/Alchemy/` so failed unregistration can restore it.
-After unregistration, the temporary directory is deleted immediately, including
-ignored files and build outputs. Successful integration retains no archived
-checkout. The task branch remains available through
-`git worktree add <original-path> <branch>`; ignored and other local-only files are
-permanently deleted. Use `--keep-worktree` when those files are still needed.
-`CODEX_WORKTREE_ARCHIVE_ROOT` can select an external staging directory; moving
-across filesystems fails without deleting the source. If cleanup fails after
-integration, inspect the reported checkout or staging directory; `recovery.json`
-records the original path, branch and commit.
+Large retained tracked assets (at least 256 KiB) automatically use per-file APFS
+copy-on-write from clean same-commit files in the dedicated main checkout (primary
+before adoption). No peer task is a source. An optional Python standard-library
+bridge calls Apple's `clonefile` directly; unavailable Python, unsupported
+platforms/volumes, dirty/mismatched sources and checkout filters use ordinary Git.
+Clones are checked against target blob bytes/modes. Git owns fresh indexes and
+normal status/stat checks; dependencies/build databases are not copied. Git's
+registration/index locks arbitrate concurrent creation. The report includes omitted
+and cloned logical bytes and population/first-status time, not unique physical
+savings on APFS. Existing task checkouts retain their configuration.
 
-Use `node scripts/agent-worktree.mjs integrate --task <slug> --keep-worktree` for
-intermediate integration when requested work, a preview or an experiment still
-needs the checkout. Final integration cleans up by default. Report cleanup status
-alongside integration and verification results.
+One-time adoption uses `node scripts/agent-worktree.mjs setup-integration`.
+This explicitly moves main ownership to `.worktrees/integration`: the original
+workspace receives a new `workspace/main` branch (or an unused numbered variant)
+at the same commit. Only its symbolic HEAD changes; staged, unstaged and untracked
+files and the index are preserved. Unfinished Git operations block setup.
+Setup rolls HEAD back if worktree creation fails and is idempotent after success.
+The original workspace can intentionally lag main. Read current committed source
+in the dedicated checkout; run task checks in task checkouts and separately
+authorized push/release commands in the dedicated main checkout.
+The original workspace's `npm run dev` delegates to the checkout owning local
+`main`; `scripts/dev.mjs` is a self-contained bootstrap that delegates both
+preparation and serving to main's current launcher. Use `npm run dev:local` for
+an explicit workspace preview. Task worktrees keep checkout-local development.
+Do not run this migration as part of ordinary task creation or switch another
+checkout's branch. The dedicated checkout is for integration; implement in task
+worktrees. Until adoption, integration supports the old clean-main layout.
 
-After handoff, stop: no completion broadcasts,
-acknowledgments, polling, or waking completed chats. Only a concrete unresolved
-dependency or conflict warrants a bounded chat exchange.
+### Integration and finish phases
 
-`scripts/bin/git` shims destructive git through
-`git-safety-guard.mjs` (auto-stash backup); `setup-git-safety.mjs` installs the PATH hook.
-Inspection and backup must honor the caller's Git options and checkout; failed
-inspection blocks the operation. Checkout path restores are guarded with or without
-`--`; a single branch operand remains a branch switch even when a tracked file
-shares its name. Git clean and push dry runs bypass backup so
-inspection never stashes the working tree. Creation instructions return to the
-original checkout before worktree removal.
+Integration holds a per-task lock. Under the shared repository lock it snapshots
+main and merges it into the clean task, releases the shared lock to verify the
+combined result, then reacquires it to revalidate both branches, commits and clean
+status before fast-forwarding main. If main advanced, it merges and checks again.
+Unfinished Git operations, including bisects, block advancement. Failures preserve
+work. Locks are OS-owned loopback listeners; waits are cancellable and never
+reclaim another owner. Test waits never hold the shared integration lock.
+Resolve understood conflicts in the task and retry. Never update main manually.
+Integration retains the task checkout and browsers; `--keep-worktree` remains a
+compatibility flag. No command pushes.
+
+`reports/integrations/<slug>.json` records integration and cleanup separately.
+`finish` requires the unchanged, clean task commit to be contained in main. It
+closes only task browsers, preserves the complete `reports/` directory and other
+non-build ignored files in a unique evidence bundle, then removes only that
+registered checkout. The task branch remains. A failure prints a finish retry
+command and leaves integration complete; inspect the state file and reported
+recovery path before retrying.
+
+Cleanup rejects changed/locked registrations, unfinished work, submodules,
+symlinks in evidence and links escaping the task. It stages the checkout under
+`~/.codex/worktree-archives/Alchemy/` before unregistering, restoring it if
+unregistration fails. `CODEX_WORKTREE_ARCHIVE_ROOT` overrides that external staging
+root; cross-filesystem moves fail without deleting the source. `recovery.json`
+records the original checkout, branch and commit. Evidence stays in the original
+workspace's reported bundle; its `integration.json` lists preserved paths.
+Disposable roots are `node_modules/`, `dist/`, `dist-demo/`, `dist-desktop/`,
+`release-desktop/`, `coverage/`, `test-results/`, `playwright-report/`, `.vite/`,
+and `.worktrees/`; move irreplaceable files from them into `reports/` before finish.
+
+The legacy `remove` command retains its explicit removal semantics; prefer
+`finish` for completed tasks. Never force-remove unfinished work or delete task
+branches. `scripts/bin/git` routes destructive Git operations through
+`git-safety-guard.mjs`; `setup-git-safety.mjs` installs the PATH hook. Failed safety
+inspection blocks the command without changing files, index, refs or stashes.
+
+## Reproducible visual scenarios
+
+`visual-scenario.mjs` validates the scenario, locale, viewport, seed, port and label,
+then runs the shared Playwright fixture through the managed test lane.
+`playwright.scenario.config.ts` uses one Chromium worker, isolated storage, a
+strict private server, reduced motion and a fixed clock. Checkpoints live in
+`tests/visual/scenarios.ts`; the existing pixel baselines reuse the battle fixture.
+Captures and source/settings metadata live under ignored `reports/visual-review/`.
+[Visual review](../Docs/UI_VISUAL_REVIEW.md#reproducible-scenarios) owns usage.
 
 ## Command execution and argument handling
 

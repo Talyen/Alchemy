@@ -1,4 +1,169 @@
 @layer components {
+  .battle-actor-pair {
+    --battle-enemy-width: var(--battle-static-enemy-width);
+  }
+
+  .battle-actor-pair:has([data-battle-enemy-format="animated"]) {
+    --battle-enemy-width: var(--battle-animated-enemy-width);
+  }
+
+  .destination-progress {
+    --progress-node: calc(2.25 * var(--content-rem, 1rem));
+    --progress-step: calc((100% - var(--progress-node)) / (var(--progress-node-count) - 1));
+    --progress-travel-duration: 420ms;
+    --progress-ease: cubic-bezier(0.2, 0, 0.2, 1);
+  }
+
+  .destination-progress-stage {
+    position: relative;
+    height: var(--progress-node);
+  }
+
+  .destination-progress-rail {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 1px;
+    width: calc(100% - var(--progress-node));
+    transform: translateX(-50%) scaleX(calc((var(--progress-act-count) - 1) / (var(--progress-node-count) - 1)));
+    background: color-mix(in srgb, var(--color-border) 70%, transparent);
+    transition: transform var(--progress-travel-duration) var(--progress-ease);
+    pointer-events: none;
+  }
+
+  .destination-progress-position {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(var(--progress-collapsed-x));
+    pointer-events: none;
+    transition:
+      transform var(--progress-travel-duration) var(--progress-ease),
+      opacity 160ms ease-out;
+  }
+
+  .destination-progress-node {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--progress-node);
+    height: var(--progress-node);
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: var(--color-background);
+    transition: transform 220ms var(--progress-ease);
+  }
+
+  .destination-progress-room {
+    opacity: 0;
+    transition:
+      transform var(--progress-travel-duration) var(--progress-ease),
+      opacity 180ms ease-out;
+    transition-delay: 0ms, 60ms;
+  }
+
+  .destination-progress-active-act {
+    transition-delay: 0ms, 200ms;
+  }
+
+  .destination-progress-current-node {
+    box-shadow:
+      0 0 calc(0.375 * var(--content-rem, 1rem)) color-mix(in srgb, currentColor 30%, transparent),
+      0 0 calc(0.75 * var(--content-rem, 1rem)) color-mix(in srgb, currentColor 15%, transparent);
+  }
+
+  .destination-progress-room .destination-progress-node {
+    transform: scale(0.94);
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-rail {
+    transform: translateX(-50%) scaleX(1);
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-position {
+    transform: translateX(var(--progress-expanded-x));
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-active-act {
+    opacity: 0;
+    transition-delay: 0ms, 0ms;
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-active-act .destination-progress-node {
+    transform: scale(0.94);
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-room {
+    opacity: 1;
+    transition-delay: 0ms, calc(70ms + var(--progress-node-delay));
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-room .destination-progress-node {
+    transform: scale(1);
+  }
+
+  .destination-progress-toggle,
+  .destination-progress-act-trigger {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    width: var(--progress-node);
+    height: var(--progress-node);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .destination-progress-toggle {
+    left: calc(
+      50% + (var(--progress-act-index) - (var(--progress-act-count) - 1) / 2) * var(--progress-step) -
+        var(--progress-node) / 2
+    );
+  }
+
+  .destination-progress-act-trigger {
+    left: calc(50% - var(--progress-node) / 2);
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-toggle {
+    left: calc(var(--progress-act-index) * var(--progress-step));
+    width: calc(100% - (var(--progress-act-count) - 1) * var(--progress-step));
+  }
+
+  .destination-progress-toggle:focus-visible,
+  .destination-progress-act-trigger:focus-visible {
+    outline: none;
+  }
+
+  .destination-progress:has(.destination-progress-toggle:focus-visible):where(html[data-focus-navigation="true"] *)
+    .destination-progress-current-node,
+  .destination-progress-act:has(.destination-progress-act-trigger:focus-visible):where(
+      html[data-focus-navigation="true"] *
+    )
+    .destination-progress-node {
+    outline: 2px solid var(--color-gold-pale);
+    outline-offset: 3px;
+  }
+
+  @media (pointer: coarse) {
+    .destination-progress-toggle::after,
+    .destination-progress-act-trigger::after {
+      content: "";
+      position: absolute;
+      inset: -4px 0;
+    }
+  }
+
+  .destination-progress[data-reduced-motion="true"] *,
+  .destination-progress[data-reduced-motion="true"] *::after {
+    transition: none;
+  }
+
   .alchemy-shell {
     background-color: var(--color-shell-bg);
     border-color: var(--color-shell-border);
@@ -6,6 +171,20 @@
 
   .character-keyword-pill-tint {
     background-color: color-mix(in srgb, currentColor 15%, transparent);
+  }
+
+  .transmutation-arrow-glow {
+    animation: transmutation-arrow-glow calc(var(--motion-fade-duration) * 2) var(--motion-fade-ease);
+  }
+
+  @keyframes transmutation-arrow-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 0 currentColor);
+    }
+    50% {
+      filter: drop-shadow(0 0 8px currentColor);
+    }
   }
 
   .transmutation-keyword-choice {
@@ -839,19 +1018,6 @@
   .labyrinth-floor-swap.screen-fade-in[data-artwork-pending] {
     transform: none;
   }
-}
-
-@keyframes labyrinth-inspector-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.labyrinth-inspector-in {
-  animation: labyrinth-inspector-in 200ms ease-out;
 }
 
 [data-artwork-pending] {

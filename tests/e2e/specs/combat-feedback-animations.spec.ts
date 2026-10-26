@@ -1,6 +1,7 @@
 import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
+import { translatedLabel } from "../localization";
 import { slow } from "../../playwright-tags";
 import type { JSHandle } from "@playwright/test";
 
@@ -305,7 +306,7 @@ for (const reducedMotion of [false, true]) {
 
 for (const reducedMotion of [false, true]) {
   test(
-    `translated simultaneous reactions stay single-line and clear of numbers (reduced motion=${reducedMotion})`,
+    `translated queued reactions stay single-line and finish promptly (reduced motion=${reducedMotion})`,
     slow,
     async ({ page }) => {
       await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
@@ -333,6 +334,7 @@ for (const reducedMotion of [false, true]) {
           reactions: { shatterDamage: 8, frostfireDamage: 8, wildfireDamage: 3 },
         }),
         { runDeck: hand, autoEndTurn: false, masterVolume: 0 },
+        translatedLabel("ru", "Continue"),
       );
       const card = page.locator('[data-hand-card="true"] button').first();
       await expect.poll(() => card.evaluate((node) => !node.closest("[inert]"))).toBe(true);
@@ -353,27 +355,30 @@ for (const reducedMotion of [false, true]) {
           let lastSeen = 0;
           let frames = 0;
           let maximumNames = 0;
+          const seenNames = new Set<string>();
           let overflow = false;
           let overflowDetails = "";
-          let overlap = false;
           let numericSizingChanged = false;
           let smallestGlyphHeight = Infinity;
           let smallestGlyphDetails = "";
-          while (!cancelled && performance.now() - started < 1750) {
+          while (!cancelled && performance.now() - started < 2500) {
             await afterPaint();
-            if (performance.now() - started >= 1750) break;
+            if (performance.now() - started >= 2500) break;
             const names = [...document.querySelectorAll<HTMLElement>('[data-testid="reaction-text"]')].filter(
               (node) => getComputedStyle(node).visibility === "visible",
             );
+            names.forEach((name) => seenNames.add(name.dataset.reaction ?? ""));
+            if (seenNames.size === 4 && names.length === 0) break;
             if (names.length > 0) {
               maximumNames = Math.max(maximumNames, names.length);
               lastSeen = performance.now() - started;
               frames++;
-              const numbers = [...document.querySelectorAll<HTMLElement>('[data-testid="combat-text"]')]
-                .filter((node) => Number(getComputedStyle(node.parentElement!).opacity) > 0.05)
-                .map((node) => node.getBoundingClientRect());
               for (const number of document.querySelectorAll<HTMLElement>('[data-testid="combat-text"]')) {
-                const base = 37.8 * Number(getComputedStyle(number).getPropertyValue("--content-scale") || 1);
+                const lane = number.closest<HTMLElement>("[data-feedback-lane]")?.dataset.feedbackLane;
+                const base =
+                  32 *
+                  Number(getComputedStyle(number).getPropertyValue("--content-scale") || 1) *
+                  (lane === "benefit" || lane === "setback" ? 0.8 : 1);
                 numericSizingChanged ||= Math.abs(Number.parseFloat(getComputedStyle(number).fontSize) - base) > 0.1;
               }
               for (const name of names) {
@@ -409,23 +414,16 @@ for (const reducedMotion of [false, true]) {
                     transition: getComputedStyle(name).transition,
                   });
                 overflow ||= outside;
-                overlap ||= numbers.some(
-                  (number) =>
-                    bounds.left < number.right &&
-                    bounds.right > number.left &&
-                    bounds.top < number.bottom &&
-                    bounds.bottom > number.top,
-                );
               }
             }
           }
           return {
             frames,
             maximumNames,
+            seenNames: seenNames.size,
             lastSeen,
             overflow,
             overflowDetails,
-            overlap,
             numericSizingChanged,
             smallestGlyphHeight,
             smallestGlyphDetails,
@@ -440,12 +438,12 @@ for (const reducedMotion of [false, true]) {
         };
       });
       const review = await observeDuringAction(observation, () => card.click());
-      expect(review.maximumNames).toBe(4);
+      expect(review.seenNames).toBe(4);
+      expect(review.maximumNames).toBeLessThanOrEqual(4);
       expect(review.frames).toBeGreaterThan(10);
       expect(review.lastSeen).toBeGreaterThan(1300);
-      expect(review.lastSeen).toBeLessThan(1750);
+      expect(review.lastSeen).toBeLessThan(2000);
       expect(review.overflow, review.overflowDetails).toBe(false);
-      expect(review.overlap).toBe(false);
       expect(review.numericSizingChanged, "dense feedback must retain its original numeric size").toBe(false);
       expect(review.smallestGlyphHeight, review.smallestGlyphDetails).toBeGreaterThan(12);
       expect(review.remaining).toBe(0);

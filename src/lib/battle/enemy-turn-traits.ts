@@ -5,6 +5,8 @@ import { ENEMY_TURN_START_GAINS, isEnemyTraitTurnStartCovered } from "@/lib/cont
 import { logError } from "../error-logger";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
+import { resolveEnemyAttackHit } from "./enemy-attack-hit";
+import { getBattleOutcome } from "./battle-outcome";
 import { hasEnemyTrait } from "./encounter-trait-state";
 
 export function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -18,6 +20,16 @@ export function processEnemyRegeneration(state: BattleState, combatTexts: Combat
 export function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
   for (const trait of state.currentEnemy.traits) {
+    if (getBattleOutcome(nextState) !== null) break;
+    if ((trait.id === "crimson-pulse" || trait.id === "radiant-judgment") && state.turn % 2 === 0) {
+      nextState = resolveEnemyAttackHit(
+        recordEnemyAbilityActivation(nextState, trait.id),
+        { kind: "damage", damageType: trait.id === "crimson-pulse" ? "bleed" : "holy", amount: 1 },
+        combatTexts,
+        { canDodge: false },
+      ).state;
+      continue;
+    }
     const gain = ENEMY_TURN_START_GAINS.get(trait.id);
     if (!gain) {
       if (!isEnemyTraitTurnStartCovered(trait.id)) {

@@ -99,6 +99,7 @@ describe("settings store", () => {
         sfxVolume: 80,
         masterVolume: 90,
         autoEndTurn: false,
+        autoEquip: false,
         bossLyricsEnabled: false,
       }),
     );
@@ -114,6 +115,7 @@ describe("settings store", () => {
       sfxVolume: 80,
       masterVolume: 90,
       autoEndTurn: false,
+      autoEquip: false,
       bossLyricsEnabled: false,
     });
   });
@@ -124,10 +126,13 @@ describe("settings store", () => {
     settings.setBrightness(120);
     settings.setMasterVolume(75);
     settings.setBossLyricsEnabled(false);
+    settings.setAutoEquip(false);
+    expect(settingsPersistenceCodec.encode().autoEquip).toBe(false);
     expect(settingsPersistenceCodec.encode().bossLyricsEnabled).toBe(false);
     settings.resetToDefaults();
 
     expect(useSettingsStore.getState().bossLyricsEnabled).toBe(true);
+    expect(useSettingsStore.getState().autoEquip).toBe(true);
     expect(useSettingsStore.getState().brightness).toBe(defaultSaveData.brightness);
     expect(useSettingsStore.getState().masterVolume).toBe(defaultSaveData.masterVolume);
     expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(["card-a"]);

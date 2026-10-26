@@ -6,13 +6,9 @@ For refactors and simplification passes on attached paths, use [Docs/Audits](./A
 
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/session/run-reads`) — not legacy alias paths that skip `shared/`.
 
-**Read scope:** use the task index to locate missing context. Batch related
-sections when useful and skip material already understood; follow dependencies
-when they matter to the requested behavior. Generated asset barrels are
-outputs; use the [asset workflow](./WORKFLOWS-ASSETS.md) for their sources and
-regeneration. The opt-in full verifier selects tests through changed-path routes
-([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); only
-catalog-external tests are named inline. Named suites are verification entry points. Apply the [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) throughout; section-specific save-compatibility and browser-timing requirements still apply.
+Use the index for missing context and read only relevant owners and dependencies.
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
+owns gate selection; named suites below are useful verification entry points.
 
 ## Task index
 
@@ -38,27 +34,45 @@ catalog-external tests are named inline. Named suites are verification entry poi
 
 ## Add permanent Gear
 
-Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data model, write paths, battle integration, persistence).
+Follow [Armory](./ARMORY.md#data-model) for the data model and
+[write paths](./ARMORY.md#write-paths) for acquisition and Health synchronization.
 
-1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, thematic homestead `salvageByRarity`). Salvage consumes `salvageValue` on the generated definition.
-2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync). A base without art still builds its definitions with fallback art so loot and saves keep working, but the gap fails `content:audit` and the gear validation tests — never ship an ordinary definition without generated barrel art (Uniques reuse their base item's Astral art).
-3. Register the base item's Unique in `src/lib/gear/unique-catalog.ts`, with one exclusive fixed signature and three fixed standard supporting affixes. Every base item needs one Unique; ordinary variant generation does not create it. Follow [Unique affix and combat contracts](./UNIQUE_ITEMS.md) for signature implementation and interaction documentation.
-4. For new affixes, append definitions in `src/lib/gear/affix-rows.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting; effect keys and numeric manifest defaults derive from the catalog. Independent-roll chance effects are recognized by the `Chances` suffix in their effect key (derived in `gear-effect-manifest.ts`); every other effect sums numerically. Display/roll helpers live in `affixes.ts`, pool filtering in `affix-pool.ts`, and description formatting in `formatAffixDescription` (`affix-catalog.ts`), shared by tooltips and the unique catalog. Percent-based bonuses use `ROLL_PERCENT`, never the resist-only `ROLL_RESIST`.
-5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Unique instances store no affix rolls — only identity — with reads resolving `getUniqueAffixes()`.
-6. Run `npm run content:audit` (enforces the affix-catalog, pool, and Unique invariants in `validators-gear.ts`) and `npm run balance:loot` when loot weights or depth curves change. New affixes must also satisfy the `uniqueOnly` fixed-roll rule and the description typography rule.
-7. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
+1. Define the base in `src/lib/gear/base-items.ts`: legal slots/hand preset,
+   affinities, rarities and thematic `salvageByRarity`. Generated definitions own
+   the final `salvageValue`.
+2. Register [Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) and regenerate
+   outputs. Missing ordinary art retains fallback definitions for saves/loot but
+   fails validation; Uniques reuse their base's Astral art.
+3. Add the base's Unique in `src/lib/gear/unique-catalog.ts` under the
+   [fixed-affix contract](./UNIQUE_ITEMS.md#affix-contract).
+4. Check affected generation/acquisition, then run `npm run content:audit` and the
+   [task gate](../CONTRIBUTING.md#what-to-run-when-you-change). Loot-weight/depth
+   changes also use `npm run balance:loot`.
 
----
+**If adding an affix:** append its stable ID, keyword, effects, ranges and slots in
+[affix rows](../src/lib/gear/affix-rows.ts). Follow [manifest/proc rules](./ARMORY.md#affix-rules),
+`uniqueOnly` restrictions and typography. Pool helpers live in `affix-pool.ts`;
+`formatAffixDescription` in `affix-catalog.ts` is shared by tooltips/Uniques.
+Use `ROLL_PERCENT` for percentages; `ROLL_RESIST` is resistance-only.
+
+**If changing instance/loadout shape:** update schema, defaults, codec and fixtures
+under [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+Rewards retain the exact rolled instance; acceptance never rerolls it or saves
+its definition/art URLs.
 
 ## Change a shop
 
-Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands). Kind `"merchant"` is the player-facing Card Shop.
+Start with [shop ownership and transaction rules](./ARCHITECTURE.md#shop-commands).
 
-1. Locate the shop's command module, sampler, and draft recipe using the ownership map above; keep slot identity helpers separate from command/audio modules.
-2. Bind shop commands to a session without passing effect manifests. Derive Talent and Homestead effects from the open transaction for purchases, services, refreshes, and sampling; quotes read current session progression. Dispatch through the existing shop transaction seam; play SFX only when its result confirms success. Purchase commands take only a shelf slot key; price and acquired contents come from the live shelf item. Equipment slot keys are instance IDs.
-3. Preserve the per-visit `firstPurchaseUsed` reset and pass the open command's transaction to `mutateGearWithRunHealthSync`; use the dispatching gear wrapper only at the outer boundary ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).
-4. Route every refresh through `createShopRefreshAction` with a sampler from `shop-state-init.ts`. The activity determines refresh pricing and the write target; the sampler returns the typed visit state with its new shelf, preserving service and purchase flags. Check remaining refreshes and affordability against the displayed price before drawing shop RNG. Restock rolls only for an affordable positive-price refresh while its free refresh remains unused; success waives payment but still consumes a refresh slot. Apply potency or other offering modifiers inside the sampler so returned items match the committed shelf. The recipe clears purchased slots and consumes a refresh only on success; rejected refreshes never sample. Refreshes avoid the current offering set when enough eligible alternatives exist. Equipment refreshes compare base items across rarities and preserve room themes. When a pool is nearly exhausted, keep the shelf full while maximizing novel offerings.
-5. Potion mixing scales amounts inside every chance branch while preserving probabilities; descriptions must reflect every alternative outcome. Same-ID ingredients combine through doubling only when their effects match; different-potency copies preserve both effect lists so ingredient order cannot create or destroy potency.
+1. Locate the shop's command module, pricing and shelf sampler in that map.
+2. Change validation, payment and acquisition inside its existing
+   `runShopTransaction`; compose Gear writes with the open transaction.
+3. Change offers in the sampler and refresh behavior in `createShopRefreshAction`.
+   Preserve visit limits, modifier ordering and saved shelf identity.
+4. Check accepted, rejected, free and repeated actions, plus current-format resume
+   when visit data changes. Use affected shop units and the
+   [task gate](../CONTRIBUTING.md#what-to-run-when-you-change); visible changes
+   also follow [visual review](./UI_VISUAL_REVIEW.md).
 
 ## Content system behavior
 
@@ -83,38 +97,62 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
   [Corruption flow](#adding--changing-corruption-flow).
 - Preserve supported saved geography and in-flight encounters. Below-baseline development maps are disposable under the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline); no historical grid/hex migration belongs in navigation.
 - Cover the changed setup/resume route with focused unit tests using
-  `npm run test:full -- <test-paths>` or select affected unit suites with
-  `npm run verify:unit -- <task-owned paths>` under the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change).
+  the affected setup and navigation suites. Select checks under the
+  [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Change battle playback
 
-Wiring: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path) (ticks stay on the battle route; session autoplay preferences stay in the controller).
-Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [battle motion](./UI_MOTION.md#battle-motion) (burst contract, death/survival behavior, attacker lunge and timing owners).
+Start with [battle controllers](./BATTLE_CONTROLLERS.md#battle-path).
 
-- Autoplay excludes cards with potentially lethal self-costs, then picks the highest `getEffectiveDamageScore` (ties go left). At half Health or below, it restricts hand choices to defensive cards only when any remain playable. Wish choices use the same score and prefer safe options, falling back to the full offer when none are safe, with a hover preview before selection. Picks live in `battle/playable-hand.ts` (`findBestPlayableHandCard`, `findBestWishChoice`). `use-battle-autoplay.ts` selects a ready Card or Wish action; `battle/autoplay-driver.ts` (`driveAutoplay`) schedules it through one loop, without owning selection or playback gates. Live scoring lives in `src/lib/battle/autoplay-policy.ts`; the balance simulator imports that owner directly. Retuning the live owner changes gameplay; independent simulation policies belong in the simulator.
-- Presentation updates may wake autoplay readiness/retry waits, but cannot shorten the post-play pause. Measure that pause from the start of the successful play, counting transfer time toward it; longer transfers add no extra pause. Teardown cancels either wait, and autoplay rechecks current playback gates before the next play.
-- Autoplay previews are uncommitted: the route forwards the driver’s abort signal and live playback eligibility check to the card handler. Disabling autoplay or unmounting cancels the preview; after its delay, recheck the session and all playback gates before committing. A cancelled preview must not clear a newer preview.
-- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn share one gate (`isBattlePlaybackBlocked` in `battle/playback-gate.ts`). Send each resolved action through `presentCombatTexts` in `battle/controller-utils.ts` under the [battle feedback contract](./UI_BATTLE.md#battle-feedback). Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.
-- Defeat settlement runs synchronously in the transition's `prepare` callback; only the visible screen change waits. Retain the terminal presentation frame through that delay and fade, following [battle controllers](./BATTLE_CONTROLLERS.md#data-flow). Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). Death, survival, and lunge composition details live in [UI battle motion](./UI_MOTION.md#battle-motion).
-- Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
-- Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
-- Run the focused battle playback unit tests with `npm run test:full -- <test-paths>` and finish with the task-scoped local gate. Browser animation coverage follows [the E2E guide](../tests/e2e/README.md#running-focused-checks) and requires an explicit local execution request. Use its shared fixture with real timing; do not request `fastBattle` or enable fast mode when timing is under test.
+1. Change selection in `battle/playable-hand.ts` or the shared
+   `src/lib/battle/autoplay-policy.ts`; change scheduling in
+   `battle/autoplay-driver.ts`. Live scoring changes gameplay and simulation.
+2. Keep gameplay commits in command owners and presentation work in the route's
+   playback lifetime. Preserve [automation, draw and settlement rules](./BATTLE_CONTROLLERS.md#playback-and-automation-rules).
+3. For visual changes, use [battle feedback](./UI_BATTLE.md#battle-feedback) and
+   [battle motion](./UI_MOTION.md#battle-motion), including their timing owners.
+4. Run affected playback units, then the [task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
+   Exercise changed interactions under [visual review](./UI_VISUAL_REVIEW.md).
+   Timing checks use the shared [E2E fixture](../tests/e2e/README.md#test-import)
+   with normal animations; never enable fast mode for a timing assertion.
 
 ## Adding a new screen
 
-1. Add the screen to `ROUTE_SCREENS` in `src/lib/routing/screens.ts`; `Screen` and the runtime value list derive from it.
-2. Classify it in `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`) and add every legal interactive edge in `src/lib/routing/screen-transition-policy.ts`. Run-loop lists derive from `SCREEN_PHASE`; `use-screen-transitions.ts` owns delay/immediate/commit timing, not taxonomy.
-   Ordinary edges cover new-run setup and player actions. Returning to an existing run uses `resumeRun` and its validated saved screen through `resumeTo`; do not add every resumable screen as an ordinary edge from menus or meta screens.
-3. Create the component under `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/`, and export it from that directory's `index.ts`.
-4. Use `TitledScreenShell` from `shared/ui/layout-components.tsx`; `ScreenShell` is transparent and layout-only. `TitledScreenShell` owns the full-stage overflow wrapper so plasma shows through, and the app stage owns the background. Reserve `alchemy-shell` for contained panels. Main Menu and Battle are exceptions; choosers use widths from `shared/config/layout.ts`. The global menu button lives in `App.tsx`, so screens wire no menu props.
-5. Wire the route in the matching phase table under `src/app/screen-routes/` (`meta-routes`, `run-setup-routes`, `run-loop-routes`, or `run-end-routes`). Register a statically imported component; `SCREEN_ROUTES` checks completeness and mounts it through React.
-6. For activity-backed run screens, add the exact display selector in `shared/stores/session/run-screen-data.ts` and its capability hook in `use-run-screen-data.ts`. Those hooks retain outgoing data during fades; Battle keeps its dedicated [route display hook](./BATTLE_CONTROLLERS.md#battle-path). When the visit also clears its payload within the screen, use `useHeldWhile` and a shell fallback, following `app/screen-routes/mystery-screen-route.tsx`.
-7. Add required actions through the existing controller composition. `shell/route-commands.ts` derives its command types from those factories and limits the battle surface exposed to routes; do not add a second handwritten method inventory. Route display stays separate from commands. If route context props must change, update their owner in `src/app/screen-routes/route-ctx.ts` and its callers; `index.tsx` re-exports that contract.
-8. For a new gameplay activity, update `lib/active-run-session/run-activity.ts` and its initialization, then encode/decode resumable data through the [resume workflow](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata). A route alone does not establish an activity or saved location.
-9. Wire the navigation trigger at the caller of `goToScreen("<name>")`. For run activities, also update the production-flow adapter and legal choices in `src/app/playthrough/` so headless careers can proceed. Review affected route mocks, save fixtures, and browser helpers against the new contracts; verify initialization and current-format resume with focused unit tests.
-10. Classify the route in `SCREEN_FAMILIES` in `tests/interaction/screen-coverage.ts` and update the [interaction screen map](../tests/interaction/README.md#screen-and-boundary-map) with its lifecycle family and retained protection. This exhaustive registration does not by itself prove action coverage; choose tests under the shared [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy).
+1. Add the route to `ROUTE_SCREENS` in `src/lib/routing/screens.ts`, classify it in
+   `run-screen-router.ts` (`SCREEN_PHASE`), and add legal interactive edges in
+   `screen-transition-policy.ts`. Derived unions/lists need no parallel registration.
+2. Create/export the component in its `meta`, `run-setup` or `run-loop` screen
+   directory. Use [shared page shells](./UI.md#placement-and-boundaries), choosers'
+   `shared/config/layout.ts` widths and the app-owned menu. Main Menu/Battle retain
+   their layout exceptions; `alchemy-shell` is for contained panels.
+3. Register the statically imported component in the matching `src/app/screen-routes/`
+   phase table. `SCREEN_ROUTES` checks completeness and React mounts the component.
+4. Compose actions through existing controllers; `shell/route-commands.ts` derives
+   their signatures. Keep display separate from commands. Context changes belong
+   in `src/app/screen-routes/route-ctx.ts` and its consumers, not another method list.
+5. Wire the caller's navigation trigger and classify the route in `SCREEN_FAMILIES`
+   in `tests/interaction/screen-coverage.ts`; update the [screen map](../tests/interaction/README.md#screen-and-boundary-map).
+   Check affected wiring and meaningful behavior under the shared test policy.
 
-Restore/hydration bypasses the interactive transition table. Cold startup opens the main menu while preserving the validated saved activity; Continue resumes that activity through the resume policy. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
+**For activity-backed screens:** add the exact selector in
+`shared/stores/session/run-screen-data.ts` and its hook in `use-run-screen-data.ts`.
+Those hooks retain outgoing data during fades; Battle uses its
+[dedicated hook](./BATTLE_CONTROLLERS.md#battle-path). A visit clearing its own payload
+also needs `useHeldWhile` and a shell fallback, as in
+`app/screen-routes/mystery-screen-route.tsx`.
+
+**For a new gameplay activity:** update `lib/active-run-session/run-activity.ts`,
+initialization and the [resume codec](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata).
+Update `src/app/playthrough/` adapters/legal choices and affected route mocks, save
+fixtures and browser helpers. Verify initialization and current-format resume;
+a route alone establishes no durable activity.
+
+Use `resumeRun`/`resumeTo` for validated saved locations rather than adding menu
+edges to every resumable screen. Restore bypasses interactive edges and cold boot
+opens Menu; Continue opens saved activity. [Navigation timing](./BATTLE_CONTROLLERS.md#navigation-timing)
+owns delay/commit behavior. Select narrow store slices (`useShallow` where needed)
+to avoid combat-driven render churn. Family registration identifies protection,
+not exhaustive action coverage.
 
 ---
 
@@ -132,19 +170,7 @@ Restore/hydration bypasses the interactive transition table. Cold startup opens 
 
 ## Adding a new mystery effect kind
 
-Mystery Boon choices prefer distinct unowned Boons across alternatives, but an unchosen alternative cannot exhaust the pool: reuse an available Boon across mutually exclusive choices before falling back to Astral Gear. Multiple grants within one choice remain distinct.
-
-Before Astral Gear becomes eligible, Mystery selection excludes an entire event if any choice would need an Astral fallback: an owned or repeated named Boon, an authored Astral grant, or too few unowned Boons for its named and random grants. Random grants reserve the named Boons in their own choice, even when those named effects appear later. Already offered and saved visits keep their resolved rewards; this gate applies only when selecting a new event.
-
-The committed `mysteryChosenChoice` records Material amounts actually awarded, including Homestead find bonuses, for the reward summary and save/resume. Keep the offered event's base amounts unchanged and apply bonuses only at the grant. `applyMysteryEffect` returns the actual Material award in `MysteryEffectResult`; navigation records that result without reconstructing it from inventory differences.
-
-Save the complete resolved Mystery offer after Boon substitution and Labyrinth modifiers. Resume uses that offer directly, so an event-pool edit cannot change a choice the player already saw. The chosen choice remains a separate record of rewards actually granted.
-
-Mystery choice commands accept only a choice object from the current resolved visit. Retained callbacks from an earlier visit, even one with the same event, cannot apply effects to the new visit. Resolve effects from the stored offer so the displayed choice and awarded outcome stay together. Choice and card-pick callbacks return whether the command was accepted; rejected actions keep the screen open, show a concise error, and suppress success feedback.
-
-`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker and `mysteryPendingRemoval` are retired.
-
-Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
+Start with [Mystery offer and resume rules](./GAME_RULES.md#mystery-visits).
 
 - **1. Add `kind` string to `MysteryEffect` union** — `src/lib/mystery/types.ts`
 - **2. Add a case to `applyMysteryEffect`** — `src/features/alchemy/run-loop/navigation/mystery-flow.ts`
@@ -159,7 +185,7 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 
 ## Adding / changing corruption flow
 
-Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Serrated Edge's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Wishing Well's visible Gold number maps to its Gold branch while its unnumbered Wish remains fixed; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
+Preserve [Corruption outcomes and numeric bindings](./GAME_RULES.md#corruption-altars).
 
 - **1. Card mutation rules** — `src/lib/corruption/`
 - **2. Destination handlers (corrupt / exit / abandon)** — `run-loop/navigation/corruption-flow.ts`

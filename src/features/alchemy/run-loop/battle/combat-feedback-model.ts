@@ -39,6 +39,7 @@ export function prepareCombatFeedback(
           entry.impact !== false &&
           entry.target === event.target &&
           entry.stat === event.stat &&
+          entry.feedback === event.feedback &&
           Math.sign(entry.amount) === Math.sign(event.amount),
       );
       const previous = consolidated[index];
@@ -65,8 +66,11 @@ export function prepareCombatFeedback(
     Array<CombatTextEvent & Pick<FloatingCombatText, "includesCritical">>
   > = { player: [], enemy: [] };
   let hasMeaningful = false;
+  const hasPrimaryResult = consolidated.some(
+    (event) => event.feedback === "primary" && (event.kind === "notice" || event.amount !== 0),
+  );
   for (const event of consolidated) {
-    if (event.kind !== "notice" && event.amount === 0) continue;
+    if (event.kind !== "notice" && event.amount === 0 && !(event.feedback === "primary" && !hasPrimaryResult)) continue;
     byTarget[event.target].push(event);
     hasMeaningful = true;
   }

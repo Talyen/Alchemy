@@ -1,10 +1,16 @@
 # Run and save workflows
 
+These are editing sequences; [run state](./RUN_STATE.md) and
+[save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md) own the
+contracts. Before handoff, check the affected acceptance/rejection and resume
+behavior, then run [the task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
+
 ## Change persisted save data
 
 1. Decide whether the change needs a version bump or a safe additive default using the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
 2. Follow its [required pattern](../src/features/alchemy/shared/storage/MIGRATIONS.md#required-pattern-automated), updating the schema, domain defaults, codecs, and fixtures together. [Defaults and resume normalization](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization) names the owners; [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion) owns clear-save modes.
-3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) with the relevant save/persistence unit suites (`npm run test:full -- <test-paths>`), then run the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). The default local gate does not select the complete save suite; the opt-in full verifier does. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
+3. Check [save expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations),
+   reusing `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
 
 ---
 
@@ -14,7 +20,8 @@
 2. Update the active-run schema and, for progression fields, `PersistedRunProgress` and `ACTIVE_RUN_PROGRESS_KEYS` in `src/lib/active-run-session/run-progress.ts`, the matching validation schema in `src/lib/validation/save-schemas/run-progress.ts`, and fresh/resume initialization in `run-state-init.ts`. The domain contract owns shared wire/live fields and serialization keys; validation owns recovery defaults. Follow the [shared run-progress contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#shared-run-progress-shape), preserving the distinction between fresh-run defaults and missing-field recovery.
 3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `run-resume-codec.ts`. This codec is the sole active-run progress/session ↔ `ActiveRunData` translation boundary; shops and interrupted flow keep their focused codec helpers.
 4. Keep `snapshotRun()` / `restoreRun()` as thin lifecycle wrappers and publish boot/resume through one `dispatchRunSessionCommand()`. Defer navigation, audio, and presentation work until after commit.
-5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract using `npm run test:full -- <test-paths>`. Follow the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change) for the final gate; the default local gate does not perform dependency-related selection.
+5. Check active-run round trips and affected storage recovery with the
+   [save expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations).
 
 ---
 
@@ -37,13 +44,8 @@ Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant s
 
 ## Add or change post-victory routing (`REWARD_ROUTES`)
 
-The Alchemist encounter bonus grants one Potion after the final reward choice or skip, including encounters with a follow-up bonus card choice.
-
-Follow-up choices include Companion cards, Archery cards from Fletched, Wish cards from Wishkeeper, and Nature cards from Kindred Spoils. The saved `companionChoiceIds` field carries all of these bonus choices. Primary and bonus choices restore against the full card catalog in their saved order, dropping only missing IDs; loading never rerolls choices or reapplies offer-pool or theme eligibility.
-
-An interrupted bonus handoff resumes only the bonus choices: the primary reward and its materials have already committed. Unclaimed rewards whose choices no longer resolve stay on Rewards with Skip available, retaining materials and routing metadata across repeated saves until finalized. Loading never awards materials.
-
-Destination eligibility uses health and maximum health after victory bonuses and the upcoming location’s loot depth. Combat and Wildwood exclude exhausted Boon and permanent-Trinket pools before sampling through the [shared loot policy](./ARMORY.md#loot-tuning). Pass progression from `resolveDraftLootProgress()` when generating new loot; loading pending rewards or shop offers must not reapply progression eligibility.
+Follow [reward handoff rules](./RUN_STATE.md#reward-handoffs) for bonus choices,
+interruption and saved routing; the steps below change the route itself.
 
 - **1. Add route constant** — `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`
 - **2. Compute route after rewards** — `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`)
@@ -73,7 +75,21 @@ All endings use the store-owned `settleRunEnd` operation, including victory insi
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put non-rollbackable effects in `afterCommit` or after the command returns. Feature commands receive a readonly `RunTransaction`; pass it to every write-port operation and return an explicit `acceptCommand(value)` or `rejectCommand(reason, fallback)`. Rejection discards all writes and RNG draws and skips `afterCommit`; the dispatcher returns the supplied value or fallback. This command-owner example awards an already bonus-adjusted material amount and returns detached result data:
+Start with [command atomicity](./RUN_STATE.md#command-atomicity) and an existing
+[production example](./RUN_STATE.md#common-implementation-paths).
+
+1. Extend the owning intent command. Compose write-port operations using its
+   readonly transaction; never dispatch a nested command.
+2. Return `acceptCommand(value)` or `rejectCommand(reason, fallback)`. Keep
+   execution synchronous and non-rollbackable effects after commit.
+3. For completed-result feedback, use the session-bound
+   `SessionPersistence.afterProgressSaved` (`routeCommands.progress.afterSaved`
+   for screens). Input acknowledgment and Saving… remain immediate.
+4. Verify the affected acceptance, rejection and persistence behavior, then run
+   the [task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
+
+For a new command owner, this example awards an already bonus-adjusted amount
+and returns detached data:
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -96,15 +112,9 @@ export function awardMaterialReward(materials: MaterialInventory, session: GameS
 }
 ```
 
-An accepted command has committed in memory; `afterCommit` does not acknowledge a
-save. The controller uses its session-bound `SessionPersistence.afterProgressSaved`
-(exposed to screens as `routeCommands.progress.afterSaved`) for completed-result
-feedback. Keep input acknowledgment and Saving… immediate, following
-[completed actions and local saving](./RUN_STATE.md#completed-actions-and-local-saving).
-
-Inside an existing reward, shop, or mystery command, call the mutator with that command's transaction instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
-
-Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. Older activity fields are read only by migration; unfinished legacy combat is abandoned after winner selection, without executing obsolete rules.
+When extending an existing reward, shop or Mystery command, retain its claim
+guard and finalization. Battle commands return detached playback frames;
+[presentation](./RUN_STATE.md#committed-battle-playback) never commits gameplay.
 
 Fixtures entering the gameplay aggregate follow the same snapshot boundary as
 production. Convert an engine fixture with `battleSnapshot(createBattleState(...))`
@@ -116,12 +126,19 @@ Pure engine tests can continue to use the execution shape directly.
 
 ## Campfire brewing and Transmutation visits
 
-`run/room-visit-initialization.ts` initializes fixed visit offers using the saved events RNG stream inside the room-entry transaction. `navigation/alchemy-commands.ts` owns brewing, source/keyword selection, and transmutation actions against that committed visit. Campfire and Transmutation activities own offers, completion, and result cards; Transmutation also saves class-independent keyword choices, source snapshots and indices, fixed randomly selected source keywords, exact alteration previews, and source/keyword selections; the resume codec persists them independently of the visible menu. Returning or reloading must not regenerate an initialized visit.
+Start with [brewing and Transmutation rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+and [visit interaction](./UI_BROWSING.md#campfire-and-transmutation).
 
-Brew and alteration commands validate the current activity, completion, source eligibility, and selected offers before writing. Payment, deck replacement, discovery, and visit use commit synchronously through the run-session write port.
-
-Campfire Rest and Brew are mutually exclusive. Campfire brewing selects the mixing flow when the deck has at least two eligible Potion instances, including previously strengthened or Mixed Potions. The player chooses two instances, inspects the preview, and confirms Mix. Otherwise, choosing one of the three saved offers immediately grants it. Both the screen and command enforce this choice. The Campfire route passes active room modifiers to the screen so Hidden Purse and Herbal Hearth rewards are acknowledged after Rest, including resume; brewing does not claim those Rest rewards. The Alchemist exposes Mix Potion and Distill as separate services sharing the existing price and once-per-visit brewing allowance.
-
-Transmutation selects a source and previews its first compatible keyword immediately. Three keyword buttons above the original-to-preview comparison switch between saved alterations. One keyword comes from each of Damage, Buffs/Restoration (including Health and Leech), and Resources/Additions when the deck supports all three groups; unavailable groups use unique useful fallback choices. Back returns to the card picker without drawing RNG. Selection commands leave the deck unchanged; Transmute validates the source snapshot, fixed selection, and current eligibility, then atomically replaces that instance with the preview.
-
-After a covering save, Transmutation reveals the completed card with the card-reward chime and waits for Continue. The result card remains inspectable; Continue advances without granting it again. Pending or failed saves keep choices locked and use the existing progress-save retry flow; a completed resume shows the saved result and Continue without altering again or replaying the reward chime. Mixed Potions, corrupted cards, and already-transmuted cards are ineligible; strengthened standard Potions are eligible. Visits with no valid alteration, and completed visits missing a result, advance automatically after offer initialization. A completed Labyrinth support visit clears its pending node through the existing progression flow.
+1. Initialize offers in `run/room-visit-initialization.ts` inside room entry using
+   the saved events stream. Rendering, Back and resume never regenerate a visit.
+2. Change actions in `navigation/alchemy-commands.ts`. Validate activity,
+   completion, eligibility and selected source/offer snapshots before writing;
+   payment, deck replacement, discovery and visit use share one synchronous command.
+3. Update the [visit codec](../src/features/alchemy/shared/storage/MIGRATIONS.md#alchemy-visits-and-modified-cards)
+   when offers, selections, previews or results change. Retain current-format resume.
+4. Pass active Campfire room modifiers to the screen, including on resume, so
+   Hidden Purse and Herbal Hearth acknowledge only Rest rewards. Completed
+   Labyrinth support visits clear their pending node through normal progression.
+5. Check fixed offers, repeated/rejected actions, saved result/departure and missing
+   result recovery, then run the [task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
+   Visible changes also require [visual review](./UI_VISUAL_REVIEW.md).

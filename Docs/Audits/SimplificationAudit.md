@@ -1,7 +1,5 @@
 # Simplification Audit
 
-Merges the former Change Locality & Context Efficiency (04), Dead Code (05), Dual-Path Retention (08), Duplicate Feature Surface (09), Inelegant Slop (11), and State Gravity & Ownership (14) audits.
-
 **Goal:** Make the code easier to understand and change safely by removing obsolete work, duplicated policy, and misplaced responsibilities. Reduced surface is useful when it reduces maintenance cost; concise code is not an end in itself.
 
 ## Scope map
@@ -19,10 +17,8 @@ Sibling routing: async/lifetime → RuntimeCorrectness; type escapes → TypeSaf
 
 ## Hard stops
 
-- Do not weaken tests/gates/diagnostics/generated-output checks; do not hand-edit generated output — fix sources and regenerate.
 - Prove dead candidates are not entry points, dynamic-import keys, barrel registrations, or externally consumed exports; read `knip.config.js` allowlists first and update them deliberately.
 - Do not delete a migration path while save/resume/fixture consumers still need the old shape (check `MIGRATIONS.md`, `tests/fixtures/current-saves.ts`, guard tests). Deprecation comments alone do not close a window.
-- Do not collapse [intentional dual seams](README.md#intentional-seams-do-not-collapse); Vite web vs Electron entries are this audit's extra seam to leave alone.
 - A shared abstraction needs concrete consumers and a coherent responsibility. Do not force distinct product variants into configuration flags to satisfy a duplication count; follow existing UI ownership rules.
 - Complexity scores and file length are discovery aids. Preserve cohesive rule code, wire formats, composition roots, and catalogs unless there is a demonstrated comprehension or change problem.
 - Do not create new stores/managers beside existing owners for one flow; no React context for run/battle data; nothing React lands in `src/lib`.
@@ -43,11 +39,15 @@ Choose deletion, retargeting, inlining, sharing, or moving responsibility accord
 
 Review the resulting caller path, not just the extracted helper. Check that the old responsibility is actually removed, callers remain understandable, intentional differences survive, and the remedy does not merely relocate complexity. Use existing behavior tests and required gates; add coverage when a meaningful preserved invariant lacks an owner. For locality findings, show the representative change that now needs fewer independent edits.
 
-## Known signals
+## Discovery tools
 
-- `npm run deadcode:entry-exports`; unreferenced types/components; unread state/events; empty or stubbed tests; orphaned support surface (CSS, routes, helpers, docs).
-- `legacy`/`compat`/`shim`/`v1` names imported beside newer owners; side-by-side barrel exports; hub methods that only forward.
-- Parallel screen shells across `meta/`/`run-setup/`/`run-loop/`; repeated empty states, card grids, modal scaffolds, reward wrappers.
-- Interface+single implementer+factory; `*Manager/*Helper/*Coordinator` around one function; boolean parameter soup; defensive cast stacks; complexity > 10 without domain reason.
-- Battle math in `.tsx`; transient UI fields on save shapes; private aggregate/store-internal imports from outside `shared/stores/`; invented parallel hubs. Direct imports of the documented capability ports are the required feature boundary, not a finding.
-- `node scripts/audit-change-amplification.mjs` clusters; duplicated policy across AGENTS/Docs/scripts; dependency-cruiser cycles (`npm run audit:all`) remedied by inversion/extraction/facades — layer violations stay Oxlint fixes.
+Use `npm run deadcode:entry-exports` and `knip.config.js` for unused symbols,
+registrations and support files. `node scripts/audit-change-amplification.mjs`
+finds co-edit clusters; `npm run audit:all` includes boundary/cycle diagnostics.
+Counts and complexity scores remain discovery aids under the evidence bars above.
+
+Search `legacy`/`compat`/`shim`/`v1` twins, forwarding hubs, parallel screen
+shells/grids/modals, boolean option bags, cast stacks, rule code in TSX and
+presentation fields in saves. Check misleading abstraction names and mixed
+responsibilities against real consumers. Documented capability ports are required
+boundaries; composition roots and cohesive catalogs may legitimately be large.

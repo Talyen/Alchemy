@@ -3,7 +3,7 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { gearAssets } from "./assets/gear-assets.mjs";
-import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-sources.mjs";
 import { selectionHash } from "./assets/asset-manifest-cache.mjs";
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
 import { processFreshEntry } from "./assets/asset-manifest-cache.mjs";
@@ -12,6 +12,7 @@ import {
   ASSET_SCHEMA_VERSION,
   MANIFEST_BASENAME,
   SHARP_DEFAULTS,
+  LOW_MEMORY_ASSETS,
 } from "./assets/asset-constants.mjs";
 import {
   ensureOutputDir,
@@ -102,9 +103,13 @@ async function optimizeAsset(asset, storedEntry, check) {
 }
 
 export async function optimizeAssets({ check = false } = {}) {
+  if (LOW_MEMORY_ASSETS) {
+    sharp.concurrency(1);
+    sharp.cache({ memory: 16, files: 0, items: 20 });
+  }
   const allAssets = [...staticAssets, ...gearAssets];
   await validateAssetRegistry(allAssets);
-  await requireAssetSources(allAssets, { manifestPath, settingsFor: artTransformSettings });
+  await requireAssetSources(allAssets);
 
   await ensureOutputDir(outputDir, { check });
 

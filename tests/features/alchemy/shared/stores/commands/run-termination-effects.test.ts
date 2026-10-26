@@ -123,18 +123,31 @@ it("a broken run-start sound cannot prevent opening combat or subsequent accepte
   expect(controller.battle.endTurn(controller.battle.read().battleState)).not.toBeNull();
 });
 
-it.each(["abandoned", "death", "victory"] as const)(
-  "%s captures only new hero unlocks, preserves saved progress and clears the reveal on the next run",
-  async (ending) => {
+it.each([
+  ["abandoned", "battle"],
+  ["abandoned", "menu"],
+  ["abandoned", "collection"],
+  ["abandoned", "talents"],
+  ["abandoned", "homestead"],
+  ["abandoned", "armory"],
+  ["abandoned", "options"],
+  ["death", "battle"],
+  ["victory", "battle"],
+] as const)(
+  "%s from %s captures new hero unlocks, saves progress and clears the reveal on the next run",
+  async (ending, screen) => {
     const { session, controller, bytes, persistence } = start();
     const end = () => {
       if (ending === "abandoned") controller.flow.handleAbandonRun();
       else if (ending === "death") completeRunDefeat(session);
       else completeRunVictory(session);
     };
+    controller.flow.goToScreen(screen);
+    expect(readActiveRunScreen(session)).toBe(screen);
     end();
     expect(readRunSession(session).runEndUnlockedCharacters).toEqual(["rogue"]);
     await persistence.waitForWrites();
+    if (ending === "abandoned") expect(readActiveRunScreen(session)).toBe("game-over");
     const save = JSON.parse(bytes.get(SAVE_KEY)!);
     expect(save.finishedRunCharacters).toContain("knight");
     expect(save.activeRun).toBeNull();

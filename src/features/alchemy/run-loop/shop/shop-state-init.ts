@@ -8,7 +8,8 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
-import { doublePotionPotency } from "@/lib/alchemist";
+import { applyStrongSpiritsToPotions, createAlchemistBrewOffers } from "@/lib/alchemist/brewing";
+export { applyStrongSpiritsToPotions } from "@/lib/alchemist/brewing";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
 import {
@@ -17,8 +18,14 @@ import {
   SHOP_CARDS_OFFERED,
   TRINKET_SHOP_OFFERED,
 } from "@/lib/game-constants";
-import { selectRewardCards, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
+import {
+  getOfferableCardPool,
+  getStandardPotionPool,
+  selectRewardCards,
+  trinketLibrary,
+  type BattleCard,
+  type TrinketEntry,
+} from "@/lib/game-data";
 import {
   gearDefinitions,
   generateGearRewardChoicesForRarity,
@@ -35,13 +42,6 @@ export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
 export function merchantShopPool(modifiers: readonly EncounterRewardTraitId[] = []): BattleCard[] {
   return labyrinthCardShopPool(getOfferableCardPool(), modifiers);
-}
-
-export function applyStrongSpiritsToPotions(
-  potions: BattleCard[],
-  modifiers: readonly EncounterRewardTraitId[] = [],
-): BattleCard[] {
-  return modifiers.includes("strong-spirits") ? potions.map(doublePotionPotency) : potions;
 }
 
 export function resampleCardShopOfferings(
@@ -148,6 +148,7 @@ export function createInitialAlchemistState(
 ): AlchemistState {
   return {
     ...emptyAlchemistState(),
+    brewOffers: createAlchemistBrewOffers(rng, modifiers),
     potions: applyStrongSpiritsToPotions(
       selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED, [], rng),
       modifiers,

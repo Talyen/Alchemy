@@ -1,51 +1,61 @@
 # Commands
 
-Canonical detail linked from [REFERENCE.md](./REFERENCE.md).
+Choose an operation here. [Contributing](../CONTRIBUTING.md) owns task checks;
+[Verification diagnostics](../scripts/VERIFICATION.md#failure-first-triage) covers failures;
+[simulation](./SIMULATION.md) covers battle and career investigations.
 
 ## Script Command Reference
 
-The table covers common tasks; `package.json` owns the complete list.
-[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns what each gate
-includes and when it applies.
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) contains the complete
+ordinary verification workflow and permissions. This reference lists other operations.
+`package.json` owns the complete script list.
 
-| Task                               | Command                            | Notes                                                                                             |
-| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Develop in the browser             | `npm run dev`                      | Validates committed assets, then starts Vite                                                      |
-| Develop in Electron                | `npm run dev:desktop`              | Starts the desktop shell                                                                          |
-| Build the web renderer             | `npm run build`                    | Validates generated outputs; does not rewrite them or run typecheck                               |
-| Regenerate assets                  | `npm run assets`                   | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
-| Check local asset freshness        | `npm run assets:check`             | Read-only; requires selected local Asset Library sources                                          |
-| Check prepared outputs             | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
-| Run local smoke                    | `npm test`                         | Fixed Node-only suites; accepts no test-path arguments                                            |
-| Run unit tests                     | `npm run test:full -- <path>`      | Omit paths for the full unit suite; agents may run unit tests without approval                    |
-| Select affected unit tests         | `npm run verify:unit -- <paths>`   | Dependency-related and risk-selected units only; add `--plan` to inspect selection                |
-| Run lightweight checks during work | `npm run verify -- --diff`         | Add `--plan` to preview selection                                                                 |
-| Finish a task                      | `npm run check -- --diff`          | Use explicit task-owned paths in a mixed checkout                                                 |
-| Check source types                 | `npm run typecheck`                | Source types; full static checks run in CI or by explicit local request                           |
-| Run the CI static aggregate        | `npm run lint:ci`                  | See [gate policy](../CONTRIBUTING.md#static-build-and-ci-policy)                                  |
-| Validate docs                      | `npm run docs:check`               | Links, paths, commands, discovery references, plan metadata                                       |
-| Run a browser journey              | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
-| Simulate isolated battles          | `npm run balance:sim`              | [Battle simulation](./REFERENCE.md#balance-simulation)                                            |
-| Simulate careers                   | `npm run balance:playthrough`      | [Headless playthroughs](./PLAYTHROUGH_SIMULATION.md)                                              |
-| Compare loot offers                | `npm run balance:loot`             | [Loot tuning](./ARMORY.md#loot-tuning)                                                            |
-| Profile frames and hitches         | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
-| Find recent check evidence         | `npm run runs:show -- --last 10`   | Run IDs, outcomes and artifact locations                                                          |
-| Reset local diagnostics            | `npm run clean`                    | Cleanup details below                                                                             |
-| Publish a release                  | `npm run release`                  | Gates, commit/tag, push and CI watch; follow [Release](./RELEASE.md)                              |
+| Task                        | Command                            | Notes                                                                                             |
+| --------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Develop in the browser      | `npm run dev`                      | From the original workspace, serves current local `main`; task worktrees serve their own source   |
+| Preview this checkout       | `npm run dev:local`                | Validates committed assets, then starts Vite in this checkout                                     |
+| Develop in Electron         | `npm run dev:desktop`              | Starts the desktop shell                                                                          |
+| Build the web renderer      | `npm run build`                    | Validates generated outputs; does not rewrite them or run typecheck                               |
+| Regenerate assets           | `npm run assets`                   | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
+| Check local asset freshness | `npm run assets:check`             | Read-only; reads committed masters under `assets/sources/`                                        |
+| Check prepared outputs      | `npm run assets:check:outputs`     | Read-only; validates prepared files without reading source masters                                |
+| Inspect test reservations   | `npm run test:status`              | Shows managed active and waiting commands; add `--json`                                           |
+| Run a browser journey       | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
+| Simulate isolated battles   | `npm run balance:sim`              | [Battle simulation](./SIMULATION.md#balance-simulation)                                           |
+| Simulate careers            | `npm run balance:playthrough`      | [Headless careers](./SIMULATION.md#headless-careers)                                              |
+| Compare loot offers         | `npm run balance:loot`             | [Loot report](./ARMORY.md#loot-progression-report)                                                |
+| Profile frames and hitches  | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
+| Produce gameplay trailers   | `npm run trailer -- help`          | [Automated capture, cinematic edits and Steam exports](./TRAILERS.md)                             |
+| Find recent check evidence  | `npm run runs:show -- --last 10`   | Run IDs, outcomes and artifact locations                                                          |
+| Clear rebuildable caches    | `npm run clean`                    | Cleanup details below                                                                             |
+| Publish a release           | `npm run release`                  | Gates, commit/tag, push and CI watch; follow [Release](./RELEASE.md)                              |
+
+For changed player-facing text, use `npm run i18n:prepare -- <task-file.json>`,
+translate and separately review its result templates, then run
+`npm run i18n:finish -- <task-file.json> --reviewed`. [Localization](./LOCALIZATION.md#agent-workflow) owns the workflow.
 
 Use [Agent discovery](./AGENT_DISCOVERY.md) for optional lookup/measurement
 commands and [Plans](./Plans/README.md) for plan creation and completion.
 `npm run docs:check:final` is a non-mutating repository-wide closure check: it
 requires no active or blocked plans and does not finish or delete them.
-Ordinary documentation handoff uses `docs:check` plus the task-scoped `check`;
-other tasks' active or blocked plans may remain.
+See [Contributing](../CONTRIBUTING.md#hooks-and-workflow-hygiene) for plan handoff requirements.
+
+Use `npm run visual:scenario -- --list` for repeatable seeded screen captures.
 
 ## Local development
 
-`npm run dev` and `npm run dev:desktop` validate committed prepared outputs through
-their `predev` lifecycle. The external Asset Library is needed for authoring and
-raw-source freshness checks, not ordinary development. If validation reports stale
-outputs, follow [asset preparation](./WORKFLOWS-ASSETS.md#local-library-and-ci)
+From the original workspace, `npm run dev` delegates to the checkout that owns
+local `main`, even when the workspace branch lags. It prints the served checkout
+and commit; Vite watches that checkout as integrations arrive. No fetch, merge,
+or build is needed. Task worktrees retain their own previews. Use `npm run dev:local`
+to explicitly preview the current checkout, including the original workspace's edits.
+If no checkout owns `main`, the root launcher fails rather than serving stale source.
+
+`npm run dev`, `npm run dev:local`, and `npm run dev:desktop` validate committed
+prepared outputs in the served checkout before starting. Desktop and checked
+development remain checkout-local. Asset authoring and source freshness checks use committed
+masters under `assets/sources/`; no external library is required. If validation reports stale
+outputs, follow [asset preparation](./WORKFLOWS-ASSETS.md#repository-sources-and-ci)
 rather than bypassing the check.
 
 If Electron's binary download was skipped or the installation is incomplete, run
@@ -81,16 +91,21 @@ directory within an edition, so run them sequentially.
 
 **Local build and checker overrides:**
 
-- `ASSET_LIBRARY_ROOT` — overrides the local Asset Library location; defaults to `~/Documents/Asset Library`.
+- `ASSET_LIBRARY_ROOT` is ignored. Production preparation always uses this checkout's `assets/sources/`; optional Sound desk browsing accepts `--library <Sounds directory>`.
 - `ALCHEMY_SKIP_ASSETS=1` — only for direct asset-preparation invocation; semantics owned by
   [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#skip-mode-and-verification).
-- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev` before `npm run dev:checked`, which starts Vite directly without the committed-output validation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
+- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev:local` before `npm run dev:checked`, which starts Vite directly without the committed-output validation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; rejected for releases with Sentry reporting. `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds, their bundle budgets, and preview smoke in the opt-in `npm run check:full`; the default `check` already omits them. CI and ship gates still build.
 
-`npm run clean` removes local diagnostics and the Vite cache (explicit reset);
-add `-- --builds` to remove build outputs. `npm run clean:all` also stops
-Alchemy-owned test-server processes. `npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity.
+`npm run clean` removes rebuildable caches and preserves evidence. Add
+`-- --reports` to explicitly select diagnostics/evidence, `-- --caches` for tool
+environments, or `-- --builds` for build outputs; preview with `--dry-run`.
+`npm run clean:all` selects all of these and Alchemy-owned test-server processes.
+`npm run prune:transient` expires only reproducible diff inventories after 24 hours.
+`npm run storage:report -- --json reports/storage/baseline.json` measures existing
+files without building or deleting them. [Cleanup details](../scripts/README.md#cleanup-clean--explicit-reset-prunetransient--expiry)
+own ownership guards and preservation rules.
 Its exact options are owned by `scripts/prune-transient-artifacts.mjs`; reset options
 belong to `scripts/clean-dev-artifacts.mjs`. Neither command manages shared
 Playwright caches.

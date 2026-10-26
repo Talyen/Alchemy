@@ -6,10 +6,13 @@ import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
 import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
-import { processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
-import { endPlayerTurn } from "@/lib/battle/enemy-turn";
+import { processEnemyTraits, processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { dealDamageToEnemy } from "@/lib/battle/damage";
+import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";
+import { dealSelfDamage } from "@/lib/battle/status-helpers";
+import { initializeEnemyState } from "@/lib/battle/battle-enemy-setup";
 import { makeTestBattleState } from "../../fixtures/battle";
 import {
   defaultCcState,
@@ -73,30 +76,30 @@ describe("imported enemy trait damage rules", () => {
     ["inquisitor", "bleed", 1],
     ["seraph", "bleed", 1],
     ["brawler", "bleed", 1],
-    ["skeleton", "holy", 2],
-    ["skeleton", "stun", 2],
-    ["frostwarden", "freeze", 0.5],
+    ["skeleton", "holy", 1.3],
+    ["skeleton", "stun", 1],
+    ["frostwarden", "freeze", 1],
     ["frostwarden", "burn", 1.3],
     ["fire-imp", "freeze", 1.3],
     ["hellhound", "freeze", 1.3],
     ["giant-snake", "freeze", 1.3],
-    ["blood-cultist", "holy", 1.3],
+    ["blood-cultist", "holy", 1],
     ["vampire", "holy", 1.3],
-    ["vampire", "burn", 1.3],
+    ["vampire", "burn", 1],
     ["winter-wolf", "burn", 1.3],
     ["ice-wraith", "holy", 1.3],
-    ["ice-wraith", "burn", 1.3],
+    ["ice-wraith", "burn", 1],
     ["yeti", "burn", 1.3],
-    ["banshee", "holy", 2],
-    ["earth-elemental", "freeze", 0.8],
+    ["banshee", "holy", 1.3],
+    ["earth-elemental", "freeze", 1],
     ["will-o-wisp", "physical", 0.7],
     ["ogre", "holy", 1],
-    ["giant-spider", "burn", 1],
-    ["dire-wolf", "physical", 0.9],
-    ["paladin", "holy", 0.7],
-    ["ice-wraith", "physical", 0.7],
-    ["yeti", "freeze", 0.7],
-    ["earth-elemental", "burn", 0.8],
+    ["giant-spider", "burn", 1.3],
+    ["dire-wolf", "physical", 1.3],
+    ["paladin", "holy", 1],
+    ["ice-wraith", "physical", 1],
+    ["yeti", "freeze", 1],
+    ["earth-elemental", "burn", 1],
   ] as const)("applies %s %s multiplier", (id, damageType, expected) => {
     const state = stateForEnemy(id);
     expect(getEnemyDamageMultiplier(state, damageType)).toBe(expected);
@@ -134,7 +137,7 @@ describe("imported enemy attack reactions", () => {
   it.each(["physical", "bleed"] as const)("Ambush describes and doubles only the first landed %s hit", (damageType) => {
     const state = stateForEnemy("bandit", {});
     expect(state.currentEnemy.traits.find((trait) => trait.id === "bandit")?.description).toBe(
-      "Deals double damage on its first landed hit",
+      "Its first landed hit deals double damage.",
     );
     const first = applyEnemyAbility(
       state,
@@ -250,7 +253,7 @@ describe("imported enemy attack reactions", () => {
     ["hellhound", "burning-blade", { burn: 1 }, 99],
     ["dire-wolf", "fangs", { bleed: 1 }, 97],
     ["banshee", "bash", { stun: 1 }, 97],
-    ["ice-wraith", "frostbolt", undefined, 96],
+    ["ice-wraith", "frostbolt", undefined, 97],
   ] as const)("modifies %s damage from its player/enemy state", (id, ability, statuses, expectedHealth) => {
     const result = applyEnemyAbility(
       stateForEnemy(id, {
@@ -333,11 +336,221 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerHealth).toBe(95);
   });
 
-  it("does not retain Blood Countess's retired Bleed aura", () => {
-    const result = endPlayerTurn(
-      stateForEnemy("blood-countess", { enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 } }),
+  it("Crimson Pulse follows alternating turns without selecting an ability", () => {
+    const state = stateForEnemy("blood-countess", { turn: 2 });
+    const result = processEnemyTraits(state, []);
+    expect(result.playerStatuses.bleed).toBe(1);
+    expect(result.lastEnemyAbilityId).toBe(state.lastEnemyAbilityId);
+    expect(processEnemyTraits({ ...state, turn: 1 }, []).playerStatuses.bleed).toBe(0);
+  });
+});
+
+describe("native enemy identities", () => {
+  const attack = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] });
+
+  it("Hollow Frame blocks direct and delayed Leech, including Leech rewards, while preserving damage", () => {
+    const state = stateForEnemy("skeleton", { playerHealth: 50 });
+    const withRewards = {
+      ...state,
+      talentEffects: { ...state.talentEffects, leechHealingBonus: 10 },
+      gearEffects: { ...state.gearEffects, leechBlockChance: 100 },
+    };
+    const effect = { kind: "damage", damageType: "bleed", amount: 8, lifesteal: true } as const;
+    const card = makeEnemyTestCard({ effects: [effect] });
+    const texts: Parameters<typeof applyEnemyAbility>[2] = [];
+    const hit = dealDamageToEnemy(withRewards, card, effect, texts);
+    expect(hit.enemyHealth).toBe(92);
+    expect(hit.playerHealth).toBe(50);
+    expect(hit.playerStatuses.block).toBe(0);
+    const ticked = tickEnemyStatuses(hit, texts);
+    expect(ticked.enemyHealth).toBeLessThan(hit.enemyHealth);
+    expect(ticked.playerHealth).toBe(50);
+    expect(texts.some((text) => text.target === "player" && text.kind === "heal")).toBe(false);
+  });
+
+  it("Hollow Frame still prevents Leech on the killing hit", () => {
+    const effect = { kind: "damage", damageType: "physical", amount: 8, lifesteal: true } as const;
+    const card = makeEnemyTestCard({ effects: [effect] });
+    const result = dealDamageToEnemy(stateForEnemy("skeleton", { playerHealth: 50, enemyHealth: 1 }), card, effect, []);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(50);
+  });
+
+  it("Pilfer transfers one Block before the attack and pays depletion rewards", () => {
+    const state = stateForEnemy("goblin", {
+      playerHealth: 50,
+      playerStatuses: defaultPlayerStatusValues({ block: 1 }),
+    });
+    const result = applyEnemyAbility(
+      { ...state, talentEffects: { ...state.talentEffects, blockDepletedHeal: 2 } },
+      attack,
+      [],
     );
-    expect(result.state.playerStatuses.bleed).toBe(0);
-    expect(result.enemyResolutionCombatTexts).toEqual([]);
+    expect(result.enemyMitigation.block).toBe(1);
+    expect(result.playerStatuses.block).toBe(0);
+    expect(result.playerHealth).toBe(44);
+  });
+
+  it("Pilfer cannot create Block from nothing or steal on a defensive ability", () => {
+    expect(applyEnemyAbility(stateForEnemy("goblin"), attack, []).enemyMitigation.block).toBe(0);
+    const state = stateForEnemy("goblin", { playerStatuses: defaultPlayerStatusValues({ block: 5 }) });
+    const defensive = applyEnemyAbility(state, cardById.block, []);
+    const withoutTrait = applyEnemyAbility(
+      { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } },
+      cardById.block,
+      [],
+    );
+    expect(defensive.playerStatuses.block).toBe(5);
+    expect(defensive.enemyMitigation.block).toBe(withoutTrait.enemyMitigation.block);
+  });
+
+  it("Pilfer steals before every hit, including Dodged hits", () => {
+    const state = stateForEnemy("goblin", { playerStatuses: defaultPlayerStatusValues({ block: 20 }) });
+    const result = applyEnemyAbility(state, { ...attack, effects: [...attack.effects, ...attack.effects] }, []);
+    expect(result.enemyMitigation.block).toBe(2);
+    expect(result.playerStatuses.block).toBe(2);
+    const dodged = applyEnemyAbility({ ...state, rng: () => 0 }, attack, []);
+    expect(dodged.playerStatuses.block).toBe(19);
+    expect(dodged.enemyMitigation.block).toBe(1);
+  });
+
+  it("Snap Shut grants Block on landed hits and never after misses or utility", () => {
+    const state = stateForEnemy("mimic");
+    expect(applyEnemyAbility(state, attack, []).enemyMitigation.block).toBe(1);
+    expect(applyEnemyAbility({ ...state, rng: () => 0 }, attack, []).enemyMitigation.block).toBe(0);
+    const defensive = applyEnemyAbility(state, cardById.block, []);
+    const baseline = applyEnemyAbility(
+      { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } },
+      cardById.block,
+      [],
+    );
+    expect(defensive.enemyMitigation.block).toBe(baseline.enemyMitigation.block);
+  });
+
+  it("Contagion heals once per damaging Poison hit and tick, including typed self-damage", () => {
+    const state = stateForEnemy("plague-doctor", { enemyHealth: 50 });
+    const poison = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 4 }] });
+    const hit = applyEnemyAbility(state, poison, []);
+    expect(hit.enemyHealth).toBe(51);
+    expect(tickPlayerStatuses(hit, []).enemyHealth).toBe(52);
+    expect(dealSelfDamage(state, 3, "poison", []).state.enemyHealth).toBe(51);
+  });
+
+  it("Contagion rewards blocked Poison hits but not other damage or a finished battle", () => {
+    const state = stateForEnemy("plague-doctor", { enemyHealth: 50 });
+    const poison = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 4 }] });
+    const blocked = applyEnemyAbility(
+      { ...state, playerStatuses: defaultPlayerStatusValues({ block: 20 }) },
+      poison,
+      [],
+    );
+    expect(blocked.enemyHealth).toBe(51);
+    const resisted = tickPlayerStatuses(
+      {
+        ...state,
+        playerStatuses: defaultPlayerStatusValues({ poison: 4 }),
+        talentEffects: { ...state.talentEffects, poisonDamageReduction: 100 },
+      },
+      [],
+    );
+    expect(resisted.enemyHealth).toBe(51);
+    const selfResisted = dealSelfDamage(
+      { ...state, talentEffects: { ...state.talentEffects, poisonDamageReduction: 100 } },
+      3,
+      "poison",
+      [],
+    );
+    expect(selfResisted.healthLost).toBe(0);
+    expect(selfResisted.state.enemyHealth).toBe(51);
+    expect(applyEnemyAbility(state, attack, []).enemyHealth).toBe(50);
+    const lethal = applyEnemyAbility({ ...state, playerHealth: 1, deathsDoorUsed: true }, poison, []);
+    expect(lethal.playerHealth).toBe(0);
+    expect(lethal.enemyHealth).toBe(50);
+  });
+
+  it("Cold Embrace heals 3 only on becoming Frozen, respecting the Health cap", () => {
+    const state = stateForEnemy("ice-wraith", {
+      enemyHealth: 50,
+      playerStatuses: defaultPlayerStatusValues({ freeze: 50 }),
+    });
+    const frozen = resolvePlayerCrowdControlTriggers(state, []);
+    expect(frozen.enemyHealth).toBe(53);
+    expect(resolvePlayerCrowdControlTriggers(frozen, []).enemyHealth).toBe(53);
+    expect(resolvePlayerCrowdControlTriggers({ ...state, enemyHealth: 99 }, []).enemyHealth).toBe(100);
+    expect(
+      resolvePlayerCrowdControlTriggers({ ...state, playerCC: defaultCcState({ cooldown: 1 }) }, []).enemyHealth,
+    ).toBe(50);
+    expect(
+      resolvePlayerCrowdControlTriggers({ ...state, playerStatuses: defaultPlayerStatusValues({ freeze: 1 }) }, [])
+        .enemyHealth,
+    ).toBe(50);
+  });
+
+  it.each([50, 51])(
+    "Soul Harvest stays inactive at %s enemy Health even when the hero is below half",
+    (enemyHealth) => {
+      const result = applyEnemyAbility(
+        stateForEnemy("necromancer", {
+          enemyHealth,
+          playerHealth: 25,
+          playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
+        }),
+        attack,
+        [],
+      );
+      expect(result.enemyHealth).toBe(enemyHealth);
+      expect(result.playerStatuses.forge).toBe(2);
+    },
+  );
+
+  it("Soul Harvest chooses Leech below the Necromancer's half Health even when the hero is healthy", () => {
+    const result = applyEnemyAbility(
+      stateForEnemy("necromancer", {
+        enemyHealth: 49,
+        playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
+      }),
+      attack,
+      [],
+    );
+    expect(result.enemyHealth).toBe(53);
+    expect(result.playerHealth).toBe(92);
+    expect(result.playerStatuses.forge).toBe(2);
+  });
+
+  it("Soul Harvest chooses and resolves Purge for each landed hit without Leech", () => {
+    let draws = 0;
+    const state = stateForEnemy("necromancer", {
+      enemyHealth: 49,
+      playerStatuses: defaultPlayerStatusValues({ forge: 2, haste: 2 }),
+      rng: () => [0.1, 0.99, 0.99][draws++ % 3],
+    });
+    const fangs = { ...cardById.fangs, effects: [...cardById.fangs.effects, ...cardById.fangs.effects] };
+    const texts: Parameters<typeof applyEnemyAbility>[2] = [];
+    const result = applyEnemyAbility(state, fangs, texts);
+    expect(result.enemyHealth).toBe(49);
+    expect(texts.filter((text) => "signal" in text && text.signal === "purge")).toHaveLength(2);
+    expect(result.pendingEnemyBleedLeechHealing).toBe(0);
+  });
+
+  it("Soul Harvest never Purges on a Dodged attack", () => {
+    let draws = 0;
+    const result = applyEnemyAbility(
+      stateForEnemy("necromancer", {
+        enemyHealth: 49,
+        playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
+        rng: () => (draws++ === 0 ? 0.1 : 0),
+      }),
+      attack,
+      [],
+    );
+    expect(result.playerStatuses.forge).toBe(2);
+    expect(result.enemyHealth).toBe(49);
+  });
+
+  it("Mud Elemental starts with the existing one-Health regeneration", () => {
+    const state = stateForEnemy("mud-elemental", { enemyHealth: 50 });
+    const setup = initializeEnemyState(state.currentEnemy, 1, []);
+    expect(setup.enemyRegeneration).toBe(1);
+    expect(processEnemyRegeneration({ ...state, enemyRegeneration: setup.enemyRegeneration }, []).enemyHealth).toBe(51);
   });
 });

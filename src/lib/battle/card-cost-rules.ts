@@ -89,7 +89,9 @@ function resolveGearCostTriggers(
     card.uid !== undefined && gear.recoverLastArcheryCard > 0 && unique.returningFlightUids.includes(card.uid);
 
   const uniqueDiscounts: UniqueCostDiscounts = {};
-  if (card.cost > 0 && physicalFree) uniqueDiscounts.knightsAnswerReady = false;
+  // Wildheart's critical opportunity is spent with this Nature card anyway.
+  // Its free play leaves the independent Physical allowance for a later card.
+  if (card.cost > 0 && physicalFree && !natureFree) uniqueDiscounts.knightsAnswerReady = false;
   if (card.uid !== undefined && unique.returningFlightUids.includes(card.uid))
     uniqueDiscounts.returningFlightUids = unique.returningFlightUids.filter((uid) => uid !== card.uid);
 

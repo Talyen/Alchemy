@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { SaveDataSchema, isCombatGoldOverride } from "@/lib/validation";
-import { defaultBattleState } from "@/lib/battle";
+import { applyCardEffects, defaultBattleState } from "@/lib/battle";
+import { isStandardPotionCard } from "@/lib/game-data";
+import { HALF_DIVISOR, TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES, UI_GOLD } from "@/lib/game-constants";
+import { scoreCombatCards } from "../../src/app/playthrough/combat-policy";
 import { makeMinimalActiveRunInput } from "../fixtures/active-run";
 import { savedActivityFixture } from "../fixtures/run-activity";
 import { scoreAvailableReactions } from "@/lib/battle/reaction-score";
 import { patchBattleState, makeTestCard } from "../fixtures/battle";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
+import type { CombatTextEvent } from "@/lib/battle/types";
 
 describe("bugfix trio regressions", () => {
   it("rounds fractional live-combat gold instead of flooring it", () => {
@@ -321,5 +325,197 @@ describe("bugfix trio regressions", () => {
     });
     // Seven Block plus four Forge damage leaves nine HP for Shatter.
     expect(scoreAvailableReactions(card, state)).toBe(9);
+  });
+
+  it("projects healing before evaluating health-threshold damage bonuses", () => {
+    const base = patchBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      playerHealth: 9,
+      playerMaxHealth: 20,
+      talentEffects: { physicalDoubledBelowHalfHealth: true },
+    });
+    // 9 HP is below half health (9 * 2 < 20).
+    // Without heal: Physical 5 doubles to 10.
+    const unhealedAttack = makeTestCard({
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    // With heal 2: player reaches 11 HP (above half health, 11 * 2 >= 20),
+    // so physical damage does not double (deals 5).
+    const healThenAttack = makeTestCard({
+      effects: [
+        { kind: "heal", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 5 },
+      ],
+    });
+    // Compare enemy health remaining or reaction score impact:
+    // With an enemy frozen with Shatter damage:
+    const frozenState = {
+      ...base,
+      enemyCC: { ...base.enemyCC, freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { ...base.reactions, shatterDamage: 20 },
+    };
+    // Unhealed attack: deals 10 physical, leaving 10 HP for Shatter -> scores 10.
+    expect(scoreAvailableReactions(unhealedAttack, frozenState)).toBe(10);
+    // Heal-then-attack: deals 5 physical, leaving 15 HP for Shatter -> scores 15.
+    expect(scoreAvailableReactions(healThenAttack, frozenState)).toBe(15);
+  });
+
+  it("projects Health costs through survival mechanics and stops hits only after actual defeat", () => {
+    const state = patchBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      playerHealth: 4,
+      playerMaxHealth: 20,
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 20 },
+    });
+    const fatalSacrifice = makeTestCard({
+      effects: [
+        { kind: "lose-health", amount: 5 },
+        { kind: "damage", damageType: "physical", amount: 5 },
+      ],
+    });
+    expect(applyCardEffects(state, fatalSacrifice, []).playerHealth).toBe(1);
+    expect(scoreAvailableReactions(fatalSacrifice, state)).toBe(15);
+    const defeated = { ...state, deathsDoorUsed: true };
+    expect(applyCardEffects(defeated, fatalSacrifice, []).playerHealth).toBe(0);
+    expect(scoreAvailableReactions(fatalSacrifice, defeated)).toBe(0);
+    const healAfterDefeat = {
+      ...fatalSacrifice,
+      effects: [fatalSacrifice.effects[0]!, { kind: "heal" as const, amount: 5 }, fatalSacrifice.effects[1]!],
+    };
+    expect(applyCardEffects(defeated, healAfterDefeat, []).playerHealth).toBe(0);
+    expect(scoreAvailableReactions(healAfterDefeat, defeated)).toBe(0);
+    const revived = { ...defeated, playerStatuses: { ...state.playerStatuses, phoenixFeather: 1 } };
+    expect(applyCardEffects(revived, fatalSacrifice, []).playerHealth).toBeGreaterThan(0);
+    expect(scoreAvailableReactions(fatalSacrifice, revived)).toBe(15);
+  });
+
+  it("includes a prepared Whiplash hit before capping a later reaction at remaining Health", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: { stunSkipTurns: 1 },
+      reactions: { thunderclapDamage: 30 },
+      flags: { nextStunAttackBonus: 4 },
+    });
+    const card = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "stun", amount: 3 },
+        { kind: "damage", damageType: "nature", amount: 1 },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    applyCardEffects(state, card, texts);
+    expect(texts).toContainEqual(expect.objectContaining({ additive: false, amount: 30, healthLost: 22 }));
+    // Seven Stun and one Nature leave 22 Health for Thunderclap.
+    expect(scoreAvailableReactions(card, state)).toBe(22);
+  });
+
+  it("projects gain-max-mana before max-mana scaled damage calculations", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      mana: 2,
+      maxMana: 2,
+      gearEffects: { burnDamagePerManaPercent: 100 },
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { frostfireDamage: 30 },
+    });
+    // Burn damage receives (maxMana * 100%) / 100 bonus multiplier.
+    // Base 5 damage with maxMana=2 gets +200% = 15 damage, leaving 15 for Frostfire.
+    const withoutMaxManaGain = makeTestCard({
+      effects: [{ kind: "damage", damageType: "burn", amount: 5 }],
+    });
+    expect(scoreAvailableReactions(withoutMaxManaGain, state)).toBe(15);
+
+    // With gain-max-mana 1: maxMana becomes 3, getting +300% = 20 damage, leaving 10 for Frostfire.
+    const withMaxManaGain = makeTestCard({
+      effects: [
+        { kind: "gain-max-mana", amount: 1 },
+        { kind: "damage", damageType: "burn", amount: 5 },
+      ],
+    });
+    expect(scoreAvailableReactions(withMaxManaGain, state)).toBe(10);
+  });
+
+  it("re-exports isStandardPotionCard from @/lib/game-data barrel", () => {
+    const healthPotion = makeTestCard({ id: "health-potion" });
+    const slash = makeTestCard({ id: "slash" });
+    expect(isStandardPotionCard(healthPotion)).toBe(true);
+    expect(isStandardPotionCard(slash)).toBe(false);
+  });
+
+  it("caps emergency defense in combat policy using HALF_DIVISOR", () => {
+    const attack = makeTestCard({ id: "attack", effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
+    const defense = makeTestCard({
+      id: "defense",
+      cost: 1,
+      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 10 }],
+    });
+    const state = patchBattleState({
+      mana: 3,
+      maxMana: 3,
+      playerHealth: 20,
+      playerMaxHealth: 20,
+      hand: [attack, defense],
+    });
+    const scores = scoreCombatCards([attack, defense], state, "greedy-effective-damage", 2);
+    // bestAttack is 10; defense is capped at bestAttack / HALF_DIVISOR = 10 / 2 = 5.
+    expect(scores[1]).toBe(10 / HALF_DIVISOR);
+  });
+
+  it("projects self-damage health loss and status application before follow-up cleanses", () => {
+    const state = patchBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 20,
+      playerStatuses: { burn: 0 },
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: { burn: 5 },
+      reactions: { wildfireDamage: 10 },
+    });
+    const exorcism = makeTestCard({
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 2 },
+        { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "nature" },
+      ],
+    });
+    // Self-damage applies 2 Burn to player. Cleanse converts 2 Burn to Nature damage.
+    // Nature damage against burning enemy triggers Wildfire reaction (10 damage).
+    expect(scoreAvailableReactions(exorcism, state)).toBe(10);
+
+    // If self-damage is lethal (with Death's Door already expended), subsequent hits and reactions score 0.
+    const fragileState = patchBattleState({
+      ...state,
+      playerHealth: 2,
+      deathsDoorUsed: true,
+    });
+    expect(scoreAvailableReactions(exorcism, fragileState)).toBe(0);
+  });
+
+  it("projects repeated execution when playNextCardTwice combat flag is set", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { poison: 5, burn: 0 },
+      flags: { playNextCardTwice: true },
+    });
+    const burnAttack = makeTestCard({
+      effects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+    });
+    // Hit 1 deals 3 Burn, triggering Venomflash because enemy has Poison and Burn was 0.
+    // Venomflash payoff is getReactionBonus(poison: 5) = 1.
+    // Hit 2 deals 3 Burn again without repeating Venomflash. Total reaction score = 1.
+    expect(scoreAvailableReactions(burnAttack, state)).toBe(1);
+  });
+
+  it("re-exports transmutation keywords, prefixes, and ui gold from game-constants barrel", () => {
+    expect(TRANSMUTATION_PREFIXES.physical).toBe("Brutal");
+    expect(TRANSMUTATION_PREFIXES.holy).toBe("Hallowed");
+    expect(TRANSMUTATION_KEYWORD_GROUPS).toBeDefined();
+    expect(UI_GOLD.base).toBe("#cd9b51");
   });
 });

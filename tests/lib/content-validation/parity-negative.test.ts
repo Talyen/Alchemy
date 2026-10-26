@@ -53,10 +53,10 @@ it.each<{ name: string; effects: BattleCardEffect[]; lines: string[]; message: s
 
 it("validates summon summaries together with additional mechanics and normalizes both sides of Gold aliases", () => {
   const summon: BattleCardEffect = { kind: "summon-companion", companionId: "golden-retriever" };
-  expect(validateCardDescriptionParity(card([summon], ["Steals 2 Gold each turn", "Companion"]))).toEqual([]);
+  expect(validateCardDescriptionParity(card([summon], ["Gain 1 Gold each turn", "Companion"]))).toEqual([]);
   expect(
     validateCardDescriptionParity(
-      card([summon, { kind: "heal", amount: 2 }], ["Steals 2 Gold each turn", "Restore 99 Health", "Companion"]),
+      card([summon, { kind: "heal", amount: 2 }], ["Gain 1 Gold each turn", "Restore 99 Health", "Companion"]),
     ),
   ).toEqual([
     {
@@ -122,13 +122,8 @@ it.each([
   ["stone-golem", "stone-golem", "Gains 1 Block each turn", ["damage"]],
   ["bandit", "bandit", "Deals double damage on its first attack", ["landed", "hit"]],
   ["blood-countess", "blood-countess", "Receives 30% more Holy damage", ["restores health"]],
-  ["frostwarden", "glacial-body", "Receives half Freeze damage", ["30% more burn damage"]],
-  [
-    "frostwarden",
-    "glacial-body",
-    "Receives 25% less Freeze damage\nReceives 30% more Burn damage",
-    ["half freeze damage"],
-  ],
+  ["frostwarden", "burn-vulnerability", "Receives 20% more Burn damage", ["30% more burn damage"]],
+  ["will-o-wisp", "will-o-wisp", "Receives 20% less Physical damage", ["30% less physical damage"]],
 ] as const)("checks %s's %s wording", (id, traitId, description, missing) => {
   const enemy = enemyBestiary.find((entry) => entry.id === id)!;
   expect(

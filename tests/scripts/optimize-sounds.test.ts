@@ -1,10 +1,15 @@
 import { mkdtempSync, rmSync } from "node:fs";
-import { mkdir, readFile, readdir, rename, utimes, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fixture = vi.hoisted(() => ({ root: "", convert: vi.fn<(args: string[]) => Promise<void>>() }));
+vi.mock("../../scripts/lib/repository-paths.mjs", () => ({
+  get REPO_ROOT() {
+    return fixture.root;
+  },
+}));
 vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
   const { pathToFileURL } = await import("node:url");
@@ -38,7 +43,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 
 fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-sounds-"));
 const { optimizeSounds } = await import("../../scripts/optimize-sounds.mjs");
-const sourceDir = path.join(fixture.root, "Raw Assets", "Sound Effects");
+const sourceDir = path.join(fixture.root, "assets/sources");
 const outputDir = path.join(fixture.root, "public", "sounds");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 const manifestWrites = () => vi.mocked(writeFile).mock.calls.filter(([file]) => file === manifestPath);
@@ -51,7 +56,6 @@ async function convert(args: string[]) {
 describe("sound manifest publication", () => {
   beforeEach(async () => {
     rmSync(fixture.root, { recursive: true, force: true });
-    vi.stubEnv("ASSET_LIBRARY_ROOT", sourceDir);
     await mkdir(sourceDir, { recursive: true });
     await mkdir(outputDir, { recursive: true });
     await writeFile(path.join(sourceDir, "raw.ogg"), "raw audio");
@@ -83,7 +87,6 @@ describe("sound manifest publication", () => {
     await optimizeSounds();
     vi.mocked(writeFile).mockClear();
     fixture.convert.mockClear();
-    await rename(path.join(sourceDir, "raw.ogg"), path.join(sourceDir, "renamed.ogg"));
     await expect(optimizeSounds({ check: true })).resolves.toEqual({ ok: true });
     expect(writeFile).not.toHaveBeenCalled();
     await writeFile(path.join(outputDir, name), "changed bytes");
@@ -193,7 +196,7 @@ describe("sound manifest publication", () => {
     await writeFile(path.join(outputDir, "generated.mp3"), "old fallback");
     fixture.convert.mockClear();
     vi.mocked(writeFile).mockClear();
-    await expect(optimizeSounds()).rejects.toThrow("Cannot read Asset Library source");
+    await expect(optimizeSounds()).rejects.toThrow("Cannot read repository asset source");
     expect(fixture.convert).not.toHaveBeenCalled();
     expect(manifestWrites()).toHaveLength(0);
     expect(await readFile(manifestPath, "utf8")).toBe(before);

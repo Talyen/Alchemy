@@ -74,7 +74,7 @@ describe("local unit verification reuse", () => {
     expect(createVerificationCache(root, [command], { ...options, capture: () => null }).read(command)).toBeNull();
   });
 
-  it("avoids input scans for new and cheap commands, then establishes proof for expensive repetitions", () => {
+  it("establishes reuse on the first expensive run without reusing cheap checks", () => {
     const root = temporaryRoot();
     let scans = 0;
     const options = {
@@ -87,15 +87,12 @@ describe("local unit verification reuse", () => {
     };
     const first = createVerificationCache(root, [command], options);
     first.finish([{ command, passed: true, result: { elapsedMs: 100 } }], "cheap");
-    expect(scans).toBe(0);
-    const second = createVerificationCache(root, [command], options);
-    second.finish([{ command, passed: true, result: { elapsedMs: 6_000 } }], "slow");
-    expect(scans).toBe(0);
-    const third = createVerificationCache(root, [command], options);
-    expect(third.read(command)).toBeNull();
-    third.finish([{ command, passed: true, result: { elapsedMs: 6_000 } }], "proven");
     expect(scans).toBe(2);
-    expect(createVerificationCache(root, [command], options).read(command)?.runId).toBe("proven");
+    const second = createVerificationCache(root, [command], options);
+    expect(second.read(command)).toBeNull();
+    second.finish([{ command, passed: true, result: { elapsedMs: 6_000 } }], "slow");
+    expect(scans).toBe(4);
+    expect(createVerificationCache(root, [command], options).read(command)?.runId).toBe("slow");
   });
 
   it("detects source, environment and dependency mutations including ignored environment files", () => {
@@ -121,4 +118,36 @@ describe("local unit verification reuse", () => {
     fs.rmSync(path.join(root, "node_modules/.package-lock.json"));
     expect(captureVerificationInputs(root, {})).toBeNull();
   });
+});
+
+it("supports managed linked dependencies while invalidating mutations and refusing external package links", () => {
+  const root = temporaryRoot();
+  const installed = temporaryRoot();
+  execFileSync("git", ["init", "-q", root]);
+  fs.writeFileSync(path.join(root, ".gitignore"), "node_modules/\nreports/\n");
+  fs.mkdirSync(path.join(installed, "example"));
+  fs.mkdirSync(path.join(installed, ".bin"));
+  fs.writeFileSync(path.join(installed, ".package-lock.json"), "{}");
+  fs.writeFileSync(path.join(installed, "example/index.js"), "first");
+  fs.symlinkSync("../example/index.js", path.join(installed, ".bin/example"));
+  fs.symlinkSync(installed, path.join(root, "node_modules"), "junction");
+  const initial = captureVerificationInputs(root, {});
+  expect(initial).toMatch(/^[0-9a-f]{64}$/u);
+  const options = { env: {}, minimumDurationMs: 0 };
+  createVerificationCache(root, [command], options).finish(
+    [{ command, passed: true, result: { elapsedMs: 1000 } }],
+    "task",
+  );
+  // Moving from dirty verification to a commit changes Git metadata, not inputs.
+  execFileSync("git", ["add", "."], { cwd: root });
+  execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"], {
+    cwd: root,
+    env: { ...process.env, LEFTHOOK: "0" },
+  });
+  expect(captureVerificationInputs(root, {})).toBe(initial);
+  expect(createVerificationCache(root, [command], options).read(command)?.runId).toBe("task");
+  fs.writeFileSync(path.join(installed, "example/index.js"), "changed");
+  expect(createVerificationCache(root, [command], options).read(command)).toBeNull();
+  fs.symlinkSync(path.join(root, ".gitignore"), path.join(installed, "external"));
+  expect(captureVerificationInputs(root, {})).toBeNull();
 });

@@ -1,8 +1,8 @@
 import { defaultGameSession } from "@/app/application-session";
 import { getDesktopApi } from "@/lib/desktop-api";
 import {
-  resolveNextOptionsReturnState,
-  resolveOptionsBackTarget,
+  resolveBrowsingHistory,
+  resolveBrowsingBackTarget,
   resolveReturnToRunTarget,
   resolveScreenBackHandler,
 } from "@/app/screen-navigation-policy";
@@ -99,18 +99,17 @@ export function useReturnToRunNavigation({
   );
   const [navState, setNavState] = useState<{
     prevScreen: Screen;
-    optionsReturnScreen: Screen;
+    history: readonly Screen[];
   }>({
     prevScreen: renderedScreen,
-    optionsReturnScreen: ROUTE_SCREENS.MENU,
+    history: [],
   });
-  let optionsReturnScreen = navState.optionsReturnScreen;
+  let history = navState.history;
   if (renderedScreen !== navState.prevScreen) {
     // Render-phase update (React-endorsed for derived state): the back target
     // must settle in the same commit that presents the new screen.
-    const next = resolveNextOptionsReturnState(renderedScreen, navState);
-    optionsReturnScreen = next.optionsReturnScreen;
-    setNavState({ prevScreen: renderedScreen, ...next });
+    history = resolveBrowsingHistory(renderedScreen, navState);
+    setNavState({ prevScreen: renderedScreen, history });
   }
 
   const navigateToMeta = useCallback(
@@ -120,11 +119,12 @@ export function useReturnToRunNavigation({
     [run],
   );
 
-  const backFromOptions = useCallback(() => {
-    const target = resolveOptionsBackTarget(optionsReturnScreen, hasActiveBattle, resumeKind != null);
+  const browsingOrigin = history.at(-1) ?? ROUTE_SCREENS.MENU;
+  const backFromBrowsing = useCallback(() => {
+    const target = resolveBrowsingBackTarget(browsingOrigin, hasActiveBattle, resumeKind != null);
     if (target.kind === "returnToRun") run.returnToBattle();
     else run.goToScreen(target.screen);
-  }, [optionsReturnScreen, hasActiveBattle, resumeKind, run]);
+  }, [browsingOrigin, hasActiveBattle, resumeKind, run]);
 
   const returnToRun = useCallback(() => {
     if (!returnToRunTarget) return;
@@ -137,19 +137,15 @@ export function useReturnToRunNavigation({
 
   const screenBackHandler = resolveScreenBackHandler({
     renderedScreen,
-    returnToRunTarget,
-    returnToRun,
     handleMainMenu,
-    backFromOptions,
+    backFromBrowsing,
     backFromDifficultySelect: run.routeCommands.runSetup.handleBackFromDifficultySelect,
     goToScreen: run.goToScreen,
   });
 
   return {
     returnToRunScreen,
-    optionsReturnScreen,
     navigateToMeta,
-    backFromOptions,
     returnToRun,
     handleMainMenu,
     returnToRunTarget,

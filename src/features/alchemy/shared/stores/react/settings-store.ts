@@ -34,6 +34,7 @@ function selectSettingsActions(state: SettingsStore): SettingsActions {
     setMuteInBackground: state.setMuteInBackground,
     setBossLyricsEnabled: state.setBossLyricsEnabled,
     setAutoEndTurn: state.setAutoEndTurn,
+    setAutoEquip: state.setAutoEquip,
     setRememberAutoplayPreference: state.setRememberAutoplayPreference,
     setAutoplayEnabled: state.setAutoplayEnabled,
     resetToDefaults: state.resetToDefaults,

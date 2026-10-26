@@ -29,7 +29,8 @@ boundaries. Translate catalog names before supplying message parameters; `text`
 interpolates those values verbatim. Generic controls pass already translated props
 and children through, so a German `Stab` (staff) cannot be translated a second
 time as the English attack name. It never changes catalog data, gameplay IDs or comparisons. Language
-switches do not remount the application or dispatch gameplay commands.
+switches preserve progress, RNG, purchases, modified cards and focus without
+remounting the application or dispatching gameplay commands.
 
 Resource amounts use `formatLargeAmount(amount, i18n.locale)` at presentation
 boundaries. Separators and compact units follow the selected game language, with
@@ -79,28 +80,26 @@ Build and package gates validate all shipped languages and the asset digest.
 ## Agent workflow
 
 The [localization skill](../.agents/skills/localization/SKILL.md) applies whenever
-player-facing text changes.
+player-facing text changes. Draft wording may evolve in the isolated task worktree without translating each experiment. Prepare one batch after the task's English wording settles, then translate and review its affected messages across all shipped locales. Reuse unchanged translations; there is no per-edit translation cycle. [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns verification and completion requirements; stale catalogs remain blocked by the freshness gate.
 
-1. Run `npm run i18n:extract` to refresh English, remove obsolete entries, and
-   regenerate runtime/Steam exports.
-2. Run `npm run i18n:tasks` for JSON packets containing only missing, stale, or
-   unreviewed canonical entries. Packets include context, source hashes, relevant
-   terminology, and prior translations. Repeated wording and exact-number catalog
-   aliases reuse canonical translations mechanically.
-3. The current agent drafts translations, then reviews their meaning separately.
-   Preserve negation, actors, conditions, timing, quantities, semantic tags and
-   placeholders. There is no manual translation or human-review requirement.
-4. Apply a JSON result using `npm run i18n:apply -- <file>`. Its shape is
-   `{ "locale": "de", "results": { "message.id": { "text": "…", "sourceHash": "…", "reviewed": true } } }`.
-   Plural messages also require `forms` for every category in the target locale's
-   `Intl.PluralRules`; the default text equals `forms.other`.
-5. Run `npm run i18n:check`. Source/context changes, relevant glossary changes,
-   missing review, invalid placeholders/tags/plurals, orphan entries, stale runtime
-   assets and stale Steam exports fail the check.
+1. Run `npm run i18n:prepare -- <task-file.json>` (default: `reports/localization/tasks.json`). This extracts current English, refreshes derived outputs, and writes one editable packet containing only pending canonical messages and result templates for affected locales. Reusing the same path refreshes pending messages while retaining matching draft translations. Source/glossary changes clear review for affected results. Metadata and missing plural slots are rebuilt; translation and semantic review remain agent work. Before a changed packet is replaced atomically, its prior contents are saved beside it as a timestamped `.bak`, including drafts for removed or already-applied messages.
+2. Edit only `results`: ordinary messages are strings; plural messages have only a `forms` map (`text` is derived from `forms.other`). The prepared `messages` retain English, prior translations, source hashes and semantic context. The packet glossary contains only terms used by its pending messages. Review meaning in a separate pass: negation, actor, timing, conditions, quantities, permanence, alternatives, and glossary consistency. Preserve named parameters, semantic tags and Steam tokens.
+3. After semantic review, run `npm run i18n:finish -- <task-file.json> --reviewed`. The flag attests that the agent completed that pass; it is not an automated quality assessment. The tool copies freshness metadata from the prepared context and records review for the batch. Every locale is validated before any catalog is written; stale hashes, invalid placeholders/tags/plurals and duplicate locales are rejected. It applies the batch, regenerates outputs once, and runs complete freshness, font and export checks.
+
+An empty packet means no translations are pending; finishing it still checks freshness.
+Legacy packets with per-entry `sourceHash` and `reviewed` fields remain accepted
+without the flag. Editable packets require `--reviewed`; a stale English or
+glossary snapshot is rejected even with that flag. Context and templates are
+working files, not committed catalogs; integration preserves them with reports.
+
+The existing `i18n:extract`, `i18n:tasks`, `i18n:apply -- <file>` and `i18n:check`
+commands remain available for diagnosis and partial work. `i18n:apply` accepts the
+same batch format without demanding that all other pending work is finished.
 
 The local check, locked integration, CI static gate and verified builds enforce
 this check. They never call a model or modify translations. If integration
-incorporates changed English, the agent updates its translations and retries.
+incorporates changed English, refresh the same packet and repair affected translations
+in the task worktree before retrying; never translate inside the integration lock.
 Machine checks protect structural validity and freshness, not native-speaker
 quality; AI semantic review remains part of completing the task.
 
@@ -137,38 +136,23 @@ Use the browser acceptance scenarios to check live switching, focus, clipping,
 keyword interactions, and saved combat. Browser/Electron and builds follow the
 execution policy in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).
 
-The opt-in localization layout review runs the existing acceptance journeys at 1280×720
-with the current maximum Game Size and Tooltip Size settings. It checks popup and
-control bounds and captures Options tabs, combat, shops and confirmations under
-`reports/localization-layout/` for visual review:
+For focused rendered review, run the acceptance suites at minimum viewport and
+maximum sizing. Enable passing screenshots explicitly when visual evidence is needed:
 
 ```sh
-ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts --workers=1
+ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 ALCHEMY_LOCALIZATION_SCREENSHOTS=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts tests/e2e/specs/localization-gameplay.spec.ts --workers=1
 ```
 
-The deeper gameplay review covers mixed/distilled Potions, transmutation previews
-and generated names, corruption, Homestead purchases, Gear crafting, Labyrinth
-discovery and reward claims. It checks acknowledged checkpoints after closing the
-seeded page, then resumes in a different language and compares saved effects,
-description marks, inventories, resources and RNG. The Homestead journey also
-checks complete translated benefit lines and the edge placement of long tooltips.
-It also covers localized mode/hero/difficulty selection, draft completion,
-keyboard talent allocation and Collection inspection, Mystery choice/reward
-checkpoints, and defeat/final-victory recaps. Difficulty header titles are explicit
-catalog fields; difficulty names and victory subtitles are translated at the screen
-boundary. Boss destinations use a complete message containing the act number.
+[The suites](../tests/e2e/specs/localization-gameplay.spec.ts) exercise translated
+flows and cross-language resume, comparing acknowledged effects, description
+marks, inventories, resources and RNG. The [E2E guide](../tests/e2e/README.md#tags)
+owns smoke/QA tags, CI tiers and screenshot policy; [workflows](../.github/workflows/)
+own scheduling. Expanded English is development-only QA, separate from production
+catalog acceptance.
 
-```sh
-ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization-gameplay.spec.ts --workers=1
-```
-
-Every-push CI runs both suites with expanded English, maximum sizing and the
-1280×720 viewport. Failure artifacts retain localization results and screenshots.
-The production demo has its own CI gate and release gate: fresh starter-card play,
-acknowledged save/resume, final Act 1 boss combat and rewards, localized recap,
-hero unlocks, marketing-screen accessible text and return to menu without duplicate
-progression.
-The final-room checkpoint is seeded; this is not an unseeded seven-room playthrough.
+The [demo journeys](../tests/e2e/specs/localization-demo.spec.ts) include starter
+play/save/resume and a seeded final-room checkpoint through recap, hero unlock,
+marketing and menu. That checkpoint does not establish an unseeded full run.
 The demo ending selects bundled promo artwork for every shipped language, with
 English artwork for expanded-English QA. The original English master is retained;
 localized variants edit its seven labels in the same panels. Accessible text and
@@ -185,13 +169,10 @@ ALCHEMY_EDITION=demo ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e -- te
 ALCHEMY_EDITION=demo PLAYWRIGHT_ELECTRON_FULL=1 npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
 ```
 
-The native demo journey closes and relaunches the actual Electron process using
-one isolated temporary profile per language pair with normal motion. It retains the
-initial language override, switches the resumed battle from Chinese to Russian or
-Japanese to French, then relaunches again and compares saved mechanics,
-full card data and RNG. It waits for the real startup/artwork and battle-input
-gates before interacting. Its profile never touches the player's normal saves.
-Native timing canaries and foreground/hardware qualification remain separate.
+The [native demo journey](../tests/electron/localization-demo.spec.ts) relaunches
+isolated profiles with normal motion and compares saved mechanics, full card
+data and RNG across language changes. Actual startup and input gates remain active;
+native timing and physical Steam qualification require their own evidence.
 
 Review the packaged Electron Options tabs, including desktop display controls,
 at the same settings with (choose a shipped locale ID):
@@ -221,35 +202,12 @@ own the external setup; release authorization remains unchanged.
 
 ## Language rollout
 
-Until Alchemy has its own audience data, use Steam-wide language usage as a
-provisional prioritization signal. The combined-platform
-[September 2026 Steam survey](https://store.steampowered.com/hwsurvey/Steam-Hardware-Software-Survey-Welcome-to-Steam)
-reports the following interface-language shares:
+The shipped registry is the current selection. Steam-wide usage informed its
+initial order; it is a provisional signal, not evidence of Alchemy sales or
+player fluency. Use regional wishlists, traffic and community feedback when
+available, following [Valve's guidance](https://partner.steamgames.com/doc/store/localization).
 
-| Bundled language     | Survey share |
-| -------------------- | -----------: |
-| English              |       34.20% |
-| Simplified Chinese   |       31.39% |
-| Russian              |        9.05% |
-| Spanish–Spain        |        4.08% |
-| Brazilian Portuguese |        3.70% |
-| German               |        2.48% |
-| Japanese             |        2.41% |
-| French               |        2.08% |
-
-These shares sum to 89.39% of survey respondents' selected interface languages;
-they do not estimate Alchemy sales, incremental reach or player language fluency.
-Participation is optional and anonymous, and monthly shares fluctuate. Recheck the
-survey before committing the launch scope.
-
-The bundled selection reflects our inference from the survey, not a claim about
-deckbuilder purchasing behavior.
-Spanish–Latin America and European Portuguese are separate locales; do not count
-them as qualified by the Spanish–Spain and Brazilian catalogs.
-
-Keep future candidate languages disabled until their complete catalogs, AI semantic
-review, fonts, save/resume and rendered layouts pass. Each bundled language still
-requires the real Steam/Windows release gate above before its Steam support is
-advertised. Once a store page exists, use regional wishlists,
-traffic and community feedback to revise this order, as recommended by
-[Valve's localization guidance](https://partner.steamgames.com/doc/store/localization).
+Keep candidate languages disabled until catalogs, AI semantic review, fonts,
+save/resume and rendered layouts pass. Advertising support also requires the
+real Steam/Windows qualification above. Spanish–Latin America and European
+Portuguese are separate locales, not covered by Spanish–Spain and Brazilian catalogs.

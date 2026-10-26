@@ -1,6 +1,6 @@
 import { EncounterRewardTraitArraySchema } from "./labyrinth-schemas";
 import { z } from "zod";
-import { defaultBattleState, type BattleSnapshot } from "@/lib/battle";
+import { defaultBattleState } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
 import {
   BattleCardEffectSchema,
@@ -8,6 +8,7 @@ import {
   EnemyStatusIdSchema,
   isEnemyId,
   keywordDefinitions,
+  type BattleCard,
   type DifficultyModifier,
   type KeywordId,
 } from "@/lib/game-data";
@@ -53,17 +54,30 @@ const difficultyModifierSchema = z
       : { kind: modifier.kind, companionId: modifier.companionId };
   });
 
-const pendingTurnStartEffectSchema = z.object({
-  remainingTurns: z.number().int().min(1).max(10),
-  effects: z.array(BattleCardEffectSchema),
-  sourceCard: z
-    .object({
-      id: z.string(),
-      consume: z.boolean().optional(),
-      tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
-    })
-    .optional(),
-});
+const pendingTurnStartEffectSchema = z
+  .object({
+    remainingTurns: z.number().int().min(1).max(10),
+    effects: z.array(BattleCardEffectSchema),
+    sourceCard: z
+      .object({
+        id: z.string(),
+        consume: z.boolean().optional(),
+        tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
+      })
+      .optional(),
+  })
+  .transform(({ sourceCard, ...pulse }) => ({
+    ...pulse,
+    ...(sourceCard
+      ? {
+          sourceCard: {
+            id: sourceCard.id,
+            ...(sourceCard.consume === undefined ? {} : { consume: sourceCard.consume }),
+            ...(sourceCard.tags === undefined ? {} : { tags: sourceCard.tags }),
+          } satisfies Pick<BattleCard, "id" | "consume" | "tags">,
+        }
+      : {}),
+  }));
 
 const PersistedBattleStateWireSchema = z.looseObject({
   pendingMaterials: MaterialInventorySchema,
@@ -150,4 +164,4 @@ export const PersistedBattleStateSchema = z
   .refine(hasBattleCardPiles, { message: "Battle block has no card piles" })
   .refine(hasKnownEnemy, { message: "Battle block has no known enemy" })
   .pipe(PersistedBattleStateWireSchema)
-  .transform((data) => normalizePersistedBattleState(data as unknown as Partial<BattleSnapshot>));
+  .transform((data) => normalizePersistedBattleState(data));

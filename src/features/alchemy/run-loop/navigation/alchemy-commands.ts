@@ -81,18 +81,8 @@ export function selectTransmutation(selection: TransmutationSelectionCommand, ga
           return rejectCommand("Card is no longer available", false);
         next.sourceIndex = selection.index;
         next.source = cloneBattleCard(source);
-        const offers = getTransmutationOffers({ ...visit, transmutation: next });
-        next.offerIndex = offers.findIndex((offer) =>
-          canTransmuteCard(
-            current.choices.filter((choice) => choice.keyword === offer.transmuted),
-            source,
-            selection.index,
-            deck,
-          ),
-        );
-        const offer = offers[next.offerIndex];
-        if (!offer?.transmuted) return rejectCommand("Transmutation choice is unavailable", false);
-        next.keyword = offer.transmuted;
+        next.keyword = null;
+        next.offerIndex = null;
       } else if (selection.kind === "back") {
         next.keyword = null;
         next.offerIndex = null;

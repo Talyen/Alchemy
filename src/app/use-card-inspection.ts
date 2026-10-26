@@ -13,7 +13,7 @@ import {
   useHiddenHandCardKeys,
 } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 import { handHasHiddenCard, type HiddenHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
-import { getBattleDamageInspectionCard, type BattleSnapshot } from "@/lib/battle";
+import { getBattleCardDescriptionInspection, type BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardInspectionCollection } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 
@@ -134,17 +134,17 @@ export function useCardInspection({
       { id: "deck", cards: data.runDeck },
       ...(data.hasActiveBattle
         ? [
-            { id: "draw" as const, cards: data.drawPile },
+            { id: "draw" as const, cards: data.drawPile, overflowCards: data.battleState.pendingHandCards },
             { id: "discard" as const, cards: data.discardPile },
           ]
         : []),
     ],
-    [data.runDeck, data.hasActiveBattle, data.drawPile, data.discardPile],
+    [data.runDeck, data.hasActiveBattle, data.drawPile, data.discardPile, data.battleState.pendingHandCards],
   );
   const battleDescriptionContext = useMemo(
     () => ({
       ...data.talentEffects,
-      inspectBattleCard: (card: BattleCard) => getBattleDamageInspectionCard(card, data.battleState),
+      inspectBattleCard: (card: BattleCard) => getBattleCardDescriptionInspection(card, data.battleState),
       companionDamageModifiers: {
         damageBonus: data.companionDamageBonus,
         damageMultiplier: data.companionDamageMultiplier,

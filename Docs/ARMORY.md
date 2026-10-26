@@ -23,6 +23,16 @@ contract and controller seams.
 
 ## Data model
 
+New Gear and permanent Trinkets automatically fill a compatible empty slot on the
+receiving Hero when **Options → Gameplay → Auto Equip** is enabled (the default).
+Acquisition never replaces equipped items or displaces the other hand, and combat
+reservations still apply. Rewards, shops, and Mystery grants use the same atomic
+acquisition path; Boons remain run effects. Turning the option on does not equip
+previously collected items. After the first equippable item, the main-menu Armory
+button uses the Talents-style border until the player opens Armory with equipment
+to manage. That introduction is saved with the profile. Armory opens on the current
+Hero.
+
 `src/lib/gear/definitions.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Item titles live with definitions (`getGearInstanceTitle`), and canonical affix resolution is centralized in `getGearInstanceAffixes`. Affix pool/roll helpers live in `affix-pool.ts` so generation and crafting depend down. Durable invariants:
 
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and an `affixes` array. Basic and Astral items persist their rolls; Unique items keep that array empty and resolve canonical affixes from the catalog. Instances never embed definition objects or art URLs.
@@ -32,7 +42,11 @@ contract and controller seams.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. Placement presets in `base-items.ts` bind legal slots and hand rules together. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - `loadout-operations.ts` owns one private hand-pair resolver shared by slot validation, equipping, and saved-loadout repair. Equipping preserves the incoming hand by displacing a conflicting item; save repair preserves main-hand by clearing an invalid off-hand. Quiver requirements reject incompatible selections (including a shield beside a bow or a melee weapon beside a Quiver). Equipping body armor or accessories preserves valid hand pairs. The Armory grid checks legality through `isGearCompatibleWithLoadoutSlot`; `equipGear` applies the same resolution. `pruneOrphanGearLoadouts` removes orphan and duplicate references before validating each hero's hand pair; invalid off-hand references do not reserve another hero's equipment. Save parsing repairs each slot separately so a malformed slot cannot erase valid neighboring equipment; removing, salvaging, or transferring a bow also unequips its unsupported Quiver without removing the Quiver from inventory.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
-- **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Signature affixes supply the item's default ID and title; `unique-catalog.ts` keeps explicit overrides where item and affix identities differ. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes, and saved Unique instances store no rolls at all — older saves carrying stored rolls converge on the catalog at load without changing identity, ownership, or Collection discovery. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
+- **Unique** is the third Gear rarity alongside Basic and Astral. Each base has
+  one named Unique; saved instances retain identity and resolve canonical fixed
+  affixes. [Unique items](./UNIQUE_ITEMS.md#affix-contract) owns signature/supporting
+  affixes, roll normalization and crafting restrictions. Collection discovery
+  survives salvage.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
 
 Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity and normalized values together so tooltip text and max-roll shine use the same item data.
@@ -60,11 +74,35 @@ Unique and Trinket choices still exclude owned definitions. A premium Hoard is
 omitted from a newly generated map before its depth gate, and a saved Hoard
 with no eligible choices at victory falls back to the normal reward roll.
 
-Edit the source weights and progression points in `run-rewards.ts`, then run `npm run balance:loot`. The seeded report in `reports/loot-progression/report.html` compares premium availability per screen and expected offered items along explicit routes for every account tier and fresh/nearly-complete collections. It counts offers, not acquisitions; three Gear choices can expose premium loot more often than a single item roll. Gear offer rates are estimated by rolling rarities directly rather than generating full instances. The report records sampling uncertainty and holds ownership fixed along each comparison route.
+Edit the source weights and progression points in `run-rewards.ts`.
+
+### Loot progression report
+
+`npm run balance:loot` writes HTML and JSON to `reports/loot-progression/`. It uses the shared loot policy and Gear generator with deterministic per-cell seeds, comparing source/depth breakpoints, all account-clear tiers, and fresh versus nearly-complete collections. Route definitions are included in both outputs. Counts represent offered items, not acquisitions; ownership stays fixed along each route and no shop refreshes are assumed. Set `ALCHEMY_LOOT_SAMPLES` to a positive integer to change the default 1,000 samples per cell. The same command also writes `materials.html` / `materials.json` with mean homestead-material payouts per progression band and encounter type.
+
+Gear offer rates are estimated by rolling rarities directly rather than generating
+full instances. Three Gear choices can expose premium loot more often than a
+single item roll. The report records sampling uncertainty. Execution follows
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Materials tuning
 
-Homestead material payouts are tuned separately from gear offers in `src/lib/game-constants/materials-economy.ts`. Combat victories use a shared pool independent of enemy identity: Normal encounters pay 3/4/5 materials across bands 1/2/3, Elites pay 5/6/7, and Bosses pay 8/10/12. Campaign uses the current act, Labyrinth the current floor, and Wildwood the current boss number; bands cap at 3. Each bundle of two picks one of all seven materials with equal odds and replacement; odd totals end with a single-material roll. The seeded reward stream owns every roll. `computeCombatMaterialReward` applies scavenger doubling and the herbalist bonus before Homestead find bonuses. Mystery grants use `computeMysteryMaterialReward`. Find bonuses add across nodes, then multiply each matching source quantity once and round with `Math.round`, without extra RNG. Gold find bonuses affect victory and Mystery payouts, excluding other generated Gold and the existing purse. Salvage and run-end accounting never apply find bonuses. The policy in `src/lib/homestead/material-rewards.ts` owns quantity calculation. The seeded report in `reports/loot-progression/materials.html` (built by `npm run balance:loot`) shows mean base payouts per progression band and encounter type; build-dependent modifiers are not simulated.
+[Materials economy](../src/lib/game-constants/materials-economy.ts) owns base payouts
+by encounter type and progression band. Campaign uses the act, Labyrinth the floor,
+and Wildwood the boss number, capped at the final band. Rewards are independent of
+enemy identity; each pair samples one of the seven materials uniformly with replacement,
+and an odd remainder uses one final roll from the seeded rewards stream.
+
+| Stage                          | Rule / owner                                                                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Combat base and room modifiers | `computeCombatMaterialReward` applies Scavenger doubling and Herbalist before find bonuses                                                                                |
+| Mystery base                   | `computeMysteryMaterialReward` uses the authored grant                                                                                                                    |
+| Homestead find bonuses         | Add matching node bonuses, multiply each source quantity once, then `Math.round`; no extra RNG                                                                            |
+| Exclusions                     | Salvage and run-end accounting never apply find bonuses; Gold find bonuses affect victory and Mystery payouts only, excluding other generated Gold and the existing purse |
+
+[Material reward helpers](../src/lib/homestead/material-rewards.ts) own these calculations.
+`npm run balance:loot` writes `reports/loot-progression/materials.html` with mean
+base payouts by band and encounter type; it does not simulate build-dependent modifiers.
 
 ## Inventory ordering and equipment movement
 
@@ -129,7 +167,7 @@ Homestead mutation timing remains unchanged.
   - Save repair imports its rule owners directly, without depending on crafting.
 - **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec), `gear-actions.ts` (draft mutations including inventory salvage), and `gear-session-command.ts` (HP-sync wrapper)
 - **Screen** — Armory route (`meta-routes.tsx`) → `routeCommands.meta.armory` → `armory-screen.tsx`
-- **Battle** — `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation
+- **Battle** — [manifest integration](#battle-integration)
 - **Persistence** — `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry)
 
 ### Read paths
@@ -137,7 +175,6 @@ Homestead mutation timing remains unchanged.
 - **Armory access** — the Main Menu always offers Armory, including before any Gear or Trinkets are owned. Combat preserves browsing but makes the battling hero’s Armory tab read-only through `useGearCombatRestrictions`; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run characters.
 - **Interaction policy** — `armory-item-state.ts` owns inventory/equipment click decisions alongside targeting affordances. Equipped slots retain locked browsing; inventory tiles retain reservation and compatibility guards. `use-armory-targeting-state.ts` owns mutually exclusive idle, salvage, currency, and salvage-confirmation modes through intent callbacks. Store commands still validate authoritative mutations.
-- **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
 - **Run start** — `run-start-command.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
 
 ### Write paths
@@ -178,7 +215,7 @@ Crafting and dev spawning accept profile-lifetime randomness, defaulting to
 its career crafting source through the same `applyCurrencyToGear` command.
 Rewards and shops grant instances and permanent Trinkets through
 `deck-mutations.ts` within their existing commands, retaining discovery and run
-recap accounting. Acquisition never auto-equips or creates a Boon.
+recap accounting. Acquisition follows the [Auto Equip policy](#data-model); it never creates a Boon.
 
 ### Salvage materials
 
@@ -194,38 +231,59 @@ Gear effects are **snapshotted** at battle start. `computeGearManifest(character
 
 Trinket effects snapshot the same way via `computeTrinketManifest` (`src/lib/trinkets.ts`) over run Boons plus the equipped Trinket. Every `TrinketManifest` key is granted by at least one trinket and has a documented battle/run consumer; the key→consumer map lives in the manifest coverage test (`tests/lib/content-validation/trinket-validation.test.ts`) and fails compilation when a key is added or removed without updating it.
 
-Lifegiving grants 1 Health per turn at every rarity and remains eligible for ordinary gear. Fixed roll values do not imply unique-only eligibility; `uniqueOnly` owns that restriction. Emberforged rolls for 1 Forge when positive Burn damage hits an enemy that was not already Burning (Basic: 10%; Astral: 20%). Equipped copies roll independently; probabilities are not summed or capped. Subsequent Burn hits require the enemy's Burn to clear before Emberforged can trigger again. Saved inventory rolls for these two affixes are bounded to their current rarity ranges during normalization, tooltip generation, and battle-manifest construction. Existing combat snapshots retain their captured magnitudes until normal live meta rebinding or the next battle.
+### Affix rules
 
-The ordinary reactive affixes use the event named in their tooltip. Consume Gear and Runic Quill react only to actual Consume. Companion summons leave the battle without Consume and grant none of these rewards. Rotbloom gives one normal Poison tick per equipped copy when a card is Consumed: it deals damage, applies Poison riders, and advances decay without removing the whole stack. Distilled requires Mana actually paid for that card, while Afterglow checks whether it was the last card in hand when played. Bloodward rolls once per Leech restoration and bases its Block on Health actually restored. Smithguard grants Block once per combined Forge award (Basic: 1; Astral: 2); matching copies add their Block. Layered adds its flat bonus only to the first positive Armor grant each player turn, including starting Armor; it does not create Armor by itself. Its saved allowance and Ironroot's separate per-turn limit follow the [Armor gain rules](./GAME_RULES.md#hit-resolution-and-pacing).
+[Affix rows](../src/lib/gear/affix-rows.ts) own names, triggers, magnitudes, roll
+ranges, affinities and slot eligibility. `uniqueOnly`, not a fixed roll value,
+restricts an affix to Uniques. Shared validation requires ordinary affixes to be
+reachable on Basic/Astral Gear, including Mana-affinity Wish effects such as Fateful.
 
-The keyword affixes use the same battle events as cards and talents. Bramblecall checks Thorns before the Nature card resolves; Spitebloom follows successful Thorns retaliation. Gildmend reacts to combat Gold awards, including kill rewards, while Tithebound requires at least 5 Forge at the kill. Bloodroot and Heartshock require actual Leech restoration and check their conditions before that healing. Starcatcher uses the existing next-card cost reduction after a Wish from an empty hand; Starfall resolves a normal Freeze follow-up. Ashkeeper and Lastlight trigger when the card is Consumed, with Lastlight checking Mana before Consume refunds. Counterplate reacts only to Armor lost from an enemy attack. Rootmender grants one Leech restoration on Nature damage to a Poisoned enemy, including triggered damage, and does not stack another restoration with Sylvan's chance. Venomtrail adds flat damage to direct Poison hits and Poison ticks against Bleeding enemies, including detonations. Scarfeast applies to the hero's Physical card attacks below half Health. Hallowguard requires a Holy card attack that damages enemy Health while the hero has no Block. Hallowbreak increases Holy damage against Stunned enemies.
+Typed rows derive `GearEffectManifest`, defaults and effect keys. Keys ending in
+`Chances` retain independent roll lists; other effects sum. Preserve row, slot and
+affix order because seeded generation and proc order depend on them. Duplicate IDs
+are rejected; display-name, range and reachability checks belong to content validation.
+`affix-catalog.ts` adds tooltip keywords without becoming a manifest dependency.
 
-Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; their new affixes use existing item affinities. Restorative rolls only after Health is actually restored, and Clearheaded and Solace reward each harmful status removed. Spellrending has a 25% chance at either rarity to Purge one enemy benefit at the start of each player turn, including the opening turn; it no longer reacts to Mana spending. Multiple copies add their chance, and no turn allowance is saved; Unraveling and Denouncing reward a successful Purge once, even if it removes multiple benefits. Emberwake deals a Burn follow-up only on Death's Door entry, Lastwatch raises Critical Hit chance only during its grace window, and Rekindled heals on surviving expiry. Ironbriar grants Thorns when Block remains after turn decay. Bristling checks Block after the incoming hit, and Spiteful heals only for the first Thorns retaliation each turn that removes enemy Health.
+Saved rolls normalize to current rarity ranges; a captured battle retains its
+magnitudes until live rebinding or the next battle. Forge procs retain every
+equipped copy rather than summing or capping independent chances. In particular,
+Emberforged checks positive Burn against the pre-hit non-Burning state.
 
-Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. Shared content validation checks that every ordinary affix is reachable on at least one Basic or Astral item.
+The following timing/source distinctions supplement the catalog:
 
-`src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders
-preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults,
-`GEAR_EFFECT_KEYS`, and the independent-roll chance keys (effect keys ending in
-`Chances`) all derive from those rows; all other effects sum numerically.
-`affix-catalog.ts` adds visible tooltip keywords without becoming
-a dependency of manifest construction. Preserve row order when editing: seeded
-Gear generation depends on it. Catalog construction rejects duplicate affix IDs;
-shared content validation owns display-name, roll-range, and ordinary-affix reachability checks.
+| Concern                | Contract                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consume                | Summons are battle-removed without Consume and earn no Consume rewards. Rotbloom uses one ordinary Poison tick per copy, including decay and riders, not whole-stack removal.                                                                                                                                                                                                                                              |
+| Payment and hand state | Distilled requires Mana actually paid; Afterglow checks the last card in hand at play. Lastlight checks Mana before Consume refunds. Ashkeeper/Lastlight trigger on Consume.                                                                                                                                                                                                                                               |
+| Leech and healing      | Bloodward, Bloodroot and Heartshock require actual restoration; conditions use pre-heal state. Bloodward rolls once and scales Block from Health restored. Rootmender allows triggered Nature damage against Poison and shares one restoration with Sylvan rather than stacking another. Restorative requires actual restoration.                                                                                          |
+| Resource grants        | Smithguard pays once on the combined Forge award; copies add Block. Layered's first positive Armor gain includes opening grants and creates no Armor itself; its allowance is separate from Ironroot under [Armor gain limits](./GAME_RULES.md#hit-resolution-and-pacing).                                                                                                                                                 |
+| Card versus packet     | Bramblecall checks Thorns before the Nature card; Spitebloom follows successful retaliation. Scarfeast, Hallowguard and conditional hero-attack bonuses require their catalog card/Health/Block conditions per hit, excluding Companions and secondary hits. Bloodscent instead uses shared Companion scaling and inspection.                                                                                              |
+| Periodic damage        | Infected, Ashen Wake and Cauterize affect existing DoT ticks/detonations, not initial hits or buildup. Bloodember shares applicable Burn/Bleed periodic bonuses. Venomtrail includes direct Poison, ticks and detonations against Bleed; Frostburn modifies Freeze attack damage and buildup against Burning enemies.                                                                                                      |
+| Wish and Gold          | Gildmend includes combat kill Gold; Tithebound checks Forge at the kill. Starcatcher prepares the ordinary next-card discount after an empty-hand Wish; Starfall is a normal Freeze follow-up.                                                                                                                                                                                                                             |
+| Cleanse and Purge      | Clearheaded/Solace reward each removed harmful status; Unraveling/Denouncing pay once per successful Purge, even when it removes several benefits. Spellrending checks at player-turn start, including opening, with additive copy chances and no saved turn allowance. Cleanse/Purge/Death's Door use existing affinities rather than new keywords.                                                                       |
+| Death's Door           | Emberwake and Deathgrip react on entry after triggering damage; Lastwatch applies during grace; Rekindled requires surviving expiry. Pending entry rewards persist.                                                                                                                                                                                                                                                        |
+| Defensive conditions   | Ironbriar checks Block after turn decay; Bristling after the hit. Spiteful pays only on the first Thorns retaliation removing enemy Health each turn. Counterplate uses Armor actually lost to an enemy attack.                                                                                                                                                                                                            |
+| Mana and Block         | Spellguard checks absent Block before actual Mana payment and grants before card effects. Arcane Ward requires actual Mana gained without Block, including new Crystals but excluding turn refills. Both use ordinary Block rewards.                                                                                                                                                                                       |
+| Recovery and charges   | Blur respects the Dodge cap. Hero Second Wind heals only the first surviving quarter-Health crossing, including self-damage, with a saved allowance separate from the enemy's. Whiplash readies one Stun hit after Dodge; further Dodges refresh, while non-Stun, Companion, secondary and dodged hits preserve it.                                                                                                        |
+| Magnitude modifiers    | Conditional hero-attack bonuses change existing packets without new hits, flags or allowances. Last Bastion modifies positive Block below half Health; Mending modifies positive healing below half Health before multipliers, rechecking Health per heal. Neither creates resources. Spentward preserves contact/Dodge, applies before Block only to enemy attacks while Mana is empty, and respects mitigation bypasses. |
+| Stun and Purge         | Disrupting settles an ordinary Purge after successful Stun, retaining rewards and additive copy chances. Its pending reward and Whiplash/recovery state use safe additive save defaults rather than new per-turn allowances.                                                                                                                                                                                               |
+
+[Game rules](./GAME_RULES.md#direct-player-hit-resolution) own shared packet stages;
+[Talent rules](./TALENT_RULES.md#armor-forge-and-gold) own shared resource recipes;
+[Unique items](./UNIQUE_ITEMS.md#combat-semantics) retain signature exceptions.
 
 ## Persistence
 
-Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/persistence.ts`), which assembles the full save snapshot (settings + profile + gear + run-profile fields, plus versions and the active run). Five of those fields are Gear-owned:
+The [Gear codec](../src/features/alchemy/shared/stores/persistence/gear-codec.ts)
+owns saved inventories, loadouts, owned/equipped Trinkets and crafting currencies.
+Instances save IDs and rolls under the [data model](#data-model), never definitions
+or art URLs. Shape changes follow [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-- **`gearInventories`** — `Record<CharacterId, GearInstance[]>` — per-character inventories.
-- **`gearLoadouts`** — `Record<CharacterId, GearLoadout>` — pruned of orphan references.
-- **`ownedTrinketIds`** — Unique permanent Trinket definition IDs.
-- **`equippedTrinkets`** — Per-character equipped Trinket ID, normalized for exclusivity.
-- **`craftingCurrencies`** — `Record<CraftingCurrencyId, number>`.
-
-Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
-
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session revision signal. The renderer groups synchronous commits into an immediate save checkpoint; action completion waits for local acknowledgement under [completed actions and local saving](./RUN_STATE.md#completed-actions-and-local-saving). The scheduler also owns debounce, maximum wait, and retry timing. `buildAlchemySaveDataFromStores(session)` derives the active run and permanent fields together, detaches the payload, and records its session receipt. Immediate writes and autosave acknowledge through the same IO seam. Armory route actions delegate to the intent commands in `shared/stores/commands/gear-commands.ts`, which call `flushSaveAfterGearMutation` (`run-lifecycle.ts`) after successful mutations.
+Gear intent commands own successful mutation checkpoints through
+`flushSaveAfterGearMutation`; routes cannot replace that boundary. Immediate writes
+and autosave use the same detached, session-owned snapshot and acknowledgement path
+under [the persistence API](./RUN_STATE.md#persistence-api). Completion waits for a
+covering local save; autosave owns retry.
 
 ## Unique combat effects
 
@@ -233,26 +291,10 @@ Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/featur
 
 ## Tests
 
-Gear rule coverage lives in `tests/lib/gear/` (`gear`, `generation`,
-`crafting`, `crafting-ids`, `salvage-yield`,
-`unique-catalog`, `gear-shine`, `affixes`,
-`affix-pool`); aggregate and
-persistence contracts in `tests/features/alchemy/shared/stores/session/gear-*`,
-`tests/features/alchemy/shared/stores/commands/gear-*`, and
-`tests/features/alchemy/shared/storage/gear-save.test.ts`; Armory interaction
-in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and
-`tests/features/alchemy/meta/screens/armory/*.test.ts`; catalog rejection checks in
-`tests/lib/content-validation/gear-validation.test.ts` and catalog-wide acceptance in
-`tests/lib/content-validation/content-validation.test.ts`; Unique battle behavior in
-`tests/lib/battle/unique-effects.test.ts`, `unique-damage-bonuses.test.ts`,
-`unique-card-repeats.test.ts`, `unique-card-opportunities.test.ts`,
-`enemy-attack-damage.test.ts`, `damage-forge.test.ts`, and `battle-effect-persistence.test.ts`.
-`src/lib/content-validation/validators-gear.ts` owns the catalog invariants for
-both the unit gate and `npm run content:audit`: pool capacity and reachability,
-distinct affix names, ordered roll ranges, fixed Unique signatures and distinct
-known supporting affixes, generated definitions, and missing-art fallbacks. Use
-CONTRIBUTING's [changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
-[test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select
-checks for the affected risks.
-
-Forge-producing affixes retain every equipped copy: Tempered adds 1/2 opening Forge; Forged rolls 25/50% for 1 Forge per successful Stun; Cinderfed rolls 25/50% per consumed Burn card; Trailforged rolls 10/20% per Companion action damaging a Burning enemy. Roll lists preserve slot and affix order through aggregation and save/resume. Everkeen, Oathkeeper, The Patient Edge and The Golden Crucible carry 2 starting Forge; Everkeen’s supporting Forged roll is 50%.
+[Gear units](../tests/lib/gear/) protect generation, crafting, loadouts and salvage;
+[store commands](../tests/features/alchemy/shared/stores/commands/) and
+[Gear saves](../tests/features/alchemy/shared/storage/gear-save.test.ts) protect
+transaction/persistence boundaries. [Armory units](../tests/features/alchemy/meta/screens/armory/)
+protect interaction, ordering and transfers. [Shared content validation](../src/lib/content-validation/validators-gear.ts)
+enforces catalog invariants for units and `content:audit`; [Unique verification](./UNIQUE_ITEMS.md#verification-ownership)
+locates signature protection. Select checks under [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).

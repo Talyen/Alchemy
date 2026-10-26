@@ -35,6 +35,7 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
   "scripts/build-verified.mjs",
   "scripts/check-bundle-budget.mjs",
   "scripts/lib/verification/bundle-budget.mjs",
+  "scripts/lib/storage-footprint.mjs",
   "scripts/lib/command-invocation.mjs",
   "scripts/lib/run-command.mjs",
   "scripts/lib/script-run.mjs",
@@ -48,13 +49,13 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
 ]);
 
 // Gate-level "documentation-only" definition: every Markdown file plus the
-// Docs/, .agents/, and .cursor/ trees. Mirrors the documentation route's
+// Docs/ and .agents/ trees. Mirrors the documentation route's
 // contract patterns below (including Docs/** for non-Markdown files under
 // Docs/) so check classification and verify routing agree — non-Markdown files
 // under Docs/ (images, archived plans) still skip code builds in check
 // classification.
-export function isDocumentationPath(filePath) {
-  return filePath.endsWith(".md") || /^(Docs|\.agents|\.cursor)\//u.test(filePath);
+function isDocumentationPath(filePath) {
+  return filePath.endsWith(".md") || /^(Docs|\.agents)\//u.test(filePath);
 }
 
 const ROUTES = Object.freeze([
@@ -76,7 +77,7 @@ const ROUTES = Object.freeze([
   ),
   route(
     "documentation",
-    ["*.md", "**/*.md", "Docs/**", ".agents/**", ".cursor/**"],
+    ["*.md", "**/*.md", "Docs/**", ".agents/**"],
     ["docs-check"],
     [doc("CONTRIBUTING.md", "What to run when you change…", "verification policy")],
     "CONTRIBUTING.md",
@@ -103,7 +104,7 @@ const ROUTES = Object.freeze([
   route(
     "assets",
     [
-      "Raw Assets/**",
+      "assets/sources/**",
       "scripts/assets/**",
       "scripts/**asset*.mjs",
       "scripts/optimize-*.mjs",
@@ -143,6 +144,8 @@ const ROUTES = Object.freeze([
       "src/lib/desktop-api.ts",
       "src/lib/platform.ts",
       "scripts/**desktop*",
+      "scripts/ensure-steamworks*",
+      "scripts/steamworks/*.patch",
       "scripts/lib/release/release-checks.mjs",
       "scripts/lib/release/game-edition.mjs",
       "tests/desktop/**",
@@ -155,7 +158,7 @@ const ROUTES = Object.freeze([
     "balance",
     ["src/lib/balance/**", "tests/balance/**", "tests/lib/balance/**", "vitest.balance.config.ts"],
     ["related", "report-balance"],
-    [doc("Docs/REFERENCE.md", "Balance simulation", "balance verification")],
+    [doc("Docs/SIMULATION.md", "Balance simulation", "balance verification")],
     "src/lib/balance/report-run.ts",
   ),
   route(
@@ -198,7 +201,7 @@ const ROUTES = Object.freeze([
       "stryker.config.mjs",
     ],
     ["unit-tooling"],
-    [doc("Docs/REFERENCE.md", "Tooling ownership", "tooling commands")],
+    [doc("Docs/COMMANDS.md", "Script Command Reference", "tooling commands")],
     "scripts/check.mjs",
   ),
   route(
@@ -257,6 +260,16 @@ const COMPILED_ROUTES = ROUTES.map((candidate) => ({
 
 function matches(route, filePath) {
   if (filePath.endsWith(".md") && route.candidate.id !== "documentation") return false;
+  // Presentation changes retain dependency-related coverage. Explicit lifecycle
+  // hooks still select families, and unfamiliar behavior owners keep the fallback.
+  if (
+    route.candidate.id === "interactions" &&
+    (/^src\/features\/alchemy\/.*\/screens\//u.test(filePath) ||
+      /^src\/features\/alchemy\/shared\/(?:ui|config|types)\//u.test(filePath) ||
+      /^src\/app\/playthrough\//u.test(filePath)) &&
+    !/\/use-[^/]+\.[jt]sx?$/u.test(filePath)
+  )
+    return false;
   return (
     route.patterns.some((expression) => expression.test(filePath)) &&
     !route.exclude.some((expression) => expression.test(filePath))
@@ -288,13 +301,62 @@ function isRelatedInput(filePath) {
   return /^(src|scripts|desktop|performance)\//u.test(filePath) || /\.(ts|tsx|js|mjs|cjs)$/u.test(filePath);
 }
 
+// Shared lifecycle seams retain the whole interaction suite. Feature owners
+// select their lifecycle families; dependency-related selection still finds
+// other affected interaction tests through actual imports.
+const INTERACTION_SCOPES = [
+  [
+    /^src\/features\/alchemy\/(?:run-loop\/battle\/|shell\/use-battle-controller\.ts$|run-loop\/screens\/battle-screen\/)/u,
+    ["battle", "overlays", "audio-progress", "timing"],
+  ],
+  [
+    /^src\/features\/alchemy\/meta\/(?:screens\/armory(?:\/|-screen\.)|screens\/homestead(?:\/|-screen\.)|screens\/talents-screen\.|talents\/)/u,
+    ["armory", "navigation"],
+  ],
+  [/^src\/features\/alchemy\/meta\/screens\/options(?:\/|-screen\.)/u, ["navigation", "overlays"]],
+  [/^src\/features\/alchemy\/meta\/screens\//u, ["navigation", "overlays", "startup"]],
+  [/^src\/features\/alchemy\/run-setup\//u, ["navigation"]],
+  [/^src\/features\/alchemy\/run-loop\//u, ["visits", "navigation"]],
+  [/^src\/features\/alchemy\/shell\//u, ["navigation", "battle"]],
+  [/^src\/features\/alchemy\/shared\/storage\//u, ["persistence"]],
+  [/^src\/(?:app\/autosave|lib\/platform-save-backend\.ts$)/u, ["persistence"]],
+  [/^src\/lib\/preload\/image\.ts$/u, ["startup", "overlays"]],
+  [/^src\/lib\/routing\//u, ["navigation"]],
+];
+
+function interactionSuites(paths, routes) {
+  if (!routes.some((candidate) => candidate.id === "interactions")) return [];
+  const suites = new Set();
+  const interactionRoute = routes.find((candidate) => candidate.id === "interactions");
+  for (const filePath of paths.filter((file) => matchesCandidate(interactionRoute, file))) {
+    if (isUnitTest(filePath)) {
+      if (!existsSync(path.join(ROOT_DIR, filePath))) return ["tests/interaction"];
+      suites.add(filePath);
+      continue;
+    }
+    const scope = INTERACTION_SCOPES.find(([pattern]) => pattern.test(filePath));
+    if (!scope) return ["tests/interaction"];
+    for (const family of scope[1]) {
+      const extension = family === "battle" || family === "overlays" ? "tsx" : "ts";
+      suites.add(`tests/interaction/${family}.dom.test.${extension}`);
+    }
+  }
+  return [...suites].sort();
+}
+
 export function resolveRoutePlan(paths) {
   const normalized = expandRepositoryPaths(ROOT_DIR, paths);
   const routes = resolveRoutes(normalized);
   const keys = new Set(routes.flatMap((candidate) => candidate.commands));
+  const interactions = interactionSuites(normalized, routes);
+  if (interactions.length === 0) keys.delete("unit-interactions");
+  const selectedCommand = (key) =>
+    key === "unit-interactions"
+      ? { ...COMMANDS[key], args: ["run", "test:unit", "--", ...interactions] }
+      : COMMANDS[key];
   const coveredPaths = [...keys]
     .filter((key) => key.startsWith("unit-") && key !== "unit-changed")
-    .flatMap((key) => COMMANDS[key].args.filter((arg) => arg.startsWith("tests/")));
+    .flatMap((key) => selectedCommand(key).args.filter((arg) => arg.startsWith("tests/")));
   const changedTests = normalized.filter(
     (filePath) =>
       isUnitTest(filePath) &&
@@ -304,7 +366,12 @@ export function resolveRoutePlan(paths) {
   const tooling = routes.find((candidate) => candidate.id === "tooling");
   const relatedInputs = normalized.filter(
     (filePath) =>
-      !isUnitTest(filePath) && isRelatedInput(filePath) && !(tooling && matchesCandidate(tooling, filePath)),
+      !isUnitTest(filePath) &&
+      isRelatedInput(filePath) &&
+      !(tooling && matchesCandidate(tooling, filePath)) &&
+      // Profiling drivers have a complete explicit unit owner. Runtime marks
+      // under src/ retain graph selection for their gameplay consumers.
+      !(keys.has("unit-performance") && filePath.startsWith("performance/")),
   );
   if (changedTests.length === 0) keys.delete("unit-changed");
   if (relatedInputs.length === 0) keys.delete("related");
@@ -318,9 +385,10 @@ export function resolveRoutePlan(paths) {
   }
   return {
     paths: normalized,
+    classification: classifyVerificationPaths(normalized),
     routes,
     commands: [...keys].map((key) => {
-      const command = COMMANDS[key];
+      const command = selectedCommand(key);
       if (key === "unit-changed") return { key, ...command, args: [...command.args, ...changedTests] };
       if (key === "related") {
         return {
@@ -329,7 +397,9 @@ export function resolveRoutePlan(paths) {
           args: [
             ...command.args,
             ...relatedInputs,
-            ...(keys.has("unit-interactions") ? ["--exclude", "tests/interaction/**"] : []),
+            ...(keys.has("unit-interactions")
+              ? interactions.flatMap((suite) => ["--exclude", suite === "tests/interaction" ? `${suite}/**` : suite])
+              : []),
             "--run",
             "--passWithNoTests",
           ],
@@ -364,4 +434,37 @@ export function validateRouteCatalog({ rootDir = ROOT_DIR } = {}) {
     }
   }
   return errors;
+}
+
+const COMPILED_SHARED_BUILD_PATTERNS = SHARED_BUILD_PATTERNS.map(globToRegExp);
+
+function classifyVerificationPaths(paths) {
+  const expanded = paths;
+  const codePaths = expanded.filter((filePath) => !isDocumentationPath(filePath));
+  const routes = resolveRoutes(codePaths.length > 0 ? codePaths : expanded);
+  const ids = new Set(routes.map((route) => route.id));
+  const needsCodeChecks = codePaths.length > 0;
+  const lockfile = codePaths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
+  const sharedBuild = codePaths.some((filePath) =>
+    COMPILED_SHARED_BUILD_PATTERNS.some((expression) => expression.test(filePath)),
+  );
+  // Extraction scans source literals and derives descriptions from runtime modules.
+  // Test/tooling-only changes do not affect those catalogs; integration and
+  // pre-push still select this gate for every changed localization input.
+  const localization = codePaths.some((filePath) =>
+    /^(?:src\/.*\.[cm]?[jt]sx?$|src\/lib\/localization\/|scripts\/localization(?:[./])|steam\/|public\/fonts\/|package(?:-lock)?\.json$|vite\.config\.ts$)/u.test(
+      filePath,
+    ),
+  );
+  const desktop = ids.has("desktop") || sharedBuild;
+  const web =
+    sharedBuild ||
+    ids.has("runtime") ||
+    ids.has("assets") ||
+    codePaths.some((filePath) =>
+      /^(src\/|public\/|index\.html$|vite\.config\.ts$|vercel\.json$|package\.json$|package-lock\.json$)/u.test(
+        filePath,
+      ),
+    );
+  return { needsCodeChecks, lockfile, desktop, web, localization, routeIds: [...ids] };
 }

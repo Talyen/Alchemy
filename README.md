@@ -26,8 +26,11 @@ Campfires.
 
 ## Prerequisites
 
-- Node.js `^20.19.0 || >=22.12.0` (see `engines` in `package.json`; `.node-version` pins 24 for local dev)
-- npm 11+
+- Node.js 24.18 or later within 24.x
+- npm 11.x
+
+[`package.json`](./package.json) owns the supported ranges; `.npmrc` enforces
+them during installation. `.node-version` selects the Node 24 release line.
 
 ## Quick Start
 
@@ -45,44 +48,15 @@ binaries, prepared-asset failures, and running checkouts on separate ports.
 
 ## Develop
 
-| Command                    | Action                                                  |
-| -------------------------- | ------------------------------------------------------- |
-| `npm run dev`              | Start Vite dev server                                   |
-| `npm run dev:desktop`      | Start the Electron shell                                |
-| `npm test`                 | Run bounded Node-only smoke tests                       |
-| `npm run test:full`        | Run the full unit suite; append paths for focused tests |
-| `npm run test:e2e`         | Run Playwright against the existing production build    |
-| `npm run lint`             | Lint all source files                                   |
-| `npm run verify -- --diff` | Run lightweight changed-path verification               |
-| `npm run check -- --diff`  | Run the lightweight push and handoff gate               |
-| `npm run docs:check`       | Validate documentation links, commands, and contracts   |
+Use [Contributing](./CONTRIBUTING.md#what-to-run-when-you-change) for task checks,
+verification permissions and completion requirements. Ordinary task verification
+starts with `npm run check`; use explicit task-owned paths in a mixed checkout.
 
-Install Playwright's browser once before the first local E2E run:
-
-```sh
-npx playwright install chromium
-```
-
-Run `npm run build` before `npm run test:e2e` to test current source. For
-checks against the development server, use `npm run test:e2e:dev`. Focused
-commands and fixture guidance live in the [E2E guide](./tests/e2e/README.md).
-
-Use explicit task-owned paths instead of `--diff` when the checkout contains
-other work. [Contributing](./CONTRIBUTING.md#what-to-run-when-you-change) owns
-local execution policy and the opt-in full gates; a local pass still needs CI validation.
-
-Full command catalog (build, desktop, gates, balance sim, perf, clean):
-[`Docs/REFERENCE.md`](./Docs/REFERENCE.md#environment--commands). Path-specific
-tests, local gates, and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
-Headless balance simulation (`npm run balance:sim`):
-[`Docs/REFERENCE.md` § Balance simulation](./Docs/REFERENCE.md#balance-simulation).
-
-Web deploys through Vercel ([`vercel.json`](./vercel.json)). Git auto-deploys
-are disabled there, so web deployments are deliberate (dashboard Redeploy or
-a Deploy Hook) rather than per-push. Desktop builds,
-installers, and Steam shipping:
-[`Docs/RELEASE.md`](./Docs/RELEASE.md) and the
-[command reference](./Docs/COMMANDS.md#script-command-reference).
+[Commands](./Docs/COMMANDS.md) covers development, builds and operational tools.
+The [E2E guide](./tests/e2e/README.md#running-focused-checks) covers browser and
+Electron execution, including browser installation and fresh-build requirements.
+Web deployments are deliberate through Vercel; desktop and Steam shipping follow
+[Release](./Docs/RELEASE.md).
 
 ## Layout
 
@@ -95,7 +69,7 @@ Repository ownership and feature layout:
 - `src/features/alchemy/` — game features and session infrastructure (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
-- Asset Library (external), `src/assets/`, `public/` — raw masters, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
+- `assets/sources/`, `src/assets/`, `public/` — raw masters, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
 - `scripts/` — command entry points, asset registries and pipeline helpers in `scripts/assets/`, and other shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `lint/` — custom lint rules and import-boundary definitions composed by `oxlint.config.ts`
 - `Docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
@@ -119,24 +93,28 @@ Do not hand-edit generated outputs.
 
 Start with the document for your question:
 
-| Question                                      | Start here                                                                                                                                                                                             |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| What does the terminology mean?               | [Glossary](./Docs/GLOSSARY.md)                                                                                                                                                                         |
-| How do combat and progression work?           | [Game rules](./Docs/GAME_RULES.md), [Talents](./Docs/TALENT_RULES.md), [Armory](./Docs/ARMORY.md), [Unique items](./Docs/UNIQUE_ITEMS.md)                                                              |
-| Where does state live, and how is it saved?   | [Architecture](./Docs/ARCHITECTURE.md), [Run state](./Docs/RUN_STATE.md), [Run and save workflows](./Docs/RUN_WORKFLOWS.md), [Save compatibility](./src/features/alchemy/shared/storage/MIGRATIONS.md) |
-| How do I add content or change a flow?        | [Workflow index](./Docs/WORKFLOWS.md), [Content authoring](./Docs/CONTENT_AUTHORING.md), [Assets](./Docs/WORKFLOWS-ASSETS.md)                                                                          |
-| Which UI and audio conventions apply?         | [UI guide index](./Docs/UI.md#guide-index), [Audio](./Docs/AUDIO.md)                                                                                                                                   |
-| Which commands and checks should I run?       | [Commands](./Docs/COMMANDS.md), [Contributing](./CONTRIBUTING.md), [Failure triage](./Docs/REFERENCE.md#failure-first-triage)                                                                          |
-| How do I test player interactions and layout? | [E2E guide](./tests/e2e/README.md), [Connected interaction coverage](./tests/interaction/README.md), [Desktop layout review](./tests/layout-review/README.md)                                          |
-| How do I investigate balance or performance?  | [Battle simulation](./Docs/REFERENCE.md#balance-simulation), [Full playthroughs](./Docs/PLAYTHROUGH_SIMULATION.md), [Performance](./Docs/PERFORMANCE.md)                                               |
-| How do I ship?                                | [Release](./Docs/RELEASE.md), [Release setup](./Docs/RELEASE_SETUP.md)                                                                                                                                 |
-| What is included in the Steam demo?           | [Demo edition and transfer](./Docs/STEAM_DEMO.md), [Candidate checklist](./Docs/STEAM_DEMO_CHECKLIST.md), [Pending copy approvals](./Docs/STEAM_DEMO_COPY_REVIEW.md)                                   |
-| How do agents work here?                      | [AGENTS.md](./AGENTS.md), [Optional discovery tools](./Docs/AGENT_DISCOVERY.md), [Local skills](./.agents/skills/README.md)                                                                            |
+| Question                                      | Start here                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------------ |
+| What do the terms mean?                       | [Glossary](./Docs/GLOSSARY.md)                                           |
+| How do combat and progression work?           | [Game rules](./Docs/GAME_RULES.md)                                       |
+| Where does a subsystem live?                  | [Architecture](./Docs/ARCHITECTURE.md)                                   |
+| How does state change and persist?            | [Run state](./Docs/RUN_STATE.md)                                         |
+| How do I add content or change a flow?        | [Workflow index](./Docs/WORKFLOWS.md)                                    |
+| Which UI and audio conventions apply?         | [UI](./Docs/UI.md#guide-index), [Audio](./Docs/AUDIO.md)                 |
+| Which command should I use?                   | [Commands](./Docs/COMMANDS.md)                                           |
+| Which checks should I run?                    | [Contributing](./CONTRIBUTING.md)                                        |
+| How do I test player interactions and layout? | [E2E guide](./tests/e2e/README.md)                                       |
+| How do I investigate balance or performance?  | [Simulation](./Docs/SIMULATION.md), [Performance](./Docs/PERFORMANCE.md) |
+| How do I ship?                                | [Release](./Docs/RELEASE.md)                                             |
+| What is included in the Steam demo?           | [Demo contract](./Docs/STEAM_DEMO.md)                                    |
+| How do agents work here?                      | [AGENTS.md](./AGENTS.md)                                                 |
 
 [Audit guides](./Docs/Audits/README.md) are on-demand review procedures.
 [Plans](./Docs/Plans/README.md) hold active work; [design inputs](./Docs/design/README.md)
 support current tools. Keep durable rules in their current owner and remove
 completed task records rather than archiving them.
+
+For automated gameplay capture and cinematic video exports, see [Trailer production](./Docs/TRAILERS.md).
 
 ### Keeping documentation useful
 

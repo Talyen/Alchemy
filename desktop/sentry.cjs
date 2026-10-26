@@ -21,6 +21,7 @@ function initializeMainSentry(app, injectedSentry, injectedMetadata) {
       enableLogs: false,
       release: metadata.sentryRelease || `alchemy@${app.getVersion()}`,
       sendDefaultPii: false,
+      beforeBreadcrumb: (breadcrumb) => (breadcrumb.category === "console" ? null : breadcrumb),
       tracesSampleRate: 0,
       initialScope: {
         tags: {

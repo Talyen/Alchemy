@@ -22,6 +22,7 @@ import { scaleReceivedPlayerDamage } from "./damage-modifiers";
 import { setPlayerStatus } from "./status-state";
 import type { EnemyStatusDamageId } from "@/lib/game-data";
 import { halveRounded } from "./amount-helpers";
+import { processContagion } from "./enemy-healing";
 
 export function decayHalvedStatus(value: number) {
   if (value <= STATUS_DECAY_THRESHOLD) return 0;
@@ -146,7 +147,14 @@ export function dealSelfDamage(
     });
   }
   return {
-    state: healthCost ? postDamage : decayArmorAfterDamage(postDamage, resolvedDamage, "player", combatTexts),
+    state: healthCost
+      ? postDamage
+      : processContagion(
+          decayArmorAfterDamage(postDamage, resolvedDamage, "player", combatTexts),
+          statLabel,
+          amount,
+          combatTexts,
+        ),
     healthLost,
     healthAfterDamage: postDamage.playerHealth,
   };

@@ -1,7 +1,10 @@
 import blightTreant from "./lyrics/blight-treant.json";
+import bloodCountess from "./lyrics/blood-countess.json";
 import forgeGolem from "./lyrics/forge-golem.json";
 import frostwarden from "./lyrics/frostwarden.json";
 import ironBear from "./lyrics/iron-bear.json";
+import seraph from "./lyrics/seraph.json";
+import stoneTitan from "./lyrics/stone-titan.json";
 import { MUSIC_KEYS } from "../game-constants";
 
 export interface LyricWord {
@@ -14,9 +17,12 @@ export interface LyricWord {
 const tracks = new Map<string, ReadonlyArray<readonly LyricWord[]>>(
   Object.entries({
     [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: blightTreant,
+    [MUSIC_KEYS.BOSS_BLOOD_COUNTESS]: bloodCountess,
     [MUSIC_KEYS.BOSS_FORGE_GOLEM]: forgeGolem,
     [MUSIC_KEYS.BOSS_FROSTWARDEN]: frostwarden,
     [MUSIC_KEYS.BOSS_IRON_BEAR]: ironBear,
+    [MUSIC_KEYS.BOSS_SERAPH]: seraph,
+    [MUSIC_KEYS.BOSS_STONE_TITAN]: stoneTitan,
   }).map(([key, { lines }]) => [
     key,
     lines.map(({ text, timings }) =>

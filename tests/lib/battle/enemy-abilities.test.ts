@@ -380,7 +380,7 @@ describe("enemy card effects", () => {
       },
       effect,
     );
-    expect(scaled).toEqual({ ...effect, amount: 13 });
+    expect(scaled).toEqual({ ...effect, amount: 26 });
     expect(effect.amount).toBe(3);
     expect(
       scaleEnemyAbilityDamage(
@@ -506,15 +506,15 @@ describe("ability trait boundaries", () => {
 
   it("rewards established Bleed with Blood Frenzy while retaining only native Leech", () => {
     const state = enemyState("blood-cultist", { enemyHealth: 10 });
-    expect(useAbility(state, "serrated-edge").enemyHealth).toBe(10);
+    expect(useAbility(state, "serrated-edge").enemyHealth).toBe(9);
     expect(useAbility(state, "rend").playerHealth).toBe(99);
     const bleeding = { ...state, playerStatuses: { ...state.playerStatuses, bleed: 1 } };
     expect(useAbility(bleeding, "rend").playerHealth).toBe(97);
-    expect(useAbility(bleeding, "rend").enemyHealth).toBe(10);
+    expect(useAbility(bleeding, "rend").enemyHealth).toBe(9);
     expect(useAbility(state, "fangs").enemyHealth).toBe(
-      useAbility(enemyState("skeleton", { enemyHealth: 10 }), "fangs").enemyHealth,
+      useAbility(enemyState("skeleton", { enemyHealth: 10 }), "fangs").enemyHealth - 1,
     );
-    expect(useAbility(state, "bloodthorn").enemyHealth).toBe(11);
+    expect(useAbility(state, "bloodthorn").enemyHealth).toBe(10);
   });
 
   it("adds one Blood Scent hit strictly below half Health without additional Leech", () => {
@@ -530,7 +530,7 @@ describe("ability trait boundaries", () => {
     expect(block.playerStatuses.bleed).toBe(0);
   });
 
-  it("rewards matching Health damage once per ability and not for fully blocked hits", () => {
+  it("rewards each matching hit even when defenses prevent Health loss", () => {
     const card = makeTestCard({
       effects: [
         { kind: "damage", damageType: "stun", amount: 2 },
@@ -544,26 +544,108 @@ describe("ability trait boundaries", () => {
       ["stone-titan", "armor"],
     ] as const) {
       const base = enemyState(id);
-      expect(applyEnemyAbility(base, card, []).enemyMitigation[reward]).toBe(1);
+      expect(applyEnemyAbility(base, card, []).enemyMitigation[reward]).toBe(
+        id === "zealot" ? 2 : id === "paladin" ? 3 : 1,
+      );
       expect(
         applyEnemyAbility({ ...base, playerStatuses: defaultPlayerStatusValues({ block: 50 }) }, card, [])
           .enemyMitigation[reward],
-      ).toBe(0);
+      ).toBe(id === "zealot" ? 2 : id === "paladin" ? 3 : 1);
     }
-    for (const id of ["cleric", "seraph"]) {
+    for (const id of ["cleric"]) {
       const result = applyEnemyAbility(enemyState(id, { enemyHealth: 10 }), card, []);
-      expect(result.enemyHealth).toBe(11);
+      expect(result.enemyHealth).toBe(12);
     }
     const armored = useAbility(
       enemyState("stone-titan", { playerStatuses: defaultPlayerStatusValues({ armor: 20 }) }),
       "bash",
     );
     expect(armored.playerHealth).toBe(100);
-    expect(armored.enemyMitigation.armor).toBe(0);
+    expect(armored.enemyMitigation.armor).toBe(1);
     const holy = useAbility(
       enemyState("inquisitor", { playerStatuses: defaultPlayerStatusValues({ burn: 1 }) }),
       "judgment",
     );
     expect(holy.playerHealth).toBe(97);
+  });
+});
+
+describe("native trait pairs", () => {
+  it("assigns exactly one positive and one negative trait to all enemies", () => {
+    for (const enemy of enemyBestiary) {
+      expect(enemy.traits.map((trait) => trait.polarity)).toEqual(["positive", "negative"]);
+      expect(new Set(enemy.traits.map((trait) => trait.id)).size).toBe(2);
+    }
+  });
+
+  it.each(["fire-imp", "giant-spider", "winter-wolf"])("%s rewards every blocked hit", (id) => {
+    const state = enemyState(id, { playerStatuses: defaultPlayerStatusValues({ block: 100 }) });
+    const card = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 2 },
+      ],
+    });
+    const result = applyEnemyAbility(state, card, []);
+    expect(result.playerHealth).toBe(100);
+    if (id === "fire-imp") expect(result.playerStatuses.burn).toBe(2);
+    if (id === "giant-spider") expect(result.playerStatuses.poison).toBe(2);
+    if (id === "winter-wolf") {
+      expect(result.playerStatuses.freeze).toBe(0);
+      expect(result.playerStatuses.block).toBe(94);
+    }
+  });
+
+  it("Self-Sacrifice charges each hit and a lethal recoil stops the remaining hits", () => {
+    const state = enemyState("zealot", { enemyHealth: 1 });
+    const card = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 2 },
+      ],
+    });
+    const result = applyEnemyAbility(state, card, []);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(98);
+  });
+
+  it("Flickering reserves one attack reduction across utility and multiple incoming hits", () => {
+    const base = enemyState("will-o-wisp", { flags: { ...enemyState().flags, enemyAttackDamageReduction: 1 } });
+    const guarded = useAbility(base, "block");
+    expect(guarded.flags.enemyAttackDamageReduction).toBe(1);
+    const attack = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 2 },
+      ],
+    });
+    const result = applyEnemyAbility(guarded, attack, []);
+    expect(result.playerHealth).toBe(97);
+    expect(result.flags.enemyAttackDamageReduction).toBe(0);
+  });
+
+  it("Concussion preserves utility cards and reduces every hit of the next attacking card", () => {
+    const utility = makeTestCard({
+      id: "guard",
+      cost: 0,
+      effects: [{ kind: "player-status", status: "block", amount: 1 }],
+    });
+    const attack = makeTestCard({
+      id: "double",
+      cost: 0,
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 4 },
+      ],
+    });
+    let state = enemyState("brawler", {
+      hand: [utility, attack],
+      flags: { ...enemyState().flags, concussionReady: true },
+    });
+    state = playBattleCardResolved(state, utility.id, 0).state;
+    expect(state.flags.concussionReady).toBe(true);
+    const result = playBattleCardResolved(state, attack.id, 0).state;
+    expect(result.enemyHealth).toBe(94);
+    expect(result.flags.concussionReady).toBe(false);
   });
 });

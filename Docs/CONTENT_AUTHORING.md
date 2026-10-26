@@ -1,5 +1,9 @@
 # Content authoring
 
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns verification
+requirements and execution permissions. Coverage references below identify the
+contracts to preserve.
+
 ## Shared tuning
 
 Shared knobs live in topical files under `src/lib/game-constants/`, exported
@@ -27,12 +31,31 @@ card effects also follow [Battle handlers](../src/lib/game-data/effects/BATTLE_H
 
 ## Add a new card
 
-1. Define card in the matching topical library — `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups
-2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
-3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
-4. Register a nonempty card sound in `src/lib/audio/sound-registry.ts` (`cardSounds`), including for Companion summon cards; follow the [audio checklist](./AUDIO.md#change-checklist). `tests/lib/audio/sound-registry.test.ts` enforces complete focal coverage; intentional silence applies only to the UI/service registrations documented by the audio owner.
-5. Build the entry with `card-builders.ts` (`effectsCard` generates a structured `description` and rendered `descriptionLines` from effects; chance, delayed, conditional, and combined clauses are generated too; a bespoke `describe(effects)` returns typed description lines with explicit magnitude references; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
-6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (summon lines use Bond levels and the shared `CompanionDamageModifiers`; other amounts stay authored), UI tokens `shared/ui/cards/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`). Universal reactions such as Shatter, Wildfire, Thunderclap, Frostfire, Consecration, Bloodboil, and Venomflash are not card effects: never include their rules or previews in card descriptions or card keyword explanations.
+1. Add the entry to the matching topical library under `src/lib/game-data/cards/library/`;
+   `cards.ts` assembles the groups. Use `effectsCard` from `card-builders.ts` with its
+   effects; ordinary descriptions derive from those effects.
+2. Register art in `src/lib/game-data/assets.ts` through the
+   [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art); `placeholderCard`
+   is available while drafting.
+3. Register a nonempty focal sound under the [audio checklist](./AUDIO.md#change-checklist),
+   including Companion summons.
+4. Check description/effect parity and typography with `npm run content:audit`,
+   complete [localization](./LOCALIZATION.md#agent-workflow), then use the
+   [task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
+
+**For a new effect kind:** follow [handler authoring](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind).
+**For bespoke wording:** use `describe(effects)` with typed magnitude references
+under the description contract below; raw literals are reserved for special
+cards such as Mixed Potion. Cards with `consume: true` may have multiple effects;
+summon builders derive titles from Companions.
+
+**For contextual text:** `card-description.ts` owns pure descriptions,
+`shared/ui/cards/card-description-ui.tsx` owns UI tokens, and
+`shared/context/card-description-context.tsx` supplies Homestead/Talent context
+from App. Summon lines use Bond and shared Companion damage modifiers; other
+amounts remain authored. Universal reactions belong to
+[game rules](./GAME_RULES.md#universal-reactions), never card effects, descriptions
+or keyword explanations.
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
 `cardLibrary` rejects duplicate IDs. Removing or renaming IDs follows the
@@ -72,7 +95,9 @@ Standard Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts
 talent's combat potency. Add a new standard Potion to the list deliberately;
 Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
-Run `npm run content:audit` before handing off: card text must match effects (canonical description diff in `src/lib/content-validation/card-parity/`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
+[Description parity](../src/lib/content-validation/card-parity/) checks text against
+effects. Typography rejects em dashes and terminal periods in description lines;
+keyword tooltips may use sentence punctuation.
 
 ---
 
@@ -96,7 +121,7 @@ effect ordering, and the focused schema/handler/description tests.
 - **7. Add the difficulty header title** — `src/lib/game-data/difficulties.ts` (`CHARACTER_HEADER_TITLES`); extract localization with `npm run i18n:extract`
 - **8. Add Armory tab metadata** — `src/features/alchemy/meta/screens/armory/armory-character-tabs.tsx` (`CHARACTER_ICONS` and `CHARACTER_KEYWORDS`)
 - **9. Register the portrait** — `characterArt` in `src/lib/game-data/assets.ts`, source art in `scripts/assets/core-assets.mjs`, then regenerate barrels and optimized outputs with the [asset workflow](./WORKFLOWS-ASSETS.md)
-- **10. Cover the hero** — update character unlock, Armory tab, and asset-manifest tests; run `npm run typecheck` so every `Record<CharacterId, …>` owner fails loudly
+- **10. Cover the hero** — update character unlock, Armory tab, and asset-manifest tests. CI typechecking checks completeness of `Record<CharacterId, …>` owners.
 
 `resolveDeck` throws on unknown card IDs so a typo fails loudly instead of
 shortening the deck. Every badge must appear in at least one starting-deck
@@ -108,7 +133,7 @@ Collection render the deck titles and badges live from this record.
 
 ## Enemy repertoire requirements
 
-Each enemy has three distinct canonical card IDs in `abilityIds` and 1–3 unique native Traits. Ability cards must satisfy `isEnemyAbilityCard`: no Consume or hero-only resource effects; every branch must be supported. Content validation checks these requirements. For selection, scaling, targeting and reactions, read [enemy combat rules](./GAME_RULES.md#enemy-abilities-and-traits) when changing their behavior.
+Each enemy has three distinct canonical card IDs in `abilityIds` and exactly two distinct native Traits, one positive followed by one negative. Ability cards must satisfy `isEnemyAbilityCard`: no Consume or hero-only resource effects; every branch must be supported. Content validation checks these requirements. For selection, scaling, targeting and reactions, read [enemy combat rules](./GAME_RULES.md#enemy-abilities-and-traits) when changing their behavior.
 
 ## Add a new enemy
 
@@ -200,7 +225,10 @@ from the authored effects, using short clauses, capitalized keywords, and no
 terminal periods. Companion descriptions remain card-owned; the summon card must
 be discovered before bonding is permitted.
 
-Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:full -- tests/lib/homestead` for the lib contract. Browser verification uses `npm run test:e2e:route -- homestead` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
+Homestead coverage lives in `tests/lib/homestead/`, the screen unit suites, and
+`tests/e2e/specs/homestead-flow.spec.ts`. Screen directories are excluded from
+Vitest coverage thresholds in `vitest.config.ts`; behavioral coverage remains
+subject to the shared test value policy.
 
 ## Add a new keyword
 
@@ -226,8 +254,19 @@ rendered numeric positions identify highlights, never the effect to mutate.
 
 ### Transmutation keywords and Potion brewing
 
-Transmutation derives compatible alterations from the run deck, independent of class affinities and offerable replacement-card pools. `game-constants/transmutation.ts` owns the three keyword groups and title prefixes. Each visit rolls up to three useful keywords per card: one per compatible group, with unique fallback choices if a group is unavailable. The visit can contain more than three distinct keywords across the deck, but selecting a card shows only its saved compatible choices. Each card's randomly chosen conversions are saved for the visit. All occurrences of the selected source keyword convert without changing existing numeric fields. Unsupported conditions and scaling exclude conversions; additions use native effects, and added effect lines respect Corruption's four-effect-line limit. Keep recursive effects, structured descriptions, distilled marks, and keyword detection consistent when adding new mechanics. Back and reload must preserve exact previews. Transmuted cards carry `transmuted`, `baseTitle`, generated descriptions, and any added tags through hydration; they cannot receive further Transmutation or Corruption.
+[Brewing and Transmutation rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+own eligibility, fixed offers, conversion limits and service behavior. To extend them:
 
-Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions remain eligible for later brewing visits; [brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions) own Campfire selection and once-per-visit service limits. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. The Distill service adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing. The Distillation talent separately scales eligible Potion benefits during combat under the [Potion potency rules](./TALENT_RULES.md#distinct-talent-and-card-effects).
+- Register keyword groups and title prefixes in `game-constants/transmutation.ts`,
+  and implement useful variants in `lib/alchemist/transmutation.ts`.
+- Keep recursive effects, keyword detection and structured magnitude bindings aligned.
+  Preserve effects, descriptions, `transmuted`, `baseTitle`, added tags and `distilled`
+  marks together through preview, mixing and hydration.
+- Follow the [visit workflow](./RUN_WORKFLOWS.md#campfire-brewing-and-transmutation-visits)
+  for commands and resume. Verify Back/reload retains the exact preview and completed
+  visits cannot reroll or regrant a result.
 
-The former Shatter and Wildfire talents are displayed as Brittle Ice and Flash Fire to distinguish them from the universal reactions. Their saved IDs and effects remain unchanged.
+The Distillation talent's combat scaling is separate from the Distill service;
+see [Potion potency](./TALENT_RULES.md#distinct-talent-and-card-effects).
+Brittle Ice and Flash Fire retain the saved IDs and effects of the former Shatter
+and Wildfire talents, distinguishing them from universal reactions.

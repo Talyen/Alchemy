@@ -2,7 +2,7 @@ import { patchBattleState } from "../../../../../fixtures/battle";
 import { useBattleDescriptionContext } from "@/features/alchemy/run-loop/screens/battle-screen/use-battle-description-context";
 import type { BattleSnapshot } from "@/lib/battle";
 import { makeTestCard } from "../../../../../fixtures/cards";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button";
@@ -79,6 +79,16 @@ describe("BattleCardButton", () => {
     );
     fireEvent.mouseEnter(screen.getByRole("button", { name: "Collection Slash" }).parentElement!);
     expect(screen.getByRole("tooltip").textContent).toContain("Deal 4 Physical damage");
+  });
+
+  it("refreshes Bloodscent in Companion inspection when enemy Bleed changes", () => {
+    const state = patchBattleState({ enemyStatuses: { bleed: 2 }, gearEffects: { companionDamageBonusVsBleeding: 3 } });
+    const { result, rerender } = renderHook(({ battle }) => useBattleDescriptionContext(battle), {
+      initialProps: { battle: state },
+    });
+    expect(result.current.companionDamageModifiers.damageBonus).toBe(3);
+    rerender({ battle: { ...state, enemyStatuses: { ...state.enemyStatuses, bleed: 0 } } });
+    expect(result.current.companionDamageModifiers.damageBonus).toBe(0);
   });
 
   it("removes a hidden card in transit from keyboard navigation until it is revealed", () => {

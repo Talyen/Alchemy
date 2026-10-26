@@ -10,16 +10,21 @@ export const SHARP_DEFAULTS = Object.freeze({
   format: "webp",
 });
 
-const ciCap = process.env.CI ? 4 : 6;
+const profile = process.env.ALCHEMY_ASSET_PROFILE ?? "default";
+if (!["default", "low-memory"].includes(profile)) throw new Error(`Unknown ALCHEMY_ASSET_PROFILE: ${profile}`);
+export const LOW_MEMORY_ASSETS = profile === "low-memory";
+const ciCap = LOW_MEMORY_ASSETS ? 2 : process.env.CI ? 4 : 6;
+export const BOSS_IDLE_CONCURRENCY = LOW_MEMORY_ASSETS ? 1 : 2;
 
 /**
  * Single concurrency knob for every asset pipeline. ALCHEMY_ASSET_CONCURRENCY
- * overrides all three so a debug value of 1 actually serializes ffmpeg too.
+ * overrides normal preparation; low-memory keeps at most two image jobs and
+ * one boss interpolation job active. Runtime quality settings stay identical.
  */
 export function resolveAssetConcurrency(fallback) {
   const override = Number(process.env.ALCHEMY_ASSET_CONCURRENCY ?? "");
   if (Number.isFinite(override) && override > 0 && override <= Number.MAX_SAFE_INTEGER)
-    return Math.max(1, Math.floor(override));
+    return Math.max(1, Math.min(LOW_MEMORY_ASSETS ? ciCap : Number.MAX_SAFE_INTEGER, Math.floor(override)));
   return Math.min(ciCap, fallback);
 }
 
@@ -85,6 +90,19 @@ export function soundTransformSettings(sourceExt) {
 }
 
 export const MUSIC_SETTINGS = Object.freeze({ mode: "copy" });
+export const BOSS_IDLE_SETTINGS = Object.freeze({
+  codec: "libx264",
+  crf: 17,
+  preset: "slow",
+  fps: 60,
+  interpolation: "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bilat:me=hexbs:search_param=16:vsbmc=1",
+  downsample: "area",
+  stripAudio: true,
+  faststart: true,
+});
+export function bossIdleTransformSettings(asset) {
+  return { ...BOSS_IDLE_SETTINGS, width: asset.width };
+}
 export const MANIFEST_BASENAME = ".asset-hashes.json";
 
 /**
@@ -98,6 +116,7 @@ export const MANAGED_DIRS = Object.freeze({
   art: Object.freeze({ dir: "src/assets/optimized" }),
   sounds: Object.freeze({ dir: "public/sounds" }),
   music: Object.freeze({ dir: "public/Music" }),
+  bossIdles: Object.freeze({ dir: "src/assets/boss-idles" }),
 });
 
 export const GENERATED_OUTPUTS = Object.freeze({

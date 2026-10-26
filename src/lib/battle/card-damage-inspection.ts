@@ -28,14 +28,23 @@ export interface BattleDamageInspection {
 
 function summarize(packets: readonly DamageEffect[]): BattleCardEffect {
   const first = packets[0]!;
-  const types = [...new Set(packets.map((packet) => packet.damageType))];
-  const amounts = packets.map((packet) => packet.amount);
-  if (amounts.every((amount) => amount === first.amount))
-    return { ...first, ...(types.length > 1 ? { damageTypePool: types } : {}) };
+  if (packets.length === 1 && !Number.isNaN(first.amount)) return { ...first };
+  const damageTypes = new Set<DamageEffect["damageType"]>();
+  let minAmount = Infinity;
+  let maxAmount = -Infinity;
+  let sameAmount = true;
+  for (const packet of packets) {
+    damageTypes.add(packet.damageType);
+    minAmount = Math.min(minAmount, packet.amount);
+    maxAmount = Math.max(maxAmount, packet.amount);
+    if (packet.amount !== first.amount) sameAmount = false;
+  }
+  const types = [...damageTypes];
+  if (sameAmount) return { ...first, ...(types.length > 1 ? { damageTypePool: types } : {}) };
   return {
     kind: "random-damage",
-    minAmount: Math.min(...amounts),
-    maxAmount: Math.max(...amounts),
+    minAmount,
+    maxAmount,
     damageTypePool: types,
     ...(first.lifesteal ? { lifesteal: true } : {}),
   };
@@ -56,16 +65,19 @@ export function inspectBattleCardDamage(
     return copy;
   }
   const resolutionCard = { ...card, effects: card.effects.map((effect, index) => copyEffect(effect, [index])) };
+  const baseState = battleSnapshot(snapshot);
+  const enemyAbility = side === "enemy" && isEnemyAbilityCard(resolutionCard);
+  const handIndex = enemyAbility ? -1 : snapshot.hand.indexOf(card);
   const resolved = inspectResolutionOutcomes(resolutionCard, (rng, observer) => {
     // Only admission is hypothetical. Production owns payment and every consequence.
     const state = {
-      ...battleSnapshot(snapshot),
+      ...baseState,
       rng,
       observer,
       sampleWishOptions: () => ({ cards: [], deferred: true }),
     };
-    if (side === "enemy" && isEnemyAbilityCard(resolutionCard)) applyEnemyAbility(state, resolutionCard, []);
-    else resolveInspectedCardPlay(state, resolutionCard, snapshot.hand.indexOf(card));
+    if (enemyAbility) applyEnemyAbility(state, resolutionCard, []);
+    else resolveInspectedCardPlay(state, resolutionCard, handIndex);
   });
   const outcomes = new Map<string, InspectedPackets>();
   for (const [effect, result] of resolved) outcomes.set(sourceAddresses.get(effect)!, result);
@@ -84,7 +96,8 @@ export function inspectBattleCardDamage(
       damageType: effect.kind === "random-damage" ? (effect.damageTypePool?.[0] ?? "physical") : effect.damageType,
       amount: 0,
     };
-    const count = Math.max(1, ...alternatives.map((packets) => packets.length));
+    let count = 1;
+    for (const packets of alternatives) count = Math.max(count, packets.length);
     const results = Array.from({ length: count }, (_, index) =>
       summarize(alternatives.map((packets) => packets[index] ?? zero)),
     );
@@ -182,4 +195,37 @@ export function getBattleDamageInspectionCard(
   side: "player" | "enemy" = "player",
 ): BattleCard {
   return inspectBattleCardDamage(card, snapshot, side).card;
+}
+
+/** Adjust fixed attack literals in-place without replacing scaling or conditional rules. */
+export function getBattleCardDescriptionInspection(
+  card: BattleCard,
+  snapshot: BattleSnapshot,
+  side: "player" | "enemy" = "player",
+): BattleCard {
+  const rules = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
+  const inspected = inspectBattleCardDamage(card, snapshot, side);
+  function inlineKnownAmount(effect: BattleCardEffect, path: number[]): BattleCardEffect {
+    const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index]));
+    if (
+      effect.kind !== "damage" ||
+      effect.equalToBlock ||
+      effect.equalToArmor ||
+      effect.forgeBonusPercent !== undefined ||
+      effect.damageTypeIfTargetFrozen ||
+      effect.doubleIfEnemyBleeding ||
+      effect.tripleIfEnemyNotBurning ||
+      effect.damageTypePool
+    )
+      return view;
+    const outcome = inspected.outcomes.get(path.join("."));
+    // The first packet is the intended attack. Follow-ups stay owned by their
+    // existing status/tooltips, and unknown alternatives retain the authored rule.
+    const attack = outcome?.kind === "exact" ? outcome.packets[0] : undefined;
+    return attack?.kind === "damage" && attack.damageType === effect.damageType
+      ? { ...effect, amount: attack.amount }
+      : view;
+  }
+  const effects = rules.effects.map((effect, index) => inlineKnownAmount(effect, [index]));
+  return withCardDescription({ ...rules, effects }, getCardDescription(rules));
 }

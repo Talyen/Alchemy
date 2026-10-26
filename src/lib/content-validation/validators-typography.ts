@@ -72,7 +72,8 @@ export function validateTypography(collector: Collector): void {
     check("enemies", enemy.id, "Enemy subtitle", enemy.subtitle, true);
     for (const trait of enemy.traits) {
       check("enemies", trait.id, "Enemy trait title", trait.title, true);
-      check("enemies", trait.id, "Enemy trait description", trait.description);
+      // Native traits are standalone sentences; allow a terminal period, not embedded prose.
+      check("enemies", trait.id, "Enemy trait description", trait.description.replace(/\.$/, ""));
     }
   }
 

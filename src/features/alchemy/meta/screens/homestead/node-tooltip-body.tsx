@@ -3,11 +3,13 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
-import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
-import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
+import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants";
+import { keywordDefinitions } from "@/lib/game-data";
+import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
+import { goldTextColor, HomesteadResourceArtwork, matTextColor } from "../../../shared/ui/material-icons";
 import { TooltipBody, TooltipSeparator } from "../../../shared/ui/tooltips/tooltip-panel";
 import { renderTextWithMaterials } from "./helpers";
+import { HomesteadBonusIcon } from "./bonus-icons";
 import type { HomesteadNodeModel } from "./node-model";
 
 export function HomesteadTooltipBody({
@@ -37,6 +39,8 @@ export function HomesteadTooltipBody({
     return () => observer.disconnect();
   }, []);
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
+  const hasBenefits = node.bonuses.length > 0 || node.production.length > 0;
+  const previewClass = node.level === 0 ? "opacity-80 saturate-[0.6]" : undefined;
   const costLabel = materials
     .map((material) => `${node.cost![material]} ${i18n.displayText(materialLabels[material])}`)
     .join(", ");
@@ -54,46 +58,71 @@ export function HomesteadTooltipBody({
       <div ref={contentRef} className="flow-root">
         {node.discovered ? (
           <>
-            {node.level > 0 && (
+            {hasBenefits && (
               <TooltipBody className="mt-2 space-y-1">
                 {[...node.bonuses, ...node.production].map((line, index) => (
-                  <p key={index} className="min-h-6 leading-6">
-                    {i18n.read(() =>
-                      renderTextWithMaterials(line, {
-                        renderPlain: (text, key) => (
-                          <Fragment key={key}>
-                            {text
-                              .split(/(\d+(?:\.\d+)?%?)/)
-                              .map((part, index) =>
-                                /^\d/.test(part) ? (
-                                  <TooltipValue key={index} value={part} animate={animate} />
-                                ) : (
-                                  <Fragment key={index}>{part}</Fragment>
-                                ),
+                  <p key={index} className="flex min-h-6 items-start gap-2 leading-6">
+                    <HomesteadBonusIcon node={node} line={line} production={index >= node.bonuses.length} />
+                    <span className="min-w-0">
+                      {i18n.read(() =>
+                        renderTextWithMaterials(line, {
+                          renderResource: (text, resource, key) => (
+                            <span
+                              key={key}
+                              className={cn(
+                                resource === "gold" ? goldTextColor : matTextColor[resource as MaterialId],
+                                "font-semibold",
+                                previewClass,
                               )}
-                          </Fragment>
-                        ),
-                      }),
-                    )}
+                            >
+                              {text}
+                            </span>
+                          ),
+                          renderKeyword: (text, keyword, key) => (
+                            <span
+                              key={key}
+                              className={cn(keywordDefinitions[keyword].colorClass, "font-semibold", previewClass)}
+                            >
+                              {text}
+                            </span>
+                          ),
+                          renderPlain: (text, key) => (
+                            <span key={key} className={previewClass}>
+                              {text
+                                .split(/(\d+(?:\.\d+)?%?)/)
+                                .map((part, index) =>
+                                  /^\d/.test(part) ? (
+                                    <TooltipValue key={index} value={part} animate={animate} />
+                                  ) : (
+                                    <Fragment key={index}>{part}</Fragment>
+                                  ),
+                                )}
+                            </span>
+                          ),
+                        }),
+                      )}
+                    </span>
                   </p>
                 ))}
               </TooltipBody>
             )}
             {node.cost && (
               <>
-                {node.level > 0 && <TooltipSeparator className="my-3" />}
+                {hasBenefits && <TooltipSeparator className="my-3" />}
                 <div
                   role="group"
                   className={cn(
                     "flex min-h-6 items-center justify-between gap-4 text-sm leading-6",
-                    node.level === 0 && "mt-3",
+                    !hasBenefits && "mt-3",
                   )}
                   aria-label={i18n.text("ui.node-tooltip-body.1", "{{value0}} cost: {{value1}}", {
                     value0: i18n.displayText(node.action),
                     value1: i18n.displayText(costLabel),
                   })}
                 >
-                  <span className="text-muted-foreground">{i18n.displayText(node.action)}</span>
+                  <span className={cn("text-muted-foreground", node.action !== "Bond" && "text-base")}>
+                    {i18n.displayText(node.action)}
+                  </span>
                   <span className="inline-flex items-center gap-3" aria-hidden="true">
                     {materials.map((material) => (
                       <span

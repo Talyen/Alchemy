@@ -76,6 +76,7 @@ export type EnemyAttackEffect =
   | { kind: "player-status"; status: PlayerStatusId; amount: number };
 
 export interface EnemyTrait {
+  polarity?: "positive" | "negative";
   id: string;
   title: string;
   description: string;

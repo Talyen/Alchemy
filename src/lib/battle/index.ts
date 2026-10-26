@@ -8,6 +8,7 @@ export {
   pickHighestScoring,
 } from "./autoplay-policy";
 export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";
+export { getBattleCardAnimationTarget } from "./card-animation-target";
 export { computeCardPayment } from "./card-cost-rules";
 export { canPlayCard, type CardPlayOptions } from "./card-play";
 export { mergeCombatText } from "./combat-text-events";
@@ -32,7 +33,7 @@ export type { BattleTurnFrame, ResolvedBattleTurn } from "./enemy-turn";
 
 export { getEncounterEnemyAbility, getEncounterEnemyTrait, type EnemyDescriptionContext } from "./enemy-description";
 
-export { getBattleDamageInspectionCard } from "./card-damage-inspection";
+export { getBattleDamageInspectionCard, getBattleCardDescriptionInspection } from "./card-damage-inspection";
 
 export { createElementalReactionState, expireCcReactions } from "./elemental-reaction-state";
 export { REACTION_DEFINITIONS, type ReactionId } from "./reaction-definitions";

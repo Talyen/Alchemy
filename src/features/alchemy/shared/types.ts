@@ -54,11 +54,24 @@ export interface BattleRefs {
   enemyPanelRef: RefObject<HTMLDivElement | null>;
 }
 
+export type CombatTextLane = "impact" | "benefit" | "setback" | "announcement";
+
+/** Presentation-only timing, assigned by the feedback owner after aggregation. */
+export interface CombatTextPresentation {
+  lane: CombatTextLane;
+  launchAt: number;
+  lifetimeMs: number;
+  phase: "waiting" | "visible";
+  /** Chosen once; new arrivals never retarget an active flight. */
+  spread?: number;
+}
+
 export type FloatingCombatText = CombatTextEvent & {
   id: string;
   displayText: string;
   reservedDigits?: number;
   includesCritical?: boolean;
+  presentation?: CombatTextPresentation;
 };
 
 export interface ReactionAnnouncement {
@@ -68,6 +81,7 @@ export interface ReactionAnnouncement {
   reactionIds: ReactionId[];
   firstShownAt: number;
   lifetimeMs: number;
+  presentation?: CombatTextPresentation;
 }
 
 export interface CombatTextBurst {

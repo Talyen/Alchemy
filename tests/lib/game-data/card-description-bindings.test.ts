@@ -1,6 +1,13 @@
 import { createCleanup } from "@/lib/cleanup";
 import { describe, expect, it, vi } from "vitest";
-import { cardById, cloneBattleCard, cardMagnitude, getCardDescription, withCardDescription } from "@/lib/game-data";
+import {
+  cardById,
+  cloneBattleCard,
+  cardMagnitude,
+  getCardDescription,
+  renderCardDescription,
+  withCardDescription,
+} from "@/lib/game-data";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import { applyNumericCorruption } from "@/lib/corruption/numeric";
 import { addCorruptionEffect } from "@/lib/corruption/card-edits";
@@ -13,6 +20,20 @@ import { buildWishOptions } from "@/lib/battle/wish";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("card description bindings", () => {
+  it("allows repeated magnitude identities only when they bind the same ordered effect fields", () => {
+    const effects = [
+      { kind: "damage", damageType: "physical", amount: 3 },
+      { kind: "damage", damageType: "physical", amount: 3 },
+    ] as const;
+    const first = cardMagnitude({ kind: "damage", effectIndex: 0, field: "amount" });
+    const repeated = { ...first, references: first.references.map((reference) => ({ ...reference })) };
+    const description = [{ role: "effect" as const, parts: [first, " then ", repeated] }];
+    expect(renderCardDescription(effects, description).descriptionLines).toEqual(["3 then 3"]);
+    repeated.references[0]!.effectIndex = 1;
+    expect(() => renderCardDescription(effects, description)).toThrow(
+      "Card magnitude identity references different effect fields",
+    );
+  });
   it("rejects numeric upgrades that would make a card unsaveable, including linked alternate values", () => {
     const source = withCardDescription(
       makeTestCard({

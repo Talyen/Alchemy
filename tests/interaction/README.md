@@ -54,9 +54,7 @@ screen-specific behavior. A mapping is not a claim of exhaustive action coverage
 | All initial renders and desktop windows                                       | startup              | Real startup readiness with delayed image/font/bootstrap ordering, frame delays and font timeout; Electron retains cold boot, display controls and save/relaunch coverage.                                                                  |
 
 The map is checked against the route enum. New routes require an explicit family
-and identified protection. Unit-only and full verification select this suite for
-application, feature, animation, routing, artwork-loading and save-backend changes,
-and avoid running it again through dependency-related selection in the same plan.
+and identified protection. Local verification selects affected lifecycle families for feature, routing, artwork-loading and save-backend changes. Shared application, animation and unclassified feature seams retain the full suite. Only explicitly selected suites are excluded from dependency-related selection, so import relationships can add other affected families without duplication. CI still runs every family.
 The default local smoke gate does not select it; see
 [verification tiers](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
@@ -77,8 +75,7 @@ Do not globally filter runtime errors. Injected storage failures must match the
 specific expected errors before recovery; unexpected errors fail the journey.
 
 Local unit discovery does not prove Electron acceptance, packaged Steam behavior,
-native Windows focus or hosted CI. Browser/Electron execution, builds and full
-static validation follow the explicit-execution policy in CONTRIBUTING. Test
+native Windows focus or hosted CI. Local execution follows the task authorization and resource policy in CONTRIBUTING. Test
 collection proves selection only. Validate actual journeys in their configured
 CI tier before treating a release as qualified.
 

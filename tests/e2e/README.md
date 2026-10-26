@@ -3,7 +3,7 @@
 Canonical E2E helper, fixture, tag, and diagnostic contract. Changed-path and
 CI tier policy lives in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-When a command or E2E test fails, use [failure-first triage](../../Docs/REFERENCE.md#failure-first-triage) to locate evidence when the cause is unclear. Open relevant traces or reports directly for a specific hypothesis.
+When a command or E2E test fails, use [failure-first triage](../../scripts/VERIFICATION.md#failure-first-triage) to locate evidence when the cause is unclear. Open relevant traces or reports directly for a specific hypothesis.
 
 Browser specs live in [`specs/`](./specs/). Electron specs and their launch/setup helpers live in [`tests/electron/`](../electron/). Shared fixtures and page objects also serve performance checks.
 
@@ -15,11 +15,9 @@ Before adding a journey, identify a distinct, consequential browser-specific
 failure and explain why existing journeys or cheaper unit/DOM tests cannot
 protect it. [Test value and coverage strategy](../../CONTRIBUTING.md#test-value-and-coverage-strategy)
 owns the high-value admission standard, rare exceptions, and active retirement.
-Apply it to journeys encountered during authorized work: remove low- and
-medium-value coverage by default after checking its purpose, dependencies, and
-execution tier, or strengthen/move it when inexpensive high-value protection is
-possible. Nightly placement does not justify weak coverage. Preserve real-timing
-canaries where timing is the behavior under test.
+Follow that owner's retirement scope; ordinary feature work creates no suite-wide
+cleanup obligation. Nightly placement does not justify weak coverage. Preserve
+real-timing canaries where timing is the behavior under test.
 
 Keep passing-journey screenshots in explicit visual acceptance or layout-review
 workflows. Functional checks assert state and geometry without screenshot encoding
@@ -61,8 +59,8 @@ Run a fresh web build first. For an intentional visual change, use
 `npm run test:visual -- --update-snapshots` on macOS, inspect every changed
 image, then rerun without updates. Never update baselines merely to clear a
 failure. Differences and failure diagnostics are retained by CI. Other OSes
-need separately reviewed baselines before running this visual suite. Local
-builds and broad browser suites retain the explicit opt-in policy below.
+need separately reviewed baselines before running this visual suite. Local execution follows
+[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
 These four baselines protect composition, text fitting and layering that
 functional assertions cannot see; the wider desktop layout-review gallery
@@ -72,11 +70,17 @@ remains the tool for manual review across viewport sizes.
 
 ### Local execution policy
 
-Browser and Electron suites are CI-first. The default local `check` gate runs bounded Node smoke, localization and selected-file formatting; it does not launch browsers. Bounded rendered review and focused browser checks of affected UI/UX, layout, polish and artwork flows are already authorized under [visual review](../../Docs/UI_VISUAL_REVIEW.md#browser-authorization). Broad browser suites, Electron and production builds require an explicit local-execution request. Prefer development mode for current-source UI checks.
+[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns local execution permissions and the task gate. Use [visual review](../../Docs/UI_VISUAL_REVIEW.md) for affected player-facing flows; prefer development mode for current-source UI checks.
 [Browser and Electron commands](#browser-and-electron-commands) own invocation,
-ports, build edition and concurrency details when local execution is requested.
+ports, build edition and concurrency details for focused local execution.
 
 ### Browser and Electron commands
+
+Install browser-test Chromium once before the first run:
+
+```sh
+npx playwright install chromium
+```
 
 For current source edits, run `npm run test:e2e:dev -- <spec>`. This uses the shared local test lane and retains compact diagnostics. Preview mode is the default for `test:e2e` and serves the existing build; rebuild before using it to verify source changes. For direct Playwright diagnosis, use `--project=chromium` with an equals sign so a following spec is not consumed as another project name; raw invocations require manual coordination under [the test policy](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
@@ -87,7 +91,7 @@ The [route command](../../scripts/run-e2e-route.mjs) owns available names and al
 
 Run browser batches serially or combine specs in one invocation. Browser tests and browser-hosted performance tests start their own server and reject occupied ports, leaving existing processes running. This prevents a run from silently testing another checkout or reusing preview output when development mode was requested; see [Playwright configuration](../playwright-shared.ts).
 
-An explicitly requested local Electron run collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
+The default local Electron command collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
 
 Build current source with `npm run build:desktop` before `npm run test:ship:desktop`;
 the test command installs a missing Electron runtime but does not rebuild the
@@ -155,7 +159,8 @@ owners directly.
 Fresh-page and desktop relaunch journeys enter active checkpoints through the
 main menu's Continue action. `withSavedGame` does this when the acknowledged save
 contains an active run; pass its translated Continue label as the third argument
-for localized saves. Meta-only saves remain on the main menu. Raw `injectSaveState`
+for localized saves. `injectActiveBattle` accepts that label as its fourth argument
+when the initial checkpoint already uses another language. Meta-only saves remain on the main menu. Raw `injectSaveState`
 and `injectExactSave` only seed storage; callers must navigate if needed and use
 `resumeInjectedRun` when they need to enter the run. `enterPrimaryRewardScreen`
 loads and enters the seeded reward.
@@ -215,15 +220,18 @@ Localization functional coverage has a separate every-push job, independent of
 critical gameplay. `localizationCoverage(locale, representative)` assigns one
 shipped language to gate each journey via `@localization-smoke`; the three script
 font checks also gate pushes. This samples all seven shipped translations in 15
-cases instead of the 99-case development matrix. Locale battle/resume checks have
+cases. Locale battle/resume checks have
 one owner here and do not carry `@critical`.
 
-Nightly/release production shards retain all shipped-locale variants. Their distinct
-protection is translated geometry, generated descriptions, movable keyword slots,
+Nightly/release retain all shipped locales for live switching/resume, Options and
+shop/menu presentation, including Cyrillic, Japanese and Chinese font loading.
+The nine gameplay settlement journeys each use one shipped-language representative
+and expanded-English QA rather than repeating mechanics in every language. They
+retain generated descriptions, movable keyword slots, translated accessible targets
 and cross-language saves; unit/DOM tests own mechanics and catalog correctness.
 Both workflows also call the expanded-English acceptance workflow, which runs
 only `@localization-qa` against development source because QA catalogs are absent
-from production. The full 99 cases remain covered across those jobs.
+from production. These jobs cover 33 production cases and 12 QA cases.
 `ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1` enables minimum-viewport, maximum-size
 geometry and reachability checks. Passing screenshots additionally require
 `ALCHEMY_LOCALIZATION_SCREENSHOTS=1` for an explicit visual review; functional CI

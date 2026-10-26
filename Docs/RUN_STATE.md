@@ -1,8 +1,70 @@
 # Run state and persistence
 
+Session state, command atomicity and persistence capabilities live here.
+[Save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md) owns
+format acceptance, file/Cloud transport, fallback writes and deletion modes.
+[Run workflows](./RUN_WORKFLOWS.md) gives editing steps.
+
+## Core model
+
+| Stage              | Guarantee                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Execute            | One synchronous command owns the draft, validation and RNG; rejection or execution failure rolls everything back          |
+| Publish            | Changed gameplay becomes one immutable revision before observers run; settings and presentation remain separate owners    |
+| Present            | Playback consumes detached results; cancelling presentation cannot undo or advance gameplay                               |
+| Save               | A covering local write releases completed-action feedback; retry saves the committed outcome without repeating the action |
+| Replace or dispose | Restore invalidates old work at commit; disposal revokes capabilities and drains submitted saves                          |
+
+For editing steps, start below. Detailed contracts follow under
+[commands](#command-atomicity), [sessions](#session-ownership),
+[local saving](#completed-actions-and-local-saving) and [persistence](#persistence-api).
+
+## Common implementation paths
+
+Start with a matching production example and its regression test. For an existing
+action, edit its domain command; the shared operation already supplies transaction
+and session protection. Do not reconstruct the entire route/controller chain. Extend that
+owner when it already represents the action; add a boundary only when a distinct
+consumer or invariant requires it. These are entry points into existing code,
+not templates to duplicate.
+
+| Change            | Follow this production path                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Executable example                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Merchant purchase | Route command → [merchant commands](../src/features/alchemy/run-loop/shop/merchant-shop-commands.ts) → [shared purchase operation](../src/features/alchemy/run-loop/shop/shop-commands-core.ts) (including the transaction guard). Price, availability, payment and acquisition use the same draft.                                                                                                                                                                                         | [Shop actions](../tests/features/alchemy/run-loop/shop/shop-actions.test.ts)                              |
+| Card play         | Battle controller → [battle commands](../src/features/alchemy/shared/stores/commands/battle-commands.ts) → production resolution → committed result → route playback. Supply the offered snapshot; the command rejects stale inputs before consuming RNG.                                                                                                                                                                                                                                   | [Battle input ownership](../tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts) |
+| Saved run field   | [Save fields](../src/features/alchemy/shared/stores/persistence/run-profile-save-fields.ts) → [profile codec](../src/features/alchemy/shared/stores/persistence/run-profile-codec.ts) → [resume codec](../src/features/alchemy/shared/stores/persistence/run-resume-codec.ts) → [restore](../src/features/alchemy/shared/stores/persistence/run-restore.ts). Update schema/defaults and fixtures together under [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md). | [Resume roundtrip](../tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts)      |
+
+Use the linked tests to understand existing protection. Select checks under
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
+
+Shop purchase/refresh recipes and `runShopTransaction` live together in
+`shop-commands-core.ts`; payment, acquisition, rollback and post-commit feedback
+remain under one transaction. Merchant removal and Alchemist mixing use that
+same guard directly.
+
+Composition wrappers such as `createShopActions` and session capability bindings
+retain a specific role: assembling route authority and revoking retained actions
+when the session ends. Keep those ownership checks when simplifying forwarding.
+
 ## Run state
 
-Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/session/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `session-gameplay-store.ts` owns a cached presentation read store per session; `gameplay-state-store.ts` is the default-application adapter. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `session/profile-store.ts` and `session/gear-store.ts` expose aggregate-backed domain operations; their save conversions live in `persistence/profile-codec.ts` and `persistence/gear-codec.ts`; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
+Each game session owns one data-only gameplay aggregate in
+`shared/stores/session/gameplay-state.ts`. Its regions are listed below.
+Reusable reads, commands and codecs neither import React nor initialize the app.
+
+- **Reads:** `gameplay-state-reads.ts` supplies explicit-session reads and
+  subscriptions; `session-gameplay-store.ts` caches each session's presentation
+  projection; `gameplay-state-store.ts` adapts the default application.
+- **Writes:** intent commands compose `run-session-write-port.ts`,
+  `homestead-actions.ts` and `gear-actions.ts`. Features receive live, deeply
+  readonly `RunTransaction` reads. Raw `GameplayDraft` access belongs only to
+  store-owned mutations and bootstrap hydration.
+- **Domain adapters:** `session/profile-store.ts` and `session/gear-store.ts`
+  read the aggregate without shadow state. Their codecs live in `persistence/`;
+  React profile slices use `use-profile-store.ts`.
+
+Use the [capability ports](#session-capability-ports) and `run-lifecycle.ts` for
+feature orchestration; independent runtimes follow [session ownership](#session-ownership).
 
 Committed gameplay is immutable in every build. `createGameplayStore` freezes the
 complete initial aggregate and each new revision before save-status or gameplay
@@ -13,7 +75,9 @@ input ownership and detached command results stay at the transaction boundary.
 Freezing caches fully traversed objects, so later revisions traverse only changed
 branches and retain structural sharing. Publication validates the changed graph
 before freezing: gameplay accepts plain records and arrays, never functions,
-accessors, or built-ins with mutable internal slots such as Map and Date.
+accessors, bigint/symbol values, non-finite numbers, or built-ins with mutable
+internal slots such as Map and Date. Invalid values reject publication before
+they can turn into missing or null fields in a save.
 Detached command results retain their broader supported data types; they do not
 become gameplay state. Settings and progress-status snapshots are also frozen,
 so borrowed reads cannot bypass their notification and persistence paths.
@@ -49,108 +113,98 @@ and deeply frozen by `deepFreeze`. A shallow `Object.freeze` does not qualify.
 This retains immutable structural sharing across playback frames without
 freezing or retaining mutable caller-owned branches. Menu and meta navigation remain
 independent of activity, so an unfinished battle stays resumable there.
+Copies retain null-prototype dictionaries, symbol and non-enumerable data fields,
+aliases and cycles. Hidden accessors reject without executing, just like enumerable
+accessors; copying cannot silently drop them before publication validation.
 
 Live reads and screen data expose `runProfile.gold` as `gold`. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/` (state in `battle-presentation-store.ts`, overlays in `presentation/` leaves) and are not persisted.
 
 ### Command atomicity
 
-Gameplay mutation callers enter through `dispatchRunSessionCommand()` from
-`run-session-command.ts`. The boundary opens one Immer draft of the authoritative
-aggregate and publishes a new root with one incremented revision when state
-changes. Every command returns an explicit `CommandOutcome` using `acceptCommand(value)`
-or `rejectCommand(reason, fallback)`. Rejection discards all draft changes, including RNG
-counters, preserves the root and revision, and emits no commit signal. Unchanged accepted
-commands also preserve the root and revision; thrown execution errors discard the draft.
-The dispatcher returns the outcome's value so route-facing result shapes stay unchanged.
-React selectors and autosave subscribe to
-that same root. Settings and presentation-only state remain separate.
+`dispatchRunSessionCommand()` in `run-session-command.ts` opens one Immer draft
+of the authoritative aggregate. Return `acceptCommand(value)` or
+`rejectCommand(reason, fallback)`; the dispatcher returns the payload without
+changing route-facing result shapes. React selectors and autosave observe the same root.
 
-Store-owned restore commands also stage settings normalization before execution.
-After acceptance, the dispatcher installs gameplay and settings, replaces the
-save acknowledgment epoch, and arms any pending save protection before notifying
-observers. Decoding, settings preparation, rejection, or result-validation failure
-leaves both stores, the pending save gate, and completion callbacks unchanged.
-Ordinary feature commands cannot request this restore publication mode.
+| Outcome                                | Publication                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Accepted with changes                  | New immutable root and one incremented revision                                            |
+| Accepted without changes               | Same root and revision; still eligible for `afterCommit`                                   |
+| Rejected                               | Discard all draft changes, including RNG counters; same root/revision and no commit signal |
+| Execution or result-validation failure | Abort before publication; no partial state or RNG changes                                  |
 
-Run-profile codecs detach persisted collections on both encode and hydration;
-run restoration owns the entire active-run graph before decoding or rebinding.
-Restoring never freezes or mutates a caller's save, including nested battle and
-visit data. `snapshotRun()` returns detached data just like the complete session
-save builder; internal resume projections may still borrow immutable branches.
+Acceptance is independent of payload truthiness: act advancement or obsolete
+claim cleanup may accept `false`. Shop adapters reject `committed: false`; Gear
+adapters reject operation failures (`false`/`null`). Raw values are not command outcomes.
 
-The aggregate exposes read/subscription capabilities separately from its internal
-commit capability; React adapters and test fixtures cannot bypass commands through
-`setState`. The coordinator installs the complete root, arms its persistence and
-presentation gate, then notifies gameplay subscribers. Save-status subscribers
-therefore see the revision they are being asked to save. Gameplay subscriber
-failures are logged independently and cannot suppress later subscribers, autosave,
-or command completion effects. Subscription changes during gameplay notification
-apply to the next publication. `notification-channel.ts` owns synchronous FIFO
-delivery for gameplay, settings, progress, save status, storage interruptions, and lifecycle
-channels. Each publication captures its listeners; observer-triggered publications
-wait until the current event reaches every observer. Session-owned channels check
-their lifetime before each callback: disposal stops the remaining captured
-listeners and queued publications immediately. Ordinary unsubscribe retains the
-current publication's listener snapshot. Listener failures are isolated
-through the channel owner's diagnostic handler. Execution failures still roll back; explicit
-`afterCommit` failures still propagate after the committed state is retained.
+#### Transaction reads and lifetime
 
-Gameplay and save-status observers run during command publication while the
-command guard is still held. They may read the installed revision, but must not
-dispatch another gameplay command. Put command follow-ups in `afterCommit` or
-after the original dispatcher returns, when the guard has been released.
+- Compose domain operations inside one command, passing its transaction explicitly;
+  never dispatch a nested command. Guards for Gold, refreshes and purchased slots
+  read the live draft, not a committed read port.
+- Transaction reads update with writes but remain deeply readonly under TypeScript
+  and runtime guards. Functional setter updaters return replacements rather than
+  mutating previous values. Validate first where possible; later rejection still
+  rolls back the whole command.
+- `run-session-write-port.ts` adapts existing mutators without another store.
+  Import boundaries restrict raw dispatch, draft lookup and read-facade internals.
+  Reads/subscriptions expose no `setState` bypass; only persistence adapters may
+  subscribe directly to the commit signal.
+- Writes, RNG and instance-ID capabilities expire with their originating draft.
+  Retained handles cannot write in `afterCommit` or another command, even in the
+  same session. An external closure cannot extend their lifetime.
+- Commands cannot span `await`. The factory and Gear wrappers reject Promise-like
+  result types, including unions; runtime checks reject thenables before publication.
+  Rejected continuations are observed to avoid unhandled rejection, but external
+  work already started by an invalid callback cannot be cancelled by this boundary.
+- Input preparation, updater, mutation or Gear Health-rebinding exceptions call
+  `abortGameplayCommand`. The first failure remains until the draft closes, even
+  if a recipe catches it. Expected validation failures use rejection; exceptions
+  abort that command only.
 
-Domain operations receive the transaction explicitly and compose inside one command;
-a command body must not call another command. Transactional checks that guard
-a write (shop Gold, refresh counts, purchased slots) read from that draft rather
-than a committed read port. The read view updates as operations write, and both TypeScript and runtime guards reject direct writes. Functional setter updaters also receive deeply readonly previous values; return the replacement rather than mutating the previous value. Validate before writing when possible; a later rejection still
-rolls back the complete transaction. Raw values are not valid command outcomes.
-Acceptance is independent of the payload: `acceptCommand(false)` can represent a
-successful act advancement, while `rejectCommand(reason, false)` rejects an action.
-Destination-claim cleanup can likewise accept a `false` result after cancelling an
-obsolete claim. Shop adapters translate `committed: false` into rejection; Gear
-adapters translate their operation failure results (`false` and `null`) into rejection.
-Persistence adapters may subscribe to the aggregate
-commit signal directly; gameplay callers must not.
+#### Boundary data
 
-`run-session-write-port.ts` adapts the existing domain mutators to transactions; it does not own a second store. Raw dispatch (`gameplay-command.ts`), draft lookup (`transaction-internal.ts`), and read-facade internals are restricted by import boundaries. A transaction can write only during its callback; retained handles cannot write in `afterCommit` or another command. `snapshotTransactionValue(value)` returns a detached value for engine APIs that require mutable types. The aggregate dispatcher detaches result data before Immer closes the draft, for both store-owned and feature commands. Accepted results and rejected fallbacks may contain nested draft reads or read facades; neither escapes into deferred playback. Result objects are independent of committed state, preserve aliases and cycles, and the same detached result reaches `afterCommit` and the caller. Wrappers do not perform their own result conversion.
+`boundary-data.ts` owns one graph traversal for setters, explicit snapshots and results.
+All supported containers preserve aliases, cycles and own data properties, including
+symbol-keyed and non-enumerable metadata.
+Caller-owned setter inputs detach; existing transaction reads retain their owned
+source. `snapshotTransactionValue(value)` detaches reads for engine APIs requiring
+mutable types. The dispatcher detaches accepted results and rejected fallbacks
+before Immer closes, so draft proxies never escape into playback. The same detached
+result reaches `afterCommit` and the caller; wrappers perform no second conversion.
 
-`boundary-data.ts` owns one graph traversal for setter inputs, explicit transaction
-snapshots, and command results. Supported objects are plain records (including
-null-prototype records), arrays, Maps, Sets, Dates, and RegExps. Aliases and cycles
-are preserved across container entries and all own data properties, including
-non-enumerable and symbol-keyed metadata. Dates retain their timestamp; RegExps
-retain their pattern, flags, and `lastIndex`. Other prototypes and accessor
-properties reject before publication rather than being silently flattened by a
-fallback clone. Caller-owned setter inputs are detached; existing transaction
-reads retain their owned source. Explicit snapshots and results always detach.
+| Data                             | Contract                                                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Records and arrays               | Plain and null-prototype records supported                                                                                   |
+| Maps, Sets, Dates, RegExps       | Preserve container relationships, timestamps, pattern/flags and `lastIndex`                                                  |
+| Accessors or other prototypes    | Reject before publication; never flatten through a fallback clone                                                            |
+| Functions or Promise-like values | Reject anywhere in a result, including nested rejected fallbacks; types check known inputs and runtime checks untyped inputs |
 
-Command results are detached data, including nested arrays, Maps, and Sets.
-Functions and Promise-like values cannot cross this boundary, even inside a
-rejected fallback. Invalid results abort before state, revision, RNG counters,
-or observers publish. Command result types enforce the same rule for known
-types; the runtime boundary also checks untyped inputs.
+Results are independent of committed state. Run-profile codecs detach on encode
+and hydration; restoration owns the full active-run graph before decoding or
+rebinding and never freezes or mutates the caller's save. `snapshotRun()` and the
+complete save builder return detached data; internal resume projections may borrow
+immutable branches.
 
-Transaction-provided RNG and instance-ID functions are execution capabilities.
-They are bound to the originating open draft and reject use after it closes,
-including during a later command in the same session. Retaining a callback in
-an external closure does not extend its lifetime.
+#### Publication and observers
 
-Commands are synchronous and must not span an `await`. The command factory and
-Gear mutation wrappers reject Promise-like result types, including unions with
-asynchronous results. The runtime boundary also rejects thenables before
-publication, preserving the root, revision, and RNG counters. Rejected
-asynchronous continuations are observed to avoid an additional unhandled
-rejection; the boundary cannot cancel external work already started by an
-invalid callback.
+Install the complete root and arm persistence/presentation protection before
+notifying observers. Save-status subscribers see the revision being saved.
+Gameplay and save-status callbacks run while the command guard is held: they may
+read, but follow-up commands belong in `afterCommit` or after dispatch returns.
 
-Every write-port operation invalidates its owning command through
-`abortGameplayCommand` if input preparation, an updater, or mutation throws.
-The same rule covers Gear's coupled mutation and Health rebinding scope.
-The coordinator retains the first failure until the draft closes: catching it
-inside an enclosing recipe cannot publish partial activity, payments, or RNG
-changes. Rejection values remain available for expected validation failures;
-exceptions abort the complete command. This failure state belongs to that command only.
+`notification-channel.ts` supplies synchronous FIFO delivery for gameplay, settings,
+progress, save status, storage interruptions and lifecycle channels. Each publication
+captures its listener set; subscription changes affect the next publication.
+Observer-triggered publications wait until the current event reaches every listener.
+Ordinary unsubscribe preserves the captured set; session disposal immediately stops
+remaining callbacks and queued publications. Diagnostic handlers isolate listener
+failures so later subscribers, autosave and completion effects still run.
+Execution failures roll back; arbitrary `afterCommit` failures propagate with the
+committed state retained.
+
+Restore uses the [coordinated publication](#codecs-and-restore) below, including
+settings and acknowledgement replacement; feature commands cannot request that mode.
 
 ### Post-commit behavior
 
@@ -176,23 +230,11 @@ listener, logging its failure without aborting the caller's remaining work.
 Execution and persistence errors retain their own failure contracts; the command
 dispatcher does not suppress arbitrary `afterCommit` errors.
 
-The same owner provides each session's restore, presentation-clear, and teardown channels.
-Accepted restore publication invalidates deferred navigation and restarts mounted
-battle playback before clearing outgoing battle presentation, then notifies settings,
-progress, and gameplay observers. `onRunRestored` listeners perform cancellation
-only, while the command guard remains held. This applies even to equal-data restores
-and bootstrap hydration that preserves an initialized run: their old presentation
-work still refers to the previous inputs. Failed restores emit no invalidation.
-Session disposal also cancels mounted playback without waiting for React unmount.
-Successful Clear Save Data uses this same replacement publication after disk
-deletion, including save-receipt and presentation invalidation. Settings and
-gameplay reset together before any observer can snapshot the new career; failed
-deletion leaves the current state and pending presentation intact.
-
-Teardown always clears battle UI, notifies presentation cancellation, then notifies
-run teardown, even if an adapter or listener fails. Listener changes apply on the
-next notification. Run abandonment and defeat submit their settled save before
-these effects; neither requires a route adapter to remember presentation cleanup.
+The same owner supplies restore, presentation-clear and teardown channels.
+[Restore](#codecs-and-restore) owns replacement ordering. Teardown clears battle UI,
+notifies presentation cancellation, then notifies run teardown even if a listener
+fails. Abandonment and defeat submit their settled save before those effects;
+route adapters do not own that cleanup.
 
 ### Committed battle playback
 
@@ -217,107 +259,65 @@ cannot roll back or advance gameplay. Inside store-owned battle commands, narrow
 Immer proxy can escape. Feature callers consume the detached command result
 through battle capabilities rather than accessing the raw draft.
 
-An active terminal battle remains serializable until its outcome settles. Current
-saves contain one committed battle snapshot in `activeRun.activity`. Versions
-19/20 convert their activity fields once during migration. Unfinished legacy
-battles produce a load-only abandonment instruction for the selected candidate;
-restore settles earned progress with today's abandonment command before showing
-End Run. No obsolete turn, Companion action, Gold delta, or RNG draw is replayed.
-The same recovery applies to a nonterminal current snapshot marked as an enemy
-turn: current turn resolution commits atomically, so no resumable enemy phase
-exists. Terminal snapshots retain their normal outcome settlement.
+Saves contain the committed snapshot in `activeRun.activity`, including terminal
+battles awaiting settlement. [Current-save recovery](../src/features/alchemy/shared/storage/MIGRATIONS.md#current-data-recovery)
+owns incompatible enemy-phase snapshots and abandonment; below-baseline data follows
+[compatibility policy](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 `playerDodgeCount` and `dodgeChanceFromDamage` remain battle-owned and persist.
-The Health-damage boundary requires explicit `hostile` or `self` provenance for
-Finding Rhythm; Health costs do not award it.
+Health damage requires explicit `hostile` or `self` provenance for Finding Rhythm;
+Health costs do not award it.
 
 ## Session ownership
 
-`shared/stores/session/game-session.ts` exposes `createGameSession({ initialSave, saveBackend, runtimeInputs })`.
-A session owns one career: permanent progression plus its sole active run. Its opaque
-`GameSession` handle exposes disposal; gameplay access still goes through capability
-reads and intent-level commands. Independent sessions do not share aggregates,
-settings, command guards, storage queues, failure status, or lifecycle channels.
+[`createGameSession`](../src/features/alchemy/shared/stores/session/game-session.ts)
+owns one career: permanent progression and its sole active run. Sessions isolate
+aggregates, settings, command guards, save queues/status and lifecycle channels.
+The opaque handle exposes disposal; reads and intent commands supply gameplay access.
 
-Imperative reads, commands, codecs, storage operations, and controller factories
-require an explicit final `GameSession`; they never fall back to another career.
-For preceding optional inputs, pass `undefined` when omitted, for example
-`dispatchRunSessionCommand(execute, undefined, session)`. Domain operations inside
-an open transaction continue to take the transaction, not another session.
+Imperative reads, commands, codecs, storage and controllers require the final
+`GameSession` argument. Omit preceding optional inputs with `undefined`, for example
+`dispatchRunSessionCommand(execute, undefined, session)`. Inside a command, pass its
+transaction to domain operations. Reusable owners never fall back to the application.
 
-Bind capabilities once at controller composition: `createBattleCapabilities`
-provides combat reads and commands; `createRunRouteActions` provides navigation
-reads and route actions; `createShopActions` binds shop operations; and
-`createSessionPersistence` binds snapshots, restore, subscriptions, and save IO.
-Deferred playback consumes `BattleControllerContext.battle`, so it cannot choose a
-career implicitly. Bound methods retain ownership when passed individually and
-reject use after disposal. `bindSessionCapabilities` and `assertSessionOwnership`
-delegate to `session-capability-graph.ts`, which validates the complete nested
-capability graph before binding. Groups are detached, immutable plain records or
-arrays; methods retain ownership when extracted or spread into another group.
-Aliases, cycles, symbol keys, and non-enumerable groups are preserved and checked.
-Accessors and opaque class/container instances are rejected rather than executed
-or silently skipped. Bound groups cannot be altered after validation, and every
-newly bound method checks session lifetime before execution. Flow and Labyrinth routing
-reject mixed-session outcomes, navigation, battle commands, and node callbacks
-before they can mutate gameplay. Composition binds and captures incoming groups,
-including nested dependencies, rather than retaining caller-owned objects after
-validation. Later replacement of a caller's methods or groups cannot change the
-assembled controller. Pure presentation callbacks need no session.
-Outcome handlers remain constructed before battle controllers; their separate
-composition is checked rather than replaced with late callback binding.
+Bind [capabilities](#session-capability-ports) once at composition. Bound methods
+retain ownership when extracted and reject disposed or mixed-session use before
+mutation. `bindSessionCapabilities` and `assertSessionOwnership` share
+[`session-capability-graph.ts`](../src/features/alchemy/shared/stores/session/session-capability-graph.ts):
+validate and detach the complete graph, then freeze groups and wrap methods with
+lifetime checks. Plain records/arrays, aliases, cycles, symbol keys and non-enumerable
+groups are supported; accessors and opaque instances are rejected. Caller edits
+cannot change an assembled controller. Pure presentation callbacks need no session.
+Outcome handlers are constructed before battle controllers, without late binding.
 
-The singleton is constructed only in `app/application-session.ts`. `App.tsx`
-passes its session and battle presentation store to `useAlchemyRunController`;
-that controller passes the same dependencies to battle and navigation hooks.
-Steam rich presence is composed in `App`, and autoplay toggle sounds use the
-session feedback capability.
-`use-session-run-reads.ts` supplies narrow explicit-session subscriptions, and
-`session-settings.ts` supplies imperative settings for battle autoplay. Battle
-presentation stores carry session ownership, so mixed-career composition fails
-before gameplay. A mounted battle controller owns one session/presentation pair;
-changing careers requires remounting that controller.
+The shipping singleton lives only in `app/application-session.ts`. `App` passes
+its session/presentation pair through run, battle and navigation composition;
+a mounted battle controller requires remounting to change careers. Steam presence
+is composed in App and autoplay sounds use session feedback. The adapter list in
+`lint/session-ownership.js` permits shipping hooks/routes while lint rejects
+singleton imports and optional/defaulted session parameters in reusable owners.
+Runtime internals stay store-owned, with scoped save/hydration/application exceptions.
 
-`session-gameplay-store.ts` caches each session's presentation projection separately.
-Pending saves retain that session's pre-action gameplay while navigation, Collection
-browsing, and Labyrinth inspection remain live. Its subscriptions detach on unmount
-or session disposal. Application screen hooks retain their default-session adapter
-without adding a provider. The explicit shipping adapter list in `lint/session-ownership.js` covers application hooks,
-routes, and presentation adapters, including those under feature directories. The Oxlint
-session-ownership rule and dependency boundary prevent reusable domain modules
-and headless playthroughs from importing the singleton; Oxlint also rejects
-optional or defaulted session parameters. Runtime internals remain store-owned,
-with scoped exceptions for save IO, hydration, and singleton construction.
+`session-gameplay-store.ts` caches each session's presentation projection. Pending
+saves retain pre-action progress while navigation, Collection and inspection stay
+live. Explicit-session subscriptions use `use-session-run-reads.ts`; shipping hooks
+retain their default adapter without another provider. Subscriptions release on
+unmount or disposal. Battle autoplay reads settings through `session-settings.ts`.
 
-`runtimeInputs` supplies the clock, new-run seed generator, and Gear instance ID
-source. Runtime-input and feedback methods are captured with their supplied object's receiver,
-so plain-object and class-based implementations behave alike. Gameplay RNG remains persisted on the run and changes inside transactions.
-ID generation reaches pure loot helpers through `createDraftInstanceIdSource`;
-those helpers do not import the runtime. The legacy test seed override affects only
-the default application adapter. New isolated tests inject their own seed source.
+`runtimeInputs` injects clocks, new-run seeds and Gear IDs. Runtime-input and
+feedback methods retain their supplied receiver, including class implementations. Gameplay RNG remains transactional
+and persisted. Pure loot helpers receive `createDraftInstanceIdSource`, never the
+runtime itself. Isolated tests inject seeds; the legacy override affects only the
+application adapter. Independent sessions need an explicit `saveBackend` for durable
+writes and default to silent feedback. Only the application supplies platform storage,
+device-local display preferences and the error buffer by default.
 
-Independent sessions require an explicit `saveBackend` to write durably; without
-one, IO remains unconfigured and skips writes even in a browser. Only the application
-adapter uses the platform backend by default. Sessions can inject feedback callbacks;
-independent sessions default to silent presentation. Device-local display preferences
-and the local error buffer remain application services.
-
-`GameSession` supports `await using` and explicit `await session.dispose()`: both
-remove subscriptions, cancel autosave/navigation work,
-clear lifecycle channels, drain already-submitted saves, and disable further
-writes. Commands and reads reject disposed handles. Disposing one session cannot
-cancel another session’s timers or writes. `session-lifetime.ts` owns resource
-registration and the clock's timer inventory. Closing the lifetime revokes feedback
-and borrowed store methods, detaches progress subscriptions, and cancels every
-registered timer before draining submitted saves. A timer callback already handed
-to the host checks lifetime again before executing. Timer cancellation and
-subscription release remain safe after disposal; new reads and work reject.
-Gameplay, settings, progress, save-status, and lifecycle notification channels
-borrow the same lifetime predicate. Disposal during notification revokes later
-callbacks in that publication as well as queued reentrant events. Restore and
-teardown also stop their remaining presentation work once their session closes;
-already-submitted storage work still drains.
-Notification-channel subscriptions and registered cleanup handles remain callable and also
-support `using`; `lib/cleanup.ts` owns their idempotent explicit/scoped release.
+Disposal supports `await using` and `await session.dispose()`. It revokes reads,
+commands, feedback and continuations, cancels registered timers/autosave/navigation,
+detaches subscriptions and drains submitted saves without affecting other sessions.
+Even a timer already delivered to the host rechecks lifetime. Notification channels
+follow [publication rules](#publication-and-observers), stopping captured listeners
+and queued events when disposed. Cleanup handles remain idempotent after disposal;
+notification subscriptions and `lib/cleanup.ts` handles also support `using`.
 
 ## Activity and rewards
 
@@ -328,17 +328,41 @@ activity initialization, encounter traits, history/progression, and seeded RNG
 commit together. Rejection and initialization errors preserve the previous root
 and revision. The returned screen and detached opening battle feedback contain
 no gameplay mutation callbacks; shell navigation and feedback run after entry.
-A presentation error does not undo accepted room entry. Save wire fields and
-resume decoding remain unchanged. `room-visit-initialization.ts` supplies the
-transaction-only visit recipes to that owner. Screen and shop command contracts
+A presentation error does not undo accepted room entry.
+
+Campaign claims its destination inside the transaction so loot depth includes the
+entering room; Labyrinth records its node before opening combat. The shell schedules
+Battle before presenting opening feedback, so an immediate Companion outcome can
+supersede it, including routing directly to Rewards before the Battle fade commits.
+`room-visit-initialization.ts` supplies transaction-only visit recipes to that owner. Screen and shop command contracts
 expose player actions without initialization. Rendering, remounting, and presenting
 Mystery never sample visit RNG or replace committed activity.
 
-`session.activity.kind === "inactive"` is the sole stored marker for an inactive run. Active runs may have `idle` while being prepared; meta screens preserve the current activity. Read ports derive `hasActiveRun`; it is not a second stored boolean. `session.rewardFlow` owns the current reward bundle, Companion cards, and one claim union (`idle`, `reward`, or `destination` with its destination). Reward and destination claims cannot both be active. The visible navigation screen remains independent so menus and fades do not redefine the resume location. Save codecs retain the existing wire fields.
+`session.activity.kind === "inactive"` is the sole stored marker for an inactive run. Active runs may have `idle` while being prepared; meta screens preserve the current activity. Read ports derive `hasActiveRun`; it is not a second stored boolean. Reward activities own their bundle and Companion follow-up cards; destination activities own only their offered destinations and boss/victory context. `session.progressClaim` owns the one claim union (`idle`, `reward`, or `destination` with its captured offer), so replacement activities cannot invalidate an accepted navigation handoff. Reward and destination claims cannot both be active. `readRunSession().rewardFlow` is a derived compatibility view, never stored authority. The visible navigation screen remains independent so menus and fades do not redefine the resume location. Save codecs retain the existing wire fields.
 
 `reward-commands.ts` owns selection validation, grants, and advancement to the next reward bundle in one transaction. Its claim lock prevents re-entry until routing settles, but save encoding uses the already-advanced bundle rather than inferring which reward was awarded from the lock. Legacy `companion-reward` saves remain readable. `victory-commands.ts` owns victory rewards and the Wildwood phase change, rejects repeated completion, and enters the rewards activity atomically. The matching run-flow modules own navigation and feedback.
 
 Activity encoding follows the [persistence API](./RUN_STATE.md#persistence-api); [navigation data flow](./BATTLE_CONTROLLERS.md#data-flow) defines when preparation commits.
+
+### Reward handoffs
+
+The Alchemist encounter bonus grants one Potion after the final reward choice or skip, including encounters with a follow-up bonus card choice.
+
+Follow-up choices include Companion cards, Archery cards from Fletched, Wish cards from Wishkeeper, and Nature cards from Kindred Spoils. The saved `companionChoiceIds` field carries all of these bonus choices. Primary and bonus choices restore against the full card catalog in their saved order, dropping only missing IDs; loading never rerolls choices or reapplies offer-pool or theme eligibility.
+
+An interrupted bonus handoff resumes only the bonus choices: the primary reward and its materials have already committed. Unclaimed rewards whose choices no longer resolve stay on Rewards with Skip available, retaining materials and routing metadata across repeated saves until finalized. Loading never awards materials.
+
+Destination eligibility uses health and maximum health after victory bonuses and the upcoming location’s loot depth. Combat and Wildwood exclude exhausted Boon and permanent-Trinket pools before sampling through the [shared loot policy](./ARMORY.md#loot-tuning). Pass progression from `resolveDraftLootProgress()` when generating new loot; loading pending rewards or shop offers must not reapply progression eligibility.
+
+### Run recap ownership
+
+Run recap tracking belongs to active-run progress: chronological visits and earned
+Gold persist through the existing resume codec. Room entry/completion and Gold grants
+use the write port; battle-to-purse commits count only newly earned Gold, never purse
+mirror synchronization. Run finalization captures a detached `runRecap` (history,
+ending and room identity, deck, Boons, earned Gold) before making activity inactive. Completion and the ending marker resolve the current visit by identity, since an unresolved room can be revisited after later history entries. The screen-data
+capability supplies the recap; card inspection selects its deck on ending screens.
+The recap is transient, survives voluntary teardown, and clears on a fresh run.
 
 ## Anti-patterns
 
@@ -361,18 +385,23 @@ Choosing one encounter trait draws once from its eligible pool. Wildwood boss pr
 ## Completed actions and local saving
 
 The renderer marks persisted gameplay commits as pending before publishing them.
+`ProgressCompletion` owns the pre-action presentation baseline and player-action admission alongside acknowledgement. Commands and settings capture that baseline through its mark/replace operations; presentation readers and command guards consume the same owner.
 `SessionPersistence` exposes `checkpoint`, `readProgress`, `subscribeProgress`,
 `trackProgress`, `retryProgress`, and `afterProgressSaved`. A checkpoint carries
 the gameplay revision and a runtime epoch; only a covering local write in that
 epoch acknowledges completion. The save envelope does not gain scheduling data.
-Pending acknowledgements, deferred feedback, and storage cancellation belong to
-the session, independently of autosave subscription lifetimes. `trackProgress`
-registers a retry driver with its own idempotent release; the newest live driver
-handles Retry, falling back to the preceding driver when released. Releasing a
-driver cannot cancel another driver's registration or acknowledge unsaved work.
-A replacement durable autosave driver schedules the session's pending revision
-without requiring another gameplay action. With no driver, pending state and
-pre-action display remain protected; explicit Retry can checkpoint directly.
+Acknowledgements, deferred feedback and storage cancellation are session-owned,
+independent of autosave subscriptions. `trackProgress` registers an idempotently
+released retry driver. The newest live driver handles Retry; releasing it restores
+the preceding driver without affecting other registrations or acknowledging work.
+A replacement durable driver schedules pending progress without another gameplay
+action. Without one,
+pending state and pre-action display remain protected; Retry checkpoints directly.
+
+Retry captures the career/checkpoint before status notification, then uses the
+latest driver. Replacement or cancellation during notification revokes the request.
+If the driver detaches or throws before saving, persistence checkpoints directly.
+Retry always saves the committed outcome without repeating gameplay.
 
 Player-facing store hooks retain the immutable pre-action progress until saving
 succeeds. Transient navigation, Collection browsing, and inspection remain usable.
@@ -382,43 +411,35 @@ settlement commands still resolve synchronously. The renderer groups synchronous
 commits into one immediate checkpoint rather than waiting for the ordinary autosave
 debounce. Presentation and local saving must both settle before another action.
 
-A failed primary write tries the recovery slot. If both fail, show “Couldn’t save”
-and Retry; keep the original action pending and retry its snapshot without repeating
-costs, rewards, or RNG. The existing autosave timer handles automatic retries.
-Explicit Retry bypasses backoff once; repeated activation during saving does nothing.
-Successful clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
-Explicit checkpoints establish a new acknowledgement requirement even when the
-gameplay revision is unchanged, including settings-only changes. Snapshot tokens
-carry that checkpoint version as well as the gameplay revision; an older write
-can finish successfully without releasing a newer checkpoint's gate or feedback.
-Requesting deletion pauses autosave and revokes submitted snapshots immediately,
-while retaining the pending action, pre-action display, and completion callbacks.
-If deletion fails, that action remains protected and retryable; autosave resumes
-with a fresh snapshot of the current career, including settings-only changes.
-Only successful deletion discards the paused work. Overlapping clears keep writes
-paused until all finish; any successful deletion discards the old work.
-Restore replaces the acknowledgment epoch only at commit and keeps save protection
-armed continuously until the replacement snapshot is saved. A failed restore retains
-the previous epoch, pending action, and deferred feedback. Successful restore also
-invalidates autosave scheduling before observers schedule replacement work, so a
-late pre-restore write cannot cancel replacement retries. The session persistence
-interruption subscription distinguishes storage pause, failure, deletion, write
-protection, and committed restores. A newly attached autosave client reads the
-current deletion gate before scheduling work.
+[Storage acknowledgement](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement)
+owns write outcomes, fallback and automatic retry timing;
+[UI feedback](./UI.md#pending-saves-and-action-feedback) owns Saving/Retry presentation.
+Explicit Retry resets its submission latch without changing exit deduplication.
+Explicit checkpoints, including settings-only changes, require a new acknowledgement
+even at the same gameplay revision. Snapshot tokens carry both versions; an older
+successful write cannot release a newer gate or its feedback.
+
+### Completion lifecycle
+
+| Event                          | Pending progress and feedback                                                                                        | Save scheduling                                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Deletion requested             | Retain the action, pre-action display and completion callbacks; revoke submitted snapshots                           | Pause autosave; newly attached clients read the deletion gate before scheduling                                |
+| All overlapping deletions fail | Keep the action protected and retryable                                                                              | Resume with a fresh current-career snapshot, including settings-only changes                                   |
+| Any deletion succeeds          | Discard the old pending work and stale feedback                                                                      | Keep writes paused until every overlapping deletion finishes                                                   |
+| Restore commits                | Replace the acknowledgement epoch at commit; protect the replacement continuously until saved; revoke stale feedback | Invalidate old scheduling before observers schedule replacement work, so late writes cannot cancel new retries |
+| Restore fails                  | Retain the previous epoch, pending action and deferred feedback                                                      | Retain the existing save protection                                                                            |
+| Write protection               | Revoke stale feedback and submitted snapshots                                                                        | Cancel autosave scheduling                                                                                     |
+| Disposal                       | Revoke feedback and capabilities                                                                                     | Reject new work; drain already-submitted saves                                                                 |
+
+The persistence interruption subscription distinguishes storage pause, failure,
+deletion, write protection and committed restores.
+
 Completed actions survive process termination after local acknowledgement. This
 promise does not cover power loss, subsequent filesystem failure, or browser eviction.
 
-Steam Cloud mirrors serialize independently and coalesce queued payloads per slot.
-Local acknowledgement does not wait for Cloud. Desktop adapters sharing the same
-IPC endpoint also share a physical operation lane in `platform-save-backend.ts`.
-Reads, local writes, deletes, and demo initialization receipt operations follow
-submission order across adapters; failure cannot poison the lane. A later save
-cannot acknowledge files while an earlier delete can still erase them.
-Deletion discards queued uploads and drains an in-flight upload before removing mirrors so it cannot resurrect a save.
-`desktop/steam-cloud-storage.cjs` owns the process-wide Cloud operation lane across
-both slots. Reads, uploads, and deletion share that lane even when their originating
-renderer has been replaced; renderer-local mirror scheduling cannot provide this
-ordering on its own. Cloud request failures release the lane for subsequent work.
+Local acknowledgement and Cloud mirroring are separate. The
+[storage contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement)
+owns operation lanes, fallback writes, exit flushing and deletion ordering.
 
 ## Persistence API
 
@@ -434,6 +455,8 @@ or externally constructed payloads must go through restore, then snapshot; they
 cannot write over a live career directly. Autosave, Gear flushes, run-end flushes,
 and exit saves use that same boundary.
 
+### Snapshot admission
+
 A snapshot can be written through another adapter for the same session. Each
 receipt binds its contents, career generation, gameplay revision, and capture
 sequence. Capture sequence orders settings-only snapshots as well as gameplay.
@@ -444,15 +467,14 @@ storage. Validation runs both at admission and inside the storage lane, so queue
 snapshots cannot revive a replaced career. An already executing backend write
 cannot be recalled; replacement saves follow it through the serialized lane.
 
-Each queued submission owns its completion. A coalesced-away submission returns
-`superseded`, never the replacement payload's outcome. Autosave retains unsaved
-work for retry; supersession neither clears an existing storage failure nor
-reports a new one. Only an actually written, current snapshot can acknowledge
-its captured revision. Detaching an autosave owner releases only its scheduling
-and retry registration; pending session feedback survives until a covering save
-or explicit invalidation. Disposing the session cancels feedback acknowledgement
-but still drains authorized exit writes. Save receipts never enter the wire format.
-Low-level transport tests use the storage runtime directly to exercise arbitrary payloads below this session boundary.
+Storage submission outcomes follow [write acknowledgement](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement).
+Supersession neither clears a storage failure nor reports a new one. Detaching an
+autosave owner releases only its scheduling and retry registration; pending session
+feedback survives until a covering save or invalidation. Disposal revokes feedback
+but drains authorized exit writes. Receipts are runtime-only. Low-level transport
+tests exercise arbitrary payloads below this session boundary.
+
+### Acknowledged feedback
 
 Acknowledged feedback has one session-owned FIFO delivery queue. A covering save
 reserves its batch before publishing idle, so idle observers and nested saves
@@ -463,11 +485,7 @@ Restore,
 clear, protection, and disposal revoke undelivered callbacks, including callbacks
 registered reentrantly while the queue is draining. Feedback failures are isolated.
 
-Explicit retry captures the pending career and checkpoint before notifying status
-observers, then selects the latest attached retry driver. Replacement or cancellation
-during notification revokes that request. If its driver detaches or throws before
-starting a save, the session persistence port performs a fresh checkpoint instead;
-retry never repeats the gameplay action or leaves saving dependent on a departed owner.
+### Codecs and restore
 
 `run-resume-codec.ts` translates the active-run progress and session fields to and from `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that
@@ -482,9 +500,19 @@ complete-save command: profile, Gear, permanent progress, codec repairs, active
 run decoding, battle rebinding, and incompatible-battle settlement share one
 draft and one gameplay revision. Settings remain a separate store; their codec
 prepares normalized values without mutation, then installs them during the same
-publication boundary. Gameplay, settings, and progress observers therefore read
-the complete replacement, never a mixture of careers. A preparation or decoding
-failure changes neither state nor pending save protection. Abandonment feedback
+publication boundary. Before notification, restore replaces the acknowledgement
+epoch and arms pending-save protection. It invalidates deferred navigation,
+restarts mounted battle playback, then clears outgoing presentation before
+settings, progress and gameplay observers run. `onRunRestored` listeners cancel
+only while the command guard is held. Equal-data restores and bootstrap preserving
+an initialized activity still invalidate old presentation; failed restores do not.
+Session disposal cancels playback independently of React unmount. Gameplay, settings, and progress observers therefore read
+the complete replacement, never a mixture of careers. Preparation, decoding,
+rejection or result-validation failure changes neither store, completion callbacks
+nor pending save protection.
+Successful Clear Save Data uses this same replacement boundary after disk deletion;
+failed deletion preserves memory/presentation, and settings/gameplay reset together.
+Abandonment feedback
 and its immediate save follow publication of the complete replacement.
 Repeated bootstrap may preserve an initialized activity while applying saved
 progression and rebinding its live manifests in the same command.
@@ -496,11 +524,18 @@ Domain persistence codecs own field selection, defaults, encoding, hydration, an
 
 The settings store defers hydration notifications until the coordinator arms save
 protection; subscriber failures are isolated so they cannot interrupt publication.
+Live settings changes advance the durability checkpoint before notifying observers
+when progress tracking is active or a save is already pending. Settings do not
+advance the gameplay revision, so an older snapshot of that revision cannot
+acknowledge the newer settings. Unchanged setters do not advance the checkpoint;
+hydration uses the coordinator's replacement epoch instead.
 Persistence subscriptions compare both owners against one baseline, producing
 one complete snapshot when restore changes both. Fields-only hydration uses the
 same publication boundary while retaining the current activity. Restore publishes
 its new persistence generation even if the saved values are equal; the gameplay
 root and revision remain unchanged when no gameplay field changes.
+
+### Change detection
 
 `shared/stores/persistence/run-resume-codec.ts` owns `projectRunResumeSnapshot`, the single
 projection used by both run encoding and persistence change detection. The
@@ -519,86 +554,78 @@ its resumable activity is complete. The save builder reads the gameplay aggregat
 directly and detaches the complete save once; it does not construct screen or
 battle display data to persist a run.
 
-`shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/save-storage.ts` owns each storage instance’s backend, queue, write protection, and load/write/exit/clear operations. `shared/storage/io.ts` preserves the app function API over the selected session’s IO instance and owns the unconfigured storage guard. The application adapter preserves the SSR guard. Backend configuration is allowed only while loads, writes, and clears are idle, so submitted work cannot move to a different transport. Bootstrap configures the application instance; each headless career configures its own instance; isolated tests can construct `SaveStorage` directly. The queue is private to its storage owner. `src/lib/platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
+#### Storage and resumable activity
 
-`desktop/save-storage.cjs` owns a second, process-wide lane for native profile
-files. IPC ring reads, writes, deletion, and demo-initialization receipt work
-serialize there across renderer replacement and independent session queues.
-Deletion waits for earlier writes, subsequent reads see complete ring rotation,
-and an operation failure does not poison later storage work.
+The [persistence ownership map](./ARCHITECTURE.md#persistence-ownership) locates
+storage, codecs and validation. [The public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract)
+owns candidate precedence, local/Cloud policy, write lanes and deletion;
+[activity ownership](#activity-and-rewards) owns resumable location. Codecs serialize
+one tagged activity, independently of presentation navigation. `idle` is construction-only;
+inactive runs save no active run. [Recovery](../src/features/alchemy/shared/storage/MIGRATIONS.md#current-data-recovery)
+owns malformed selected activities without reviving stale visits.
 
-`SaveOperationQueue` serializes loads, writes, and clears; a load seals pending save coalescing, observes preceding writes, and establishes slot protection before following writes. Demo initialization writes inside its load operation, so a later clear cannot be overtaken by import. Exit writes use the synchronous path only when no load or clear is pending; otherwise they follow the queue's protection and cancellation rules. Loads and successful clears may resume writes only if no newer explicit write-permission decision has occurred since submission; recovery-slot selection does not itself grant permission. Draining storage includes pending loads and their initialization writes. `save-io.ts` also drains published write outcomes, including failure status and session progress receipts, so transport completion cannot outrun acknowledgement.
+`platform-save-backend.ts` owns transport; Steam initialization returns capabilities.
+Configure backends only while storage is idle, retaining method receivers so
+submitted work cannot switch transport. Independent sessions configure their own;
+only the application retains platform/SSR defaults. Storage drain includes published
+outcomes and progress receipts even when the submitter does not await them.
 
-The storage owner reads primary and recovery slots before selecting the freshest playable save. Selection also determines the permitted write attempts; a failed primary write only tries recovery when compatibility allows it. Unreadable or newer-format data stays in its slot under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract), which owns the exact fallback and wipe rules. Load status is diagnostic only, so the app continues into play without a save-problem screen.
+The permanent purse owns Gold. Battle commands reconcile engine Gold deltas and
+update live battle input in the same transaction; restore rebinds without executing
+gameplay or reconciling retired uncommitted earnings. Run Health carries between
+battles; combat owns current Health until settlement, while live meta rebinding
+updates maximum Health and clamps current Health.
 
-Save snapshots are detached from live state; read ports borrow immutable committed
-values as described under [Run state](#run-state). Restoring active combat returns
-to battle before considering the mode map or destination route.
-
-`session.activity` owns one logical location and its visit. Mode geography remains
-run-wide; the reward-flow working state spans commands, but only the selected
-activity's reward/destination payload is serialized. Presentation navigation and
-Menu/meta visits never replace activity. Commands establish a durable next
-activity before animation starts. `idle` is construction-only and cannot be
-saved as an active run. The version 21 wire union contains battle, reward,
-destination, visit, drafting, difficulty, map, and Wildwood-removal branches.
-Inactive state writes no active run. A malformed selected activity cannot silently
-be replaced by another stale visit; unusable run structure preserves permanent
-progress while dropping that run. A damaged Mystery offer retains its known tag
-until the current restore command exits the unusable visit.
-
-Reward grants and bundle advancement follow [Activity and rewards](./RUN_STATE.md#activity-and-rewards); mode selection and resume follow [Run setup ownership](./ARCHITECTURE.md#run-setup-ownership).
-
-Reset Homestead is a session-bound meta intent command. One transaction sums
-current catalog costs for purchased Building, Farm, Research, and Companion tiers,
-refunds the stockpile, clears those levels to defaults, and recomputes/rebinds live
-meta effects. Empty resets reject without a revision or refund. Refunds bypass
-find bonuses and run-earned/recap tallies. Discoveries, Gold, RNG, and resolved
-combat grants remain intact; existing maximum-Health rebinding clamps Health.
-
-The permanent purse owns Gold. Live battle commands reconcile the engine output delta against that purse in the same transaction. Purse writes update the current battle input. Battle restore hydrates and rebinds the committed snapshot without executing gameplay. Retired legacy input/result pairs never reconcile uncommitted earnings. Run Health is carried between battles; the battle snapshot owns combat Health until run settlement, while live meta rebinding updates the shared maximum and clamps current Health.
-
-- **Autosave scheduling:** `app/autosave-scheduler.ts` owns revision acknowledgement, cancellation epochs, maximum wait, retry decisions, and the exit-once latch for one subscription lifetime. Its factory is the only scheduling API; submission and completion update the same private state, and tests exercise save sequences through that API. The shared `app/autosave-lifecycle.ts` supplies subscriptions, debounce selection, snapshots, completion gating, and storage writes with an injectable clock/timer seam. The React adapter supplies lifecycle events; the headless runner uses the same lifecycle without mounting React. Explicitly configured save backends also run outside a browser; unconfigured SSR retains its no-storage behavior. Late completions from cancelled epochs cannot acknowledge new progress. `SaveOperationQueue.storageEpoch` separately guards storage invalidation (clear/protection/reset) for all queue writers, including non-scheduler fast paths.
-
-Run recap tracking belongs to active-run progress: chronological visits and earned
-Gold persist through the existing resume codec. Room entry/completion and Gold grants
-use the write port; battle-to-purse commits count only newly earned Gold, never purse
-mirror synchronization. Run finalization captures a detached `runRecap` (history,
-ending and room identity, deck, Boons, earned Gold) before making activity inactive. Completion and the ending marker resolve the current visit by identity, since an unresolved room can be revisited after later history entries. The screen-data
-capability supplies the recap; card inspection selects its deck on ending screens.
-The recap is transient, survives voluntary teardown, and clears on a fresh run.
+[Autosave and exit](../src/features/alchemy/shared/storage/MIGRATIONS.md#autosave-and-exit)
+own scheduling, retry and interruption. React and headless callers share
+`app/autosave-lifecycle.ts` and its scheduler; the React adapter adds host events.
+Unconfigured SSR performs no storage IO. [Reset Homestead](./TALENT_RULES.md#reset-homestead)
+uses the same session command and live-rebinding boundary.
 
 ## Session capability ports
 
-Use this reference for access and orchestration. Under `shared/stores/`, committed reads and runtime internals live in `session/`, React hooks in `react/`, commands and writes in `commands/`, and save codecs in `persistence/`.
+Bind capabilities once to an explicit session at controller composition. Under
+`shared/stores/`, domain reads and runtime internals live in `session/`, React
+adapters in `react/`, intent commands and writes in `commands/`, and codecs in
+`persistence/`. [Session ownership](#session-ownership) governs binding and disposal.
 
-- **Committed reads** — `run-reads.ts`: data-only `readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`, and shop reads. React hooks in `use-run-reads.ts` provide the derived run phase and narrow Homestead, talent, and battle reads; `useActiveRunScreenValue` reads the presentation screen.
-- **Screen display** — `run-screen-data.ts` owns the exact selectors and derives `RunScreenDataByScreen` from their return types; `useRunScreenData(screen)` in `use-run-screen-data.ts` subscribes once per route and retains its last active data during fades. Visit hooks follow activity; run recaps follow the visible ending screen because settlement makes activity inactive. Battle uses `app/screen-routes/use-battle-screen-route-data.ts`, composing `useRunSessionBattleContext` for display, never shell command inputs.
-- **Commands and writes** — `run-session-command.ts` owns dispatch and `createRunSessionCommand` bindings. `run-session-write-port.ts` exposes domain operations with `RunTransaction` as their first argument; `set*` accepts a value or readonly updater. The internal `gameplay-command.ts` retains the single draft/commit coordinator. There is one import path for writes; implementations are split by domain under `shared/stores/commands/write/` behind that barrel.
-- **Battle commands** — `battle-commands.ts` owns card play, Wish selection, and turn completion; `battle-start-commands.ts` owns standalone validated starts; room entry composes the same `initializeBattle` transaction operation. Its `presentBattleStart` callback receives committed opening feedback. Each input supplies the borrowed battle snapshot that offered it; commands reject stale snapshot identity inside the transaction before RNG or progress changes. Rejected inputs return null, so callers start presentation only after a committed result. Raw snapshot replacement and RNG binding stay private under `write/run-battle.ts`. Live resolutions commit an explicit Gold delta against the authoritative purse and tally earnings atomically. Snapshot Gold remains an engine/save input; historical unfinished battles are abandoned through the load instruction.
-- **Gear reads and writes** — `gear-state-defaults.ts` owns pure initial-state and save-field factories so startup storage never imports the live session runtime. `gear-store.ts` provides data-only reads; `persistence/gear-codec.ts` owns its codec; `use-gear-store.ts` owns React slices and combat restrictions; `gear-session-command.ts` composes Gear, discovery, materials, and live-run rebinding within one command. Choose its outer or draft wrapper using [Armory write paths](./ARMORY.md#write-paths).
-- **Session persistence** — `shared/storage/session-persistence.ts`: `createSessionPersistence(gameSession)` is the session capability port for snapshots, writes, exit writes, loading, platform configuration, recovery routing, clearing, and failure subscriptions. Feature code uses this port. Store-owned immediate lifecycle flushes use the same snapshot builder and acknowledgement-aware IO seam.
-- **Lifecycle** — `run-lifecycle.ts` owns restore, snapshot, battle sync, and teardown including presentation listeners and battle UI clearing (import it directly). `finalizeRunEndSession` retains recap progress; `teardownRun` fully resets the live run.
-- **Settings actions** — `settings-store.ts`: `useSettingsActions` / `useAppSettings` for App chrome. The public store exposes reads, subscriptions, and named actions; raw replacement and hydration authority stay with the settings owner and its persistence codec. Borrowed reads and actions check session lifetime, and subscriptions belong to that session. Homestead and Collection commands are first-class intent commands in `meta-commands.ts` exposed via `AlchemyRouteCommands.meta` and bound to the session controller.
-- **Flow commands** — `navigation-commands.ts` supplies shell navigation and talent actions; `room-entry-commands.ts` applies room traits with activity initialization. Domain command modules beside run flows own destination claims, campfire healing, progression, Mystery/Corruption choices, Wildwood updates, and run settlement. Shell, battle presentation, and these flow adapters cannot import draft dispatch or setters (Oxlint-enforced). Feature command authors compose public domain operations inside a readonly transaction. Store-owned implementations retain raw draft access.
-- **Route command composition** — `shell/use-alchemy-run-controller.ts` composes the explicit contracts in `shell/route-commands.ts`.
-- **Navigation and rewards** — `shell/use-alchemy-run-controller.ts` wires React lifetime and display reads; `shell/run-flow-engine.ts` composes command factories. Start at `createRunFlow` in `run-loop/run/run-flow.ts`, its `run-flow-*.ts` modules, and `run-loop/navigation/mystery-event-navigation.ts` for destinations. Navigation vocabulary: `transition` is validated + delayed, `navigateTo` is `transition` sugar, `goToScreen` is `navigateTo` plus card-hover clear; every flow `navigateTo` clears hover by construction. Destination eligibility: pure `resolveAvailableDestinations` in `shared/run-flow/resolve-available-destinations.ts`, transaction projection and offer sampling in `shared/stores/commands/destination-offer-command.ts`. Commands derive eligibility from their open transaction; shells supply no destination reader. Labyrinth combat traits travel via session store, not battle-starter args.
-- **Mode entry** — Follow [run setup ownership](./ARCHITECTURE.md#run-setup-ownership) for mode selection, starter drafts, run-start snapshots, and Wildwood progression.
-- **Battle control** — `shell/use-battle-controller.ts` provides commands; `app/screen-routes/use-battle-playback.ts` owns route playback. See [Battle path](./ARCHITECTURE.md#battle-path).
-- **Shops** — `run-loop/shop/create-shop-actions.ts` composes the [shop command owners](./ARCHITECTURE.md#shop-commands).
-- **Screen transitions** — `lib/routing/screen-transition-policy.ts` owns ordinary interactive edges and the separate meta-to-saved-run resume rule; `run-setup/run/run-resume-navigation.ts` selects the active run's saved screen before calling `resumeTo`. `shell/use-screen-transitions.ts` applies the same preparation, cancellation, and presentation timing to both paths. Each committed hook lifetime creates a navigation owner; replacement or unmount disposes it, unregisters restore/session cleanup, and revokes retained commands before they can prepare gameplay. Imperative owners expose the same idempotent `dispose()` operation and are also disposed with their session.
+| Consumer need                             | Entry point                                                                    | Contract                                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Committed gameplay reads                  | `session/run-reads.ts`                                                         | Data-only active-run, profile, session, battle and shop views                                              |
+| React gameplay reads                      | `react/use-run-reads.ts`, `use-gear-store.ts`, `use-profile-store.ts`          | Narrow session-bound slices; no internal store access                                                      |
+| Screen display                            | `session/run-screen-data.ts`, `react/use-run-screen-data.ts`                   | Selectors derive `RunScreenDataByScreen`; routes retain outgoing data through fades                        |
+| Command dispatch and domain writes        | `commands/run-session-command.ts`, `run-session-write-port.ts`                 | [Atomicity](#command-atomicity), readonly transactions and detached results                                |
+| Card, Wish and turn actions               | `commands/battle-commands.ts`                                                  | [Committed playback](#committed-battle-playback) and [input identity](./BATTLE_CONTROLLERS.md#battle-path) |
+| Standalone battle starts                  | `commands/battle-start-commands.ts`                                            | Room entry composes the same private initialization operation                                              |
+| Gear player actions                       | `commands/gear-commands.ts`                                                    | [Armory write paths](./ARMORY.md#write-paths)                                                              |
+| Snapshot, restore, save and retry         | `shared/storage/session-persistence.ts`                                        | [Persistence API](#persistence-api) and [local saving](#completed-actions-and-local-saving)                |
+| Run lifecycle                             | `commands/run-lifecycle.ts`                                                    | [Teardown and settlement](./RUN_WORKFLOWS.md#run-teardown)                                                 |
+| Settings and meta intents                 | `session/settings-store.ts`, `commands/meta-commands.ts`                       | Named actions; raw hydration/replacement stays private                                                     |
+| Route actions and shop/battle composition | `shell/use-alchemy-run-controller.ts`, `shell/route-commands.ts`               | Signatures derive from factories; routes borrow only their phase's authority                               |
+| Navigation and outcomes                   | `shell/run-flow-engine.ts`, `run-loop/run/run-flow.ts`                         | [Controller navigation timing](./BATTLE_CONTROLLERS.md#navigation-timing)                                  |
+| Room entry and destination sampling       | `run-loop/run/room-entry-commands.ts`, `commands/destination-offer-command.ts` | [Activity ownership](#activity-and-rewards) and [run setup](./ARCHITECTURE.md#run-setup-ownership)         |
 
-Run-ending gameplay belongs to `shared/stores/commands/write/run-end.ts`: one `settleRunEnd`
-operation captures earned resources, merges talent XP, unlocks the hero, captures
-the recap, and ends activity atomically. Lifecycle commands take only the owning
-session; feature code cannot supply or separately invoke material/XP settlement.
-Reward claims compose the same operation through `settleRunVictory(transaction)`;
-restore composes abandonment before publishing hydration. An inactive activity
-returns rejection so repeated lifecycle requests cannot replay completion effects.
+Unprefixed entries are relative to `shared/stores/`; `shell/`, `run-loop/` and
+`shared/storage/` are relative to `src/features/alchemy/`.
+`run-session-write-port.ts` is the public write import; domain implementations stay
+behind it in `commands/write/`. Feature adapters call intent commands, while command
+owners compose write-port operations in their open transaction.
 
-Controllers implement the explicit **command contracts** in `shell/route-commands.ts`; `use-alchemy-run-controller.ts` composes them. Shop and battle commands pass through directly, with shop continuation owned by run navigation. Screen contracts never derive from the composition root’s inferred return type. Screen routes own **display data** via their specific hooks. App chrome / autosave / particles read via capability hooks, not controller display re-exports. Imperative handlers read lifetime-specific ports at call time. Reward route commands expose `claimChoice(id)` and `skip()`: the reward command validates the offered ID and finalizes it atomically behind the claim guard. Card-only skipping explicitly finalizes with no choice, ignoring legacy persisted selection; `selectedId` remains save-compatible but no longer drives reward interaction. Battle refs and handlers travel through `routeCommands.battle`; battle display is read locally by the battle route. Battle-start commands derive gameplay and meta inputs from their open command draft instead of React controller props. Run-flow handlers take `RunFlowShellActions` and read gameplay fields from the command draft / read ports at call time. Room-entry presentation takes only navigation and opening-feedback callbacks (`RoomPresentation` in `run-destination-handlers.ts`); post-reward presentation is composed in `run-flow.ts`; reward commands commit the destination, act, node, or Wildwood transition atomically. Active-run core fields shared by committed session reads come from `pickActiveRunView` in `run-state-init.ts`.
+Screen routes own display hooks. Battle uses `useBattleScreenRouteData` and route
+playback rather than controller display re-exports; ending screens inspect the
+captured recap after activity becomes inactive. App chrome, autosave and particles
+also use capability hooks. Imperative handlers read their lifetime-bound ports when
+called. Transient UI may use `ui-store`.
 
-Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) calls `SessionPersistence.restore`, which delegates to `restoreSessionSave` before publishing bootstrap readiness (preserving an already initialized activity), so [`App.tsx`](../src/App.tsx) cannot render `AppInner` against an unhydrated run. [`bootstrap-save-state.ts`](../src/features/alchemy/shared/storage/bootstrap-save-state.ts) initializes Steam, configures the save backend from the returned capabilities, and only then loads candidates. `restoreRun` and `restoreSessionSave` share the same run restoration recipe; complete saves hydrate gameplay codecs inside that recipe's transaction.
+Reward route actions accept `claimChoice(id)` or `skip()`. The command validates the
+live offer and finalizes it behind the claim guard. Card Skip ignores legacy
+`selectedId`; saved selection no longer drives interaction. Battle routes exclude
+startup and cancellation authority. Room presentation takes navigation and detached
+opening feedback, never gameplay callbacks or draft access.
+
+Boot restores the complete save through `SessionPersistence.restore` before
+publishing readiness. Steam initialization configures the backend before loading
+candidates. See [boot](./ARCHITECTURE.md#boot-and-loading) for application composition.
 
 ## Card inspection and combat equipment reservations
 

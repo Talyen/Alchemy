@@ -4,7 +4,7 @@ import type { BattleSnapshot } from "./types";
 
 type CompanionScalingState = Pick<
   BattleSnapshot,
-  "talentEffects" | "gearEffects" | "trinketEffects" | "enemyCC" | "enemyHealth" | "enemyMaxHealth"
+  "talentEffects" | "gearEffects" | "trinketEffects" | "enemyCC" | "enemyStatuses" | "enemyHealth" | "enemyMaxHealth"
 >;
 
 /** Companion-specific scaling, before ordinary hit modifiers and target defenses. */
@@ -14,6 +14,7 @@ export function getBattleCompanionDamageModifiers(state: CompanionScalingState):
     damageBonus:
       talents.companionDamage +
       state.gearEffects.companionDamageBonus +
+      (state.enemyStatuses.bleed > 0 ? state.gearEffects.companionDamageBonusVsBleeding : 0) +
       state.trinketEffects.companionDamageBonus +
       (state.enemyCC.freezeSkipTurns > 0 ? talents.companionVsFrozenBonus : 0),
     damageMultiplier:

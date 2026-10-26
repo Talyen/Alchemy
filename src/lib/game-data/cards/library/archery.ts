@@ -1,5 +1,6 @@
 import type { BattleCard } from "../../types";
 import * as cardBuilders from "../card-builders";
+import { cardMagnitude } from "../../card-description-model";
 
 export const archeryCards: BattleCard[] = [
   cardBuilders.effectsCard({
@@ -47,7 +48,26 @@ export const archeryCards: BattleCard[] = [
     tags: ["archery"],
     effects: [
       { kind: "damage", damageType: "physical", amount: 2 },
-      { kind: "gain-gold", amount: 2 },
+      {
+        kind: "chance",
+        probability: 0.1,
+        successEffects: [{ kind: "gain-gold", amount: 4 }],
+        failureEffects: [],
+      },
+    ],
+    describe: () => [
+      {
+        role: "effect",
+        parts: ["Deal ", cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }), " Physical damage"],
+      },
+      {
+        role: "effect",
+        parts: [
+          "10% chance to Steal ",
+          cardMagnitude({ effectIndex: 1, effectPath: [0], kind: "gain-gold", field: "amount" }),
+          " Gold",
+        ],
+      },
     ],
   }),
   cardBuilders.damageCard({

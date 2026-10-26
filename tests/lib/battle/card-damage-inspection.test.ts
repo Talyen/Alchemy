@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { effectsCard } from "@/lib/game-data/cards/card-builders";
 import { cardById, enemyById, getEnemyAbilities, getEnemyAbilityCard, type BattleCardEffect } from "@/lib/game-data";
-import { getBattleDamageInspectionCard } from "@/lib/battle/card-damage-inspection";
+import { getBattleDamageInspectionCard, getBattleCardDescriptionInspection } from "@/lib/battle/card-damage-inspection";
 import type { CombatTextEvent } from "@/lib/battle";
 import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -8,6 +9,85 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const hit = (amount = 6): BattleCardEffect => ({ kind: "damage", damageType: "physical", amount });
+
+describe("rule-preserving tooltip inspection", () => {
+  it.each([0, 6, 20])("keeps Shield Bash's scaling rule at %i starting Block", (block) => {
+    const card = cardById["shield-bash"]!;
+    const rng = vi.fn(() => {
+      throw new Error("live RNG consumed");
+    });
+    const state = patchBattleState({ hand: [card], mana: 3, playerStatuses: { block }, rng });
+    const before = JSON.stringify({ card, state });
+    const result = getBattleCardDescriptionInspection(card, state);
+    expect(result.descriptionLines).toEqual(["Gain 2 Block", "Deal Stun damage equal to half your Block"]);
+    expect(result.effects).toEqual(card.effects);
+    expect(JSON.stringify({ card, state })).toBe(before);
+    expect(rng).not.toHaveBeenCalled();
+  });
+
+  it("adjusts known gear and talent bonuses inside the original fixed-damage sentence", () => {
+    const card = effectsCard({ id: "plain", art: "", effects: [hit(3)] });
+    const state = patchBattleState({
+      gearEffects: { flatPhysicalDamage: 1 },
+      talentEffects: { flatPhysicalDamage: 1 },
+    });
+    expect(card.descriptionLines).toEqual(["Deal 3 Physical damage"]);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Deal 5 Physical damage"]);
+    expect(card.effects).toEqual([hit(3)]);
+  });
+
+  it("excludes enemy defenses, Dodge and Critical outcomes from fixed attack numbers", () => {
+    const card = effectsCard({ id: "plain", art: "", effects: [hit(3)] });
+    const rng = vi.fn(() => {
+      throw new Error("live RNG consumed");
+    });
+    const state = patchBattleState({
+      currentEnemy: enemyById["will-o-wisp"],
+      gearEffects: { flatPhysicalDamage: 1 },
+      talentEffects: { flatPhysicalDamage: 1 },
+      enemyMitigation: { block: 50, armor: 20 },
+      flags: { nextHitCrit: true },
+      rng,
+    });
+    const before = JSON.stringify(state);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Deal 5 Physical damage"]);
+    expect(JSON.stringify(state)).toBe(before);
+    expect(rng).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { kind: "damage", damageType: "physical", amount: 0, equalToArmor: true },
+    { kind: "damage", damageType: "stun", amount: 3, forgeBonusPercent: 50 },
+    { kind: "damage", damageType: "physical", amount: 3, damageTypeIfTargetFrozen: "freeze", amountIfTargetFrozen: 8 },
+    { kind: "damage", damageType: "physical", amount: 3, doubleIfEnemyBleeding: true },
+    { kind: "damage", damageType: "burn", amount: 3, tripleIfEnemyNotBurning: true },
+  ] as const)("retains the complete $damageType scaling/conditional rule", (effect) => {
+    const card = effectsCard({ id: "formula", art: "", effects: [effect] });
+    const result = getBattleCardDescriptionInspection(
+      card,
+      patchBattleState({
+        playerStatuses: { armor: 8, forge: 6 },
+        enemyCC: { freezeSkipTurns: 1 },
+        enemyStatuses: { bleed: 2 },
+      }),
+    );
+    expect(result.descriptionLines).toEqual(card.descriptionLines);
+    expect(result.effects[0]).toEqual(effect);
+  });
+
+  it("does not append triggered follow-ups or duplicate the original effect sentence", () => {
+    const card = cardById.fireball!;
+    const result = getBattleCardDescriptionInspection(card, patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }));
+    expect(result.descriptionLines).toEqual(card.descriptionLines);
+    expect(result.effects).toEqual(card.effects);
+  });
+
+  it("keeps authored numbers when an unresolved draw can change the attack", () => {
+    const card = effectsCard({ id: "draw-attack", art: "", effects: [{ kind: "draw-cards", amount: 1 }, hit()] });
+    const result = getBattleCardDescriptionInspection(card, patchBattleState({ deck: [makeTestCard()] }));
+    expect(result.descriptionLines).toEqual(card.descriptionLines);
+  });
+});
 
 describe("battle damage inspection", () => {
   it("shows offensive power before defenses and crits without consuming state or RNG", () => {
@@ -207,8 +287,8 @@ describe("battle damage inspection", () => {
     const state = patchBattleState({ currentEnemy: enemyById.bandit });
     const card = { ...getEnemyAbilityCard("slash"), effects: [hit(4), hit(4)] };
     expect(getBattleDamageInspectionCard(card, state, "enemy").descriptionLines).toEqual([
-      "Deal 8 Physical damage",
-      "Deal 4 Physical damage",
+      "Deal 10 Physical damage",
+      "Deal 5 Physical damage",
     ]);
     expect(state.flags.enemyFirstHitDoubleUsed).toBe(false);
   });

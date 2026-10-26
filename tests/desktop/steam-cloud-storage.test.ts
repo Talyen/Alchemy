@@ -16,6 +16,8 @@ afterEach(() => vi.restoreAllMocks());
 function fixture() {
   const files = new Map<string, string>();
   const cloud = {
+    isEnabledForAccount: () => true,
+    isEnabledForApp: () => true,
     fileExists: (name: string) => files.has(name),
     readFile: vi.fn(async (name: string): Promise<Buffer | null> => Buffer.from(files.get(name)!)),
     writeFile: vi.fn(async (name: string, value: string) => {
@@ -85,3 +87,23 @@ it.each([null, Buffer.alloc(1001)])("protects an existing unreadable Cloud save 
   await expect(storage.read()).rejects.toThrow();
   expect(await storage.read()).toBe("existing");
 });
+
+it.each(["account", "app"])(
+  "does not restore, mutate or delete Cloud cache when %s Cloud is disabled",
+  async (setting) => {
+    const { storage, cloud, files } = fixture();
+    files.set("primary", "protected Cloud progress");
+    if (setting === "account") cloud.isEnabledForAccount = () => false;
+    else cloud.isEnabledForApp = () => false;
+    expect(await storage.read()).toBeNull();
+    expect(await storage.write("local progress")).toBe(true);
+    expect(await storage.remove()).toBe(true);
+    expect(cloud.readFile).not.toHaveBeenCalled();
+    expect(cloud.writeFile).not.toHaveBeenCalled();
+    expect(cloud.deleteFile).not.toHaveBeenCalled();
+    expect(files.get("primary")).toBe("protected Cloud progress");
+    cloud.isEnabledForAccount = () => true;
+    cloud.isEnabledForApp = () => true;
+    expect(await storage.read()).toBe("protected Cloud progress");
+  },
+);

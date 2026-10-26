@@ -12,7 +12,6 @@ import {
 import {
   ENEMY_BOSS_REGENERATION,
   ENEMY_BASE_REGENERATION,
-  ENEMY_STARTING_BLOCK,
   LIVING_ARMOR_STARTING_ARMOR,
   ROOM_SCALING_INCREMENT,
   ENEMY_PRESSURE_OVERRIDES,
@@ -39,7 +38,7 @@ describe("initializeEnemyState", () => {
 
   it("applies boss HP multiplier and boss regeneration", () => {
     const result = initializeEnemyState(blightTreant, 1, []);
-    expect(result.enemyMaxHealth).toBe(81);
+    expect(result.enemyMaxHealth).toBe(128);
     expect(result.enemyRegeneration).toBe(ENEMY_BOSS_REGENERATION);
   });
 
@@ -58,7 +57,7 @@ describe("initializeEnemyState", () => {
       { currentEnemy: skeleton, roomScalingMultiplier: roomMul, difficultyModifiers: [] },
       { kind: "damage", damageType: "physical", amount: 6 },
     );
-    expect(physical.amount).toBe(9);
+    expect(physical.amount).toBe(20);
   });
 
   it("multiplies max health with enemy-health-multiplier", () => {
@@ -90,9 +89,9 @@ describe("initializeEnemyState", () => {
     }
   });
 
-  it("reduces new boss Health by ten percent while preserving normal and elite Health", () => {
-    expect(initializeEnemyState(getEnemy("blood-countess"), 9, []).enemyMaxHealth).toBe(211);
-    expect(initializeEnemyState(getEnemy("frostwarden"), 9, []).enemyMaxHealth).toBe(200);
+  it("applies boss Health scaling after progression and content tuning", () => {
+    expect(initializeEnemyState(getEnemy("blood-countess"), 9, []).enemyMaxHealth).toBe(281);
+    expect(initializeEnemyState(getEnemy("frostwarden"), 9, []).enemyMaxHealth).toBe(267);
     expect(initializeEnemyState(skeleton, 1, []).enemyMaxHealth).toBe(54);
     expect(initializeEnemyState(getEnemy("will-o-wisp"), 1, []).enemyMaxHealth).toBe(79);
   });
@@ -105,7 +104,7 @@ describe("initializeEnemyState", () => {
         { currentEnemy: enemy, roomScalingMultiplier: 1, difficultyModifiers: [] },
         { kind: "damage", damageType: "physical", amount: 6 },
       ).amount,
-    ).toBe(6);
+    ).toBe(9);
   });
 
   it("includes living-armor trait starting armor scaled by room", () => {
@@ -114,10 +113,9 @@ describe("initializeEnemyState", () => {
     expect(result.startingArmor).toBe(Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul));
   });
 
-  it.each(["forge-golem", "goblin"])("includes %s starting Block scaled by room", (id) => {
-    const roomMul = 1 + 2 * ROOM_SCALING_INCREMENT;
+  it.each(["forge-golem"])("does not retain %s retired starting Block", (id) => {
     const result = initializeEnemyState(getEnemy(id), 3, []);
-    expect(result.startingEnemyBlock).toBe(Math.round(ENEMY_STARTING_BLOCK * roomMul));
+    expect(result.startingEnemyBlock).toBe(0);
   });
 
   it("returns start-block, start-max-mana, and start-companion from modifiers", () => {
@@ -205,8 +203,7 @@ describe("enemy ability damage floor", () => {
     const physical = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "physical", amount: 4 });
     const holy = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "holy", amount: 4 });
     const poison = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "poison", amount: 4 });
-    expect(physical.amount).toBe(7);
-    expect(holy.amount).toBe(4);
-    expect(poison.amount).toBe(4);
+    expect(physical.amount - holy.amount).toBe(3);
+    expect(poison.amount).toBe(holy.amount);
   });
 });

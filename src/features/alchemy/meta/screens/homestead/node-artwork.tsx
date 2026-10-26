@@ -1,7 +1,7 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useEffect, useState, type CSSProperties } from "react";
-import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
+import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { HomesteadTooltipBody } from "./node-tooltip-body";
 import { Check, LockKeyhole, Star } from "lucide-react";
@@ -200,7 +200,7 @@ export function HomesteadNodeArtwork({
                   aria-hidden="true"
                   style={feedbackStyle}
                   className={cn(
-                    "h-3.5 w-3.5",
+                    "h-4 w-4",
                     feedback && animateTooltip && !reducedMotion && index === node.level - 1 && "homestead-earned-star",
                     index < node.level ? "fill-gold-light text-gold-light" : "text-muted-foreground/40",
                   )}

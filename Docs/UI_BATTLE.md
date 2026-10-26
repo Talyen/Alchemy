@@ -2,14 +2,90 @@
 
 ## Battle layout
 
-Draw Pile and Mana sit beside the left of the centered card hand; Discard Pile
-and End Turn sit beside its right. The three columns form one centered group,
-with the earlier responsive gap between the hand and each side column. Both piles
-open their matching pile viewer. The hand retains its centered
-fan and hover movement, with clearance for its rotated artwork. Mana crystals sit
-centered above Draw Pile, retaining their spending, refill, capacity, overflow,
-glint and blue spill effects. End Turn is an outline text button above Discard Pile
-and commits immediately after input gates pass.
+Draw Pile and Mana, the centered hand, and Discard Pile with End Turn form one
+centered three-column group. Gaps follow
+[the shared battle layout](../src/features/alchemy/shared/config/layout.ts);
+the shared [display-sizing contract](./UI.md#display-sizing) governs scaling.
+
+The hero and enemy portrait centers sit at equal horizontal distances from the
+stage center in every battle. Preserve their intrinsic sizes and the action gap;
+use the displayed enemy width, including the reduced-motion static fallback.
+Center points are the anchors, not the combined outside bounds. The current
+renderer has one enemy; a Companion stays attached to the hero and extends into
+the reserved gap without shifting the hero's anchor when summoned. Health,
+status panels, targeting, card flights and impact effects follow the same
+portrait refs. The hand and corner HUD remain fixed.
+
+The hand rests against the bottom viewport edge as a centered fan, with capped
+spacing, responsive card sizing and clearance for rotated artwork. Draw Pile sits beside the hand's left edge and Discard Pile
+beside its right, both with their pile artwork in the bottom corners. Clicking either
+pile opens that pile in the shared card viewer. Draw Pile also includes Hand Overflow
+when cards are waiting for room. All battle transfer and feedback
+coordinates use the full viewport scene.
+
+Mana crystals sit centered above Draw Pile in the left bottom column. Their shallow
+curved arrangement, recessed settings, spending, refill, capacity, hover glint, glow,
+and shard effects remain intact. Full crystals retain subdued Mana blue; spent
+crystals are dim grayscale. Increasing counts gradually shrink the crystals and
+effects; the row caps at nine. Beyond nine, the final crystal carries a +N badge.
+Exact current and maximum Mana remain in accessible inspection, without a persistent
+numerical readout. Hover leaves each crystal at rest and glints only its artwork;
+refresh effects remain independent. Reduced motion keeps crystals static.
+
+The top-right battle cluster shows live Gold, the Autoplay and
+Boons toggles, the dev-only Skip Combat control, and Menu. Gold briefly highlights on
+increases. End Turn is an outline text button above Discard Pile and commits
+immediately after input gates pass, without confirmation. Dev-only Skip Combat uses a labeled skip-forward
+icon and a below-icon tooltip using `horizontalInset={8}` so the wide content inset does not detach its label. End Turn has no tooltip.
+
+The hand's bottom dock stays centered and stationary as the hand grows to seven
+cards; smaller hands remain centered with capped spacing. Every resting card
+touches or overlaps the bottom edge; playable card centers stay visible. Hover
+and keyboard focus lift cards for inspection. Hand hover and pointer
+activation use the nearest stable slot center, with boundaries halfway between
+centers, independent of raised artwork and reflow motion. Hidden transfer cards
+cannot receive pointer selection. Keyboard focus uses the native card buttons.
+
+Actor anchors use `BATTLE_ACTOR_TOP` plus `BATTLE_ACTOR_VIEWPORT_OFFSET` from
+[layout constants](../src/lib/game-constants/ui-layout.ts).
+[BattleActors](../src/features/alchemy/run-loop/screens/battle-screen/actors.tsx)
+applies upward Game Size compensation, including health bars and statuses, to keep
+health and controls clear. Backgrounds fill the frame.
+
+## Boss idle artwork
+
+Battle portraits for Blight Treant, Blood Countess, Seraph and Stone Titan play
+muted idle clips continuously. Each next clip is selected randomly excluding the
+current clip. Two video elements preload the next clip. Playback starts its
+replacement 240 ms before the end, retains the outgoing image until the incoming
+decoder is ready, then blends opacity for 180 ms. Native looping keeps the
+outgoing video moving if loading or a busy main thread delays that handoff. The
+outgoing buffer is paused and rewound before reuse, including when the next
+selection has the same URL.
+Only the short blend plays both decoders. This cosmetic selection never uses
+the world's gameplay RNG. Hidden tabs pause playback; reduced/disabled motion and
+unavailable video playback use the usual static artwork. Defeat freezes the
+visible video frame for the existing sliced-portrait effect.
+
+Prepared clips contain 60 fps motion interpolation, computed offline, and filtered
+640/1280/1920-pixel variants. The player selects the smallest width covering the
+portrait's actual transformed width times display density, capped at the 1920-pixel
+master resolution. Resizing or changing displays updates the waiting buffer; the
+visible clip finishes without a resolution switch or seek. No runtime optical
+flow, canvas downsampling, or per-frame React updates are used. Interpolation
+cannot correct motion artifacts already present in the authored clips, and short
+blends soften rather than reconstruct mismatched poses.
+
+Animated portraits use the clips' full 16:9 composition with `contain` scaling,
+filling the frame edge to edge. Only the frame's rounded corners mask the video;
+there is no matte inset. The static fallback disappears when playback starts,
+so a second portrait never shows around the video. Neither video nor its static
+fallback uses cover/crop scaling. Their extra width retains the same base
+frame height as the hero's 3:4 portrait and other enemies' 4:3
+portraits. Hero and enemy frames keep that height through turn changes and hover;
+the shining border indicates the active turn. Earth Elemental and Stone Titan battle artwork is
+mirrored toward the hero, including available idle playback and the defeat image. Collections, Destination,
+Labyrinth, inspection and bosses without clips retain their static artwork.
 
 ## Battle feedback
 
@@ -37,14 +113,24 @@ its sign. Sums exceeding that width become separate entries. Partial matches
 create a new burst only for unmatched entries. Expired/evicted entries cannot
 return. The same window applies to reduced/disabled motion.
 
-Notices come first, damage/loss next, healing/gains last, with stable order within
-each group. Up to three numeric entries use one centered column; larger bursts
-use two columns, with notices spanning both. Impact and audio cues follow each
-incoming action's actual events, never accumulated display totals. Resource
-payments and removals do not invent damage impacts.
+Each entry follows its own path. Intended card damage and healing use the center
+launch queue. For cards without a meaningful direct hit or heal, the first meaningful
+authored result appears centrally: Block is primary for Spiked Shield, with Thorns
+secondary. An ineffective first effect yields to a later successful authored result;
+costs and triggered rewards never become primary merely because their number is larger.
+Direct emitters mark intent before aggregation, keeping a proc separate even when it
+grants the same status. Secondary benefits use the lower-left corner and setbacks
+the lower-right. Corner placement reserves the label's actual width and peak pop
+footprint inside the measured portrait, rather than fixed fractions of portrait width.
+Resource costs and removals belong to setbacks. Secondary Cleanse, immunity, and preparations
+belong to benefits; Purge and harmful control notices belong to setbacks. Unattributed
+turn feedback retains its existing damage, healing, Block-loss and Dodge center route. Status
+entries use a smaller, stationary pop. Within an action, notices precede losses
+and gains; each lane preserves arrival order. Impact and audio cues remain immediate
+and follow actual incoming events, never accumulated display totals.
 
-Universal reactions show their localized names above the numbers in the same
-portrait-anchored action group, without a standalone damage-type icon or a repeated
+Universal reactions show their localized names above the numbers, each with an
+independent portrait-anchored flight, without a standalone damage-type icon or a repeated
 bonus amount. Reaction IDs select the shared names and keyword palettes:
 Shatter uses Freeze/Physical, Frostfire Freeze/Burn, Thunderclap Stun/Nature,
 Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil Burn/Bleed, and Venomflash
@@ -52,51 +138,60 @@ Poison/Burn. Reuse keyword text shine with a dark drop shadow. Transparent gradi
 text must reset inherited text strokes: an outline can cut through its letter interiors.
 This applies to all shared ShineText consumers and the corrupted-title shine.
 
-Reaction names last 1,600 ms independently of numeric bursts. Pop from 90% to 108%
-by 140 ms, settle to 100% by 240 ms, and fade from 1,250 to 1,600 ms.
-Names and numbers share the ordinary combat-feedback upward trajectory. Names
-remain at its final position until their independent lifetime ends. Reserve space for the numeric pop so
-numbers cannot cross names; older actions stack above newer ones. Numeric feedback retains fixed sizing, even during dense rapid sequences. The
-newest group uses the earlier lower portrait anchor; older groups ease upward over
-150ms. Reaction names fit their columns independently.
-The existing shine sweeps once between 100 and 1,100 ms. Names
-use 1.25 times the numeric base size. One or two simultaneous names use one column;
-three or more use two. Names never wrap or truncate: fit their size to their
-column, accounting for the pop scale. Keep at most
-three announcement groups per target; newer groups may evict older groups. Numeric
-merging never restarts a name animation or extends its lifetime. Reduced/disabled
-motion shows static keyword-colored names for the same readable duration. Names
-never block play, and teardown cancels their timers and portrait tracking.
+Reaction names retain their independent 1600 ms lifetime and keyword shine.
+They pop, settle, rise up to 76 scaled pixels, then hold and fade. Each localized
+name fits the portrait width without wrapping or truncation. Numeric and name
+queues prefer clearance in the center band, allowing overlap rather than delaying
+feedback beyond 180 ms. Dense names receive fixed extra rows. Merging numbers never restarts a name or extends its
+lifetime. Reduced/disabled motion keeps the keyword colors without travel.
+[Reaction text](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
+owns fitting and styling; [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)
+owns entry rendering. The shared
+[motion sampler](../src/features/alchemy/run-loop/battle/combat-feedback-motion.ts)
+drives both clearance planning and rendered curves.
 
-Within each resolved action, damaging packets of the same type and recipient
+Within each resolved action, damaging packets of the same type, recipient and intent
 produce one numeric total, including non-additive reaction damage and natural
 ticks. Resource removals and Health costs remain separate. Preserve original
 packets for gameplay, audio, and impact strength; visual aggregation never turns
 a reaction into a Critical. A total containing Critical damage uses the existing
 accent and an accessible label saying it includes a Critical.
 
-Critical damage uses ordinary typed damage text, retaining its damage color and
-icon. A pale flash fades over 140 ms and a gold glow fades over 480 ms, without
-changing font size, weight, or angle. Reduced/disabled motion uses a steady gold
-glow for the entry's ordinary lifetime. Critical remains in the accessible label
-and uses the existing sound cue. Merging into an already critical entry does not
-restart the pulse or extend the entry's lifetime.
+Critical damage retains ordinary typed color/icon with a brief pale flash and
+gold glow, without changing font size, weight or angle. Reduced/disabled motion
+keeps a steady glow for the ordinary lifetime. Critical remains in the accessible
+label and sound cue. Merging into an already critical entry neither restarts its
+pulse nor extends its lifetime; exact curves live in
+[battle styles](../src/styles/battle-scene.css).
 
-Each action appears immediately above card flights, anchored to its moving portrait.
-Measured layout moves earlier bursts upward without changing their values or
-restarting their animations. Keep at most three active bursts per target; overflow
-fades the oldest early without truncating the new action's types or queuing feedback.
-Reduced motion or disabled animations remove pop, travel, and animated repositioning.
-Use the existing game-delay policy and minimum readable lifetime; teardown cancels
-all lifetimes and tracking stops when no bursts remain or the layer unmounts.
+The Balanced treatment uses 38.4px base text, an 85 ms pop to 1.85×, a settle to
+1.55×, and a smooth shrink toward 1.2×. Travel begins at 240 ms, slows over 810 ms,
+and ends 76 scaled pixels above the launch point. Numeric entries last 1050 ms
+with a smooth final 280 ms fade. Benefits and setbacks use 80% of the base size.
+All coordinates and travel follow Game Size and remain above card flights.
 
-Preserve text and icon sizing, portrait-relative placement, and static dark outlines
-and shadows for contrast against artwork. Exact geometry, typography, and animation
-curves live in [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx);
-lifetimes and limits live in [motion constants](../src/lib/game-constants/ui-motion.ts).
-Do not duplicate outline elements; ordinary dark shadows stay static. Only the
-brief critical gold glow fades, through its bounded filter animation in
-[battle styles](../src/styles/battle-scene.css). Implementation and playback
+The [feedback owner](../src/features/alchemy/run-loop/battle/combat-feedback.ts)
+assigns each entry a waiting/visible phase, launch time, and post-launch lifetime.
+The [queue](../src/features/alchemy/run-loop/battle/combat-feedback-queue.ts) samples
+projected visible footprints with a preferred 6px clearance and 80 ms launch interval.
+Every entry launches within 180 ms of arrival, even when that permits overlap.
+New numeric flights compare projected footprints before selecting a fixed center
+or diagonal path. Wider paths add vertical separation, protecting different damage
+types from receiving the same path when their queue deadlines coincide. Complete
+masking receives priority over smaller overlaps. Damage and healing prefer opposite
+sides when mixed. Fan distance is capped to the portrait width.
+Corners and names receive fixed extra rows. Crowded numeric bursts can use extra
+rows rather than reuse an occupied path; all regions of a recipient share the
+covering check while keeping their own launch stagger. Each path is chosen once: new arrivals
+never push, restart, shorten, or evict existing text. All waiting entries are retained
+and every entry keeps its full post-launch lifetime. One owner timer advances launches and
+expiry, and reset/unmount cancels it. Queues never block card input or playback.
+Reduced/disabled motion removes pop and travel and uses separate static rows; the existing minimum-readable-lifetime policy remains in effect.
+
+Dark outlines and shadows stay static for contrast against artwork. Only the brief
+Critical gold glow fades through its bounded filter animation in
+[battle styles](../src/styles/battle-scene.css). Exact tuning lives in
+[motion constants](../src/lib/game-constants/ui-motion.ts). Implementation and playback
 ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
 
 Divine Intervention opens or queues an ordinary Wish under the [Talent rules](./TALENT_RULES.md#wishes-and-mana), using the existing [Wish interaction](./UI_BROWSING.md#rewards-and-wishes).
@@ -116,10 +211,19 @@ The Mana area stays still, and all effects follow displayed battle frames withou
 gating accepted gameplay. Initial mount and resume settle without effect replay;
 reduced motion settles immediately, and presentation reset cancels pending exits.
 
+Cards entering Hand Overflow briefly shake only the Draw Pile artwork and play
+the card-rejection sound. Each batch receives one cue, including fresh opening
+draws. Retained overflow, delivery into the hand, and saved-battle mount stay quiet.
+Reduced or disabled motion suppresses the shake while preserving sound settings.
+
 ## Boss lyrics
 
-Timed boss lyrics sit centered across the space between the combatants and the
-hand, without intercepting card input. Words appear as sung with a brief fade
+Timed boss lyrics sit inside the boss portrait, centered near its bottom edge,
+without intercepting inspection or card input. Each complete phrase is measured
+before its words appear: text grows up to 36px and shrinks to fit a single line
+inside the frame, including room for its animation. Font loading and portrait
+resizing recompute the fit; hand changes do not move the anchor.
+Words appear as sung with a brief fade
 and small pop; earlier words remain dim until the phrase ends. The gold highlight
 switches directly between whole words. Instrumental gaps stay clear. Audio
 settings owns the default-on **Boss Lyrics** switch; timing data and playback
@@ -135,21 +239,31 @@ Do not mirror engine field dependencies in a separate UI cache.
 ## Damage values in battle inspection
 
 Card hover and keyboard inspection in the battle hand, Wish, and the pile viewers
-show current offensive damage before Block, Armor, resistance, dodge, or
-critical strikes. The combat owner's offensive stages supply Forge, active
-bonuses, prepared Poison conversion, current conditions, mana remaining after
-payment, and fight pacing. Resource-based attacks show a damage number. Random
-damage keeps an adjusted range; chance branches remain separate. Delayed attacks
-retain authored values because future resources and pacing are unknown. These
-values describe attack packets, excluding follow-up reactions and damage over time.
-Inspection never rolls randomness or spends live resources or prepared effects.
-Collection and other nonbattle views retain authored descriptions.
+show current offensive damage before defenses and critical strikes. Inspection
+runs production card resolution against detached battle alternatives, including
+payment, pre-triggers, ordered effects, and reactions that affect later packets.
+Forge, prepared conversions, resource changes, conditions, and fight pacing
+therefore come from the same rules as play. These are offensive packet values,
+not final Health loss or a total of all reactions and damage over time.
+
+Finite random outcomes retain their correlated state through later effects.
+Agreement produces an exact value; disagreement produces an adjusted range or
+damage-type alternatives. Chance clauses remain separate. Unknown drawn-card
+identities or inspection work limits leave dependent damage at its authored
+value; already known earlier packets remain usable. Delayed attacks also retain
+authored values because future resources and pacing are unknown. Inspection
+never consumes live RNG, resources, or prepared effects. Collection and other
+nonbattle views retain authored descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
+defines execution seams, uncertainty limits, and effect-authoring requirements.
 
 ## Deck and pile inspection
 
 The stacked-cards toolbar icon opens the run Deck during drafting, non-battle run
 screens, and meta detours from that run. Battle has no Deck toolbar button; clicking
-Draw Pile or Discard Pile opens only that pile. Each viewer has a centered title
+Draw Pile or Discard Pile opens that pile. Draw Pile includes a separate Hand Overflow
+section only while cards are queued, preserving their arrival order and individual
+modifications. The section remains available when the draw pile is empty. Other
+collections retain their alphabetical ordering. Each viewer has a centered title
 (Deck, Draw Pile, or Discard Pile) with no collection tabs.
 Titled screen headers place Deck on the left alongside any Back control and Menu
 on the right, with the title centered between them. The icon has no tooltip.
@@ -191,6 +305,20 @@ active attack traits (including Glacial Surge), and pacing, before hero defenses
 The repertoire remains visible without selecting or revealing the next ability. Trait descriptions use the same encounter context through
 `getEncounterEnemyTrait`. These are presentation copies; never pass scaled cards
 back into ability resolution or mutate the canonical catalog.
+
+`TraitBox` owns unboxed rows with colored icons, keyword descriptions and title
+shine for enemy hover/inspection and Labyrinth details. Traits have no individual
+border, background or box padding. Shared encounter icon themes also drive map effects.
+Icons align with Trait names; descriptions sit below in the text column.
+Inspection uses two equal columns when 40rem is available, one column otherwise,
+and full width for a sole Trait. Hover/map Traits stay stacked. Inline-size
+containment belongs only on inspection: shrink-to-fit tooltips need intrinsic width.
+
+Enemy hover uses the [TraitBox](../src/features/alchemy/shared/ui/trait-box.tsx)
+tooltip variant with the shared tooltip header and body typography, inheriting
+tooltip scale once. Inspection and Labyrinth details use the default variant.
+Trait rows share normal icon sizes and spacing; there is no compact text exception
+to the [small-text baseline](./UI.md#display-sizing).
 
 Enemy portrait tooltips show traits only, with no repeated-attack text, ability
 cards, or upcoming-action indicator. `EnemyTraits` renders the same named trait

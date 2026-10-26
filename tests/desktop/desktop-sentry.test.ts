@@ -31,10 +31,14 @@ describe("desktop crash reporting", () => {
       autoSessionTracking: boolean;
       sendDefaultPii: boolean;
       tracesSampleRate: number;
+      beforeBreadcrumb: (breadcrumb: { category: string; message?: string }) => unknown;
     };
     expect(options.autoSessionTracking).toBe(false);
     expect(options.sendDefaultPii).toBe(false);
     expect(options.tracesSampleRate).toBe(0);
+    expect(options.beforeBreadcrumb({ category: "console", message: "Private Steam name or save payload" })).toBeNull();
+    const breadcrumb = { category: "navigation", message: "Battle" };
+    expect(options.beforeBreadcrumb(breadcrumb)).toBe(breadcrumb);
     expect(options).not.toHaveProperty("beforeSend");
     expect(options).not.toHaveProperty("integrations");
 

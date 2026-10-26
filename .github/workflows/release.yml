@@ -230,6 +230,8 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
+        with:
+          native-steamworks: "true"
 
       - name: Cache Electron binary
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -287,6 +289,7 @@ jobs:
           path: |
             release-desktop/
             release-notes/${{ github.ref_name }}.md
+            reports/storage/package-full.json
           retention-days: 7
           compression-level: 0
           if-no-files-found: error
@@ -315,6 +318,8 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
+        with:
+          native-steamworks: "true"
 
       - name: Cache Electron binary
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -377,6 +382,7 @@ jobs:
           path: |
             release-desktop-demo/
             release-notes/${{ github.ref_name }}.md
+            reports/storage/package-demo.json
           retention-days: 7
           compression-level: 0
           if-no-files-found: error

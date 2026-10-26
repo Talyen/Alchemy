@@ -111,7 +111,13 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
       (draft) => {
         const snapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.LABYRINTH);
         applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
-        setLabyrinthMap(draft, generateLabyrinthMap(createDraftRunRandomSource(draft, "world")));
+        setLabyrinthMap(
+          draft,
+          generateLabyrinthMap(
+            createDraftRunRandomSource(draft, "world"),
+            snapshotTransactionValue(draft.run.activeRun.runDeck),
+          ),
+        );
         setStarterDraftChoices(draft, null);
         setRunProgressActivity(draft, "labyrinth-map");
       },

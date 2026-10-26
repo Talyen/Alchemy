@@ -103,6 +103,7 @@ const SaveDataObjectSchema = z
     steamAccountId: z.string().regex(/^\d+$/u).nullable().catch(null),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
     ...SettingsSaveFieldsSchema.shape,
+    hasSeenArmory: z.boolean().catch(false),
     discoveredCardIds: deduplicatedStringArraySchema(),
     encounteredEnemyIds: deduplicatedStringArraySchema(),
     discoveredTrinketIds: deduplicatedStringArraySchema(),

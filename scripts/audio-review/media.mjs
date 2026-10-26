@@ -1,4 +1,4 @@
-import { resolveAssetSource } from "../assets/asset-library.mjs";
+import { resolveAssetSource } from "../assets/asset-sources.mjs";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";

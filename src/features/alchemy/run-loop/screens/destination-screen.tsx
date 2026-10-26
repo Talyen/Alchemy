@@ -14,15 +14,20 @@ import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { ShineText } from "../../shared/ui/shine-text";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import type { RewardState } from "@/lib/active-run-session";
+import { DestinationRoomProgress } from "./destination-room-progress";
 
 export function DestinationScreen({
   rewardState,
   currentAct,
+  destinationIndexInAct,
+  completedDestinations,
   onChoose,
   onPrepare,
 }: {
   rewardState: RewardState;
   currentAct: number;
+  destinationIndexInAct: number;
+  completedDestinations: readonly Destination[];
   onChoose: (destination: Destination) => void;
   onPrepare?: () => void;
 }) {
@@ -56,6 +61,13 @@ export function DestinationScreen({
     <TitledScreenShell
       title={i18n.displayText(title)}
       maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}
+      aboveHeader={
+        <DestinationRoomProgress
+          currentAct={currentAct}
+          destinationIndexInAct={destinationIndexInAct}
+          completedDestinations={completedDestinations}
+        />
+      }
     >
       <div className="mt-6 flex flex-col justify-center gap-4">
         <DestinationChoices

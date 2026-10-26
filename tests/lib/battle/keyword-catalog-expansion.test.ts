@@ -75,7 +75,7 @@ describe("keyword catalog expansion", () => {
       enemyHealth: 0,
       enemyStatuses: { poison: 1 },
       gearEffects: { goldOnKillWithForge: 3, goldGrantsForgeAndHoly: 1 },
-      talentEffects: { goldOnPoisonedKill: 1 },
+      talentEffects: { goldOnPoisonedKill: 1, goldOnPoisonedKillChance: 100 },
     });
     expect(payKillPayouts(forgeFromPayout, true, []).gold).toBe(forgeFromPayout.gold + 1);
   });

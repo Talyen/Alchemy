@@ -1,13 +1,10 @@
-import { focusControl } from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { autoUpdate, computePosition, flip, offset, shift } from "@floating-ui/dom";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import { usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-source";
 import { layoutFloorNodes } from "./labyrinth-map-layout";
 import { LabyrinthNodeSeal } from "./labyrinth-node-seal";
-import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
 import { labyrinthFloorVisualStates } from "@/lib/content-systems/labyrinth/map-state";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 
@@ -15,32 +12,17 @@ interface Props {
   map: LabyrinthMap;
   heroArt: string;
   nodes: LabyrinthNode[];
-  selectedNodeId: string | null;
-  onEnter: () => void;
-  onDescend: () => void;
   onSelect: (id: string) => void;
-  onDeselect: () => void;
 }
 
-export function LabyrinthMapViewport({
-  map,
-  heroArt,
-  nodes,
-  selectedNodeId,
-  onEnter,
-  onDescend,
-  onSelect,
-  onDeselect,
-}: Props) {
+export function LabyrinthMapViewport({ map, heroArt, nodes, onSelect }: Props) {
   const i18n = useGameTranslation();
   const viewportRef = useRef<HTMLDivElement>(null);
-  const inspectorRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0, scale: 1 });
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const nodesById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const visuals = useMemo(() => labyrinthFloorVisualStates(map), [map]);
-  const selectedNode = selectedNodeId ? (nodesById.get(selectedNodeId) ?? null) : null;
   const emphasizedId = hoveredNodeId ?? focusedNodeId;
   const emphasizedNode = useMemo(() => {
     if (!emphasizedId) return null;
@@ -49,8 +31,8 @@ export function LabyrinthMapViewport({
     return candidate && visual && visual !== "undiscovered" ? candidate : null;
   }, [nodesById, emphasizedId, visuals]);
   const emphasizedPlasmaPair = useMemo(
-    () => (emphasizedNode && emphasizedNode.id !== selectedNodeId ? getLabyrinthNodePlasmaPair(emphasizedNode) : null),
-    [emphasizedNode, selectedNodeId],
+    () => (emphasizedNode ? getLabyrinthNodePlasmaPair(emphasizedNode) : null),
+    [emphasizedNode],
   );
   usePlasmaInteraction(emphasizedPlasmaPair, Boolean(emphasizedNode));
 
@@ -61,13 +43,8 @@ export function LabyrinthMapViewport({
       const style = getComputedStyle(element);
       const width = Number.parseFloat(style.width) || element.clientWidth;
       const height = Number.parseFloat(style.height) || element.clientHeight;
-      const scale = width > 0 ? element.getBoundingClientRect().width / width : 1;
-      const next = { width, height, scale: scale > 0 ? scale : 1 };
-      setSize((previous) =>
-        previous.width === next.width && previous.height === next.height && previous.scale === next.scale
-          ? previous
-          : next,
-      );
+      const next = { width, height };
+      setSize((previous) => (previous.width === next.width && previous.height === next.height ? previous : next));
     };
     const observer = new ResizeObserver(update);
     observer.observe(element);
@@ -97,58 +74,6 @@ export function LabyrinthMapViewport({
     };
   }, []);
 
-  useLayoutEffect(() => {
-    const viewport = viewportRef.current;
-    const inspector = inspectorRef.current;
-    const trigger = viewport?.querySelector<HTMLElement>('[data-labyrinth-node] button[aria-pressed="true"]');
-    if (!viewport || !inspector || !trigger || !selectedNodeId) return;
-    let cancelled = false;
-    let needsFocus = true;
-    inspector.style.visibility = "hidden";
-    const update = () => {
-      void computePosition(trigger, inspector, {
-        placement: "right",
-        middleware: [
-          offset(10 / size.scale),
-          flip({ boundary: viewport, padding: 8, fallbackPlacements: ["left", "top", "bottom"] }),
-          shift({ boundary: viewport, padding: 8, crossAxis: true }),
-        ],
-      }).then(
-        ({ x, y }) => {
-          if (cancelled) return;
-          inspector.style.left = `${x}px`;
-          inspector.style.top = `${y}px`;
-          inspector.style.visibility = "visible";
-          if (needsFocus) {
-            needsFocus = false;
-            focusControl(inspector);
-          }
-        },
-        () => {
-          // Positioning can reject when the inspector unmounts mid-flight; the next autoUpdate pass repositions.
-        },
-      );
-    };
-    const cleanup = autoUpdate(trigger, inspector, update);
-    return () => {
-      cancelled = true;
-      cleanup();
-    };
-  }, [selectedNodeId, size]);
-
-  useEffect(() => {
-    if (!selectedNodeId) return;
-    const dismiss = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (inspectorRef.current?.contains(target)) return;
-      if (target.closest('[data-labyrinth-node]:not([data-state="undiscovered"])')) return;
-      onDeselect();
-    };
-    document.addEventListener("pointerdown", dismiss, true);
-    return () => document.removeEventListener("pointerdown", dismiss, true);
-  }, [selectedNodeId, onDeselect]);
-
   return (
     <section
       aria-label={i18n.text("ui.labyrinth-map-viewport.1", "Labyrinth map")}
@@ -171,8 +96,7 @@ export function LabyrinthMapViewport({
                     visual={visuals.get(node.id) ?? "undiscovered"}
                     current={node.id === map.currentNodeId}
                     heroArt={heroArt}
-                    selected={selectedNodeId === node.id}
-                    emphasized={selectedNodeId === node.id || hoveredNodeId === node.id || focusedNodeId === node.id}
+                    emphasized={hoveredNodeId === node.id || focusedNodeId === node.id}
                     x={point.x}
                     y={point.y}
                     width={layout.metrics.width}
@@ -186,26 +110,6 @@ export function LabyrinthMapViewport({
             </>
           ) : null}
         </div>
-        {selectedNode ? (
-          <div
-            ref={inspectorRef}
-            tabIndex={-1}
-            className="absolute z-40 flex flex-col outline-none"
-            style={{
-              width: `clamp(${320 / size.scale}px,calc(26*var(--content-rem,1rem)),${420 / size.scale}px)`,
-              maxWidth: Math.max(0, size.width - 16 / size.scale),
-              maxHeight: Math.max(0, size.height - 16 / size.scale),
-            }}
-          >
-            <LabyrinthNodeInspector
-              key={selectedNode.id}
-              node={selectedNode}
-              map={map}
-              onEnter={onEnter}
-              onDescend={onDescend}
-            />
-          </div>
-        ) : null}
       </div>
     </section>
   );

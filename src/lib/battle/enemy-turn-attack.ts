@@ -25,6 +25,7 @@ import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import { addEnemyStatus, setPlayerStatus } from "./status-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { writeCombatFlag as setFlag } from "./action-context";
+import { hasEnemyTrait } from "./encounter-trait-state";
 
 function applyEnemyEffect(
   state: BattleState,
@@ -112,6 +113,7 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
+  if (damaging) nextState = setFlag(nextState, "enemyAttackDamageReduction", 0);
   nextState = resolveBattleSequence(
     nextState,
     card.effects,
@@ -121,6 +123,12 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
     "either-defeated",
   );
   if (!damaging || getBattleOutcome(nextState) !== null) return nextState;
+  if (context.attackReduction > 0 && !hasEnemyTrait(nextState, "cowardly"))
+    nextState = setFlag(
+      nextState,
+      "enemyAttackDamageReduction",
+      Math.max(nextState.flags.enemyAttackDamageReduction, context.attackReduction),
+    );
   return resolvePendingBattleReactions(applyAbilityFollowups(nextState, context, combatTexts), combatTexts);
 }
 

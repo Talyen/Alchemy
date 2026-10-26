@@ -13,6 +13,7 @@ import {
   VolumeX,
   StepForward,
   Brain,
+  Shield,
   RotateCcw,
   Trash2,
   KeyRound,
@@ -170,20 +171,34 @@ export function GameplayOptionsPanel({ preferences }: { preferences: OptionsPref
   const i18n = useGameTranslation();
   const { values, actions } = preferences;
   return (
-    <SettingsSection title={i18n.text("ui.options-panels.15", "Battle")}>
-      <SettingsToggle
-        icon={StepForward}
-        label={i18n.text("ui.options-panels.16", "Auto-End Turn")}
-        checked={values.autoEndTurn}
-        onChange={actions.setAutoEndTurn}
-      />
-      <SettingsToggle
-        icon={Brain}
-        label={i18n.text("ui.options-panels.17", "Remember Auto-Battle Preference")}
-        checked={values.rememberAutoplayPreference}
-        onChange={actions.setRememberAutoplayPreference}
-      />
-    </SettingsSection>
+    <div className="space-y-6">
+      <SettingsSection title={i18n.text("ui.options-panels.15", "Battle")}>
+        <SettingsToggle
+          icon={StepForward}
+          label={i18n.text("ui.options-panels.16", "Auto-End Turn")}
+          checked={values.autoEndTurn}
+          onChange={actions.setAutoEndTurn}
+        />
+        <SettingsToggle
+          icon={Brain}
+          label={i18n.text("ui.options-panels.17", "Remember Auto-Battle Preference")}
+          checked={values.rememberAutoplayPreference}
+          onChange={actions.setRememberAutoplayPreference}
+        />
+      </SettingsSection>
+      <SettingsSection title={i18n.text("ui.options-panels.equipment", "Equipment")}>
+        <SettingsToggle
+          icon={Shield}
+          label={i18n.text("ui.options-panels.auto-equip", "Auto Equip")}
+          description={i18n.text(
+            "ui.options-panels.auto-equip-description",
+            "Equip new Gear and Trinkets in empty slots.",
+          )}
+          checked={values.autoEquip}
+          onChange={actions.setAutoEquip}
+        />
+      </SettingsSection>
+    </div>
   );
 }
 

@@ -2,7 +2,7 @@
 
 FPS / hitch profiling for Alchemy. Seeded reachable battles provide discovery by default; fixed realistic journeys remain for same-machine comparisons. Nightly discovery spans all three modes. Performance targets are advisory and are not push gates.
 
-For harness failures, the [failure-first triage guide](./REFERENCE.md#failure-first-triage) helps locate evidence; open a known relevant trace or per-run artifact directly when useful.
+For harness failures, the [failure-first triage guide](../scripts/VERIFICATION.md#failure-first-triage) helps locate evidence; open a known relevant trace or per-run artifact directly when useful.
 
 Use this when you are actively optimizing frame pacing and need repeatable numbers plus optional deep Chrome traces.
 
@@ -10,34 +10,63 @@ Reports capture the actual renderer viewport, including native Electron window d
 
 **Goal:** smooth locked **60 FPS** on a 60 Hz panel. Advisory bands and hitch/stall cutoffs are written for that; this harness does not measure sustained 120–144 FPS headroom (rAF is vsync-capped to the display).
 
+## Workflow
+
+```text
+Measure → identify failing scenario/phase → perf:trace that scenario → optimize → perf:compare before/after
+```
+
+Compare identical workloads and environments, inspect the targeted cost, and
+preserve visual/audio behavior. [Comparison validity](#comparison-validity) defines
+which reports can establish an improvement.
+
+## Storage and RAM efficiency
+
+Use `npm run storage:report -- --json reports/storage/baseline.json` for logical
+file-byte baselines without building. Renderer media budgets live beside the
+JavaScript budget in `scripts/lib/verification/bundle-budget.mjs` and run through
+`check:bundle`; public Music/sounds count alongside emitted artwork/video. Source
+maps are reported separately from shipping bytes. Packaging retains per-output
+logical sizes in `reports/storage/package-<edition>.json`; installer and unpacked
+bytes are separate output entries, not a combined installed-size claim.
+
+Preserve upfront image readiness and the warm cache. Release only abandoned
+pending work or demonstrated redundant/expired ownership. Do not add cache
+pressure, deferred first-use decoding, lower resolutions, new loaders, reduced
+animation cadence or audio changes to reach a memory target. A background job is
+not proof of hitch-free execution. Measure cold first-use paths as well as warm
+replays, including the Electron GPU/utility working sets below. Any observable
+presentation, sound, loading or timing change requires explicit user approval
+before integration. There is no arbitrary total-RAM threshold.
+
+Compression candidates start from retained masters, preserve dimensions, alpha,
+frame/sample timing and loudness, and use existing compatible formats first.
+Compare decoded pixels/samples for exact-preserving changes; lossy candidates
+also need motion/listening review and native decode/frame-pacing evidence.
+Quality scores alone cannot approve a perceptible change. Avoid routine lossy
+recompression of compressed music sources. Record rejected candidates and their
+sizes rather than shipping a speculative size reduction.
+
 ## Quick start
 
 ```bash
-npm run perf
+npm run perf -- --electron --seed 9
 npm run perf -- --all
-npm run perf -- --suite synthetic --all
-npm run perf -- --suite seeded --electron
-npm run perf -- --suite seeded --seed 9 --electron
 npm run perf -- --replay reports/performance/<run>/replay/seeded-discovery.json --electron
 npm run perf:trace -- --scenario battle-effects
-npm run perf -- --electron --scenario campaign-developed
-npm run perf -- --electron --scenario campfire-brewing
-npm run perf -- --electron --scenario transmutation-journey
-npm run perf -- --electron --scenario crafting-journey
-npm run perf -- --electron --cold --scenario startup-first-use
 npm run perf:compare -- reports/performance/<before> reports/performance/<after>
 npm run perf -- --help
 ```
 
-`reports/current-run.md` and `reports/current-run.json` point to the latest
-report-producing command. Use it to locate an unknown run; it is ephemeral — overwritten on the next
-run — and is not a historical index. `reports/` is otherwise opt-in evidence, not committed history.
+Read the summary first, then follow its evidence for a specific hypothesis.
+`reports/current-run.md` / `.json` locate the latest report-producing command;
+they are overwritten pointers, not history. Reports are ignored, opt-in evidence.
+Load deep-trace JSON through Chrome DevTools → Performance → Load profile.
 
-Start with the summary when the cause is unclear. Open a relevant result,
-per-run file, or trace directly for a specific hypothesis. Choose evidence
-that answers the question; ordinary FPS questions usually need only the summary.
+[Measurement setup](#measurement-setup) covers builds, warm-up and repetition;
+[scenarios and replay](#scenarios-and-replay) covers workload selection.
 
-Open a deep trace in Chrome: DevTools → Performance → Load profile → select the `.json` file.
+## Measurement setup
 
 Ordinary runs rebuild the renderer so a clean Git checkout cannot silently reuse an older build.
 Reuse an existing renderer with `--skip-build` only when intentionally profiling that build, such as when iterating on the harness itself. Keep `ALCHEMY_EDITION` consistent: the [edition contract](./STEAM_DEMO.md#edition-contract) selects `dist/` for full and `dist-demo/` for demo.
@@ -51,27 +80,79 @@ use a bounded set of additional runs for the affected scenario under the same
 conditions. Report the repetitions and observed variation; do not select only the
 best sample or repeat the full scenario suite unnecessarily.
 
-Short smoke / harness iteration (not for baselines):
+Use `PERF_MEASURE_MS` / `PERF_MIN_FRAMES` overrides only for harness iteration,
+not baselines. For a short smoke run:
 
 ```bash
 PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-turn --skip-build
 ```
 
-The default is one seeded reachable battle with a fresh recorded seed. Use `--scenario campaign-early` for the fixed Campaign opening battle. `--all` runs the fixed realistic suite; `--suite synthetic --all` runs the earlier isolated stress loops. `--suite seeded` generates one reachable case from the balance playthrough engine with a fresh random uint32 seed. The seed is printed before generation and retained in the case and replay bundle; pass `--seed <uint32>` to reproduce it. Every generated case includes a current-format save checkpoint, encounter provenance, and an inventory of available cards and declared card effect kinds. The checkpoint and replay preserve the complete randomized account. Fixed journeys use their existing fixtures. The developed Campaign and account journeys use a second career, after earning talents and other progression.
+## Scenarios and replay
 
-Discovery starts from the labeled `performance-random-account-v1` fixture: the seeded hero receives a random legal gear loadout across Basic, Astral, and Unique definitions, production affix rolls, one random permanent Trinket, and randomized talent trees and purchase depths. Talent choices obey row prerequisites and point budgets, with a mix of hero affinities and other keywords. Gear placement uses the normal equipment rules, including two-handed and Quiver restrictions. Heroes vary by seed; nightly rotation covers all eight in every mode over eight workflow runs.
+| Selection                   | Workload                                                                                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Default / `--suite seeded`  | One reachable battle generated through the playthrough engine; fresh uint32 seed printed before generation and retained in case/replay artifacts. Use `--seed <uint32>` to reproduce |
+| `--scenario campaign-early` | Fixed Campaign opening battle                                                                                                                                                        |
+| `--all`                     | Fixed realistic journeys, using their recorded fixtures                                                                                                                              |
+| `--suite synthetic --all`   | Isolated stress loops, including the older battle, account, map and shop loops                                                                                                       |
+| `startup-first-use`         | Cold-start observations, separate from frame targets                                                                                                                                 |
+| `battle-art-diag`           | Opt-in artwork diagnosis                                                                                                                                                             |
 
-The trinket journey starts from the labeled `trinket-v1` account fixture, which grants equipped Companion's Collar and owned Oathkeeper alongside the economy fixture's resources. Its battle checkpoint is reached through normal play; these starting items are fixture grants, not earned loot. The coverage inventory records the starting fixture name.
+The [scenario catalog](../performance/catalog.json) and `npm run perf -- --help`
+own IDs, defaults and sample requirements. Seeded sweeps discover cases; replay
+an interesting case for controlled comparison.
 
-The realistic journeys run normal animations and production cards with authored costs and effects. Generated checkpoints disable the Auto End Turn preference because the harness explicitly records manual end-turn actions; `coverage.controls` retains this choice. Automatic turns would race card selection and mislabel enemy work. Dedicated automatic-turn timing remains unmeasured. Each measured run records actions, named segments, and a replay bundle under `replay/`. `--replay <bundle>` loads the same checkpoint and requires the same action sequence; divergence invalidates the run. The setup wall time is reported separately. Screen transitions, draft, combat, reward claims, shop purchases, account navigation, and resume have their own frame segments. Segment rows require completed actions and frames, so a skipped or stalled journey fails rather than reporting an easy FPS value.
+### Checkpoints and fixture grants
 
-Discovery samples reachable battle starts across both careers, balancing boss and ordinary encounter groups when both were reached. It does not fabricate battle decks, enemy stats, or combat effect manifests. The starting account gear, Trinket, and talents are fixture grants, not earned progression; `coverage.fixtureGrants` records their exact identities, affix rolls, placement, and talent allocation. Normal play reaches the battle checkpoint, and production battle setup computes the granted loadout effects. New discovery cases try up to six turns and eight legal card plays per turn, selecting reproducibly among cards and Wish choices and preferring choices not yet played in that measurement. Fixed journeys keep their existing control policy and turn limits. Older replay bundles retain their original three-turn limit.
+Generated cases retain a current-format save, encounter provenance, available-card
+and effect-kind inventory, and the complete randomized account. Discovery starts
+from `performance-random-account-v1`: legal Basic/Astral/Unique equipment with
+production affix rolls, one permanent Trinket, and talent allocations respecting
+row prerequisites and point budgets, mixing hero affinities and other keywords.
+Normal placement rules include two-handed/Quiver restrictions. Grants are labeled
+in `coverage.fixtureGrants` with identities, rolls, placement and talents; they
+are not earned progression. Normal play reaches the battle, and production setup
+computes its effects without fabricated decks, enemy stats or manifests.
 
-The summary separates **checkpoint inventory** from **measured actions** (played card labels, Wish choice labels, card plays, and end-turn actions). A card click counts only after its hand identity leaves the hand. Inventory is not evidence that a mechanic triggered: conditional effects, gear procs, status combinations, and enemy abilities still need direct evidence before claiming coverage. A random burst may legally win before an enemy turn; discovery omits the enemy-turn segment only when the phase was never entered and no action was recorded. Entered phases must meet their action and frame requirements, so a stalled enemy turn cannot disappear from the report. Fixed battle journeys always require the enemy-turn segment.
+Discovery samples starts across both careers, balancing boss/ordinary groups
+when both were reached. Fixed developed Campaign/account journeys use a second
+career after earned progression. The fixed `trinket-v1` journey starts with
+Companion's Collar equipped, Oathkeeper owned and economy resources; its reached
+battle and starting fixture remain labeled separately from earned loot.
 
-Case IDs, defaults, and diagnostics are maintained by the CLI and `performance/catalog.json`; use `npm run perf -- --help` for the current list. Fixed case comparisons require the same checkpoint hash, action path, segment names and action counts, in addition to the environment checks below. Seeded sweeps are exploratory; replay an interesting case for a controlled before/after comparison.
+### Actions and replay validity
 
-Battle stage User Timing marks (`alchemy:battle:*`) accumulate within the current battle session for animation diagnostics. The battle session owner clears these marks when preparing or resetting a session, after cancelling old transfers; stale draw and discard completions must not add terminal marks. Startup and performance sampler marks have separate lifetimes.
+Realistic journeys use normal animation and authored cards/costs. Generated cases
+disable Auto End Turn because manual actions are recorded; `coverage.controls`
+retains this choice. Dedicated automatic-turn pacing remains unmeasured.
+Discovery reproducibly chooses legal cards/Wishes, preferring previously unplayed
+choices, for up to six turns/eight plays per turn. Fixed policies retain their
+limits; older replay bundles retain three turns.
+
+Measured actions, named frame segments and replay bundles are recorded separately
+from setup wall time. Replay requires the same checkpoint and action sequence;
+divergence fails. Segments cover transitions, draft, combat, rewards, purchases,
+account navigation and resume. Each requires completed actions and frames.
+A card click counts only after its hand identity leaves the hand.
+
+The summary separates checkpoint inventory from measured card/Wish labels and
+play/end-turn counts. Inventory never proves a mechanic triggered; conditional effects, procs,
+status combinations and abilities need direct evidence. Discovery may omit enemy-turn
+measurement only after a win before entering that phase with no recorded enemy action.
+Entered phases cannot disappear when stalled; fixed battles always require that segment.
+Fixed comparisons additionally match checkpoint hash, action path, segment names and
+counts under [comparison validity](#comparison-validity).
+
+### Nightly and diagnostics
+
+[Nightly](../.github/workflows/nightly.yml) owns mode/hero rotation and profiling
+budgets. Reports retain seeds and replays; incomplete generated cases fail without
+easier fallbacks. The [scenario catalog](../performance/catalog.json) owns fixed
+transaction journeys; the [memory soak](#gameplay-memory-soak) has a separate budget.
+
+Battle `alchemy:battle:*` User Timing marks last for one session. Preparation/reset
+cancels old transfers before clearing them; stale draw/discard callbacks cannot
+append terminal marks. Startup and sampler marks have separate lifetimes.
 
 ## Metrics
 
@@ -151,8 +232,6 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 | ≥100 ms stalls    |         0 |
 | ≥50 ms long tasks | ≤1 / 30 s |
 
-The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, Campfire brewing, transmutation, Armory crafting and salvage, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery derives three seeds from the workflow run number: one per game mode, with each mode rotating through all eight heroes over eight workflow runs. Higher seed bits vary difficulty, reward policy, and the playthrough world. Each job retains its seed and replay artifacts; generated cases that cannot complete fail visibly rather than falling back to an easy fixture. `--seed` accepts any unsigned 32-bit seed locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `battle-art-diag` remains opt-in. Nightly also profiles one of the three fixed transaction journeys in each mode slot, covering Campfire brewing, transmutation, and crafting/salvage on every workflow run. Nightly runs one five-minute `memory-soak` in the existing discovery job, with at least 20 completed gameplay cycles; the manual soak defaults to thirty minutes.
-
 ### Extreme player workloads and RAM
 
 `npm run perf -- --suite extreme --all --electron` profiles constructed stress
@@ -203,46 +282,41 @@ and target-device RAM budgets still need separate acceptance.
 
 ### Coverage gaps
 
-The registry describes measured journeys, not all game features. Preparing a save through the playthrough engine happens outside renderer measurement and does not cover the screens visited during generation.
+The [catalog](../performance/catalog.json) describes available workloads; each
+report records what actually completed. Checkpoint generation happens outside
+renderer measurement. Inventory, an available scenario or a reached screen does
+not prove an effect triggered or an interaction was measured.
 
-| Area                | Current measured coverage                                                                                                                          | Missing performance workload                                                                                                                                                         |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Combat              | Fixed battles plus seeded reachable encounters, card and Wish choices, enemy turns                                                                 | Guaranteed coverage of every effect, status interaction, companion, trinket, Unique proc, and boss mechanic; actual triggered-mechanic telemetry and dedicated automatic-turn pacing |
-| Run destinations    | Reward claim, destination selection, card purchase, transmutation, Labyrinth inspection, Wildwood draft                                            | Alchemist Shop purchase/mixing/distilling, Mystery choices/deck pickers, Corruption, trinket/gear shop interactions, and Wildwood removal workloads                                  |
-| Campfire            | Reachable brewing selection, saved result and departure; conditional Rest in the memory soak                                                       | Dedicated rest/healing and guaranteed mixed-Potion selection workloads                                                                                                               |
-| Account progression | Armory equipment/inspection, 200-item filtering/paging, currency targeting, crafting and salvage; Homestead and Talent navigation, Collection tabs | Every currency transformation, Homestead purchases and bonds, Talent purchases, and large complete Collection inspection workloads                                                   |
-| Run lifecycle       | Startup and checkpoint resume; incidental end states in the soak                                                                                   | Measured mode/hero/difficulty selection, victory/defeat rewards, hero unlock, and demo completion journeys                                                                           |
-| Runtime             | Frame gaps, main-thread blocking, input timing, resource snapshots and gameplay soak                                                               | Performance-specific renderer error assertions, hardware GPU present timing, physical audio quality, suspend/resume, Proton, and Steam Deck acceptance                               |
+Important limits remain:
 
-The `campfire-brewing` and `transmutation-journey` cases capture reachable visits before selection. Their required segments measure selection, the saved result, and departure. `crafting-journey` captures an earned legal currency application between careers from the labeled `economy-v1` starting account. It records the exact currency and item identity, targets that item through normal Armory controls, requires currency consumption and a visible result, then salvages the item through its confirmation. These are short transactional journeys, not sustained stress loops; each runs once after warm-up. Replay bundles preserve the checkpoint and completed action path.
+- Combat discovery does not guarantee every mechanic or automatic-turn pacing.
+- Transaction journeys and the soak cover selected services, purchases and end
+  states; they do not establish every destination, account action or demo ending.
+- Frame, input and memory probes do not qualify physical audio, GPU presentation,
+  OS suspend, minimum-spec hardware, Proton or Deck behavior.
 
-Prioritize Alchemist Shop services, progression purchases, and complete Collection inspection next. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
+When extending coverage, require reachable checkpoints and completed-action/frame
+segments. Fixed replays preserve checkpoint and action identity for comparison;
+discovery finds candidates. Durations and minimum samples belong to the catalog
+and `npm run perf -- --help`.
 
-Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
-durations and minimum samples rather than maintaining a second defaults table.
+Reports retain per-run samples, aggregates, environment/display metadata and,
+when requested, traces. Follow summary links to the exact evidence rather than
+inferring coverage from a fixture or a report filename.
 
-Override per-scenario defaults with `PERF_MEASURE_MS` / `PERF_MIN_FRAMES` for harness iteration only (not for baselines). Keep the default one measured run plus one unmeasured warm-up; use `--electron --cold` to measure first use. Each run writes `runs/<scenario>-<run>.json`, `runs/<scenario>-<run>-sample.json`, `aggregates/<scenario>.json`, plus `traces/` in trace mode, `display-env.json`, and `environment.json`.
+Judge an optimization by repeatable improvement in the targeted cost relative to
+run-to-run variation, then check affected neighboring scenarios. Preserve visuals,
+particle counts, animation timing and sound. Rendering changes need matched pixel
+comparison or existing parity checks for the affected calculation; better FPS
+and passing builds alone leave presentation parity unverified.
 
-Judge an optimization by a repeatable improvement in the targeted latency or hitch, compared with observed run-to-run variation. Check relevant neighboring scenarios for regressions; a fixed percentage alone cannot distinguish an improvement from noise.
-
-Preserve player-facing visual fidelity, particle counts, animation timing, and
-sound behavior when optimizing. For rendering changes, compare actual pixels
-under identical inputs; deterministic geometry or draw-output comparisons can
-also protect the affected calculation. Reuse existing parity checks where they
-cover the change. A passing build or better FPS does not establish presentation
-parity; report it as unverified when the necessary comparison is unavailable.
-
-## Workflow
-
-```text
-Measure → identify failing scenario/phase → perf:trace that scenario → optimize → perf:compare before/after
-```
+## Comparison validity
 
 `perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Both reports must contain usable environment metadata and valid, complete metrics. Material environment differences (runtime, trace mode, cold mode, platform, CPU architecture, viewport, DPR, refresh rate, browser, target profile, runs per scenario) are rejected with clear compatibility errors. Optional display and browser metadata must be present on both sides when present on either. Duplicate scenario names and invalid measured runs or journey segments reject comparison.
 
 Pooling preserves each run's minimum frame requirement and starts a new phase timeline for each run. An empty or short run cannot be hidden by a larger neighboring run. Invalid samples retain diagnostic numbers but receive red target bands; they never qualify as optimization evidence.
 
-### Finding the work behind a slow frame
+## Finding the work behind a slow frame
 
 Every measured run retains a `runs/<scenario>-<run>-sample.json` containing the full
 frame timeline, phase marks, long tasks, and input events. The summary links to it;
@@ -291,8 +365,9 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 | `scripts/run-performance.mjs`                           | CLI entry (`npm run perf`, `npm run perf:compare`) |
 | `tests/performance/`                                    | Metrics, compare, and report unit tests (Node)     |
 
-Run metric and comparison unit tests with `npm run test:full -- tests/performance`.
-They also run in the full unit suite; `npm test` contains only fixed local smoke suites.
+Metric and comparison coverage lives in `tests/performance/` and runs in the
+full unit suite. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
+owns check selection and local execution permissions.
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).
 
@@ -300,7 +375,7 @@ Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change cod
 
 Bundle ceilings live with the bundle-budget owner (`scripts/lib/verification/bundle-budget.mjs`, `npm run check:bundle`), not this FPS harness. See that owner for ceilings, chunk policy, and history.
 
-### Gameplay memory soak
+## Gameplay memory soak
 
 `npm run perf -- --scenario memory-soak --electron --skip-build` uses the existing
 developed `meta-journey` checkpoint, with its fixture provenance retained in the

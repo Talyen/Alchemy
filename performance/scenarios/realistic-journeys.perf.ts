@@ -11,6 +11,7 @@ import { MenuPage } from "../../tests/pages/menu-page";
 import { RewardPage } from "../../tests/pages/reward-page";
 import { ShopPage } from "../../tests/pages/shop-page";
 import { injectExactSave } from "../../tests/e2e/save-injection";
+import { resumeInjectedRun } from "../../tests/e2e/navigation";
 import { waitForBattleReady } from "../battle-setup";
 import { createCombatChoices } from "../combat-choices";
 import { waitForCombatDecision } from "../combat-decision";
@@ -40,6 +41,7 @@ async function loadSave(page: Page, journeyCase: JourneyCase): Promise<void> {
   await expect(page.getByRole("progressbar", { name: "Loading Alchemy", exact: true })).toHaveCount(0, {
     timeout: 30_000,
   });
+  if (journeyCase.initialSave.activeRun) await resumeInjectedRun(page);
 }
 
 async function record(name: string, action: () => Promise<unknown>, recordAction: RecordAction): Promise<void> {

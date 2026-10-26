@@ -76,13 +76,16 @@ describe("gameplay scaling regressions", () => {
   });
 
   it.each(["burning-blade", "shield-bash"])("enemy %s respects the difficulty damage multiplier", (id) => {
-    const state = patchBattleState({
-      playerHealth: 100,
-      playerMaxHealth: 100,
-      roomScalingMultiplier: 1.07,
-      enemyMitigation: { forge: 9, block: 18 },
-      rng: () => 0.99,
-    });
+    const state = patchBattleState(
+      {
+        playerHealth: 100,
+        playerMaxHealth: 100,
+        roomScalingMultiplier: 1.07,
+        enemyMitigation: { forge: 9, block: 18 },
+        rng: () => 0.99,
+      },
+      { liveEnemyPressure: true },
+    );
     const normal = applyEnemyAbility(state, cardById[id]!, []);
     const harder = applyEnemyAbility(
       {
@@ -94,6 +97,9 @@ describe("gameplay scaling regressions", () => {
     );
     // Shield Bash's separate Forge bonus retains its existing treatment.
     const forgeBonus = id === "shield-bash" ? state.enemyMitigation.forge : 0;
-    expect(100 - harder.playerHealth - forgeBonus).toBe(2 * (100 - normal.playerHealth - forgeBonus));
+    // Each difficulty arm rounds its scaled packet independently.
+    expect(
+      Math.abs(100 - harder.playerHealth - forgeBonus - 2 * (100 - normal.playerHealth - forgeBonus)),
+    ).toBeLessThanOrEqual(1);
   });
 });

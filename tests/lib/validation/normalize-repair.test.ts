@@ -1,11 +1,15 @@
 import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, it, expect } from "vitest";
 import { makeWildwoodDraft, parseActiveRunData, tombstonedCard, tombstonedCard2 } from "../../fixtures/active-run";
-import { createRunRngState, createSeededRng, stepRunRng } from "@/lib/rng";
+import { createRunRngState, createRunStateRng, createSeededRng, stepRunRng } from "@/lib/rng";
 import { TOMBSTONED_CARD_IDS, isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { cardById } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
+import { createStarterDraftChoices } from "@/lib/starter-draft";
+import { getImmediateDamage, getImmediateDefense } from "@/lib/battle";
+import { createCampfirePotionOffers } from "@/lib/alchemist/brewing";
+import { doublePotionPotency } from "@/lib/alchemist";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { findMysteryEvent } from "@/lib/mystery";
@@ -41,6 +45,67 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
     choice.effects.length = 0;
     expect(catalog).toEqual(authored);
   });
+
+  it("repairs Wildcard offers with the same guaranteed starter choices and RNG recipe", () => {
+    const rng = makeRng();
+    const expectedRng = structuredClone(rng);
+    const expected = createStarterDraftChoices([], createRunStateRng(expectedRng, "rewards"));
+    const result = parseActiveRunData({
+      characterId: "wildcard",
+      activity: savedActivityFixture("draft-deck"),
+      runDeck: [],
+      rng,
+      starterDraftChoices: [tombstonedCard],
+    });
+    expect(result.starterDraftChoices?.map((card) => card.id)).toEqual(expected.map((card) => card.id));
+    expect(result.rng).toEqual(expectedRng);
+    expect(result.starterDraftChoices?.some((card) => !card.consume && getImmediateDamage(card) > 0)).toBe(true);
+    expect(result.starterDraftChoices?.some((card) => !card.consume && getImmediateDefense(card) > 0)).toBe(true);
+  });
+
+  it.each(["campaign", "labyrinth"] as const)(
+    "repairs an unused %s Alchemist Brew shelf once without changing the other services",
+    (mode) => {
+      const rng = makeRng();
+      const expectedRng = structuredClone(rng);
+      const offers = createCampfirePotionOffers(createRunStateRng(expectedRng, "shops"));
+      const expected = mode === "labyrinth" ? offers.map(doublePotionPotency) : offers;
+      const input = {
+        rng,
+        contentSystemType: mode,
+        ...(mode === "labyrinth"
+          ? {
+              labyrinthMap: generateLabyrinthMap(createSeededRng(1)),
+              activeLabyrinthRewardModifiers: ["strong-spirits"],
+            }
+          : {}),
+        activity: savedActivityFixture("alchemist", {
+          potions: [cardById["mana-potion"]!],
+          brewOffers: [tombstonedCard],
+          brewUsed: false,
+          mixUsed: true,
+          distillUsed: true,
+          refreshesLeft: 2,
+          freeRefreshUsed: true,
+          firstPurchaseUsed: true,
+          purchasedSlotKeys: [],
+        }),
+      };
+      const result = parseActiveRunData(input);
+      const shelf = savedActivityData(result, "alchemist")!;
+      expect(shelf.brewOffers).toEqual(expected);
+      expect(shelf).toMatchObject({ brewUsed: false, mixUsed: true, distillUsed: true, refreshesLeft: 2 });
+      expect(result.rng).toEqual(expectedRng);
+      const resumed = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(result)));
+      expect(resumed).toEqual(result);
+      const used = parseActiveRunData({
+        ...input,
+        activity: savedActivityFixture("alchemist", { ...shelf, brewOffers: [tombstonedCard], brewUsed: true }),
+      });
+      expect(savedActivityData(used, "alchemist")!.brewOffers).toEqual([]);
+      expect(used.rng).toEqual(rng);
+    },
+  );
 
   it("re-offers starter draft choices for labyrinth", () => {
     const rng = makeRng();

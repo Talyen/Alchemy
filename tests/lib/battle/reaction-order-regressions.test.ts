@@ -30,7 +30,9 @@ describe("card and turn reaction ordering", () => {
     const texts: Parameters<typeof advanceToPlayerTurn>[1] = [];
     const result = advanceToPlayerTurn(initial, texts);
     expect(result.flags.nextHitCrit).toBe(true);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 1 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "poison", amount: 1 }),
+    );
     expect(result.enemyHealth).toBe(0);
     expect(result.playerHealth).toBe(13);
     expect(initial.playerStatuses.poison).toBe(2);
@@ -183,12 +185,14 @@ it.each(["phoenix", "fox"] as const)(
     expect(description[0]).toContain(`Deals ${expected} `);
     const texts: Parameters<typeof processCompanionTurnStart>[1] = [];
     processCompanionTurnStart(state, texts);
-    expect(texts).toContainEqual({
-      target: "enemy",
-      kind: "damage",
-      stat: id === "phoenix" ? "burn" : id === "fox" ? "stun" : "physical",
-      amount: expected,
-    });
+    expect(texts).toContainEqual(
+      expect.objectContaining({
+        target: "enemy",
+        kind: "damage",
+        stat: id === "phoenix" ? "burn" : id === "fox" ? "stun" : "physical",
+        amount: expected,
+      }),
+    );
     const summon = makeTestCard({
       effects: [{ kind: "summon-companion", companionId: id }],
       descriptionLines: ["old", "Companion"],

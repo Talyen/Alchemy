@@ -20,8 +20,32 @@ import {
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/verification/test-commands.mjs";
 import { formatRouteHintLine, routeHintForPath } from "../../scripts/lib/agent/route-hints.mjs";
 import { formatPlan, filterPlanCommands, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
+import { batchUnitCommands } from "../../scripts/lib/verification/unit-batch.mjs";
 
 describe("verification selection", () => {
+  it("combines related, owner and changed coverage without losing unknown dependencies or non-unit gates", () => {
+    const plan = batchUnitCommands(
+      resolveRoutePlan([
+        "src/lib/performance/marks.ts",
+        "src/lib/unknown-owner.ts",
+        "tests/components/error-boundary.test.tsx",
+        "tests/performance/discovery-case.test.ts",
+        "CONTRIBUTING.md",
+      ]),
+    );
+    expect(plan.commands.map((command) => command.key).sort()).toEqual(["docs-check", "unit-batch"]);
+    const batch = plan.commands.find((command) => command.key === "unit-batch")!;
+    expect(JSON.parse(batch.args.at(-1)!)).toEqual({
+      related: ["src/lib/performance/marks.ts", "src/lib/unknown-owner.ts"],
+      selectors: ["tests/performance", "tests/lib/performance", "tests/components/error-boundary.test.tsx"],
+      maxWorkers: 1,
+    });
+    const full = filterPlanCommands(resolveRoutePlan(["scripts/check.mjs"]), new Set(["all-units"]));
+    expect(batchUnitCommands(full)).toEqual(full);
+    expect(resolveRoutePlan(["performance/battle-setup.ts"]).commands.map((command) => command.key)).toEqual([
+      "unit-performance",
+    ]);
+  });
   it("normalizes absolute and relative files and expands directories before selecting coverage", () => {
     const file = "src/features/alchemy/shared/storage/io.ts";
     expect(resolveRoutePlan([path.resolve(file), "./" + file])).toEqual(resolveRoutePlan([file]));
@@ -46,7 +70,7 @@ describe("verification selection", () => {
       "scripts/run-compact.mjs",
       "vitest",
       "related",
-      "--maxWorkers=4",
+      "--maxWorkers=1",
       "src/lib/battle/damage-calc.ts",
       "--run",
       "--passWithNoTests",
@@ -60,7 +84,7 @@ describe("verification selection", () => {
     ];
     const plan = resolveRoutePlan(paths);
     expect(plan.commands.map((command) => command.key)).toEqual(["assets-check", "unit-all"]);
-    expect(plan.commands.find((command) => command.key === "unit-all")?.args).toEqual(["run", "test:full"]);
+    expect(plan.commands.find((command) => command.key === "unit-all")?.args).toEqual(["run", "test:unit"]);
   });
 
   it("loads a large selection losslessly from a JSON file", () => {
@@ -68,7 +92,7 @@ describe("verification selection", () => {
     using _scopeCleanup = createCleanup(() => fs.rmSync(root, { recursive: true, force: true }));
 
     const filename = path.join(root, "paths.json");
-    const paths = ["src/a space.ts", "src/another.ts"];
+    const paths = ["src/App.tsx", "scripts/check.mjs"];
     fs.writeFileSync(filename, JSON.stringify(paths));
     expect(parseVerifyArgs(["--paths-file", filename, "--plan"]).paths).toEqual(paths);
     expect(() => parseVerifyArgs(["--paths-file", filename, "--diff"])).toThrow("Choose");
@@ -117,7 +141,7 @@ describe("verification selection", () => {
       "scripts/run-compact.mjs",
       "vitest",
       "related",
-      "--maxWorkers=4",
+      "--maxWorkers=1",
       runtimePath,
       "--run",
       "--passWithNoTests",
@@ -283,10 +307,59 @@ it("selects connected progress coverage once for asynchronous flow owners", () =
     const plan = resolveRoutePlan([owner, "tests/interaction/battle.dom.test.tsx"]);
     expect(plan.commands.filter((command) => command.key === "unit-interactions")).toHaveLength(1);
     expect(plan.commands.find((command) => command.key === "related")?.args).toEqual(
-      expect.arrayContaining(["--exclude", "tests/interaction/**"]),
+      expect.arrayContaining(["--exclude", "tests/interaction/battle.dom.test.tsx"]),
     );
     expect(plan.commands.find((command) => command.key === "unit-changed")?.args ?? []).not.toContain(
       "tests/interaction/battle.dom.test.tsx",
     );
   }
+});
+
+it("selects lifecycle families without suppressing other related interaction tests", () => {
+  const plan = resolveRoutePlan(["src/features/alchemy/meta/screens/options/use-settings-controls.ts"]);
+  const selected = plan.commands.find((command) => command.key === "unit-interactions");
+  expect(selected?.args).toEqual([
+    "run",
+    "test:unit",
+    "--",
+    "tests/interaction/navigation.dom.test.ts",
+    "tests/interaction/overlays.dom.test.tsx",
+  ]);
+  const related = plan.commands.find((command) => command.key === "related");
+  expect(related?.args).toContain("tests/interaction/navigation.dom.test.ts");
+  expect(related?.args).not.toContain("tests/interaction/**");
+  expect(related?.args).not.toContain("tests/interaction/persistence.dom.test.ts");
+  for (const file of selected?.args.filter((arg) => arg.startsWith("tests/")) ?? [])
+    expect(fs.existsSync(file)).toBe(true);
+  expect(resolveRoutePlan(["src/features/alchemy/shared/storage/io.ts"]).commands[0]?.args).toEqual([
+    "run",
+    "test:unit",
+    "--",
+    "tests/interaction/persistence.dom.test.ts",
+  ]);
+  expect(resolveRoutePlan(["src/features/alchemy/shared/ui/use-fade.tsx"]).commands[0]?.args).toEqual([
+    "run",
+    "test:unit",
+    "--",
+    "tests/interaction",
+  ]);
+});
+
+it("keeps presentation edits dependency-selected while preserving lifecycle fallback coverage", () => {
+  for (const file of [
+    "src/features/alchemy/run-loop/screens/campfire-screen.tsx",
+    "src/features/alchemy/run-loop/screens/battle-screen/hand.tsx",
+    "src/features/alchemy/shared/ui/trait-box.tsx",
+    "src/features/alchemy/shared/config/game-data-catalog.ts",
+    "src/app/playthrough/report.ts",
+  ]) {
+    const plan = resolveRoutePlan([file]);
+    expect(
+      plan.commands.some((command) => command.key === "unit-interactions"),
+      file,
+    ).toBe(false);
+    expect(plan.commands.find((command) => command.key === "related")?.args, file).toContain(file);
+  }
+  const fallback = resolveRoutePlan(["src/features/alchemy/shared/stores/session/session-runtime.ts"]);
+  expect(fallback.commands.find((command) => command.key === "unit-interactions")?.args).toContain("tests/interaction");
 });

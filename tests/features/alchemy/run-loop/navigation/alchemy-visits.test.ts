@@ -115,6 +115,8 @@ describe("alchemy visit transactions and resume", () => {
     expect(selectTransmutation({ kind: "source", index: 0, card: reordered }, defaultGameSession)).toBe(true);
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "transmutation") throw new Error("wrong visit");
+    expect(activity.data.transmutation).toMatchObject({ keyword: null, offerIndex: null });
+    expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
     const offers = getTransmutationOffers(activity.data);
     const offerIndex = offers.length - 1;
     const preview = offers[offerIndex]!;
@@ -192,12 +194,15 @@ describe("alchemy visit transactions and resume", () => {
     expect(snapshotRun(defaultGameSession)).toEqual(before);
   });
 
-  it("shop strengthening shares price, rejects insufficient Gold atomically, and spends the one service", () => {
+  it("shop strengthening shares price, rejects insufficient Gold atomically, and spends Distill once", () => {
     setRunSession({
       activity: {
         kind: "alchemist",
         data: {
           potions: [],
+          brewOffers: [],
+          brewUsed: false,
+          distillUsed: false,
           mixUsed: false,
           refreshesLeft: 1,
           purchasedSlotKeys: [],
@@ -214,7 +219,7 @@ describe("alchemy visit transactions and resume", () => {
     setRunProgress({ gold: 80 });
     expect(shop.strengthenPotion(1)?.effects).toEqual([{ kind: "heal", amount: 9 }]);
     expect(readRunProfile(defaultGameSession).gold).toBe(40);
-    expect(shop.mixPotions(1, 2)).toBeNull();
+    expect(shop.strengthenPotion(2)).toBeNull();
     reload();
     expect(shop.strengthenPotion(2)).toBeNull();
   });
@@ -238,6 +243,9 @@ describe("alchemy visit transactions and resume", () => {
         kind: "alchemist",
         data: {
           potions: [],
+          brewOffers: [],
+          brewUsed: false,
+          distillUsed: false,
           mixUsed: false,
           refreshesLeft: 1,
           purchasedSlotKeys: [],

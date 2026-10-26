@@ -45,8 +45,7 @@ export const BattleCardEffectSchema: z.ZodType<BattleCardEffect> = z.union([
     kind: z.literal("chance"),
     probability: z.number().min(0).max(1),
     successEffects: z.array(z.lazy(() => BattleCardEffectSchema)).min(1),
-    // Synthesized runtime bonuses may do nothing on failure. Content validation
-    // requires non-empty failure branches on authored cards.
+    // Chance bonuses may do nothing on failure, including authored cards.
     failureEffects: z.array(z.lazy(() => BattleCardEffectSchema)),
   }),
   z.object({

@@ -33,12 +33,72 @@ function* unfencedLines(lines) {
   }
 }
 
+/** Preserve offsets while excluding examples from the maintained-link inventory. */
+function markdownProse(source) {
+  const lines = source.split("\n");
+  const visible = new Set([...unfencedLines(lines)].map(({ index }) => index));
+  return lines
+    .map((line, index) => (visible.has(index) ? line : " ".repeat(line.length)))
+    .join("\n")
+    .replace(/(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/gu, (code) => code.replace(/[^\r\n]/g, " "));
+}
+
+const normalizeReference = (label) => label.trim().replace(/\s+/gu, " ").toLowerCase();
+const unescapeDestination = (target) => target.replace(/\\([\\()[\]<>])/gu, "$1");
+
+/** Read a Markdown destination, retaining spaces in angle brackets and balanced parentheses. */
+function linkDestination(source, start) {
+  const rest = source.slice(start);
+  const angle = /^<([^>\n]*)>/u.exec(rest);
+  if (angle) return { target: unescapeDestination(angle[1]), end: start + angle[0].length };
+  let depth = 0;
+  let end = start;
+  for (; end < source.length; end += 1) {
+    const char = source[end];
+    if (char === "\\" && end + 1 < source.length) {
+      end += 1;
+      continue;
+    }
+    if (/\s/u.test(char)) break;
+    if (char === "(") depth += 1;
+    if (char === ")") {
+      if (depth === 0) break;
+      depth -= 1;
+    }
+  }
+  if (depth !== 0 || end === start) return null;
+  return { target: unescapeDestination(source.slice(start, end)), end };
+}
+
 export function extractMarkdownLinkTargets(source) {
+  const references = new Map();
+  // Definitions can follow their uses. Blank them after collecting so an unused
+  // definition does not create an inbound link or a path contract by itself.
+  const prose = markdownProse(source).replace(/^ {0,3}\[([^\]\n]+)\]:[ \t]*(.*)$/gmu, (line, label, value) => {
+    const destination = linkDestination(value, 0);
+    const key = normalizeReference(label);
+    if (destination && !references.has(key)) references.set(key, destination.target);
+    return " ".repeat(line.length);
+  });
   const targets = [];
-  for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
-    const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
-    if (!target) continue;
-    targets.push({ target, index: match.index ?? 0 });
+  const links = /(?<!\\)\[([^\]\n]*)\](?:\[([^\]\n]*)\])?/gu;
+  let match;
+  while ((match = links.exec(prose))) {
+    let target;
+    if (match[2] === undefined && prose[match.index + match[0].length] === "(") {
+      const start = match.index + match[0].length + 1;
+      const whitespace = /^\s*/u.exec(prose.slice(start))[0].length;
+      const destination = linkDestination(prose, start + whitespace);
+      if (!destination) continue;
+      const suffix = prose.slice(destination.end);
+      const closing = /^\s*(?:(?:"[^"\n]*"|'[^'\n]*'|\([^()\n]*\))\s*)?\)/u.exec(suffix);
+      if (!closing) continue;
+      links.lastIndex = destination.end + closing[0].length;
+      target = destination.target;
+    } else {
+      target = references.get(normalizeReference(match[2] || match[1]));
+    }
+    if (target) targets.push({ target, index: match.index });
   }
   return targets;
 }
@@ -69,16 +129,13 @@ export function headingSlugs(source) {
     if (!match?.[2]) continue;
     const base = githubHeadingSlug(headingPlainText(match[2]));
     if (!base) continue;
-    const count = seen.get(base) ?? 0;
+    let count = seen.get(base) ?? 0;
+    let slug = count === 0 ? base : `${base}-${count}`;
+    while (slugs.has(slug)) slug = `${base}-${++count}`;
     seen.set(base, count + 1);
-    slugs.add(count === 0 ? base : `${base}-${count}`);
+    slugs.add(slug);
   }
   return slugs;
-}
-
-/** Source with fenced code blocks removed (backticked paths inside examples are not repo refs). */
-export function stripFencedBlocks(source) {
-  return Array.from(unfencedLines(source.split("\n")), ({ line }) => line).join("\n");
 }
 
 /** Read a heading-delimited section of a repo document, ignoring headings inside fenced blocks. */

@@ -11,7 +11,7 @@ it owns imports, fixtures, page objects, tags, helpers, and diagnostics.
 
 ## Workflow
 
-1. Apply [coverage selection](../../../tests/e2e/README.md#choosing-browser-coverage) before adding a journey: establish a distinct, consequential browser-specific risk and why existing journeys or cheaper tests cannot protect it. Actively retire encountered low- and medium-value journeys under the shared policy after checking their purpose and dependencies; justify rare additions and borderline retention. Nightly placement does not justify weak coverage.
-2. Use CI results while iterating. Focused browser checks of affected UI/UX, layout, polish and artwork flows are authorized by [visual review](../../../Docs/UI_VISUAL_REVIEW.md#browser-authorization). Broad browser suites and Electron tests still require an explicit local-execution request. Use the failure digest when the cause is unclear, or open an existing trace for a specific hypothesis.
+1. Apply [coverage selection](../../../tests/e2e/README.md#choosing-browser-coverage) before adding a journey: establish the consequential browser-specific risk and why existing or cheaper protection cannot catch it. Follow the shared [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy) for additions and task-relevant retirement.
+2. Follow [execution permissions](../../../CONTRIBUTING.md#what-to-run-when-you-change). Use the failure digest when the cause is unclear, or open an existing trace for a specific hypothesis.
 
-For authoring/debugging browser tests use this skill; for gating edited work use `verifier`. Keep mechanics in the canonical README; update this skill only when the task-selection or execution strategy changes.
+Use this skill for authoring/debugging browser tests; ordinary verification follows CONTRIBUTING directly. Keep mechanics in the canonical README; update this skill only when the task-selection or execution strategy changes.

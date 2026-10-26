@@ -1,3 +1,4 @@
+import { setDestinationState } from "@/features/alchemy/shared/stores/commands/write/run-session";
 import "../../../helpers/mock-audio";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createPlaythroughController } from "@/app/playthrough/controller";
@@ -44,7 +45,11 @@ function prepare(mode: "campaign" | "labyrinth", combat = false) {
   });
   mutateGameplayForTest((draft) => {
     draft.run.navigation.screen = mode === "campaign" ? "destination" : "labyrinth-map";
-    draft.session.rewardFlow.state.destinations = [combat ? DESTINATIONS.NORMAL_COMBAT : DESTINATIONS.CARD_SHOP];
+    if (mode === "campaign")
+      setDestinationState(draft, (state) => ({
+        ...state,
+        destinations: [combat ? DESTINATIONS.NORMAL_COMBAT : DESTINATIONS.CARD_SHOP],
+      }));
   });
 }
 
