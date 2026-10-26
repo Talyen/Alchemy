@@ -5,7 +5,6 @@ import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import {
   DAMAGE_TYPES,
-  getModifiedCompanionEffects,
   getCardKeywords,
   visitBattleCardEffects,
   harmfulPlayerStatusIds,
@@ -16,7 +15,7 @@ import {
 import { halveRounded, scalePercent } from "./amount-helpers";
 import { getForgeBonusForDamage } from "./player-damage-base";
 import { computeCardPayment } from "./card-cost-rules";
-import { getBattleCompanionDamageModifiers } from "./companion-scaling";
+import { createCompanionActionCard } from "./companion-scaling";
 
 import { AUTOPLAY_EFFECT_SCORE } from "./autoplay-weights";
 import { nominalCardValue } from "./autoplay-draft-policy";
@@ -90,13 +89,7 @@ function playerStatusDefense(
 }
 
 function activeCompanionEffects(state: BattleSnapshot): BattleCardEffect[] {
-  return state.activeCompanion
-    ? getModifiedCompanionEffects(
-        state.activeCompanion,
-        state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
-        getBattleCompanionDamageModifiers(state),
-      )
-    : [];
+  return state.activeCompanion ? createCompanionActionCard(state, state.activeCompanion).effects : [];
 }
 
 function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: number): number {

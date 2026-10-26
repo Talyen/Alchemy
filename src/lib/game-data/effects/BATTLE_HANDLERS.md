@@ -92,8 +92,10 @@ choice source; it does not assemble another utility or attack recipe.
 
 ## Battle inspection ownership
 
-[`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) adapts
-production observations into presentation-only card descriptions. Player payment,
+[`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) resolves
+production observations once per inspection. Inline descriptions and card-flight
+targeting read those outcomes directly; the damage-only presentation adapter builds
+a projected card only when requested. Player payment,
 pre-triggers, ordered effects, and follow-ups resolve through `card-play.ts`;
 enemy abilities resolve through `enemy-turn-attack.ts`. Admission alone is
 hypothetical, so cards outside the hand or above the current Mana remain inspectable.
@@ -168,8 +170,9 @@ and tick callers. These owners call the production operations directly, so
 inspection carries earned resources between damage packets using the same rules.
 Rendering owns only summaries and presentation copies.
 
-Wish reward ordering lives in `wish-rewards.ts`; Companion action scope, Bond
-scaling and captured hit facts live in `companion-effects.ts`. The Companion effect
+Wish reward ordering lives in `wish-rewards.ts`; Companion action scope and
+captured hit facts live in `companion-effects.ts`. `companion-scaling.ts` constructs
+the same Bond-scaled action for combat and autoplay scoring. The Companion effect
 interpreter callback avoids an import cycle with the registry. Card cloning and
 Companion scaling use `mapEffectChildren`; reward selection uses
 `isCompanionSummonCard`. Chance effects may have an empty branch, including
