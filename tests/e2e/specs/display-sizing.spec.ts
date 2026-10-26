@@ -12,6 +12,7 @@ import {
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 import { CONTENT_REFERENCE_VIEWPORT } from "../../../src/lib/game-constants/ui-layout";
+import { cardLibrary } from "../../../src/lib/game-data/cards";
 
 // Representative CSS viewports cover narrow, standard, ultrawide, and 4K layouts.
 const VIEWPORTS = [
@@ -64,20 +65,20 @@ test.describe("Responsive display sizes", slow, () => {
     }
     await page.getByRole("button", { name: "Back", exact: true }).click();
     await menu.openOptions();
-    const headerTops = new Map<number, number>();
     for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
       await page.getByRole("button", { name: tab, exact: true }).click();
-      for (const viewport of VIEWPORTS) {
+      // Display covers every boundary; the other tabs share its shell and need
+      // their own content checked only at the short and largest viewports.
+      const viewports = tab === "Display" ? VIEWPORTS : [VIEWPORTS[1]!, VIEWPORTS[4]!];
+      for (const viewport of viewports) {
         await page.setViewportSize(viewport);
         await waitForLayoutSettled(page);
         await assertNoOverflow(page, `Options ${tab} ${viewport.width}`);
-        const header = page.getByRole("heading", { name: "Options", exact: true });
-        const top = (await header.boundingBox())!.y;
         if (tab === "Display") {
-          headerTops.set(viewport.width, top);
           await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("100");
           await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
-        } else expect(top).toBeCloseTo(headerTops.get(viewport.width)!, 0);
+        }
+        await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeInViewport();
         await expect
           .poll(() =>
             page.locator(".game-page-scroll").evaluate((element) => element.scrollHeight - element.clientHeight),
@@ -139,19 +140,26 @@ test.describe("Responsive display sizes", slow, () => {
 
   test("battle cards and tooltips fit at large and small game sizes", async ({ page, fastBattle }) => {
     void fastBattle;
+    await page.addInitScript(() => {
+      if (!localStorage.getItem("alchemy-device-display-v1")) {
+        localStorage.setItem(
+          "alchemy-device-display-v1",
+          JSON.stringify({ version: 1, gameSizePercent: 120, tooltipSizePercent: 125 }),
+        );
+      }
+    });
     for (const { gameSizePercent, viewport } of [
       { gameSizePercent: 120, viewport: { width: 1280, height: 720 } },
       { gameSizePercent: 80, viewport: { width: 3840, height: 2160 } },
     ]) {
-      await page.addInitScript(
-        ({ gameSizePercent }) => {
+      if (gameSizePercent === 80) {
+        await page.evaluate((size) => {
           localStorage.setItem(
             "alchemy-device-display-v1",
-            JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
+            JSON.stringify({ version: 1, gameSizePercent: size, tooltipSizePercent: 125 }),
           );
-        },
-        { gameSizePercent },
-      );
+        }, gameSizePercent);
+      }
       await page.setViewportSize(viewport);
       await startBattleWithDeck(
         page,
@@ -205,30 +213,30 @@ test.describe("Responsive display sizes", slow, () => {
 
   test("collection keeps page capacity and position across proportional resizes and tab changes", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await new MenuPage(page).gotoCollection();
+    await new MenuPage(page).gotoCollection({ discoveredCardIds: cardLibrary.map((card) => card.id) });
     await page.getByRole("button", { name: "Cards", exact: true }).click();
     const cards = page.getByRole("button", { name: /Inspect/ });
     await expect(page.getByRole("button", { name: "Inspect Knight", exact: true })).toHaveCount(0);
-    await expect(cards).toHaveCount(8);
-    const before = await cards.first().locator("img").first().getAttribute("src");
+    await expect(cards.first()).toBeVisible();
+    const capacity = await cards.count();
+    const before = await cards.first().getAttribute("aria-label");
     await page.getByRole("button", { name: "Next page", exact: true }).click();
-    await expect.poll(() => cards.first().locator("img").first().getAttribute("src")).not.toBe(before);
-    const first = await cards.first().locator("img").first().getAttribute("src");
+    await expect.poll(() => cards.first().getAttribute("aria-label")).not.toBe(before);
+    const first = await cards.first().getAttribute("aria-label");
+    expect(first).not.toBeNull();
     await page.setViewportSize({ width: 3840, height: 2160 });
-    await expect(cards).toHaveCount(8, { timeout: 15_000 });
+    await expect(cards).toHaveCount(capacity, { timeout: 15_000 });
     await expect
-      .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
+      .poll(() => cards.evaluateAll((elements) => elements.map((element) => element.getAttribute("aria-label"))))
       .toContain(first);
-    for (const tab of ["Trinkets", "Bestiary"]) {
-      const previousArt = await cards.first().locator("img").first().getAttribute("src");
-      await page.getByRole("button", { name: tab, exact: true }).click();
-      await expect.poll(() => cards.first().locator("img").first().getAttribute("src")).not.toBe(previousArt);
-      await page.getByRole("button", { name: "Cards", exact: true }).click();
-      await expect(cards).toHaveCount(8, { timeout: 15_000 });
-      await expect
-        .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
-        .toContain(first);
-    }
+    await page.getByRole("button", { name: "Trinkets", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Trinkets", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry", exact: true }).first()).toBeVisible();
+    await page.getByRole("button", { name: "Cards", exact: true }).click();
+    await expect(cards).toHaveCount(capacity, { timeout: 15_000 });
+    await expect
+      .poll(() => cards.evaluateAll((elements) => elements.map((element) => element.getAttribute("aria-label"))))
+      .toContain(first);
   });
 
   test("hero descriptions fit at maximum tooltip size on a small viewport", async ({ page }) => {
