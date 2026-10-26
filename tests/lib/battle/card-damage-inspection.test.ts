@@ -11,6 +11,174 @@ import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 const hit = (amount = 6): BattleCardEffect => ({ kind: "damage", damageType: "physical", amount });
 
 describe("rule-preserving tooltip inspection", () => {
+  it.each([0, 9])("inlines the direct12Block grant without including %i existing Block or proc rewards", (block) => {
+    const card = cardById.block!;
+    const rng = vi.fn(() => {
+      throw new Error("live RNG consumed");
+    });
+    const state = patchBattleState({
+      hand: [card],
+      mana: 4,
+      maxMana: 4,
+      currentEnemy: enemyById["blood-countess"],
+      playerHealth: 31,
+      playerMaxHealth: 47,
+      enemyHealth: 273,
+      enemyMaxHealth: 528,
+      turn: 15,
+      appliesFightPacing: true,
+      playerStatuses: { block, forge: 20 },
+      talentEffects: { forgeBlockPercent: 25 },
+      gearEffects: { flatBlockGained: 2 },
+      trinketEffects: { ironwoodBucklerThornsOnBlock: 3 },
+      rng,
+    });
+    const before = JSON.stringify({ state, card });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Gain 12 Block"]);
+    expect(JSON.stringify({ state, card })).toBe(before);
+    expect(rng).not.toHaveBeenCalled();
+    const played = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0);
+    expect(played.state.playerStatuses.block).toBe(block + 12);
+    expect(played.state.playerStatuses.thorns).toBe(3);
+    expect(played.combatTexts).toContainEqual(
+      expect.objectContaining({ stat: "block", amount: 12, feedback: "primary" }),
+    );
+  });
+
+  it("adjusts Shield Bash's fixed Block without replacing its authored scaling rule", () => {
+    const card = cardById["shield-bash"]!;
+    const state = patchBattleState({
+      playerStatuses: { block: 12, forge: 20 },
+      talentEffects: { forgeBlockPercent: 25 },
+      gearEffects: { flatBlockGained: 2 },
+    });
+    const result = getBattleCardDescriptionInspection(card, state);
+    expect(result.descriptionLines).toEqual(["Gain 9 Block", "Deal Stun damage equal to half your Block"]);
+    expect(result.effects[1]).toEqual(card.effects[1]);
+    expect(card.descriptionLines[0]).toBe("Gain 2 Block");
+  });
+
+  it("uses ordered production resource changes before a later fixed grant", () => {
+    const card = effectsCard({
+      id: "forge-then-block",
+      art: "",
+      effects: [
+        { kind: "player-status", status: "forge", amount: 2 },
+        { kind: "player-status", status: "block", amount: 5 },
+      ],
+    });
+    const state = patchBattleState({
+      playerStatuses: { forge: 20 },
+      talentEffects: { forgeBlockPercent: 25 },
+      gearEffects: { flatBlockGained: 2 },
+    });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Gain 2 Forge", "Gain 13 Block"]);
+  });
+
+  it("previews adjusted healing power before its Health cap, excluding larger overheal conversions and Consume procs", () => {
+    const card = cardById["health-potion"]!;
+    const rng = vi.fn(() => {
+      throw new Error("live RNG consumed");
+    });
+    const state = patchBattleState({
+      hand: [card],
+      playerHealth: 49,
+      playerMaxHealth: 50,
+      talentEffects: { potionPotency: 2, healMultiplier: 1.5, overhealToBlockRatio: 1, healOnConsume: 7 },
+      gearEffects: { flatBlockGained: 2 },
+      rng,
+    });
+    const before = JSON.stringify({ card, state });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Restore 24 Health", "Consume"]);
+    expect(JSON.stringify({ card, state })).toBe(before);
+    expect(rng).not.toHaveBeenCalled();
+    const played = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0);
+    expect(played.state.playerHealth).toBe(50);
+    expect(played.state.playerStatuses.block).toBe(25);
+    expect(played.combatTexts).toContainEqual(
+      expect.objectContaining({ kind: "heal", amount: 24, feedback: "primary" }),
+    );
+  });
+
+  it("inlines deterministic Mana and Gold grants without including their separate healing rewards", () => {
+    const mana = cardById["mana-potion"]!;
+    const state = patchBattleState({
+      hand: [mana],
+      mana: 1,
+      maxMana: 10,
+      talentEffects: { potionPotency: 2, healthPerMana: 3 },
+      gearEffects: { blockOnManaRestoreWithoutBlock: 5 },
+    });
+    expect(getBattleCardDescriptionInspection(mana, state).descriptionLines).toEqual(["Gain 4 Mana", "Consume"]);
+    const gold = effectsCard({ id: "gold-grant", art: "", effects: [{ kind: "gain-gold", amount: 5 }] });
+    expect(
+      getBattleCardDescriptionInspection(
+        gold,
+        patchBattleState({ gearEffects: { goldGainPercent: 20, healOnCombatGoldGain: 7 } }),
+      ).descriptionLines,
+    ).toEqual(["Gain 6 Gold"]);
+  });
+
+  it("uses exact Armor and Forge bonuses but preserves authored values for uncertain grants", () => {
+    const armor = cardById["stoneskin-potion"]!;
+    const state = patchBattleState({
+      playerHealth: 10,
+      playerMaxHealth: 50,
+      talentEffects: { potionPotency: 2, armorLowHealthBonusPercent: 50 },
+      gearEffects: { flatArmorGained: 2 },
+    });
+    expect(getBattleCardDescriptionInspection(armor, state).descriptionLines).toEqual(["Gain 15 Armor", "Consume"]);
+    expect(
+      getBattleCardDescriptionInspection(armor, {
+        ...state,
+        talentEffects: { ...state.talentEffects, armorDoubleChance: 25 },
+      }).descriptionLines,
+    ).toEqual(armor.descriptionLines);
+    const forge = cardById.anvil!;
+    expect(
+      getBattleCardDescriptionInspection(
+        forge,
+        patchBattleState({ talentEffects: { forgeBonusChance: 100 }, gearEffects: { blockOnForgeGain: 9 } }),
+      ).descriptionLines,
+    ).toEqual(["Gain 3 Forge"]);
+  });
+
+  it.each([
+    { kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 },
+    { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 2 },
+    { kind: "player-status", status: "armor", amount: 3, statusPool: ["block", "armor"] },
+    { kind: "player-status", status: "haste", amount: 1 },
+  ] satisfies BattleCardEffect[])("keeps the authored $status formula, random choice or duration", (effect) => {
+    const card = effectsCard({ id: "utility-rule", art: "", effects: [effect] });
+    const result = getBattleCardDescriptionInspection(
+      card,
+      patchBattleState({
+        playerStatuses: { forge: 20 },
+        talentEffects: { forgeBlockPercent: 25 },
+        gearEffects: { flatBlockGained: 2 },
+      }),
+    );
+    expect(result.descriptionLines).toEqual(card.descriptionLines);
+    expect(result.effects).toEqual(card.effects);
+  });
+
+  it("retains an authored utility value when an earlier draw makes its result unknown", () => {
+    const card = effectsCard({
+      id: "draw-block",
+      art: "",
+      effects: [
+        { kind: "draw-cards", amount: 1 },
+        { kind: "player-status", status: "block", amount: 5 },
+      ],
+    });
+    const state = patchBattleState({
+      deck: [makeTestCard()],
+      playerStatuses: { forge: 20 },
+      talentEffects: { forgeBlockPercent: 25 },
+    });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(card.descriptionLines);
+  });
+
   it.each([0, 6, 20])("keeps Shield Bash's scaling rule at %i starting Block", (block) => {
     const card = cardById["shield-bash"]!;
     const rng = vi.fn(() => {

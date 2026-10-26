@@ -314,7 +314,12 @@ Do not mirror engine field dependencies in a separate UI cache.
 ## Damage values in battle inspection
 
 Card hover and keyboard inspection in the battle hand, Wish, and the pile viewers
-show current offensive damage before defenses and critical strikes. Inspection
+show current offensive damage before defenses and critical strikes. Fixed player
+Block, Armor, Forge, Thorns, healing, Mana and Gold numerals also use known direct
+execution results inside their original sentences. They exclude existing totals,
+separate procs and overheal conversions; healing reports adjusted power before its
+Health cap. Authored resource formulas, random choices, durations and conditions
+remain intact, and uncertain or unobserved results retain their authored values. Inspection
 runs production card resolution against detached battle alternatives, including
 payment, pre-triggers, ordered effects, and reactions that affect later packets.
 Forge, prepared conversions, resource changes, conditions, and fight pacing

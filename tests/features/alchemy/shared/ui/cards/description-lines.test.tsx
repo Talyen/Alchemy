@@ -40,3 +40,22 @@ it("renders the original scaling rule without extra preview text", () => {
   expect(container.textContent).not.toContain("Attack power");
   expect(container.textContent).not.toContain("Deal 9 Stun damage");
 });
+
+it("renders known Block bonuses in the existing sentence and preserves authored magnitude marks", () => {
+  const base = cardById.block!;
+  const card = applyNumericCorruption(base, getEditableCorruptionTargets(base)[0]!, 1);
+  expect(card.descriptionLines).toEqual(["Gain 6 Block"]);
+  const view = getBattleCardDescriptionInspection(
+    card,
+    patchBattleState({
+      playerStatuses: { forge: 20 },
+      talentEffects: { forgeBlockPercent: 25 },
+      gearEffects: { flatBlockGained: 2 },
+    }),
+  );
+  const { container } = render(<DescriptionLines lines={view.descriptionLines} idPrefix="fixed-block" card={view} />);
+  expect(container.textContent).toBe("Gain 13 Block");
+  expect(container.querySelector(".text-destructive")?.textContent).toBe("13");
+  expect(container.textContent).not.toContain("Attack power");
+  expect(card.descriptionLines).toEqual(["Gain 6 Block"]);
+});

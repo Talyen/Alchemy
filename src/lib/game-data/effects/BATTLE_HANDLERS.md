@@ -130,6 +130,14 @@ compete. Ties, uncertain mixed-target branches and unresolved numeric outcomes
 retain the first non-cost authored recipient. The choice affects only the card
 travel ghost, never combat targeting, resolution, state or live RNG.
 
+The rule-preserving card-description adapter also uses exact direct observations
+to replace fixed player status, healing, Mana and Gold literals inline. Match the
+authored effect's recipient, numeric kind and resource; do not combine proc rewards,
+overheal conversions or existing totals with its amount. Healing observations are
+adjusted power before the Health cap. Resource formulas, random status pools,
+durations, charges and uncertain or missing observations retain their authored
+rules. Shared magnitude bindings still require agreement across every reference.
+
 Effect occurrence addresses, including both Chance branches, own observation and
 Corruption-mark mapping. Repeated references to one authored effect object still
 have independent packet identities. Import boundaries keep the description adapter
