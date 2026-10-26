@@ -238,7 +238,7 @@ export async function sampleVisualTime(timeMs) {
         state.lyricSourceVisibility = source.style.visibility;
       }
       const rect = source.getBoundingClientRect();
-      const style = getComputedStyle(source);
+      const style = globalThis.getComputedStyle(source);
       const width = Number.parseFloat(style.width);
       const height = Number.parseFloat(style.height);
       const clone = source.cloneNode(true);
@@ -271,7 +271,7 @@ export async function sampleVisualTime(timeMs) {
       const originals = [source, ...source.querySelectorAll("span")];
       const copies = [clone, ...clone.querySelectorAll("span")];
       originals.forEach((original, index) => {
-        const computed = getComputedStyle(original);
+        const computed = globalThis.getComputedStyle(original);
         const copy = copies[index];
         for (const property of properties) copy.style.setProperty(property, computed.getPropertyValue(property));
         copy.style.animation = "none";
