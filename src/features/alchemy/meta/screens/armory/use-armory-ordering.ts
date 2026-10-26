@@ -62,12 +62,10 @@ function useFilteredInventory(
     const visibleIds: string[] = [];
     for (const id of orderedIds) {
       const item = byId.get(id);
-      if (!item) continue;
+      if (!item || !matcher.matches(item, filters)) continue;
       if ("instanceId" in item) {
-        if (!matcher.matchesGearFilters(item, filters)) continue;
         visibleGear.push(item);
       } else {
-        if (!matcher.matchesTrinketFilters(item, filters)) continue;
         visibleTrinkets.push(item);
       }
       visibleIds.push(id);

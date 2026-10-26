@@ -31,21 +31,10 @@ function normalizeSearch(value: string): string {
   return value.toLowerCase().replace(/[‘’]/g, "'").replace(/\s+/g, " ");
 }
 
-function matchesSearch(text: string, words: readonly string[]): boolean {
-  return words.every((word) => text.includes(word));
-}
-
-function matchesKeywords(keywordIds: readonly KeywordId[], filters: ArmoryInventoryFilters): boolean {
-  if (filters.keywords.length === 0) return true;
-  return filters.keywords.some((keyword) => keywordIds.includes(keyword));
-}
-
 /** One screen/language lifetime; inventory revisions replace immutable item references. */
 export function createArmoryInventoryMatcher(translate: typeof displayText = displayText) {
-  const gearText = new WeakMap<GearInstance, string>();
-  const trinketText = new WeakMap<TrinketEntry, string>();
-  const gearKeywords = new WeakMap<GearInstance, readonly KeywordId[]>();
-  const trinketKeywords = new WeakMap<TrinketEntry, KeywordId[]>();
+  type Item = GearInstance | TrinketEntry;
+  const index = new WeakMap<Item, { text?: string; keywords?: readonly KeywordId[] }>();
   let previousQuery: string | undefined;
   let words: string[] = [];
   function searchWords(query: string): readonly string[] {
@@ -56,58 +45,40 @@ export function createArmoryInventoryMatcher(translate: typeof displayText = dis
     return words;
   }
 
-  return {
-    matchesGearFilters(item: GearInstance, filters: ArmoryInventoryFilters): boolean {
-      const definition = gearDefinitions[item.definitionId];
-      if (filters.rarities.length > 0 && (definition?.rarity == null || !filters.rarities.includes(definition.rarity)))
-        return false;
-      if (filters.keywords.length > 0) {
-        let keywords = gearKeywords.get(item);
-        if (!keywords) {
-          keywords = getGearInstanceKeywordIds(item);
-          gearKeywords.set(item, keywords);
-        }
-        if (!matchesKeywords(keywords, filters)) return false;
-      }
-      if (!filters.search.trim()) return true;
-      let text = gearText.get(item);
-      if (text === undefined) {
-        const parts = [
-          getGearInstanceTitle(item),
-          definition ? gearBaseItems[definition.baseItemId]?.displayName : undefined,
-          ...getGearInstanceTooltipEntries(item).flatMap((entry) => [entry.name, entry.text]),
-        ].filter((part): part is string => typeof part === "string");
-        text = normalizeSearch([...parts, ...parts.map(translate)].join(" "));
-        gearText.set(item, text);
-      }
-      return matchesSearch(text, searchWords(filters.search));
-    },
-    matchesTrinketFilters(item: TrinketEntry, filters: ArmoryInventoryFilters): boolean {
-      if (!filters.search.trim() && filters.keywords.length === 0) return true;
-      if (filters.keywords.length > 0) {
-        let keywords = trinketKeywords.get(item);
-        if (!keywords) {
-          keywords = extractKeywordIds(item.descriptionLines.join(" "));
-          trinketKeywords.set(item, keywords);
-        }
-        if (!matchesKeywords(keywords, filters)) return false;
-      }
-      if (!filters.search.trim()) return true;
-      let text = trinketText.get(item);
-      if (text === undefined) {
-        text = normalizeSearch(
-          [
-            item.title,
-            item.descriptionLines.join(" "),
-            translate(item.title),
-            ...item.descriptionLines.map(translate),
-          ].join(" "),
-        );
-        trinketText.set(item, text);
-      }
-      return matchesSearch(text, searchWords(filters.search));
-    },
-  };
+  function matches(item: Item, filters: ArmoryInventoryFilters): boolean {
+    const gear = "instanceId" in item;
+    const definition = gear ? gearDefinitions[item.definitionId] : undefined;
+    if (gear && filters.rarities.length > 0 && (!definition || !filters.rarities.includes(definition.rarity)))
+      return false;
+    if (!filters.search.trim() && filters.keywords.length === 0) return true;
+
+    let cached = index.get(item);
+    if (!cached) {
+      cached = {};
+      index.set(item, cached);
+    }
+    if (filters.keywords.length > 0) {
+      const keywords = (cached.keywords ??= gear
+        ? getGearInstanceKeywordIds(item)
+        : extractKeywordIds(item.descriptionLines.join(" ")));
+      if (!filters.keywords.some((keyword) => keywords.includes(keyword))) return false;
+    }
+    if (!filters.search.trim()) return true;
+    if (cached.text === undefined) {
+      const parts = gear
+        ? [
+            getGearInstanceTitle(item),
+            definition ? gearBaseItems[definition.baseItemId]?.displayName : undefined,
+            ...getGearInstanceTooltipEntries(item).flatMap((entry) => [entry.name, entry.text]),
+          ].filter((part): part is string => typeof part === "string")
+        : [item.title, ...item.descriptionLines];
+      cached.text = normalizeSearch([...parts, ...parts.map(translate)].join(" "));
+    }
+    const text = cached.text;
+    return searchWords(filters.search).every((word) => text.includes(word));
+  }
+
+  return { matches };
 }
 
 export const ARMORY_FILTER_KEYWORDS = Object.values(keywordDefinitions)
