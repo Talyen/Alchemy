@@ -2,6 +2,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
+import { stringify, parse } from "yaml";
+import { readWorkflow, workflowJob } from "../helpers/workflow";
 
 import { resolveRoutes, SHARED_BUILD_PATTERNS } from "../../scripts/lib/verification/change-routes.mjs";
 import { globToRegExp } from "../../scripts/lib/glob-pattern.mjs";
@@ -36,26 +38,9 @@ it("CI action dependencies pins external actions in workflows and composite acti
  * paths-filter, and representative paths must land on both sides together.
  * Update the cases below deliberately when either side changes intent.
  */
-function readCiFilters() {
-  const lines = readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8").split("\n");
-  const start = lines.findIndex((line) => line.trim() === "filters: |");
-  expect(start).toBeGreaterThan(-1);
-  const filtersIndent = lines[start].indexOf("filters:");
-  const filters = new Map<string, string[]>();
-  let current: string | null = null;
-  for (const line of lines.slice(start + 1)) {
-    if (line.trim() === "" || line.trim().startsWith("#")) continue;
-    if ((line.match(/^\s*/) ?? [""])[0].length <= filtersIndent) break;
-    const gate = line.match(/^\s+([A-Za-z_]+):\s*$/)?.[1];
-    if (gate) {
-      current = gate;
-      filters.set(gate, []);
-      continue;
-    }
-    const pattern = line.match(/^\s+-\s+"([^"]+)"\s*$/)?.[1];
-    if (pattern && current) filters.get(current)?.push(pattern);
-  }
-  return filters;
+function readCiFilters(): Map<string, string[]> {
+  const filter = readWorkflow("ci").jobs.changes.steps.find((step) => step.id === "filter")!;
+  return new Map(Object.entries(parse(String(filter.with!.filters)) as Record<string, string[]>));
 }
 
 function ciGatesFor(filters: Map<string, string[]>, filePath: string): string[] {
@@ -158,15 +143,38 @@ describe("CI path-filter parity", () => {
 });
 
 describe("desktop CI artifact flow", () => {
-  const workflow = readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
-  const packaging = workflow.split("  desktop-build:\n")[1].split("  electron-e2e:\n")[0];
-  const condition = packaging.split("    if: >-\n")[1].split("    runs-on:")[0].trim();
+  const packaging = workflowJob("ci", "desktop-build");
+  const commands = (workflow: string, job: string) =>
+    workflowJob(workflow, job).steps.flatMap((step) => (step.run ? [step.run] : []));
 
   it("restores installed Electron binaries only from exact dependency caches", () => {
-    const electron = workflow.split("  electron-e2e:\n")[1];
-    expect(electron).toContain("key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}");
-    expect(electron).not.toContain("restore-keys:");
-    expect(electron).toContain("node scripts/ensure-electron.mjs");
+    const electron = workflowJob("ci", "electron-e2e");
+    const cache = electron.steps.find((step) => step.id === "electron-binary-cache")!;
+    expect(cache.with?.key).toBe("electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}");
+    expect(cache.with).not.toHaveProperty("restore-keys");
+    expect(commands("ci", "electron-e2e")).toContain("node scripts/ensure-electron.mjs");
+    const nightly = workflowJob("nightly", "ship-gate-full");
+    expect(readWorkflow("nightly").jobs["ship-gate-full"].with).toMatchObject({
+      full: true,
+      renderer: "",
+      timeout: 45,
+    });
+    expect(nightly.steps).toContainEqual(
+      expect.objectContaining({
+        uses: expect.stringMatching(/^actions\/checkout@/u),
+        if: "inputs.full",
+        with: { "fetch-depth": 0 },
+      }),
+    );
+    expect(nightly.steps).toContainEqual(
+      expect.objectContaining({ run: "npm run check:ship", if: "${{ inputs.full }}" }),
+    );
+    expect(nightly.steps).toContainEqual(
+      expect.objectContaining({
+        if: "inputs.full",
+        env: expect.objectContaining({ ALCHEMY_INTERACTION_TIER: "nightly" }),
+      }),
+    );
   });
 
   it("checks renderer budgets before packaging and retains verified releases before Steam upload", () => {
@@ -174,53 +182,68 @@ describe("desktop CI artifact flow", () => {
       scripts: Record<string, string>;
     };
     expect(pkg.scripts["dist:desktop"]).toBe("node scripts/dist-desktop.mjs --build");
-    expect(packaging.indexOf("npm run check:bundle")).toBeGreaterThan(packaging.indexOf("npm run build:desktop"));
-    expect(packaging.indexOf("npm run check:bundle")).toBeLessThan(packaging.indexOf("node scripts/dist-desktop.mjs"));
-    const release = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8")
-      .split("  package:\n")[1]
-      .split("  release:\n")[0];
-    expect(release).toContain("npm run dist:desktop");
-    expect(release).not.toContain("npm run check:bundle");
-    const retained = release.indexOf("- name: Retain verified release package");
-    expect(retained).toBeGreaterThan(release.indexOf("npm run smoke:desktop"));
-    const upload = release.slice(retained);
-    expect(upload).toMatch(/uses: actions\/upload-artifact@[a-f0-9]{40}/u);
-    expect(upload).toContain("name: release-package-${{ github.ref_name }}-${{ github.run_attempt }}");
-    expect(upload).toContain("release-desktop/");
-    expect(upload).toContain("release-notes/${{ github.ref_name }}.md");
-    expect(upload).toContain("retention-days: 7");
-    expect(upload).toContain("compression-level: 0");
-    expect(upload).toContain("if-no-files-found: error");
-    expect(upload).not.toContain("if: always()");
+    const steps = commands("ci", "desktop-build");
+    expect(steps.indexOf("npm run check:bundle")).toBeGreaterThan(steps.indexOf("npm run build:desktop"));
+    expect(steps.indexOf("npm run check:bundle")).toBeLessThan(steps.indexOf("node scripts/dist-desktop.mjs"));
+    for (const [job, suffix] of [
+      ["package", ""],
+      ["package-demo", "-demo"],
+    ]) {
+      const producer = workflowJob("release", job);
+      const upload = producer.steps.find((step) => step.id === "package-upload")!;
+      expect(readWorkflow("release").jobs[job].with?.edition ?? "full").toBe(suffix ? "demo" : "full");
+      expect(upload.with?.name).toBe(
+        "release-package${{ inputs.edition == 'demo' && '-demo' || '' }}-${{ github.ref_name }}-${{ github.run_attempt }}",
+      );
+      expect(commands("release", job)).toContain("npm run dist:desktop");
+      expect(commands("release", job)).not.toContain("npm run check:bundle");
+      expect(producer.steps.findIndex((step) => step.id === "package-upload")).toBeGreaterThan(
+        producer.steps.findIndex((step) => step.run === "npm run smoke:desktop"),
+      );
+      expect(upload.uses).toMatch(/^actions\/upload-artifact@[a-f0-9]{40}$/u);
+      expect(upload.with).toMatchObject({ "retention-days": 7, "compression-level": 0, "if-no-files-found": "error" });
+      expect(upload.with?.path).toContain("release-desktop${{ inputs.edition == 'demo' && '-demo' || '' }}/");
+      expect(upload.with?.path).toContain("release-notes/${{ github.ref_name }}.md");
+      expect(upload.if).toBeUndefined();
+    }
   });
 
-  it("publishes the producer artifact by ID without rebuilding on a delivery retry", () => {
-    const releaseWorkflow = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
-    const producer = releaseWorkflow.split("  package:\n")[1].split("  release:\n")[0];
-    const delivery = releaseWorkflow.split("  release:\n")[1];
-    const concurrency = delivery.match(/^ {4}concurrency:\n((?: {6}.+\n)+)/mu)?.[1];
-    expect(concurrency).toBeDefined();
-    expect(concurrency).toContain("group: steam-publishing");
-    expect(concurrency).toContain("queue: max");
-    expect(concurrency).toContain("cancel-in-progress: false");
-    expect(producer).toContain("artifact-id: ${{ steps.package-upload.outputs.artifact-id }}");
-    expect(producer).toContain("id: package-upload");
-    expect(delivery).toContain("needs: [package, package-demo]");
-    const demoProducer = releaseWorkflow.split("  package-demo:\n")[1].split("  vercel-qa:\n")[0];
-    expect(demoProducer).toContain("artifact-id: ${{ steps.package-upload.outputs.artifact-id }}");
-    expect(delivery).toContain("artifact-ids: ${{ needs.package-demo.outputs.artifact-id }}");
-    expect(demoProducer).toContain("release-desktop-demo/");
-    expect(delivery).toContain("artifact-ids: ${{ needs.package.outputs.artifact-id }}");
-    expect(delivery).toContain("merge-multiple: true");
-    expect(delivery).not.toContain("github.run_attempt");
-    expect(delivery).not.toContain("npm run dist:desktop");
-    expect(delivery.indexOf("actions/download-artifact")).toBeLessThan(delivery.indexOf("- name: Steam upload"));
+  it("publishes each producer artifact by ID without rebuilding on a delivery retry", () => {
+    const release = readWorkflow("release");
+    const delivery = release.jobs.release;
+    expect(delivery.concurrency).toEqual({ group: "steam-publishing", queue: "max", "cancel-in-progress": false });
+    expect(delivery.needs).toEqual(["package", "package-demo"]);
+    for (const job of ["package", "package-demo"]) {
+      const caller = release.jobs[job];
+      expect(caller.uses).toBe("./.github/workflows/release-package.yml");
+      expect(readWorkflow("release-package").on.workflow_call?.outputs).toMatchObject({
+        "artifact-id": { value: "${{ jobs.package.outputs.artifact-id }}" },
+      });
+      expect(workflowJob("release", job).outputs?.["artifact-id"]).toBe(
+        "${{ steps.package-upload.outputs.artifact-id }}",
+      );
+      const download = delivery.steps.find(
+        (step) => step.with?.["artifact-ids"] === `\${{ needs.${job}.outputs.artifact-id }}`,
+      )!;
+      expect(download.with?.["merge-multiple"]).toBe(true);
+      expect(delivery.steps.indexOf(download)).toBeLessThan(
+        delivery.steps.findIndex((step) => step.name === "Steam upload"),
+      );
+    }
+    expect(stringify(delivery)).not.toContain("github.run_attempt");
+    expect(commands("release", "release")).not.toContain("npm run dist:desktop");
   });
 
-  it.each(["ci", "release", "nightly"])("keeps music in %s browser artifacts", (name) => {
-    const contents = readFileSync(path.join(repoRoot, `.github/workflows/${name}.yml`), "utf8");
-    expect(contents).not.toContain("!dist/Music/");
-    expect(contents).toContain("Smoke test downloaded build including music");
+  it.each([
+    ["ci", "e2e"],
+    ["release", "e2e-full"],
+    ["nightly", "e2e-web"],
+  ])("keeps music in %s browser artifacts", (name, job) => {
+    const steps = workflowJob(name, job).steps;
+    expect(stringify(steps)).not.toContain("!dist/Music/");
+    expect(steps).toContainEqual(
+      expect.objectContaining({ name: "Smoke test downloaded build including music", run: "npm run smoke:preview" }),
+    );
   });
 
   it.each([
@@ -234,27 +257,27 @@ describe("desktop CI artifact flow", () => {
   ])(
     "runs packaging only when its prerequisites permit it (%s, %s)",
     (changes, renderer, selected, cancelled, expected) => {
-      // Without a status function, GitHub implicitly requires all needs to succeed.
+      const condition = packaging.if!;
       expect(condition).toContain("!cancelled()");
-      const actual = runInNewContext(condition.replaceAll("needs.ship-gate", "needs.renderer"), {
-        cancelled: () => cancelled,
-        github: { event_name: "push" },
-        needs: { changes: { result: changes, outputs: { desktop: String(selected) } }, renderer: { result: renderer } },
-      });
-      expect(actual).toBe(expected);
+      expect(
+        runInNewContext(condition.replaceAll("needs.ship-gate", "needs.renderer"), {
+          cancelled: () => cancelled,
+          github: { event_name: "push" },
+          needs: {
+            changes: { result: changes, outputs: { desktop: String(selected) } },
+            renderer: { result: renderer },
+          },
+        }),
+      ).toBe(expected);
     },
   );
 
   it("preserves music in the shared packaging artifact and gates publishing on package startup", () => {
-    const renderer = workflow.split("  ship-gate:\n")[1].split("  assets:\n")[0];
-    expect(renderer).not.toContain("!dist/Music/");
-    expect(renderer).toContain("npm run check:bundle");
-    expect(packaging.indexOf("npm run smoke:desktop")).toBeGreaterThan(
-      packaging.indexOf("node scripts/dist-desktop.mjs"),
-    );
-    const release = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
-    expect(release).toContain("npm run smoke:desktop");
-    expect(release.indexOf("npm run smoke:desktop")).toBeLessThan(release.indexOf("- name: Steam upload"));
+    const renderer = workflowJob("ci", "ship-gate");
+    expect(stringify(renderer)).not.toContain("!dist/Music/");
+    expect(commands("ci", "ship-gate")).toContain("npm run check:bundle");
+    const steps = commands("ci", "desktop-build");
+    expect(steps.indexOf("npm run smoke:desktop")).toBeGreaterThan(steps.indexOf("node scripts/dist-desktop.mjs"));
   });
 });
 
@@ -265,33 +288,42 @@ describe("build failure visibility", () => {
     ["ci", "desktop-build"],
     ["release", "build"],
     ["release", "package"],
+    ["release", "package-demo"],
     ["nightly", "prepare"],
     ["nightly", "ship-gate-full"],
   ])("retains full logs for %s/%s failures", (workflow, job) => {
-    const contents = readFileSync(path.join(repoRoot, `.github/workflows/${workflow}.yml`), "utf8");
-    const block = contents.split(`  ${job}:\n`)[1].split(/^ {2}[a-zA-Z][\w-]*:/mu)[0];
-    const upload = block.split("- name: Retain build failure diagnostics")[1];
-    expect(upload).toContain("if: failure()");
-    expect(upload).toContain(`name: build-diagnostics-${workflow}-${job}`);
-    for (const entry of [
-      "reports/compact/",
-      "reports/current-run.*",
-      "reports/runs/",
-      "retention-days: 1",
-      "if-no-files-found: ignore",
-    ]) {
-      expect(upload).toContain(entry);
-    }
+    const upload = workflowJob(workflow, job).steps.find((step) => step.name === "Retain build failure diagnostics")!;
+    expect(upload.if).toContain("failure()");
+    const expectedName =
+      workflow === "release" && job.startsWith("package")
+        ? "build-diagnostics-release-package${{ inputs.edition == 'demo' && '-demo' || '' }}"
+        : readWorkflow(workflow).jobs[job].with?.diagnostics
+          ? "${{ inputs.diagnostics }}"
+          : `build-diagnostics-${workflow}-${job}`;
+    if (readWorkflow(workflow).jobs[job].with?.diagnostics)
+      expect(readWorkflow(workflow).jobs[job].with?.diagnostics).toBe(`build-diagnostics-${workflow}-${job}`);
+    expect(upload.with).toMatchObject({
+      name: expectedName,
+      "retention-days": 1,
+      "if-no-files-found": "ignore",
+    });
+    for (const entry of ["reports/compact/", "reports/current-run.*", "reports/runs/"])
+      expect(upload.with?.path).toContain(entry);
   });
 
   it("rejects a mismatched tag before building the release web artifact", () => {
-    const contents = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
-    const build = contents.split("  build:\n")[1].split("  e2e-full:\n")[0];
-    const validation = build.indexOf("node scripts/verify-release.mjs --skip-package");
-    expect(validation).toBeGreaterThan(build.indexOf("uses: ./.github/actions/setup"));
-    expect(validation).toBeLessThan(build.indexOf("npm run build"));
-    expect(build).toContain("RELEASE_TAG: ${{ github.ref_name }}");
-    expect(contents.split("  e2e-full:\n")[1]).toContain("needs: build");
-    expect(contents.split("  package:\n")[1]).toContain("node scripts/verify-release.mjs --skip-package");
+    const build = workflowJob("release", "build");
+    expect(readWorkflow("release").jobs.build.with?.release).toBe(true);
+    const validation = build.steps.findIndex((step) => step.run === "node scripts/verify-release.mjs --skip-package");
+    expect(validation).toBeGreaterThan(build.steps.findIndex((step) => step.uses === "./.github/actions/setup"));
+    expect(validation).toBeLessThan(build.steps.findIndex((step) => step.run === "npm run build"));
+    expect(build.steps[validation]).toMatchObject({
+      if: "${{ inputs.release }}",
+      env: { RELEASE_TAG: "${{ github.ref_name }}" },
+    });
+    expect(readWorkflow("release").jobs["e2e-full"].needs).toBe("build");
+    expect(workflowJob("release", "package").steps).toContainEqual(
+      expect.objectContaining({ run: "node scripts/verify-release.mjs --skip-package" }),
+    );
   });
 });

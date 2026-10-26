@@ -1,0 +1,109 @@
+name: Shared electron-e2e
+on:
+  workflow_call:
+    inputs:
+      artifact:
+        type: string
+        required: true
+      renderer:
+        type: string
+        default: dist-desktop
+      timeout:
+        type: number
+        default: 20
+      full:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  electron-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout }}
+    steps:
+      - name: Record test job setup start
+        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        if: inputs.full
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          sparse-checkout: |
+            /*
+          sparse-checkout-cone-mode: false
+        if: "!inputs.full"
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: ${{ inputs.renderer }}
+          path: dist/
+        if: ${{ inputs.renderer != '' }}
+      - name: Cache Electron binary
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        id: electron-binary-cache
+        with:
+          path: |
+            ~/.cache/electron
+            node_modules/electron/dist
+            node_modules/electron/path.txt
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Ensure Electron binary
+        run: node scripts/ensure-electron.mjs
+      - name: Install Electron system dependencies
+        run: npx playwright install-deps chromium
+      - name: Install native window manager for focus canaries
+        if: ${{ inputs.full }}
+        run: sudo apt-get install -y --no-install-recommends openbox
+      - name: Run full ship gate
+        if: ${{ inputs.full }}
+        run: npm run check:ship
+      - run: mkdir -p reports
+      - name: Run Electron e2e
+        if: "!inputs.full"
+        run: xvfb-run --auto-servernum -- npm run test:ship:desktop
+        env:
+          CI: true
+          PLAYWRIGHT_ELECTRON_FULL: "1"
+      - name: Run full Electron e2e with native focus canaries
+        if: inputs.full
+        run: xvfb-run --auto-servernum -- sh -c 'openbox >/tmp/alchemy-openbox.log 2>&1 & npm run test:ship:desktop'
+        env:
+          CI: true
+          PLAYWRIGHT_ELECTRON_FULL: "1"
+          ALCHEMY_INTERACTION_TIER: nightly
+      - name: Summarize Electron e2e
+        id: playwright-summary
+        if: always()
+        run: node scripts/ci-summarize.mjs --playwright reports/playwright-electron-results.json
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ inputs.artifact }}-results
+          path: reports/playwright-electron-results.json
+          retention-days: 1
+          if-no-files-found: ignore
+      - name: Upload Electron Playwright report
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ inputs.artifact }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-electron-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 1
+      - name: Retain build failure diagnostics
+        if: failure() && inputs.full
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: build-diagnostics-nightly-ship-gate-full
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 1
+          if-no-files-found: ignore

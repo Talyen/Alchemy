@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveCheckPlan } from "../../scripts/lib/verification/check-plan.mjs";
+import { readWorkflow } from "../helpers/workflow";
 import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
@@ -92,10 +93,10 @@ describe("canonical verification commands", () => {
 
   it("runs critical browser journeys on every push and keeps manual save selection unfiltered", () => {
     const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
-    const e2eJob = workflow.split("  e2e:\n")[1].split(/\n {2}[\w-]+:\n/u)[0];
-    expect(e2eJob).not.toMatch(/^ {4}if:/mu);
-    expect(e2eJob).toContain("npm run test:e2e:critical");
-    expect(e2eJob).not.toContain("localization.spec.ts");
+    const e2eJob = readWorkflow("ci").jobs.e2e;
+    expect(e2eJob.if).toBeUndefined();
+    expect(e2eJob.with?.command).toBe("npm run test:e2e:critical");
+    expect(e2eJob.with?.command).not.toContain("localization.spec.ts");
     const localizationJob = workflow.split("  localization:\n")[1].split(/\n {2}[\w-]+:\n/u)[0];
     expect(localizationJob).toContain("needs: build");
     expect(localizationJob).toContain("--grep @localization-smoke");

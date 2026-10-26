@@ -1,0 +1,76 @@
+name: Shared web-e2e
+on:
+  workflow_call:
+    inputs:
+      command:
+        type: string
+        required: true
+      artifact:
+        type: string
+        required: true
+      timeout:
+        type: number
+        default: 30
+      variant:
+        type: string
+        default: ""
+      layout-review:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout }}
+    steps:
+      - name: Record test job setup start
+        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          sparse-checkout: |
+            /*
+          sparse-checkout-cone-mode: false
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: dist
+          path: dist/
+      - name: Smoke test downloaded build including music
+        run: npm run smoke:preview
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+      - run: mkdir -p reports
+      - name: Run browser suite
+        run: ${{ inputs.command }}
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+          CI: true
+          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-results.json
+          ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: ${{ inputs.layout-review && '1' || '' }}
+      - name: Summarize e2e tests
+        id: playwright-summary
+        if: always()
+        run: node scripts/ci-summarize.mjs --playwright reports/playwright-results.json
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ inputs.artifact }}-results
+          path: reports/playwright-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Upload Playwright report
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ inputs.artifact }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 1
+    env:
+      ALCHEMY_RUN_VARIANT: ${{ inputs.variant }}
