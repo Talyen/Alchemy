@@ -4,7 +4,7 @@ import type { NumericCombatTextEvent } from "./types/state-types";
 
 export type ObservedAttack = Extract<BattleCardEffect, { kind: "damage" }>;
 export type ObservedDirectAmount = Pick<NumericCombatTextEvent, "target" | "kind" | "stat" | "amount">;
-export type ObservedMagnitudeField = CardMagnitudeReference["field"];
+export type ObservedMagnitudeField = CardMagnitudeReference["field"] | "conditionalAmount";
 
 /** Execution-only observations. No observer or projection belongs in a saved battle. */
 export interface BattleResolutionObserver {

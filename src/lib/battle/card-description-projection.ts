@@ -155,7 +155,7 @@ export function describeKnownConditionalDamage(
       { effectIndex, kind: "damage", field: "amount" },
       { editable: false, corrupted: source?.corrupted, distilled: source?.distilled },
     ),
-    ` ${capitalizeWord(damageType)} damage (base damage ${condition === "bleeding" ? "doubled" : "tripled"})`,
+    ` ${capitalizeWord(damageType)} damage instead (base damage ${condition === "bleeding" ? "doubled" : "tripled"})`,
   ];
   let replaced = false;
   let matchingSource = false;

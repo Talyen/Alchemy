@@ -117,7 +117,7 @@ describe("complete catalog deterministic preview coverage", () => {
     for (const card of cardLibrary) {
       expect(getBattleCardDescriptionInspection(card, stateFor(card)).descriptionLines, card.id).toEqual(
         card.id === "kindling"
-          ? ["Deal 1 Burn damage", "If the enemy was not Burning, deal 3 Burn damage (base damage tripled)"]
+          ? ["Deal 1 Burn damage", "If the enemy was not Burning, deal 3 Burn damage instead (base damage tripled)"]
           : card.descriptionLines,
       );
     }
@@ -276,7 +276,7 @@ describe("complete catalog deterministic preview coverage", () => {
     const view = getBattleCardDescriptionInspection(rend, state);
     expect(view.descriptionLines).toEqual([
       "Deal 8 Bleed damage",
-      "If the enemy was already Bleeding, deal 12 Bleed damage (base damage doubled)",
+      "If the enemy was already Bleeding, deal 12 Bleed damage instead (base damage doubled)",
     ]);
     const played = playBattleCardResolved({ ...state, rng: () => 0.99 }, rend.id, 0);
     expect(state.enemyHealth - played.state.enemyHealth).toBe(12);
@@ -294,5 +294,50 @@ describe("complete catalog deterministic preview coverage", () => {
       ready.enemyHealth - playBattleCardResolved({ ...ready, rng: () => 0.99 }, stab.id, 0).state.enemyHealth,
     ).toBeGreaterThan(10);
     expect(ready.uniqueGear.viperReady).toBe(true);
+  });
+
+  it("evaluates Ice Shot's Frozen modifier at the effect's ordered state", () => {
+    const card = cardById["ice-shot"]!;
+    const patch = { gearEffects: { flatFreezeDamage: 1, frozenEnemyDamageBonusPercent: 100 } };
+    const state = stateFor(card, patch);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
+      "Deal 3 Freeze damage; Against Frozen enemies, deal 10 Freeze instead",
+      "Archery",
+    ]);
+    const ordinary = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0);
+    const frozenState = stateFor(card, { ...patch, enemyCC: { freezeSkipTurns: 1 } });
+    const frozen = playBattleCardResolved({ ...frozenState, rng: () => 0.99 }, card.id, 0);
+    expect(state.enemyHealth - ordinary.state.enemyHealth).toBe(3);
+    expect(frozenState.enemyHealth - frozen.state.enemyHealth).toBe(10);
+    const mixed = createMixedPotion(cardById.block!, card);
+    expect(
+      getBattleCardDescriptionInspection(
+        mixed,
+        stateFor(mixed, { gearEffects: { ...patch.gearEffects, freezeAttackBonusWithBlock: 2 } }),
+      ).descriptionLines,
+    ).toEqual([
+      "Gain 5 Block",
+      "Deal 5 Freeze damage; Against Frozen enemies, deal 14 Freeze instead",
+      "Archery",
+      "Consume",
+    ]);
+    const prepared = stateFor(card, {
+      flags: { nextHitPoison: true },
+      gearEffects: { flatPoisonDamage: 2, frozenEnemyDamageBonusPercent: 100 },
+    });
+    expect(getBattleCardDescriptionInspection(card, prepared).descriptionLines).toEqual([
+      "Deal 4 Poison damage; Against Frozen enemies, deal 12 Poison instead",
+      "Archery",
+    ]);
+    expect(prepared.flags.nextHitPoison).toBe(true);
+    const stunned = stateFor(card, {
+      ...patch,
+      enemyCC: { stunSkipTurns: 1 },
+      talentEffects: { stunDoubleDamage: true },
+    });
+    expect(getBattleCardDescriptionInspection(card, stunned).descriptionLines).toEqual([
+      "Deal 6 Freeze damage; Against Frozen enemies, deal 10 Freeze instead",
+      "Archery",
+    ]);
   });
 });

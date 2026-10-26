@@ -16,6 +16,8 @@ export interface CardEffectResolutionContext {
   damageMultiplier?: number;
   baseDamageBonus?: number;
   guaranteedCrit?: boolean;
+  /** Inspection-only authored operands, retained before choosing a conditional hit. */
+  descriptionDamage?: { effect: Extract<BattleCardEffect, { kind: "damage" }>; potionMultiplier: number };
 }
 
 export function hasCardHealing(context: CardEffectResolutionContext | undefined): boolean {

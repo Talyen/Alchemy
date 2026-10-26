@@ -267,23 +267,40 @@ export function getBattleCardDescriptionInspection(
     condition: "bleeding" | "not-burning";
   }> = [];
 
-  function damageAlternative(replacement: Extract<BattleCardEffect, { kind: "damage" }>, path: number[]) {
-    const replace = (candidate: BattleCardEffect, location: number[]): BattleCardEffect =>
-      location.join(".") === path.join(".")
-        ? replacement
-        : mapEffectChildren(candidate, (child, index) => replace(child, [...location, index]));
-    const variant = { ...card, effects: card.effects.map((candidate, index) => replace(candidate, [index])) };
-    const hand = snapshot.hand.map((candidate) => (candidate === card ? variant : candidate));
-    const outcome = inspectBattleCardDamage(variant, { ...snapshot, hand }, side).outcomes.get(path.join("."));
-    const attack = firstAttack(outcome);
-    return attack?.kind === "damage" ? attack : undefined;
-  }
-
   function inlineKnownAmount(effect: BattleCardEffect, path: number[]): BattleCardEffect {
     const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index]));
     const key = path.join(".");
     const outcome = inspected.outcomes.get(key);
-    if (outcome?.magnitudes.size) {
+    if (effect.kind === "damage" && outcome?.magnitudes.size) {
+      const amount = outcome.magnitudes.get("amount");
+      const actual = firstAttack(outcome);
+      if (amount !== undefined && actual?.kind === "damage") {
+        const frozenAmount = outcome.magnitudes.get("amountIfTargetFrozen");
+        if (effect.damageTypeIfTargetFrozen && frozenAmount !== undefined) {
+          if (actual.damageType !== effect.damageType) rebuild = true;
+          return {
+            ...effect,
+            amount,
+            damageType: actual.damageType,
+            amountIfTargetFrozen: frozenAmount,
+            damageTypeIfTargetFrozen: actual.damageType,
+          };
+        }
+        const conditional = outcome.magnitudes.get("conditionalAmount");
+        if (conditional !== undefined && !(effect.doubleIfEnemyBleeding && effect.tripleIfEnemyNotBurning)) {
+          if (actual.damageType !== effect.damageType) rebuild = true;
+          if (conditional !== amount)
+            conditionalDamage.push({
+              path,
+              amount: conditional,
+              damageType: actual.damageType,
+              condition: effect.doubleIfEnemyBleeding ? "bleeding" : "not-burning",
+            });
+          return { ...effect, amount, damageType: actual.damageType };
+        }
+      }
+    }
+    if (effect.kind !== "damage" && outcome?.magnitudes.size) {
       const amounts = Object.fromEntries(outcome.magnitudes);
       if (
         effect.kind === "random-draw" &&
@@ -323,40 +340,6 @@ export function getBattleCardDescriptionInspection(
       }
       if (effect.statusPool.every((status) => amounts.has(status))) statusOptions.push({ path, amounts });
       return view;
-    }
-    if (effect.kind === "damage" && effect.damageTypeIfTargetFrozen && outcome && outcome.kind !== "unknown") {
-      const { damageTypeIfTargetFrozen, amountIfTargetFrozen: frozenAmount, ...base } = effect;
-      const ordinary = damageAlternative(base, path);
-      const frozen = damageAlternative({ ...base, damageType: damageTypeIfTargetFrozen, amount: frozenAmount! }, path);
-      if (!ordinary || !frozen) return view;
-      if (ordinary.damageType !== effect.damageType || frozen.damageType !== effect.damageTypeIfTargetFrozen)
-        rebuild = true;
-      return {
-        ...effect,
-        amount: ordinary.amount,
-        damageType: ordinary.damageType,
-        amountIfTargetFrozen: frozen.amount,
-        damageTypeIfTargetFrozen: frozen.damageType,
-      };
-    }
-    if (effect.kind === "damage" && (effect.doubleIfEnemyBleeding || effect.tripleIfEnemyNotBurning)) {
-      if (!outcome || outcome.kind === "unknown" || (effect.doubleIfEnemyBleeding && effect.tripleIfEnemyNotBurning))
-        return view;
-      const ordinary = damageAlternative(
-        { ...effect, doubleIfEnemyBleeding: false, tripleIfEnemyNotBurning: false },
-        path,
-      );
-      const actual = firstAttack(outcome);
-      if (!ordinary || actual?.kind !== "damage") return view;
-      if (ordinary.damageType !== effect.damageType) rebuild = true;
-      if (actual.amount !== ordinary.amount)
-        conditionalDamage.push({
-          path,
-          amount: actual.amount,
-          damageType: actual.damageType,
-          condition: effect.doubleIfEnemyBleeding ? "bleeding" : "not-burning",
-        });
-      return { ...effect, amount: ordinary.amount, damageType: ordinary.damageType };
     }
     if (
       (effect.kind !== "damage" && effect.kind !== "random-damage") ||

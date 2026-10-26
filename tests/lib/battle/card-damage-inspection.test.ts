@@ -161,6 +161,36 @@ describe("rule-preserving tooltip inspection", () => {
     expect(result.effects).toEqual(card.effects);
   });
 
+  it("shows both known status-choice quantities and leaves the random choice unresolved", () => {
+    const card = effectsCard({
+      id: "utility-choice",
+      art: "",
+      effects: [{ kind: "player-status", status: "armor", amount: 3, statusPool: ["block", "armor"] }],
+    });
+    const state = patchBattleState({
+      hand: [card],
+      mana: 3,
+      playerStatuses: { forge: 20 },
+      talentEffects: { forgeBlockPercent: 25 },
+      gearEffects: { flatBlockGained: 2 },
+    });
+    const before = JSON.stringify({ card, state });
+    const rng = vi.fn(() => {
+      throw new Error("Preview sampled the live status choice");
+    });
+    expect(getBattleCardDescriptionInspection(card, { ...state, rng }).descriptionLines).toEqual([
+      "Gain 10 Block or 3 Armor",
+    ]);
+    expect(rng).not.toHaveBeenCalled();
+    const block = playBattleCardResolved({ ...state, rng: () => 0 }, card.id, 0).state;
+    const armor = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0).state;
+    expect(block.playerStatuses.block - state.playerStatuses.block).toBe(10);
+    expect(block.playerStatuses.armor - state.playerStatuses.armor).toBe(0);
+    expect(armor.playerStatuses.armor - state.playerStatuses.armor).toBe(3);
+    expect(armor.playerStatuses.block - state.playerStatuses.block).toBe(0);
+    expect(JSON.stringify({ card, state })).toBe(before);
+  });
+
   it("retains an authored utility value when an earlier draw makes its result unknown", () => {
     const card = effectsCard({
       id: "draw-block",
@@ -281,12 +311,15 @@ describe("rule-preserving tooltip inspection", () => {
     const dealAndReceive = effectsCard({
       id: "reckless",
       art: "",
-      effects: [hit(3), { kind: "self-damage", damageType: "physical", amount: 3 }],
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 3 },
+        { kind: "self-damage", damageType: "burn", amount: 3 },
+      ],
     });
     expect(
-      getBattleCardDescriptionInspection(dealAndReceive, patchBattleState({ playerStatuses: { forge: 2 } }))
+      getBattleCardDescriptionInspection(dealAndReceive, patchBattleState({ talentEffects: { flatBurnDamage: 2 } }))
         .descriptionLines,
-    ).toEqual(["Deal 5 Physical damage", "Take 3 Physical damage"]);
+    ).toEqual(["Deal 5 Burn damage", "Take 3 Burn damage"]);
   });
 });
 
