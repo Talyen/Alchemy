@@ -12,7 +12,6 @@ import { BattlePage } from "../../pages/battle-page";
 import { DEVICE_DISPLAY_RANGES } from "../../../src/lib/settings-values";
 import { controllerInput } from "../controller-input";
 import { expectUnfocused } from "../focus-input";
-import { assertNoOverflow } from "../layout-assertions";
 import {
   acceptanceLocales,
   localizationCoverage,
@@ -47,6 +46,38 @@ async function openOptions(page: Page, name: string | RegExp, ready: Locator) {
     if (!(await ready.isVisible())) await page.getByRole("button", { name, exact: true }).click({ timeout: 2000 });
     await expect(ready).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15_000 });
+}
+
+const SCRIPT_FONTS = [
+  ["zh-Hans", "Alchemy Chinese", "造成伤害，获得格挡。简体中文，万亿"],
+  ["ru", "Alchemy Cyrillic", "Здоровье, броня, оглушение"],
+  ["ja", "Alchemy Japanese", "体力、装甲、マナ。日本語、億、兆"],
+] as const;
+
+async function expectScriptFont(page: Page, [locale, family, phrase]: (typeof SCRIPT_FONTS)[number]) {
+  const loaded = await page.evaluate(
+    async ({ family, phrase }) => {
+      const faces = await document.fonts.load(`16px "${family}"`, phrase);
+      return faces.length > 0 && faces.every((face) => face.status === "loaded");
+    },
+    { family, phrase },
+  );
+  expect(loaded).toBe(true);
+  if (locale === "ja") {
+    await page.locator("#language").click();
+    for (const [optionLocale, optionFamily] of [
+      ["ja", "Alchemy Japanese"],
+      ["zh-Hans", "Alchemy Chinese"],
+    ] as const) {
+      const nativeName = page
+        .getByRole("option", { name: languages[optionLocale].name, exact: true })
+        .locator(`[lang="${optionLocale}"]`);
+      await expect(nativeName).toBeVisible();
+      const nativeFamily = await nativeName.evaluate((element) => getComputedStyle(element).fontFamily);
+      expect(nativeFamily.split(",").map((family) => family.trim().replaceAll('"', ""))).toContain(optionFamily);
+    }
+    await page.keyboard.press("Escape");
+  }
 }
 
 for (const locale of acceptanceLocales) {
@@ -115,9 +146,11 @@ for (const locale of acceptanceLocales) {
 }
 
 for (const locale of acceptanceLocales) {
+  const scriptFont = SCRIPT_FONTS.find(([language]) => language === locale);
+
   test(
     `${locale} Options tabs fit and keep translated controls usable`,
-    localizationCoverage(locale, "zh-Hans"),
+    localizationCoverage(locale, scriptFont ? locale : "zh-Hans"),
     async ({ page }) => {
       // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
       test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a QA locale");
@@ -129,6 +162,7 @@ for (const locale of acceptanceLocales) {
         locale === "en-XA" ? /ÔÔptïïôôns\]$/ : label("Options"),
         page.getByRole("heading", { name: label("Options"), exact: true }),
       );
+      if (scriptFont) await expectScriptFont(page, scriptFont);
       await controllerInput(page).reach(page.locator("#language"));
       await expect(page.locator("#language")).toBeFocused();
       for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
@@ -156,50 +190,6 @@ for (const locale of acceptanceLocales) {
           .evaluateAll((labels) => labels.some((label) => label.scrollWidth > label.clientWidth + 1));
         expect(clipped).toBe(false);
       }
-    },
-  );
-}
-
-for (const [locale, family, phrase] of [
-  ["zh-Hans", "Alchemy Chinese", "造成伤害，获得格挡。简体中文，万亿"],
-  ["ru", "Alchemy Cyrillic", "Здоровье, броня, оглушение"],
-  ["ja", "Alchemy Japanese", "体力、装甲、マナ。日本語、億、兆"],
-] as const) {
-  test(
-    `${locale} uses a bundled font for its script`,
-    { tag: ["@localization", "@localization-smoke"] },
-    async ({ page }) => {
-      await page.addInitScript((value) => localStorage.setItem("alchemy-language-v1", value), locale);
-      await page.goto("/");
-      await openOptions(
-        page,
-        translatedLabel(locale, "Options"),
-        page.getByRole("heading", { name: translatedLabel(locale, "Options"), exact: true }),
-      );
-      const loaded = await page.evaluate(
-        async ({ family, phrase }) => {
-          const faces = await document.fonts.load(`16px "${family}"`, phrase);
-          return faces.length > 0 && faces.every((face) => face.status === "loaded");
-        },
-        { family, phrase },
-      );
-      expect(loaded).toBe(true);
-      if (locale === "ja") {
-        await page.locator("#language").click();
-        for (const [optionLocale, optionFamily] of [
-          ["ja", "Alchemy Japanese"],
-          ["zh-Hans", "Alchemy Chinese"],
-        ] as const) {
-          const nativeName = page
-            .getByRole("option", { name: languages[optionLocale].name, exact: true })
-            .locator(`[lang="${optionLocale}"]`);
-          await expect(nativeName).toBeVisible();
-          const nativeFamily = await nativeName.evaluate((element) => getComputedStyle(element).fontFamily);
-          expect(nativeFamily.split(",")[1]?.trim().replaceAll('"', "")).toBe(optionFamily);
-        }
-        await page.keyboard.press("Escape");
-      }
-      await assertNoOverflow(page, `${locale} font coverage`);
     },
   );
 }

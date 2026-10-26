@@ -89,6 +89,16 @@ function playerStatusDefense(
   return (amount * defensive) / effect.statusPool.length;
 }
 
+function activeCompanionEffects(state: BattleSnapshot): BattleCardEffect[] {
+  return state.activeCompanion
+    ? getModifiedCompanionEffects(
+        state.activeCompanion,
+        state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
+        getBattleCompanionDamageModifiers(state),
+      )
+    : [];
+}
+
 function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: number): number {
   switch (effect.kind) {
     case "damage":
@@ -128,18 +138,7 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
     case "summon-companion":
       return AUTOPLAY_EFFECT_SCORE.summon;
     case "companion-action":
-      return state.activeCompanion
-        ? effect.amount *
-            scoreEffects(
-              getModifiedCompanionEffects(
-                state.activeCompanion,
-                state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
-                getBattleCompanionDamageModifiers(state),
-              ),
-              state,
-              manaRoom,
-            )
-        : 0;
+      return effect.amount * scoreEffects(activeCompanionEffects(state), state, manaRoom);
     case "multiply-enemy-status": {
       const current = state.enemyStatuses[effect.status] ?? 0;
       // Mirror the live pipeline's nearest-integer rounding so close picks agree.
@@ -177,69 +176,53 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
   }
 }
 
-function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot): number {
+type ImmediateAccumulator = (total: number, effect: BattleCardEffect, state: BattleSnapshot) => number;
+
+// Immediate estimates expand Chance and current Companion actions, but exclude
+// delayed effects. Keep each branch's addition order stable for tied card picks.
+function sumImmediateEffects(
+  effects: readonly BattleCardEffect[],
+  state: BattleSnapshot,
+  accumulate: ImmediateAccumulator,
+): number {
   return effects.reduce((total, effect) => {
-    if (effect.kind === "damage") {
-      return total + scoreDamageEffect(effect, state);
-    }
-    if (effect.kind === "random-damage") {
-      const nominal = (effect.minAmount + effect.maxAmount) / 2;
-      const pool = effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES;
-      return total + nominal + averageForgeBonus(state, pool);
-    }
-    if (effect.kind === "cleanse-player-status-to-damage") {
-      const stacks = state.playerStatuses[effect.status] ?? 0;
-      return total + (stacks > 0 ? stacks + getForgeBonusForDamage(state, effect.damageType) : 0);
-    }
-    if (effect.kind === "chance") {
+    if (effect.kind === "chance")
       return (
         total +
-        effect.probability * immediateDamageFromEffects(effect.successEffects, state) +
-        (1 - effect.probability) * immediateDamageFromEffects(effect.failureEffects, state)
+        effect.probability * sumImmediateEffects(effect.successEffects, state, accumulate) +
+        (1 - effect.probability) * sumImmediateEffects(effect.failureEffects, state, accumulate)
       );
-    }
-    if (effect.kind === "repeat-over-turns") {
-      return total + effect.remainingTurns * immediateDamageFromEffects(effect.effects, state);
-    }
-    return total;
+    if (effect.kind === "companion-action")
+      return total + effect.amount * sumImmediateEffects(activeCompanionEffects(state), state, accumulate);
+    return accumulate(total, effect, state);
   }, 0);
+}
+
+function accumulateDamage(total: number, effect: BattleCardEffect, state: BattleSnapshot): number {
+  if (effect.kind === "random-damage") {
+    const pool = effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES;
+    return total + (effect.minAmount + effect.maxAmount) / 2 + averageForgeBonus(state, pool);
+  }
+  return effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage"
+    ? total + scoreEffect(effect, state, 0)
+    : total;
+}
+
+function accumulateDefense(total: number, effect: BattleCardEffect, state: BattleSnapshot): number {
+  if (effect.kind === "player-status") return total + playerStatusDefense(effect, state);
+  if (effect.kind === "heal" || effect.kind === "remove-harmful-status" || effect.kind === "remove-player-status")
+    return total + scoreEffect(effect, state, 0);
+  if (effect.kind === "cleanse-player-status-to-damage")
+    return total + (state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0);
+  return effect.kind === "dodge-next-attack" ? total + (state.flags.dodgeNextAttack ? 0 : 1) : total;
 }
 
 export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): number {
-  return state ? immediateDamageFromEffects(card.effects, state) : nominalCardValue(card.effects).damage;
-}
-
-function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot): number {
-  return effects.reduce((total, effect) => {
-    if (effect.kind === "chance") {
-      return (
-        total +
-        effect.probability * immediateDefenseFromEffects(effect.successEffects, state) +
-        (1 - effect.probability) * immediateDefenseFromEffects(effect.failureEffects, state)
-      );
-    }
-    if (effect.kind === "repeat-over-turns") {
-      return total + effect.remainingTurns * immediateDefenseFromEffects(effect.effects, state);
-    }
-    if (effect.kind === "heal")
-      return total + Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth));
-    if (effect.kind === "player-status") return total + playerStatusDefense(effect, state);
-    if (effect.kind === "remove-harmful-status") {
-      let removable = 0;
-      for (const status of harmfulPlayerStatusIds) if (state.playerStatuses[status] > 0) removable++;
-      const count = effect.removeAll ? removable : Math.min(effect.amount ?? 0, removable);
-      return total + count * AUTOPLAY_EFFECT_SCORE.cleanse;
-    }
-    if (effect.kind === "remove-player-status" || effect.kind === "cleanse-player-status-to-damage") {
-      return total + (state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0);
-    }
-    if (effect.kind === "dodge-next-attack") return total + (state.flags.dodgeNextAttack ? 0 : 1);
-    return total;
-  }, 0);
+  return state ? sumImmediateEffects(card.effects, state, accumulateDamage) : nominalCardValue(card.effects).damage;
 }
 
 export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): number {
-  return state ? immediateDefenseFromEffects(card.effects, state) : nominalCardValue(card.effects).defense;
+  return state ? sumImmediateEffects(card.effects, state, accumulateDefense) : nominalCardValue(card.effects).defense;
 }
 
 export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {

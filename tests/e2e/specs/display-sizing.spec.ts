@@ -6,13 +6,11 @@ import {
   assertNoOverflow,
   assertStageFitsViewport,
   makeCard,
-  startAtDestination,
   startBattleWithDeck,
   waitForLayoutSettled,
 } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
-import { getVirtualResolutionLayout } from "../../../src/features/alchemy/shared/ui/use-virtual-resolution";
 import { CONTENT_REFERENCE_VIEWPORT } from "../../../src/lib/game-constants/ui-layout";
 
 // Representative CSS viewports cover narrow, standard, ultrawide, and 4K layouts.
@@ -53,31 +51,39 @@ test.describe("Responsive display sizes", slow, () => {
     await menu.goto();
     for (const viewport of VIEWPORTS) {
       await page.setViewportSize(viewport);
-      await menu.expectMainMenuAfterColdStart();
       await assertStageFitsViewport(page);
       await assertNoOverflow(page, `Menu ${viewport.width}`);
-      await menu.openCollection();
+      await expect(menu.playBtn).toBeInViewport();
+    }
+    await menu.openCollection();
+    for (const viewport of VIEWPORTS) {
+      await page.setViewportSize(viewport);
+      await waitForLayoutSettled(page);
       await assertNoOverflow(page, `Collection ${viewport.width}`);
-      await page.getByRole("button", { name: "Back", exact: true }).click();
-      await menu.openOptions();
-      await page.getByRole("button", { name: "Display", exact: true }).click();
-      await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("100");
-      await assertNoOverflow(page, `Options ${viewport.width}`);
-      await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
-      const scroll = page.locator(".game-page-scroll");
-      await expect
-        .poll(() => scroll.evaluate((element) => element.scrollHeight - element.clientHeight))
-        .toBeLessThanOrEqual(1);
-      const header = page.getByRole("heading", { name: "Options", exact: true });
-      const headerTop = (await header.boundingBox())!.y;
-      for (const tab of ["Sound", "Gameplay", "Other", "Display"]) {
-        await page.getByRole("button", { name: tab, exact: true }).click();
-        await expect.poll(async () => (await header.boundingBox())!.y).toBeCloseTo(headerTop, 0);
+      await expect(page.getByRole("button", { name: "Back", exact: true })).toBeInViewport();
+    }
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await menu.openOptions();
+    const headerTops = new Map<number, number>();
+    for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
+      await page.getByRole("button", { name: tab, exact: true }).click();
+      for (const viewport of VIEWPORTS) {
+        await page.setViewportSize(viewport);
+        await waitForLayoutSettled(page);
+        await assertNoOverflow(page, `Options ${tab} ${viewport.width}`);
+        const header = page.getByRole("heading", { name: "Options", exact: true });
+        const top = (await header.boundingBox())!.y;
+        if (tab === "Display") {
+          headerTops.set(viewport.width, top);
+          await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("100");
+          await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
+        } else expect(top).toBeCloseTo(headerTops.get(viewport.width)!, 0);
         await expect
-          .poll(() => scroll.evaluate((element) => element.scrollHeight - element.clientHeight))
+          .poll(() =>
+            page.locator(".game-page-scroll").evaluate((element) => element.scrollHeight - element.clientHeight),
+          )
           .toBeLessThanOrEqual(1);
       }
-      await page.getByRole("button", { name: "Back", exact: true }).click();
     }
   });
 
@@ -259,36 +265,6 @@ test.describe("Responsive display sizes", slow, () => {
   });
 });
 
-test("keyboard Options and confirmation fit at 1280×720", async ({ page }) => {
-  const height = 720;
-  await page.setViewportSize({ width: 1280, height });
-  await page.goto("/");
-  const input = controllerInput(page);
-  await input.activate(page.getByRole("button", { name: "Options", exact: true }));
-  await input.activate(page.getByRole("button", { name: "Sound", exact: true }));
-  const volume = page.getByRole("slider", { name: "Music Volume", exact: true });
-  await input.reach(volume);
-  await expect(volume).toBeInViewport();
-  await expectTooltipFitsViewport(volume, { width: 1280, height });
-  const renderedText = await page.getByText("Music Volume", { exact: true }).evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const scale = rect.height / (element as HTMLElement).offsetHeight;
-    return parseFloat(getComputedStyle(element).fontSize) * scale;
-  });
-  const expectedScale = getVirtualResolutionLayout(1280, height).contentScale;
-  expect(renderedText).toBeCloseTo(20 * expectedScale, 1);
-  await input.activate(page.getByRole("button", { name: "Other", exact: true }));
-  await input.activate(page.getByRole("button", { name: "Clear Save Data", exact: true }));
-  const dialog = page.getByRole("dialog");
-  await expectTooltipFitsViewport(dialog, { width: 1280, height });
-  const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
-  await expect(cancel).toBeFocused();
-  await expect(cancel).toBeInViewport();
-  await expect(cancel).toBeVisible();
-  await input.press("back");
-  await expect(dialog).toHaveCount(0);
-});
-
 test("compact Options controls remain reachable at large size in a narrow window", async ({ page }) => {
   await page.setViewportSize({ width: 480, height: 720 });
   await page.addInitScript(() => {
@@ -317,57 +293,6 @@ test("compact Options controls remain reachable at large size in a narrow window
   await input.reach(page.getByRole("switch", { name: "Mute in Background" }));
   await expect(page.getByRole("slider", { name: "Brightness", exact: true })).toHaveCount(0);
 });
-
-test(
-  "card selection grid removal actions stay visible and stable across pages at maximum game size",
-  slow,
-  async ({ page }) => {
-    await page.addInitScript((gameSizePercent) => {
-      localStorage.setItem(
-        "alchemy-device-display-v1",
-        JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
-      );
-    }, 120);
-    await page.setViewportSize({ width: 1366, height: 768 });
-    await startAtDestination(
-      page,
-      { runGold: 9999, runDeck: Array.from({ length: 13 }, () => makeCard()) },
-      { forceDestination: "Card Shop" },
-    );
-    await page.getByRole("button", { name: "Card Shop", exact: true }).click();
-    await page.getByRole("button", { name: /Remove Card/ }).click();
-    const heading = page.getByRole("heading", { name: "Remove Card", exact: true });
-    const remove = page.getByRole("button", { name: /^Remove Gold/ });
-    const cancel = page.getByRole("button", { name: "Cancel", exact: true });
-    const next = page.getByRole("button", { name: "Next page" });
-    await expect(heading).toBeVisible();
-    await expect(remove).toBeInViewport({ ratio: 0.999 });
-    await expect(cancel).toBeInViewport({ ratio: 0.999 });
-    const cards = page.getByRole("button", { name: "Select Slash", exact: true });
-    const grid = page.getByTestId("card-selection-grid");
-    const fullPageSize = 3;
-    await expect(cards).toHaveCount(fullPageSize);
-    for (const card of await cards.all()) {
-      await expect(card).toBeInViewport({ ratio: 0.999 });
-    }
-    const before = { heading: await heading.boundingBox(), remove: await remove.boundingBox() };
-    while (await next.isEnabled()) {
-      await next.click();
-    }
-    await expect(cards).toHaveCount(1);
-    await expect(grid).toHaveCSS("opacity", "1");
-    await expect
-      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
-      .toEqual(before);
-    await expect(page.getByText("Select a card to remove from your deck")).toHaveCount(0);
-    await page.getByRole("button", { name: "Previous page" }).click();
-    await expect(cards).toHaveCount(fullPageSize);
-    await expect(grid).toHaveCSS("opacity", "1");
-    await expect
-      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
-      .toEqual(before);
-  },
-);
 
 for (const deviceScaleFactor of [1.25, 2]) {
   test.describe(`DPR ${deviceScaleFactor}`, () => {

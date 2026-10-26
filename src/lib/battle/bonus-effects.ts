@@ -1,9 +1,9 @@
+import { FREE_CARD_SENTINEL } from "../game-constants";
+import { writeCombatFlag } from "./action-context";
+import { isPlayerDefeated } from "./battle-outcome";
+import { stripEnemyArmor, stripEnemyBlock } from "./enemy-mitigation-state";
+import { mergeCombatText } from "./combat-text-events";
 import { rollBattleChance } from "./chance-roll";
-import {
-  resolveLuckyCloverReward,
-  resolveNatureGoldReward,
-  resolveNatureManaReward,
-} from "./resource-reward-resolution";
 import { drawFromState, applyDrawResult } from "./draw";
 import {
   addGoldWithCombatText,
@@ -13,38 +13,81 @@ import {
   applyBlockReward,
 } from "./player-rewards";
 import type { BattleState, CombatTextEvent } from "./types";
-import { resolveCrowdControlBonuses, type CrowdControlTriggerBonuses } from "./crowd-control-resolution";
 
-export type { CrowdControlTriggerBonuses } from "./crowd-control-resolution";
+export interface CrowdControlTriggerBonuses {
+  block?: number;
+  forge?: number;
+  mana?: number;
+  draw?: number;
+  nextCardFree?: boolean;
+  stripArmor?: boolean;
+  stripBlock?: boolean;
+}
 
 export function applyCrowdControlTriggerBonuses(
   state: BattleState,
   bonuses: CrowdControlTriggerBonuses,
-  combatTexts?: CombatTextEvent[],
+  combatTexts: CombatTextEvent[] = [],
 ): BattleState {
-  return resolveCrowdControlBonuses(state, bonuses, combatTexts ?? [], {
-    draw: (current, amount, texts) => {
-      const drawn = applyDrawResult(current, drawFromState(current, amount), texts);
-      return drawn.onEmptyDraw?.(drawn, amount, texts) ?? drawn;
-    },
-    block: applyBlockReward,
-    forge: addForgeToPlayer,
-    mana: gainManaWithCombatText,
-  });
+  let nextState = state;
+  const draw = bonuses.draw ?? 0;
+  if (draw > 0) {
+    const drawn = applyDrawResult(nextState, drawFromState(nextState, draw), combatTexts);
+    nextState = drawn.onEmptyDraw?.(drawn, draw, combatTexts) ?? drawn;
+    if (isPlayerDefeated(nextState)) return nextState;
+  }
+  if (bonuses.nextCardFree) {
+    nextState = writeCombatFlag(nextState, "nextCardCostReduction", FREE_CARD_SENTINEL);
+  }
+  const block = bonuses.block ?? 0;
+  if (block > 0) {
+    nextState = applyBlockReward(nextState, block, combatTexts);
+  }
+  const forge = bonuses.forge ?? 0;
+  if (forge > 0) {
+    nextState = addForgeToPlayer(nextState, forge, combatTexts);
+  }
+  for (const [stat, enabled, strip] of [
+    ["armor", bonuses.stripArmor, stripEnemyArmor],
+    ["block", bonuses.stripBlock, stripEnemyBlock],
+  ] as const) {
+    if (!enabled) continue;
+    if (nextState.enemyMitigation[stat] > 0) {
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat,
+        amount: nextState.enemyMitigation[stat],
+        impact: false,
+      });
+    }
+    nextState = strip(nextState);
+  }
+  const mana = bonuses.mana ?? 0;
+  if (mana > 0) {
+    nextState = gainManaWithCombatText(nextState, mana, combatTexts);
+  }
+  return nextState;
 }
 
-const resourceRewardPort = { chance: rollBattleChance, mana: gainManaWithCombatText, gold: addGoldWithCombatText };
-
 export function applyLuckyCloverGold(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
-  return resolveLuckyCloverReward(state, healthDamage, combatTexts, resourceRewardPort);
+  if (state.trinketEffects.luckyCloverGoldChance <= 0 || healthDamage <= 0) return state;
+  return rollBattleChance(state.trinketEffects.luckyCloverGoldChance, state)
+    ? addGoldWithCombatText(state, healthDamage, combatTexts)
+    : state;
 }
 
 export function applyNatureManaRefund(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  return resolveNatureManaReward(state, damage, combatTexts, resourceRewardPort);
+  if (damage <= 0 || state.gearEffects.manaOnNatureDamageChance <= 0) return state;
+  return rollBattleChance(state.gearEffects.manaOnNatureDamageChance, state)
+    ? gainManaWithCombatText(state, 1, combatTexts)
+    : state;
 }
 
 export function applyNatureGoldReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  return resolveNatureGoldReward(state, damage, combatTexts, resourceRewardPort);
+  return damage > 0 && rollBattleChance(state.talentEffects.goldOnNatureDamageChance, state)
+    ? addGoldWithCombatText(state, damage, combatTexts)
+    : state;
 }
 
 export function applyEmberforgedPayout(
@@ -54,5 +97,15 @@ export function applyEmberforgedPayout(
 ): BattleState {
   return !enemyWasBurningBefore
     ? addForgeToPlayer(state, rollForgeAffixAwards(state, state.gearEffects.forgeOnBurnVsUnburnedChances), combatTexts)
+    : state;
+}
+
+export function resolveBleedGoldReward(
+  state: BattleState,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  return healthDamage > 0 && rollBattleChance(state.trinketEffects.cutpurseGoldChance, state)
+    ? addGoldWithCombatText(state, healthDamage, combatTexts)
     : state;
 }

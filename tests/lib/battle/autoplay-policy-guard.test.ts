@@ -6,7 +6,8 @@ import {
   getImmediateDefense,
   pickHighestScoring,
 } from "@/lib/battle/autoplay-policy";
-import { makeTestBattleState } from "../../fixtures/battle";
+import type { BattleCardEffect, DamageType } from "@/lib/game-data";
+import { makeTestBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("autoplay policy", () => {
@@ -111,197 +112,150 @@ describe("autoplay policy", () => {
     expect(getImmediateDefense(card)).toBe(9.5);
   });
 
-  it("scores random damage at its exact average instead of rounding odd ranges up", () => {
-    const odd = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4 }],
-    });
-    const even = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "random-damage", minAmount: 2, maxAmount: 4 }],
-    });
-    const state = makeTestBattleState();
-    // True uniform expectation is 2.5; rounding would inflate Gambler's Shot-style cards to 3.
-    // Reaction scoring uses the same exact average so autoplay and the simulator agree.
-    expect(getImmediateDamage(odd, state)).toBe(2.5);
-    expect(getEffectiveDamageScore(odd, state)).toBe(2.5);
-    expect(getEffectiveDamageScore(even, state)).toBe(3);
+  // Independent expected values pin both draft estimates and live scores. Keep
+  // resource scaling, rounding, conditional damage and pool averages visible here.
+  const hit = (
+    damageType: DamageType,
+    amount: number,
+    extra: Partial<Extract<BattleCardEffect, { kind: "damage" }>> = {},
+  ): BattleCardEffect => ({ kind: "damage", damageType, amount, ...extra });
+  it.each<[string, BattleCardEffect, BattleStatePatch, number, number]>([
+    ["odd random range", { kind: "random-damage", minAmount: 1, maxAmount: 4 }, {}, 2.5, 2.5],
+    ["even random range", { kind: "random-damage", minAmount: 2, maxAmount: 4 }, {}, 3, 3],
+    [
+      "random pool Forge",
+      { kind: "random-damage", minAmount: 2, maxAmount: 4, damageTypePool: ["physical", "nature"] },
+      { playerStatuses: { forge: 4 } },
+      3,
+      5,
+    ],
+    [
+      "damage pool Forge",
+      hit("poison", 2, { damageTypePool: ["poison", "physical"] }),
+      { playerStatuses: { forge: 4 } },
+      2,
+      4,
+    ],
+    ["Burn against Burning", hit("burn", 7, { tripleIfEnemyNotBurning: true }), { enemyStatuses: { burn: 1 } }, 7, 7],
+    ["Burn against unburned", hit("burn", 7, { tripleIfEnemyNotBurning: true }), {}, 7, 21],
+    ["Bleed against unbleeding", hit("bleed", 5, { doubleIfEnemyBleeding: true }), {}, 5, 5],
+    [
+      "Bleed against Bleeding",
+      hit("bleed", 5, { doubleIfEnemyBleeding: true }),
+      { enemyStatuses: { bleed: 2 } },
+      5,
+      10,
+    ],
+    ["ordinary hit", hit("physical", 5), {}, 5, 5],
+    ["ordinary Forge", hit("physical", 5), { playerStatuses: { forge: 3 } }, 5, 8],
+    ["Burn detonation", hit("burn", 1, { detonateAllBurn: true }), { enemyStatuses: { burn: 8 } }, 1, 9],
+    ["Bleed detonation", hit("bleed", 2, { detonateAllBleed: true }), { enemyStatuses: { bleed: 6 } }, 2, 8],
+    ["empty cleanse damage", { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }, {}, 1, 0],
+    [
+      "stored cleanse damage",
+      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
+      { playerStatuses: { burn: 5 } },
+      1,
+      5,
+    ],
+    ["empty Forge scaling", hit("physical", 0, { forgeBonusPercent: 50 }), {}, 1, 0],
+  ])("preserves %s damage in drafting, immediate estimates and autoplay", (_name, effect, patch, nominal, live) => {
+    const card = makeTestCard({ cost: 0, effects: [effect] });
+    const state = makeTestBattleState(patch);
+    expect(getImmediateDamage(card)).toBe(nominal);
+    expect(getImmediateDamage(card, state)).toBe(live);
+    expect(getEffectiveDamageScore(card, state)).toBe(live);
   });
 
-  it("scores conditional double and triple damage live when a snapshot is available", () => {
-    const burnCard = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "damage", damageType: "burn", amount: 7, tripleIfEnemyNotBurning: true }],
-    });
-    const bleedCard = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "damage", damageType: "bleed", amount: 5, doubleIfEnemyBleeding: true }],
-    });
-    // Stateless draft heuristics cannot see enemy statuses, so they stay nominal.
-    expect(getImmediateDamage(burnCard)).toBe(7);
-    expect(getImmediateDamage(bleedCard)).toBe(5);
-    expect(getImmediateDamage(burnCard, makeTestBattleState({ enemyStatuses: { burn: 1 } }))).toBe(7);
-    expect(getImmediateDamage(burnCard, makeTestBattleState({ enemyStatuses: { burn: 0 } }))).toBe(21);
-    expect(getImmediateDamage(bleedCard, makeTestBattleState({ enemyStatuses: { bleed: 0 } }))).toBe(5);
-    expect(getImmediateDamage(bleedCard, makeTestBattleState({ enemyStatuses: { bleed: 2 } }))).toBe(10);
-  });
+  it.each<[string, BattleCardEffect, BattleStatePatch, number, number, number]>([
+    [
+      "empty Mana conversion",
+      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 2 },
+      { mana: 0 },
+      2,
+      0,
+      0,
+    ],
+    [
+      "funded Mana conversion",
+      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 2 },
+      { mana: 3 },
+      2,
+      6,
+      3,
+    ],
+    ["empty targeted cleanse", { kind: "remove-player-status", status: "burn" }, {}, 3, 0, 0],
+    ["targeted cleanse", { kind: "remove-player-status", status: "burn" }, { playerStatuses: { burn: 2 } }, 3, 3, 3],
+    ["empty fixed cleanse", { kind: "remove-harmful-status", amount: 1 }, {}, 3, 0, 0],
+    ["empty full cleanse", { kind: "remove-harmful-status", removeAll: true }, {}, 3, 0, 0],
+    [
+      "fixed cleanse",
+      { kind: "remove-harmful-status", amount: 1 },
+      { playerStatuses: { burn: 5, poison: 3, bleed: 2 } },
+      3,
+      3,
+      3,
+    ],
+    [
+      "full cleanse",
+      { kind: "remove-harmful-status", removeAll: true },
+      { playerStatuses: { burn: 5, poison: 3, bleed: 2 } },
+      3,
+      9,
+      9,
+    ],
+    [
+      "empty cleanse damage",
+      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
+      {},
+      3,
+      0,
+      0,
+    ],
+    [
+      "stored cleanse damage",
+      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
+      { playerStatuses: { burn: 4 } },
+      3,
+      3,
+      4,
+    ],
+  ])(
+    "preserves %s defense without confusing it with the autoplay score",
+    (_name, effect, patch, nominal, live, score) => {
+      const card = makeTestCard({ cost: 0, effects: [effect] });
+      const state = makeTestBattleState(patch);
+      expect(getImmediateDefense(card)).toBe(nominal);
+      expect(getImmediateDefense(card, state)).toBe(live);
+      expect(getEffectiveDamageScore(card, state)).toBe(score);
+    },
+  );
 
-  it("scores ordinary damage with the usual Forge bonus like the live base pipeline", () => {
-    const strike = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-    // Stateless heuristics stay nominal; physical converts Forge at full value with state.
-    expect(getImmediateDamage(strike)).toBe(5);
-    expect(getImmediateDamage(strike, makeTestBattleState({ playerStatuses: { forge: 0 } }))).toBe(5);
-    expect(getImmediateDamage(strike, makeTestBattleState({ playerStatuses: { forge: 3 } }))).toBe(8);
-    expect(getEffectiveDamageScore(strike, makeTestBattleState({ playerStatuses: { forge: 3 } }))).toBe(8);
-  });
-
-  it("treats a mana-conversion guard as non-defensive without current Mana", () => {
-    const convert = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 2 }],
-    });
-    // Stateless draft heuristics use the authored factor; live defense needs actual Mana.
-    expect(getImmediateDefense(convert)).toBeGreaterThan(0);
-    expect(getImmediateDefense(convert, makeTestBattleState({ mana: 0 }))).toBe(0);
-    expect(getImmediateDefense(convert, makeTestBattleState({ mana: 3 }))).toBeGreaterThan(0);
-  });
-
-  it("scores random damage with expected Forge bonus when a snapshot is available", () => {
-    const randomAttack = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "random-damage", minAmount: 2, maxAmount: 4, damageTypePool: ["physical", "nature"] }],
-    });
-    // Stateless uses the nominal average (3); with 4 Forge, physical gets +4 while nature gets 0, so average is +2.
-    expect(getImmediateDamage(randomAttack)).toBe(3);
-    const forged = makeTestBattleState({ playerStatuses: { forge: 4 } });
-    expect(getImmediateDamage(randomAttack, forged)).toBe(5);
-    expect(getEffectiveDamageScore(randomAttack, forged)).toBe(5);
-  });
-
-  it("scores cleanse-player-status-to-damage nominally in draft and with status and Forge live", () => {
-    const purifyingFlame = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
-    });
-    // Draft heuristics count it nominally as 1; live scores the cleansed stacks.
-    expect(getImmediateDamage(purifyingFlame)).toBe(1);
-    expect(getImmediateDamage(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 0 } }))).toBe(0);
-    expect(getImmediateDamage(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 5 } }))).toBe(5);
-    expect(getEffectiveDamageScore(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 5 } }))).toBe(5);
-  });
-
-  it("scores nested chance and repeat-over-turns in immediate damage and defense", () => {
-    const chanceAttack = makeTestCard({
-      cost: 0,
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-          failureEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-        },
-      ],
-    });
-    expect(getImmediateDamage(chanceAttack)).toBe(4);
-
-    const repeatDefense = makeTestCard({
-      cost: 0,
+  it("includes scheduled effects in draft estimates while immediate live estimates exclude them", () => {
+    const card = makeTestCard({
       effects: [
         {
           kind: "repeat-over-turns",
           remainingTurns: 3,
-          effects: [{ kind: "player-status", status: "block", amount: 4 }],
+          effects: [hit("physical", 6), { kind: "player-status", status: "block", amount: 4 }],
         },
       ],
     });
-    expect(getImmediateDefense(repeatDefense)).toBe(12);
-  });
-
-  it("scores 0-amount Forge-scaling attacks nominally in stateless draft heuristics", () => {
-    const forgeAttack = makeTestCard({
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 0, forgeBonusPercent: 50 }],
+    expect(getImmediateDamage(card)).toBe(18);
+    expect(getImmediateDefense(card)).toBe(12);
+    expect(getImmediateDamage(card, makeTestBattleState())).toBe(0);
+    expect(getImmediateDefense(card, makeTestBattleState())).toBe(0);
+    const chance = makeTestCard({
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [hit("physical", 6)],
+          failureEffects: [hit("physical", 2)],
+        },
+      ],
     });
-    expect(getImmediateDamage(forgeAttack)).toBe(1);
-  });
-
-  it("scores cleanse-player-status-to-damage as defense when status is present", () => {
-    const purifyingFlame = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
-    });
-    // Stateless counts nominally; live counts if and only if harmful burn stacks are present
-    expect(getImmediateDefense(purifyingFlame)).toBeGreaterThan(0);
-    expect(getImmediateDefense(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 0 } }))).toBe(0);
-    expect(getImmediateDefense(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 4 } }))).toBeGreaterThan(
-      0,
-    );
-  });
-
-  it("averages Forge bonus across damageTypePool damage types", () => {
-    const toxicArrow = makeTestCard({
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "poison", damageTypePool: ["poison", "physical"], amount: 2 }],
-    });
-    // Poison gets 0% Forge, Physical gets 100% Forge. With 4 Forge, average bonus is 2.
-    const forgedState = makeTestBattleState({ playerStatuses: { forge: 4 } });
-    expect(getImmediateDamage(toxicArrow, forgedState)).toBe(4);
-    expect(getEffectiveDamageScore(toxicArrow, forgedState)).toBe(4);
-  });
-
-  it("scores detonateAllBurn and detonateAllBleed with live detonation damage and nominally in draft", () => {
-    const combustion = makeTestCard({
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "burn", amount: 1, detonateAllBurn: true }],
-    });
-    const hemorrhage = makeTestCard({
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true }],
-    });
-
-    // Stateless draft heuristic counts both nominally
-    expect(getImmediateDamage(combustion)).toBe(1);
-    expect(getImmediateDamage(hemorrhage)).toBe(2);
-
-    // Live scoring includes detonation of present DoT stacks
-    const burnState = makeTestBattleState({ enemyStatuses: { burn: 8 } });
-    expect(getImmediateDamage(combustion, burnState)).toBe(1 + 8);
-    expect(getEffectiveDamageScore(combustion, burnState)).toBe(1 + 8);
-
-    const bleedState = makeTestBattleState({ enemyStatuses: { bleed: 6 } });
-    expect(getImmediateDamage(hemorrhage, bleedState)).toBe(2 + 6);
-    expect(getEffectiveDamageScore(hemorrhage, bleedState)).toBe(2 + 6);
-  });
-
-  it("scores remove-harmful-status live according to present debuffs and nominally in draft", () => {
-    const fixedCleanse = makeTestCard({
-      cost: 1,
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-    });
-    const fullCleanse = makeTestCard({
-      cost: 1,
-      effects: [{ kind: "remove-harmful-status", removeAll: true }],
-    });
-
-    // Stateless draft heuristics score both nominally
-    expect(getImmediateDefense(fixedCleanse)).toBe(AUTOPLAY_EFFECT_SCORE.cleanse);
-    expect(getImmediateDefense(fullCleanse)).toBe(AUTOPLAY_EFFECT_SCORE.cleanse);
-
-    // Live scoring without debuffs gives 0 defense and 0 autoplay score
-    const cleanState = makeTestBattleState({ playerStatuses: { burn: 0, poison: 0, bleed: 0 } });
-    expect(getImmediateDefense(fixedCleanse, cleanState)).toBe(0);
-    expect(getImmediateDefense(fullCleanse, cleanState)).toBe(0);
-    expect(getEffectiveDamageScore(fixedCleanse, cleanState)).toBe(0);
-    expect(getEffectiveDamageScore(fullCleanse, cleanState)).toBe(0);
-
-    // Live scoring with multiple debuffs: fixed cleanses up to its amount, removeAll cleanses all
-    const debuffedState = makeTestBattleState({ playerStatuses: { burn: 5, poison: 3, bleed: 2 } });
-    expect(getImmediateDefense(fixedCleanse, debuffedState)).toBe(1 * AUTOPLAY_EFFECT_SCORE.cleanse);
-    expect(getImmediateDefense(fullCleanse, debuffedState)).toBe(3 * AUTOPLAY_EFFECT_SCORE.cleanse);
-    expect(getEffectiveDamageScore(fixedCleanse, debuffedState)).toBe(1 * AUTOPLAY_EFFECT_SCORE.cleanse);
-    expect(getEffectiveDamageScore(fullCleanse, debuffedState)).toBe(3 * AUTOPLAY_EFFECT_SCORE.cleanse);
+    expect(getImmediateDamage(chance)).toBe(4);
+    expect(getImmediateDamage(chance, makeTestBattleState())).toBe(4);
   });
 });

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { useStore } from "zustand";
+import { CARD_FLIGHT_Z_INDEX } from "@/lib/game-constants";
 import type { BattlePresentationStore } from "../battle-presentation-store";
 
 import type { CardGhost, GhostStyle } from "../../../shared/types";
@@ -12,7 +13,7 @@ const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { gho
     <div
       data-variant={ghost.variant}
       aria-hidden="true"
-      className="card-ghost-overlay pointer-events-none absolute z-[80]"
+      className="card-ghost-overlay pointer-events-none absolute"
       onAnimationEnd={onDone}
       style={
         {
@@ -20,6 +21,7 @@ const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { gho
           top: ghost.rect.y,
           width: ghost.rect.width,
           height: ghost.rect.height,
+          zIndex: CARD_FLIGHT_Z_INDEX,
           animationDelay: `${ghost.delay}ms`,
           "--ghost-rotation": `${ghost.rotation}deg`,
           "--ghost-travel-x": ghost.travel ? `${ghost.travel.x}px` : undefined,

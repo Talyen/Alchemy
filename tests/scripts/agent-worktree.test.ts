@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -183,6 +184,10 @@ describe("worktree removal", () => {
       writeFileSync(join(root, directory, "ready.bin"), "prepared");
     }
     writeFileSync(join(root, "assets/sources/master.png"), "master");
+    writeFileSync(join(root, "assets/sources/README.md"), "# Source artwork\n");
+    mkdirSync(join(root, "assets/sources/docs"));
+    writeFileSync(join(root, "assets/sources/docs/policy.mdx"), "# Authoring policy\n");
+    writeFileSync(join(root, "assets/sources/docs/master.psd"), "nested master");
     writeFileSync(join(root, "src/assets/optimized/ready.webp"), "prepared");
     git("add", ".");
     git("commit", "-qm", "initial");
@@ -193,6 +198,10 @@ describe("worktree removal", () => {
     expect(result.status, result.stderr).toBe(0);
     const small = join(root, ".worktrees/small");
     expect(existsSync(join(small, "assets/sources/master.png"))).toBe(false);
+    expect(existsSync(join(small, "assets/sources/docs/master.psd"))).toBe(false);
+    expect(readFileSync(join(small, "assets/sources/README.md"), "utf8")).toBe("# Source artwork\n");
+    expect(readFileSync(join(small, "assets/sources/docs/policy.mdx"), "utf8")).toBe("# Authoring policy\n");
+    expect(result.stdout).toContain("omitted 19 logical bytes");
     expect(readFileSync(join(small, "src/assets/optimized/ready.webp"), "utf8")).toBe("prepared");
     expect(readFileSync(join(root, "assets/sources/master.png"), "utf8")).toBe("master");
     expect(git("-C", small, "status", "--porcelain")).toBe("");
@@ -205,7 +214,7 @@ const recoveryRoots: string[] = [];
 afterEach(() => {
   for (const root of recoveryRoots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
-function integrationFixture(suffix = "") {
+function integrationFixture(suffix = "", { codeOnlyDocumentation = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), `alchemy-integration-${suffix}`));
   const archive = root + "-archives";
   recoveryRoots.push(archive);
@@ -230,14 +239,54 @@ function integrationFixture(suffix = "") {
   git(["config", "user.email", "integration@example.test"]);
   git(["config", "commit.gpgsign", "false"]);
   writeFileSync(join(root, ".gitignore"), ".worktrees/\nreports/\n");
-  writeFileSync(
-    join(root, "package.json"),
-    JSON.stringify({ scripts: { check: "node check.cjs", "docs:check": "node check.cjs" } }),
-  );
+  const scripts: Record<string, string> = { check: "node check.cjs", "docs:check": "node check.cjs" };
+  if (codeOnlyDocumentation) {
+    scripts["assets:check:outputs"] = "node scripts/check-prepared-assets.mjs --check --outputs-only";
+    scripts["verify:assets"] = "npm run assets:check:outputs";
+    copyFileSync(
+      join(process.cwd(), "scripts/check-prepared-assets.mjs"),
+      join(root, "scripts/check-prepared-assets.mjs"),
+    );
+    mkdirSync(join(root, "scripts/lib/agent"), { recursive: true });
+    copyFileSync(
+      join(process.cwd(), "scripts/lib/agent/markdown-sections.mjs"),
+      join(root, "scripts/lib/agent/markdown-sections.mjs"),
+    );
+    for (const directory of ["assets/sources/docs", "src/assets/optimized", "public/Music", "public/sounds", "Docs"])
+      mkdirSync(join(root, directory), { recursive: true });
+    for (const directory of ["src/assets/optimized", "public/Music", "public/sounds"])
+      writeFileSync(join(root, directory, "ready.bin"), "prepared");
+    writeFileSync(join(root, "assets/sources/master.png"), "master");
+    writeFileSync(join(root, "assets/sources/docs/master.psd"), "nested master");
+    writeFileSync(join(root, "assets/sources/README.md"), "# Sources\n\n[Policy](docs/policy.mdx)\n");
+    writeFileSync(join(root, "assets/sources/docs/policy.mdx"), "# Policy\n\n[Sources](../README.md)\n");
+    writeFileSync(
+      join(root, "Docs/WORKFLOWS-ASSETS.md"),
+      "# Asset workflow\n\n[Sources](../assets/sources/README.md)\n",
+    );
+    writeFileSync(
+      join(root, "scripts/check-documentation-links.mjs"),
+      `
+import fs from 'node:fs';
+import path from 'node:path';
+import { extractMarkdownLinkTargets } from './lib/agent/markdown-sections.mjs';
+for (const file of ['Docs/WORKFLOWS-ASSETS.md', 'assets/sources/README.md', 'assets/sources/docs/policy.mdx']) {
+  for (const { target } of extractMarkdownLinkTargets(fs.readFileSync(file, 'utf8'))) {
+    if (!fs.existsSync(path.resolve(path.dirname(file), target))) throw new Error('Broken documentation link: ' + target);
+  }
+}
+if (['assets/sources/master.png', 'assets/sources/docs/master.psd'].some(file => fs.existsSync(file)))
+  throw new Error('Source masters were unexpectedly materialized');
+fs.writeFileSync(process.env.INTEGRATION_DOCUMENTATION_PROOF, JSON.stringify({ cwd: process.cwd(), documentationLinksPassed: true, mastersOmitted: true }));
+`,
+    );
+  }
+  writeFileSync(join(root, "package.json"), JSON.stringify({ scripts }));
   writeFileSync(
     join(root, "check.cjs"),
     `
 const fs = require('node:fs');
+if (process.env.INTEGRATION_DOCUMENTATION_PROOF) require('node:child_process').execFileSync(process.execPath, ['scripts/check-documentation-links.mjs'], { stdio: 'inherit' });
 if (process.env.INTEGRATION_DETACH) require('node:child_process').execFileSync('git', ['checkout', '--detach'], { cwd: process.env.INTEGRATION_DETACH, stdio: 'ignore' });
 if (process.env.INTEGRATION_READY) {
   fs.writeFileSync(process.env.INTEGRATION_READY, 'ready');
@@ -414,6 +463,26 @@ describe("serialized local integration", () => {
     expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
     expect(existsSync(taskPath)).toBe(false);
     expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
+  }, 20000);
+
+  it("keeps source documentation available to the combined integration link gate while omitting masters", () => {
+    const { root, taskPath, git, integrate } = integrationFixture("docs-", { codeOnlyDocumentation: true });
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+    const proof = join(root, ".git/documentation-proof.json");
+    const expectedCwd = realpathSync(taskPath);
+    writeFileSync(join(root, "main.txt"), "concurrent main\n");
+    git(["add", "main.txt"]);
+    git(["commit", "-qm", "test: advance main before documentation verification"]);
+
+    const result = integrate({ INTEGRATION_DOCUMENTATION_PROOF: proof });
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(readFileSync(proof, "utf8"))).toEqual({
+      cwd: expectedCwd,
+      documentationLinksPassed: true,
+      mastersOmitted: true,
+    });
+    expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+    expect(readFileSync(join(root, "assets/sources/master.png"), "utf8")).toBe("master");
   }, 20000);
 
   it.each(["main", "task"])(

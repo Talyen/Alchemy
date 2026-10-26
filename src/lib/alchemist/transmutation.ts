@@ -289,28 +289,27 @@ export function createTransmutationOffers(
   const choices = new Map<KeywordId, TransmutationChoice>();
   deck.forEach((source, sourceIndex) => {
     // Roll against this card so unrelated cards cannot crowd out useful choices.
-    const variants = new Map<KeywordId, ReturnType<typeof getTransmutationVariants>>();
     const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
-      group.filter((keyword) => {
-        const result = getTransmutationVariants(source, keyword, deck);
-        variants.set(keyword, result);
-        return result.length > 0;
+      group.flatMap((keyword) => {
+        const alterations = getTransmutationVariants(source, keyword, deck);
+        return alterations.length ? [{ keyword, alterations }] : [];
       }),
     );
-    const keywords: KeywordId[] = prismatic ? pools.flat() : [];
-    if (!prismatic && guaranteed && pools.some((pool) => pool.includes(guaranteed))) keywords.push(guaranteed);
+    const available = pools.flat();
+    const selected = prismatic ? [...available] : [];
+    const guaranteedOffer = available.find((offer) => offer.keyword === guaranteed);
+    if (!prismatic && guaranteedOffer) selected.push(guaranteedOffer);
     for (const pool of pools) {
-      if (prismatic || pool.some((keyword) => keywords.includes(keyword))) continue;
-      const keyword = pickRandom(pool, rng);
-      if (keyword) keywords.push(keyword);
+      if (prismatic || pool.some((offer) => selected.includes(offer))) continue;
+      const offer = pickRandom(pool, rng);
+      if (offer) selected.push(offer);
     }
-    const chosen = new Set(keywords);
-    const remaining = pools.flat().filter((keyword) => !chosen.has(keyword));
-    while (keywords.length < 3 && remaining.length) {
-      keywords.push(takeRandomItem(remaining, rng)!);
+    const remaining = available.filter((offer) => !selected.includes(offer));
+    while (selected.length < 3 && remaining.length) {
+      selected.push(takeRandomItem(remaining, rng)!);
     }
-    for (const keyword of keywords) {
-      const alteration = pickRandom(variants.get(keyword)!, rng)!;
+    for (const { keyword, alterations } of selected) {
+      const alteration = pickRandom(alterations, rng)!;
       let choice = choices.get(keyword);
       if (!choice) {
         choice = { keyword, alterations: [] };

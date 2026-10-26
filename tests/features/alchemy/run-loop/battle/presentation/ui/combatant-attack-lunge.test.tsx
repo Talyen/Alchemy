@@ -1,61 +1,31 @@
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, expect, it } from "vitest";
 import { CombatantAttackLunge } from "@/features/alchemy/run-loop/battle/presentation/ui/combatant-attack-lunge";
 
-describe("CombatantAttackLunge", () => {
-  afterEach(cleanup);
+afterEach(cleanup);
 
-  it("does not animate on a stale positive token at mount", () => {
-    const { getByTestId } = render(
-      <CombatantAttackLunge attackToken={3} aim={1}>
-        <span>art</span>
-      </CombatantAttackLunge>,
-    );
-
-    expect(getByTestId("combatant-attack-lunge").classList.contains("animate-attack-lunge")).toBe(false);
-  });
-
-  it("triggers lunge animation when attackToken increases", () => {
-    const { getByTestId, rerender } = render(
-      <CombatantAttackLunge attackToken={0} aim={1}>
-        <span>art</span>
-      </CombatantAttackLunge>,
-    );
-
-    rerender(
-      <CombatantAttackLunge attackToken={1} aim={1}>
-        <span>art</span>
-      </CombatantAttackLunge>,
-    );
-
-    expect(getByTestId("combatant-attack-lunge").classList.contains("animate-attack-lunge")).toBe(true);
-    expect(getByTestId("combatant-attack-lunge").style.getPropertyValue("--attack-aim")).toBe("1");
-    expect(getByTestId("combatant-attack-lunge").style.getPropertyValue("--attack-lunge-ms")).toBe("950ms");
-
-    rerender(
-      <CombatantAttackLunge attackToken={2} aim={-1}>
-        <span>art</span>
-      </CombatantAttackLunge>,
-    );
-
-    expect(getByTestId("combatant-attack-lunge").classList.contains("animate-attack-lunge")).toBe(true);
-    expect(getByTestId("combatant-attack-lunge").style.getPropertyValue("--attack-aim")).toBe("-1");
-  });
-
-  it("triggers brace cast animation when castToken increases", () => {
-    const { getByTestId, rerender } = render(
-      <CombatantAttackLunge attackToken={0} castToken={0} aim={1}>
-        <span>art</span>
-      </CombatantAttackLunge>,
-    );
-
-    rerender(
-      <CombatantAttackLunge attackToken={0} castToken={1} aim={1}>
-        <span>art</span>
-      </CombatantAttackLunge>,
-    );
-    expect(getByTestId("combatant-attack-lunge").classList.contains("animate-cast-brace")).toBe(true);
-    expect(getByTestId("combatant-attack-lunge").style.getPropertyValue("--cast-brace-ms")).toBe("520ms");
-  });
+it("plays fresh attack and cast cues, ignores child completion, and never replays a settled cue", () => {
+  const view = (attack: number, cast: number, aim: 1 | -1 = 1) => (
+    <CombatantAttackLunge attackToken={attack} castToken={cast} aim={aim}>
+      <span>Portrait</span>
+    </CombatantAttackLunge>
+  );
+  const { rerender } = render(view(3, 2));
+  const actor = screen.getByTestId("combatant-attack-lunge");
+  const active = () => [...actor.classList].filter((name) => name.startsWith("animate-"));
+  expect(active()).toEqual([]);
+  rerender(view(4, 2));
+  expect(active()).toEqual(["animate-attack-lunge"]);
+  fireEvent.animationEnd(screen.getByText("Portrait"));
+  expect(active()).toEqual(["animate-attack-lunge"]);
+  // A new cue replaces unfinished motion instead of layering animations.
+  rerender(view(4, 3));
+  expect(active()).toEqual(["animate-cast-brace"]);
+  rerender(view(5, 3, -1));
+  expect(active()).toEqual(["animate-attack-lunge"]);
+  expect(actor.style.getPropertyValue("--attack-aim")).toBe("-1");
+  fireEvent.animationEnd(actor);
+  expect(active()).toEqual([]);
+  rerender(view(5, 3));
+  expect(active()).toEqual([]);
 });

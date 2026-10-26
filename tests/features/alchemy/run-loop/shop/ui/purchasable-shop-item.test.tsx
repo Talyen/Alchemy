@@ -3,14 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 
-import {
-  PurchasableCardItem,
-  PurchasableGearItem,
-  PurchasableTrinketItem,
-} from "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item";
+import { PurchasableCardItem } from "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item";
 
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
-import type { GearInstance } from "@/lib/gear";
+import type { BattleCard } from "@/lib/game-data";
 import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 
 installFocusInputForTests(true);
@@ -25,43 +20,21 @@ const card = {
   effects: [],
 } as unknown as BattleCard;
 
-const testTrinket: TrinketEntry = {
-  id: "meteorite",
-  title: "Meteorite",
-  descriptionLines: ["Deal 2 damage at combat start."],
-  art: "meteorite.png",
-  effects: {},
-};
-
-const testGearInstance: GearInstance = {
-  instanceId: "inst-1",
-  definitionId: "longsword-basic",
-  affixes: [],
-};
-
 describe("PurchasableCardItem", () => {
   afterEach(() => {
     cleanup();
   });
 
-  it("announces the price and affordability before a Card purchase", () => {
-    const props = { card, price: 40, gold: 80, purchased: false, onBuy: vi.fn() };
-    const { rerender } = render(<PurchasableCardItem {...props} />);
-    expect(screen.getByRole("button", { name: "Buy Strike for 40 Gold" })).toBeTruthy();
-    rerender(<PurchasableCardItem {...props} gold={20} />);
-    expect(screen.getByRole("button", { name: "Buy Strike for 40 Gold. Not enough Gold" })).toBeTruthy();
-  });
-
-  it("lets keyboard users buy once and keep inspecting the purchased card", async () => {
+  it("keeps an unaffordable card inspectable, then buys once when Gold becomes available", async () => {
     const user = userEvent.setup();
     const onBuy = vi.fn();
-    function ShopCardHarness() {
+    function ShopCardHarness({ gold }: { gold: number }) {
       const [purchased, setPurchased] = useState(false);
       return (
         <PurchasableCardItem
           card={card}
           price={40}
-          gold={80}
+          gold={gold}
           purchased={purchased}
           onBuy={() => {
             onBuy();
@@ -70,12 +43,18 @@ describe("PurchasableCardItem", () => {
         />
       );
     }
-    render(<ShopCardHarness />);
-    const button = screen.getByRole("button", { name: "Buy Strike for 40 Gold" });
+    const { rerender } = render(<ShopCardHarness gold={20} />);
+    const button = screen.getByRole("button", { name: "Buy Strike for 40 Gold. Not enough Gold" });
     await user.tab();
     expect(document.activeElement).toBe(button);
     const descriptionSpan = screen.getByText(/Deal/);
     expect(descriptionSpan.closest(".hover-popup-panel")).toBeTruthy();
+    await user.keyboard("{Enter}");
+    await user.click(button);
+    expect(onBuy).not.toHaveBeenCalled();
+    rerender(<ShopCardHarness gold={80} />);
+    expect(screen.getByRole("button", { name: "Buy Strike for 40 Gold" })).toBe(button);
+    expect(document.activeElement).toBe(button);
     await user.keyboard("{Enter}");
     expect(onBuy).toHaveBeenCalledTimes(1);
     const purchasedButton = screen.getByRole("button", { name: "Strike. Purchased" });
@@ -86,40 +65,5 @@ describe("PurchasableCardItem", () => {
     await user.keyboard("{Enter}");
     expect(onBuy).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/Deal/).closest(".hover-popup-panel")).toBeTruthy();
-  });
-});
-
-describe.each([
-  {
-    name: "Gear",
-    mount: (onBuy: () => void) => (
-      <PurchasableGearItem instance={testGearInstance} price={50} gold={20} purchased={false} onBuy={onBuy} />
-    ),
-    label: /Buy Longsword/,
-  },
-  {
-    name: "Trinket",
-    mount: (onBuy: () => void) => (
-      <PurchasableTrinketItem trinket={testTrinket} price={50} gold={20} purchased={false} onBuy={onBuy} />
-    ),
-    label: /Buy Meteorite/,
-  },
-])("Purchasable$nameItem", ({ mount, label }) => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("keeps an unaffordable item keyboard-inspectable while preventing purchases", async () => {
-    const user = userEvent.setup();
-    const onBuy = vi.fn();
-    render(mount(onBuy));
-    const button = screen.getByRole("button", { name: label });
-    await user.tab();
-    expect(document.activeElement).toBe(button);
-    expect(button.getAttribute("aria-disabled")).toBe("true");
-    expect(button.querySelector("[tabindex], [role='group']")).toBeNull();
-    expect(await screen.findByText(/Not Enough/u)).toBeTruthy();
-    await user.keyboard("{Enter}");
-    expect(onBuy).not.toHaveBeenCalled();
   });
 });

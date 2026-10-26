@@ -98,9 +98,9 @@ their actual outcome; a valid ineffective action can show its effect icon with 0
 Nonzero results suppress redundant zero entries in the same action.
 
 Phoenix Feather revival shows its Feather notice and the Health restored, even
-when revival leaves the final Health unchanged. Rejected Stun/Freeze buildup
-during immunity pairs a shield icon with the affected status and an accessible
-immunity label; it does not play a successful control cue. Zero damage retains
+when revival leaves the final Health unchanged. Control immunity appears only in
+the persistent status row below Health; blocked buildup never creates a floating
+immunity notice or a successful control cue. Zero damage retains
 ineffective-action feedback without shaking a portrait.
 
 Matching additive entries can sum across effects, cards, and actions during the
@@ -122,40 +122,53 @@ Direct emitters mark intent before aggregation, keeping a proc separate even whe
 grants the same status. Secondary benefits use the lower-left corner and setbacks
 the lower-right. Corner placement reserves the label's actual width and peak pop
 footprint inside the measured portrait, rather than fixed fractions of portrait width.
-Resource costs and removals belong to setbacks. Secondary Cleanse, immunity, and preparations
+Resource costs and removals belong to setbacks. Secondary Cleanse and preparations
 belong to benefits; Purge and harmful control notices belong to setbacks. Unattributed
 turn feedback retains its existing damage, healing, Block-loss and Dodge center route. Status
 entries use a smaller, stationary pop. Within an action, notices precede losses
 and gains; each lane preserves arrival order. Impact and audio cues remain immediate
 and follow actual incoming events, never accumulated display totals.
 
-Universal reactions show their localized names above the numbers, each with an
-independent portrait-anchored flight, without a standalone damage-type icon or a repeated
-bonus amount. Reaction IDs select the shared names and keyword palettes:
-Shatter uses Freeze/Physical, Frostfire Freeze/Burn, Thunderclap Stun/Nature,
-Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil Burn/Bleed, and Venomflash
-Poison/Burn. Reuse keyword text shine with a dark drop shadow. Transparent gradient
-text must reset inherited text strokes: an outline can cut through its letter interiors.
-This applies to all shared ShineText consumers and the corrupted-title shine.
+Primary intent resolves before display deduplication, so a card's main Block or
+other authored result remains central even when its status is also below Health.
+Positive secondary status gains and armed preparations omit their redundant corner
+flight only while the same recipient's semantic status chip is actually rendered
+and fully visible within the viewport and overflow clips. Missing, hidden or clipped
+chips keep the ordinary corner feedback. Damage, healing, reaction payoffs, zero or
+failed outcomes, removals, consumption, expiry, Cleanse, Purge and actual Stunned/Frozen
+application notices retain their feedback. Receipts and expiry remain unchanged;
+the renderer checks live row visibility without changing combat math or status values.
+Status chips stay opaque through their existing entrance pop, so an entering or
+updated chip never briefly reintroduces its redundant corner feedback.
 
-Reaction names retain their independent 1600 ms lifetime and keyword shine.
-They pop, settle, rise up to 76 scaled pixels, then hold and fade. Each localized
-name fits the portrait width without wrapping or truncation. Numeric and name
-queues prefer clearance in the center band, allowing overlap rather than delaying
-feedback beyond 180 ms. Dense names receive fixed extra rows. Merging numbers never restarts a name or extends its
-lifetime. Reduced/disabled motion keeps the keyword colors without travel.
-[Reaction text](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
-owns fitting and styling; [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)
-owns entry rendering. The shared
-[motion sampler](../src/features/alchemy/run-loop/battle/combat-feedback-motion.ts)
-drives both clearance planning and rendered curves.
+Direct typed damage retains its independent fan flights, including actions that
+trigger reactions. Each reaction has a separate central portrait-anchored pair:
+the localized name beside its actual typed bonus. Damage packets carry their exact
+reaction ID through display aggregation: prerequisite keywords never imply extra
+damage types. Shatter's Block and Armor losses remain separate defense feedback.
+The name and bonus number use the same keyword text shine, with a dark shadow and
+no inherited stroke through transparent glyphs. The ordinary type icon preserves
+the payoff's damage type. Shatter uses Freeze/Physical, Frostfire Freeze/Burn,
+Thunderclap Stun/Nature, Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil
+Burn/Bleed, and Venomflash Poison/Burn.
 
-Within each resolved action, damaging packets of the same type, recipient and intent
-produce one numeric total, including non-additive reaction damage and natural
-ticks. Resource removals and Health costs remain separate. Preserve original
-packets for gameplay, audio, and impact strength; visual aggregation never turns
-a reaction into a Critical. A total containing Critical damage uses the existing
-accent and an accessible label saying it includes a Critical.
+Each complete pair pops, settles, rises up to 24 scaled pixels, then holds and
+fades together over 1600 ms. Each localized name and its bonus fit the portrait
+width without wrapping or truncation. Multiple reactions retain their actual
+resolution order with independent queued routes. Pair footprints participate in the existing
+clearance queue; new actions never move or restart an active group. Reduced or
+disabled motion keeps static, separately reserved rows and the same keyword colors. The shared
+[reaction renderer](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
+owns fitting and grouping; [combat text entries](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text-entry.tsx)
+render the typed numbers and accessible labels.
+
+Within a resolved action, repeated damaging packets of the same type, recipient,
+intent and reaction origin can total for display. Direct and reaction damage never
+merge with one another; different reactions remain separate even when their output
+type matches. Resource removals and Health costs remain separate. Preserve original
+packets for gameplay, audio and impact strength; visual aggregation never turns
+a reaction into a Critical. A direct total containing Critical damage retains its
+existing accent and accessible label saying it includes a Critical.
 
 Critical damage retains ordinary typed color/icon with a brief pale flash and
 gold glow, without changing font size, weight or angle. Reduced/disabled motion
@@ -168,7 +181,9 @@ The Balanced treatment uses 38.4px base text, an 85 ms pop to 1.85×, a settle t
 1.55×, and a smooth shrink toward 1.2×. Travel begins at 240 ms, slows over 810 ms,
 and ends 76 scaled pixels above the launch point. Numeric entries last 1050 ms
 with a smooth final 280 ms fade. Benefits and setbacks use 80% of the base size.
-All coordinates and travel follow Game Size and remain above card flights.
+All coordinates and travel follow Game Size. Played cards and draw/discard flights
+remain in the foreground above combat feedback and boss lyrics; modal tooltips
+keep their existing inspection layer.
 
 The [feedback owner](../src/features/alchemy/run-loop/battle/combat-feedback.ts)
 assigns each entry a waiting/visible phase, launch time, and post-launch lifetime.
@@ -215,6 +230,66 @@ Cards entering Hand Overflow briefly shake only the Draw Pile artwork and play
 the card-rejection sound. Each batch receives one cue, including fresh opening
 draws. Retained overflow, delivery into the hand, and saved-battle mount stay quiet.
 Reduced or disabled motion suppresses the shake while preserving sound settings.
+
+## Battle motion
+
+Living combatant artwork, including Companions, enlarges during its active turn
+alongside the shine border. Hover multiplies that active size. Exact scale and
+transition values belong to [component styles](../src/styles/components.css).
+
+[The playback workflow](./WORKFLOWS.md#change-battle-playback) owns wiring and lifecycle. Battle VFX live in `run-loop/battle` (visual state in
+`battle-presentation-store.ts`, overlays in `presentation/` leaves); every fight
+action presents numbers + shake + sound through `presentCombatTexts` in
+`battle/controller-utils.ts`.
+
+Player lunges occur only for cards with a damage effect and move the portrait,
+not the Health/status column. Feedback and the single portrait impact flash appear
+as soon as the action resolves, independently of the attack animation. Health
+damage takes priority over Block-only impacts; the largest eligible amount wins,
+with first occurrence breaking ties. Portrait recoil has light, normal, and heavy
+strengths: below 5%, from 5%, and from 20% of the target's maximum Health per
+selected impact. Block and periodic damage always use light recoil. Recoil stays
+on artwork, leaving Health and statuses steady; at most one recoil starts per
+target every 180ms. Every resolved impact still retains its flash, numbers, and
+sound. These effects never delay input. Each action requests each combat sound family
+at most once. Player and enemy deaths share the slice effect and battle-end delay;
+Death's Door is not defeat, and voluntary run exits remain immediate.
+
+Player and enemy dodges use a mirrored, shallow dip and backward lean on the
+artwork frame, easing back over 460ms without hit recoil or an added effect.
+Health and statuses stay steady. Existing floating Dodge text and sounds remain
+unchanged. Dodge motion never delays input; another dodge replaces the previous
+motion, and reset, death, teardown or reduced/disabled motion cancels it.
+
+The shared death effect uses a straight diagonal cut for portrait halves and
+particle origins, with a pointed white blade flash and restrained warm halo.
+[Battle timing](../src/lib/game-constants/battle-timing.ts) and the effect's styles
+own durations. Dark shading and thin warm glints
+follow the cut edges as the halves separate and fade; a small directional spark
+burst accompanies the cut, followed by the existing border dissolve. Motion-disabled
+preferences skip the effect and its sound cue.
+
+Played cards fly as artwork and finish with a small pop before fading on
+arrival, marking the activation. At most six flight ghosts overlap; the oldest
+sheds first. Motion-disabled preferences skip the flight.
+Autoplay flashes the hover lift, scale, and shine for a beat before committing,
+without the description popup; reduced motion plays instantly with no preview.
+Cancelling or restarting the battle clears its pending autoplay preview immediately
+and prevents that preview from committing a card or Wish choice.
+
+Draws fly from the bottom-left Draw Pile into measured hand slots and flip from
+back to front. Discards leave right-to-left, flip onto the bottom-right Discard
+Pile, and scale to its top card. Both follow the shallow curved path in
+[transfer motion](../src/features/alchemy/run-loop/battle/presentation/card-transfer-motion.ts),
+with batch-accelerated timing. Flights run sequentially;
+each departure starts its sound. The live card identity follows hand reflow.
+Tuning lives in `CARD_TRANSFER_CONFIG`.
+
+Existing playback owns batch completion, input gates, hidden-card handoff,
+cancellation, and timers. A batch waits for its last flight rather than pausing
+between cards. Reduced or disabled motion settles immediately. Cancellation
+revokes pending departures, flights, and sounds; absent geometry cannot leave a
+committed card hidden. Played cards retain their travel, pop, and fade animation.
 
 ## Boss lyrics
 
@@ -287,6 +362,17 @@ open it contains focus and blocks underlying input, autoplay, and automatic End
 Turn without changing saved automation preferences. Navigation, run replacement,
 battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
 button dismiss it and return focus to the toolbar or pile opener.
+
+Draw Pile, Discard Pile, and Deck inspection share the backdrop fade and upward
+panel settle defined in [component styles](../src/styles/components.css), using
+the shared [motion duration](../src/lib/game-constants/ui-motion.ts). Closing
+uses only the fade; reduced motion omits the settle. Cards appear together, and
+populated panels retain content-based sizing without animated dimensions. Empty
+collections show a centered, muted collection icon in a 10rem-high content area with a
+20rem minimum panel width, bounded by the available viewport with overflow scrolling.
+Deck, Draw Pile, and Discard Pile use the stacked-cards icon; Boons uses the trophy icon.
+Each empty icon is exposed as an image labelled Empty Deck, Empty Draw Pile,
+Empty Discard Pile, or Empty Boons.
 
 ## Enemy inspection
 

@@ -63,6 +63,8 @@ export class ProgressCompletion<Presentation = unknown> {
   }
 
   mark(revision: number, force = false, before?: Presentation) {
+    // A stale caller cannot lower the durability boundary of newer committed work.
+    if (this.state.kind !== "idle") revision = Math.max(revision, this.state.revision);
     if (force) {
       // Settings and explicit checkpoints can change without a gameplay revision.
       // Earlier snapshots cannot cover this newly requested durability boundary.

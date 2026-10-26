@@ -1,8 +1,6 @@
-import { useGameTranslation } from "@/components/use-game-translation";
-import { createElement, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
-import { cn } from "@/lib/utils";
 import {
   COMBAT_TEXT_BASE_SIZE_PX,
   COMBAT_TEXT_LIFETIME_MS,
@@ -12,18 +10,13 @@ import {
 import { ReactionTextRail } from "./reaction-text";
 import type {
   CombatTextBurst,
-  FloatingCombatText,
   ReactionAnnouncement,
   CombatTextLane,
   CombatTextPresentation,
 } from "../../../../shared/types";
-import {
-  getCombatTextColorClass,
-  getCombatTextIcon,
-  getCombatTextLeadingIcon,
-  getCombatTextAccessibleLabel,
-} from "../../../../shared/utils/index";
+import { CombatTextEntry } from "./combat-text-entry";
 import { combatTextFrame, combatTextLane, combatTextRoute } from "../../combat-feedback-motion";
+import { secondaryStatusFeedbackKey } from "../combat-status-feedback";
 
 function animationFor(lane: CombatTextLane, lifetimeMs: number) {
   const times = [
@@ -71,9 +64,10 @@ export function CombatTextRail({
 }) {
   const staticMotion = useReducedMotionPreference();
   const staticRows = new Map<CombatTextLane, number>();
-  const nextStaticRow = (lane: CombatTextLane) => {
-    const row = staticRows.get(lane) ?? 0;
-    staticRows.set(lane, row + 1);
+  const nextStaticRow = (lane: CombatTextLane, rows = 1) => {
+    const key = lane === "announcement" ? "impact" : lane;
+    const row = staticRows.get(key) ?? 0;
+    staticRows.set(key, row + rows);
     return staticMotion ? row : 0;
   };
   return (
@@ -85,7 +79,9 @@ export function CombatTextRail({
       }}
     >
       {bursts.map((burst) => {
-        const entries = burst.entries.filter((entry) => entry.presentation?.phase !== "waiting");
+        const entries = burst.entries.filter(
+          (entry) => entry.presentation?.phase !== "waiting" && !(entry.kind === "notice" && entry.signal === "immune"),
+        );
         if (!entries.length) return null;
         return (
           <div
@@ -101,6 +97,7 @@ export function CombatTextRail({
               return (
                 <FeedbackFlight
                   key={entry.id}
+                  statusFeedbackKey={secondaryStatusFeedbackKey(entry, lane)}
                   lane={lane}
                   spread={entry.presentation?.spread ?? 0}
                   staticMotion={staticMotion}
@@ -121,7 +118,7 @@ export function CombatTextRail({
             lane="announcement"
             spread={reaction.presentation?.spread ?? 0}
             staticMotion={staticMotion}
-            staticRow={nextStaticRow("announcement")}
+            staticRow={nextStaticRow("announcement", reaction.reactionIds.length + 2)}
           >
             <ReactionTextRail announcements={[reaction]} />
           </FeedbackFlight>
@@ -136,12 +133,14 @@ function FeedbackFlight({
   staticMotion,
   staticRow,
   children,
+  statusFeedbackKey,
 }: {
   lane: CombatTextLane;
   spread: NonNullable<CombatTextPresentation["spread"]>;
   staticMotion: boolean;
   staticRow: number;
   children: ReactNode;
+  statusFeedbackKey?: string | undefined;
 }) {
   const firstFrame = combatTextFrame(
     lane,
@@ -169,6 +168,7 @@ function FeedbackFlight({
     <div
       data-feedback-lane={lane}
       data-feedback-spread={spread}
+      data-secondary-status-feedback={statusFeedbackKey}
       className="absolute"
       style={{
         left: lane === "benefit" ? cornerInset : lane === "setback" ? undefined : "50%",
@@ -195,63 +195,6 @@ function FeedbackFlight({
       >
         {children}
       </motion.div>
-    </div>
-  );
-}
-
-function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; staticMotion: boolean }) {
-  const i18n = useGameTranslation();
-  const icon = getCombatTextIcon(entry);
-  const leading = getCombatTextLeadingIcon(entry);
-  return (
-    <div
-      data-testid="combat-text"
-      aria-label={i18n.read(() => getCombatTextAccessibleLabel(entry))}
-      data-kind={entry.kind}
-      data-stat={entry.stat}
-      className={cn(
-        "inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
-        getCombatTextColorClass(entry),
-        entry.kind === "damage" &&
-          entry.critical &&
-          (staticMotion ? "combat-text-critical-static" : "combat-text-critical"),
-      )}
-    >
-      {i18n.displayText(
-        leading
-          ? createElement(leading, {
-              "aria-hidden": true,
-              style: { width: "0.94em", height: "0.94em", strokeWidth: 3 },
-            })
-          : null,
-      )}
-      {i18n.displayText(
-        icon
-          ? createElement(icon, {
-              style: {
-                width: "0.94em",
-                height: "0.94em",
-                strokeWidth: 3,
-              },
-            })
-          : null,
-      )}
-      {entry.displayText ? (
-        <span
-          style={{
-            WebkitTextStroke: "1.5px rgba(0, 0, 0, 0.95)",
-            paintOrder: "stroke fill",
-            fontVariantNumeric: "tabular-nums",
-            textAlign: "center",
-            width:
-              entry.reservedDigits === undefined
-                ? undefined
-                : `${entry.reservedDigits + (/^[+-]/.test(entry.displayText) ? 1 : 0)}ch`,
-          }}
-        >
-          {i18n.displayText(entry.displayText)}
-        </span>
-      ) : null}
     </div>
   );
 }

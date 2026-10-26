@@ -1,0 +1,57 @@
+name: Shared web-build
+on:
+  workflow_call:
+    inputs:
+      diagnostics:
+        type: string
+        required: true
+      timeout:
+        type: number
+        default: 25
+      release:
+        type: boolean
+        default: false
+      acceptance:
+        type: boolean
+        default: true
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          sparse-checkout: |
+            /*
+          sparse-checkout-cone-mode: false
+      - uses: ./.github/actions/setup
+      - name: Verify release tag matches package.json
+        run: node scripts/verify-release.mjs --skip-package
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        if: ${{ inputs.release }}
+      - run: npm run build
+      - run: npm run check:bundle
+        if: ${{ inputs.acceptance }}
+      - name: Smoke test production build
+        run: npm run smoke:preview
+        if: ${{ inputs.acceptance }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dist
+          path: dist/
+          compression-level: 0
+          retention-days: 1
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ inputs.diagnostics }}
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 1
+          if-no-files-found: ignore

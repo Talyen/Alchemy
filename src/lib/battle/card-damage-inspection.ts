@@ -205,9 +205,15 @@ export function getBattleCardDescriptionInspection(
 ): BattleCard {
   const rules = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
   const inspected = inspectBattleCardDamage(card, snapshot, side);
-  function inlineKnownAmount(effect: BattleCardEffect, path: number[]): BattleCardEffect {
-    const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index]));
+  function inlineKnownAmount(
+    effect: BattleCardEffect,
+    path: number[],
+    skipPaths?: ReadonlySet<string>,
+  ): BattleCardEffect {
+    const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index], skipPaths));
+    const key = path.join(".");
     if (
+      skipPaths?.has(key) ||
       effect.kind !== "damage" ||
       effect.equalToBlock ||
       effect.equalToArmor ||
@@ -218,7 +224,7 @@ export function getBattleCardDescriptionInspection(
       effect.damageTypePool
     )
       return view;
-    const outcome = inspected.outcomes.get(path.join("."));
+    const outcome = inspected.outcomes.get(key);
     // The first packet is the intended attack. Follow-ups stay owned by their
     // existing status/tooltips, and unknown alternatives retain the authored rule.
     const attack = outcome?.kind === "exact" ? outcome.packets[0] : undefined;
@@ -226,6 +232,27 @@ export function getBattleCardDescriptionInspection(
       ? { ...effect, amount: attack.amount }
       : view;
   }
-  const effects = rules.effects.map((effect, index) => inlineKnownAmount(effect, [index]));
-  return withCardDescription({ ...rules, effects }, getCardDescription(rules));
+  const description = getCardDescription(rules);
+  const candidateEffects = rules.effects.map((effect, index) => inlineKnownAmount(effect, [index]));
+  // Shared magnitudes ("... twice", "... this turn and next", "Deal and Receive ...")
+  // bind multiple effect fields to one displayed literal; inline only when every
+  // referenced field still agrees on the same value.
+  const inconsistentPaths = new Set<string>();
+  for (const part of description.flatMap((line) => line.parts)) {
+    if (typeof part === "string" || part.references.length < 2) continue;
+    const values = part.references.map((reference) => {
+      const effect = getCardEffect(candidateEffects, reference);
+      const fieldValue =
+        effect && effect.kind === reference.kind ? (effect as Record<string, unknown>)[reference.field] : undefined;
+      return typeof fieldValue === "number" ? fieldValue / (reference.multiplier ?? 1) : NaN;
+    });
+    if (values.some((value) => value !== values[0])) {
+      for (const reference of part.references)
+        inconsistentPaths.add([reference.effectIndex, ...(reference.effectPath ?? [])].join("."));
+    }
+  }
+  const effects = inconsistentPaths.size
+    ? rules.effects.map((effect, index) => inlineKnownAmount(effect, [index], inconsistentPaths))
+    : candidateEffects;
+  return withCardDescription({ ...rules, effects }, description);
 }

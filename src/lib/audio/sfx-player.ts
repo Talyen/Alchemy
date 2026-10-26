@@ -56,7 +56,14 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
     if (state.phase === "finished") return false;
     cue.state = { phase: "finished" };
     cues.delete(cue);
-    if (state.phase === "pending") deps.cancel(state.timer);
+    if (state.phase === "pending") {
+      try {
+        deps.cancel(state.timer);
+      } catch {
+        // Ownership is already revoked; a late callback cannot restart this cue.
+        // Continue releasing the other cues even if the scheduler failed.
+      }
+    }
     if (state.phase === "playing") {
       state.element.onended = null;
       state.element.onerror = null;
@@ -131,14 +138,19 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
         fail();
       }
     };
-    if (delay > 0) {
-      cue.state = { phase: "pending", timer: deps.schedule(start, delay * 1000) };
-    } else {
-      cues.add(cue);
+    cues.add(cue);
+    if (!(delay > 0)) {
       start();
       return;
     }
-    cues.add(cue);
+    try {
+      const timer = deps.schedule(start, delay * 1000);
+      // An injected clock may run the cue before returning its timer.
+      if (cue.state.phase === "ready") cue.state = { phase: "pending", timer };
+      else deps.cancel(timer);
+    } catch {
+      finish(cue);
+    }
   }
 
   return {

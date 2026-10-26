@@ -1,35 +1,24 @@
 import { getBattleOutcome } from "./battle-outcome";
-import { applyDamageStatuses } from "./damage-status-riders";
 import { rollBattleChance } from "./chance-roll";
 import type { ReactionBoundary } from "./battle-sequence";
-import { resolveWishRewards, type WishRewardPort } from "./wish-rewards";
-import { resolveFollowUpHit } from "./follow-up-hit-resolution";
+import { resolveWishRewards } from "./wish-rewards";
 import { hasEncounterBenefit } from "./encounter-trait-state";
-import { getOfferableCardPool, selectRewardCards, type BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool, isCompanionSummonCard, selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import { getCorruptionTargetEffect } from "@/lib/corruption/numeric";
-import { addCardToHandOrQueue, applyDrawResult, drawFromState } from "./draw";
+import { addCardToHandOrQueue } from "./draw";
 import type { BattleState, CombatTextEvent } from "./types";
-import {
-  addGoldWithCombatText,
-  applyHealingWithCombatText,
-  applyHitEpilogue,
-  gainManaWithCombatText,
-} from "./player-rewards";
-import {
-  removeHarmfulPlayerStatuses,
-  applyPlayerStatusEffect,
-  applyArmorReward,
-  applyBlockReward,
-} from "./status-player";
-import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 import { WISH_CHOICE_COUNT } from "../game-constants";
-import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-damage";
 import { appendUniqueMany } from "@/lib/utils";
 
 export function upgradeWishCard(card: BattleCard): BattleCard {
-  return getEditableCorruptionTargets(card).reduce((next, target) => {
+  // Widen upper bounds before raising lower bounds: intermediate cards must
+  // remain valid even when an authored random range starts with equal bounds.
+  const targets = getEditableCorruptionTargets(card).toSorted(
+    (a, b) => Number(b.field === "maxAmount") - Number(a.field === "maxAmount"),
+  );
+  return targets.reduce((next, target) => {
     const effect = getCorruptionTargetEffect(next, target);
     // An upgrade must not raise a cost, including a shared Deal/Receive amount.
     if (!effect || target.affectsCost) return next;
@@ -48,9 +37,7 @@ export function buildWishOptions(
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
   const candidates = getOfferableCardPool().filter(
-    (candidate) =>
-      candidate.id !== card?.id &&
-      (!companionOnly || candidate.effects.some((effect) => effect.kind === "summon-companion")),
+    (candidate) => candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate)),
   );
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const discovered = new Set(state.discoveredCardIds);
@@ -107,7 +94,7 @@ export function applyWishEffect(
           wishQueue: [...state.wishQueue, ...queuedOptions.slice(1)],
         };
 
-  return resolveWishRewards(nextState, wishCount, combatTexts, wishRewardPort, reactions);
+  return resolveWishRewards(nextState, wishCount, combatTexts, reactions);
 }
 
 /**
@@ -131,39 +118,6 @@ export function applyEmergencyWishForEmptyDraw(state: BattleState, amount: numbe
     ? applyEmergencyWish(state, combatTexts)
     : state;
 }
-
-const wishRewardPort: WishRewardPort = {
-  chance: (chance, state) => rollBattleChance(chance, state),
-  gold: addGoldWithCombatText,
-  heal: applyHealingWithCombatText,
-  cleanse: removeHarmfulPlayerStatuses,
-  block: applyBlockReward,
-  mana: (state, amount, texts) => gainManaWithCombatText(state, amount, texts, { skipFightPacing: true }),
-  draw: (state, amount, texts) => applyDrawResult(state, drawFromState(state, amount), texts),
-  forge: (state, amount, texts) =>
-    applyPlayerStatusEffect(state, { kind: "player-status", status: "forge", amount }, texts),
-  armor: applyArmorReward,
-  hit: resolveFollowUpHit,
-  burningEnemyHit: (state, amount, texts) =>
-    dealEnemyScaledDamage(state, amount, "burn", texts, {
-      multiplier: getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state),
-      riders: (damagedState, damage, events) =>
-        applyHitEpilogue(
-          applyDamageStatuses(
-            damagedState,
-            { kind: "damage", damageType: "burn", amount },
-            damage,
-            events,
-            state.enemyHealth,
-          ),
-          state.enemyHealth,
-          state.enemyHealth > 0,
-          events,
-          undefined,
-          state.playerStatuses.forge >= 5,
-        ),
-    }),
-};
 
 export function chooseWishCard(state: BattleState, cardId: string) {
   const [nextWishOptions = null, ...wishQueue] = state.wishQueue;

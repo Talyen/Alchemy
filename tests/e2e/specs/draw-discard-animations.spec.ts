@@ -135,6 +135,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       expect(opening.openingFlight).toBe(true);
       expect(opening.openingBlocked).toBe(true);
       const before = await dock.boundingBox();
+      expect(before).not.toBeNull();
       await icon.click();
       await expect(page.getByRole("dialog", { name: "Draw Pile", exact: true })).toBeVisible();
       await page.keyboard.press("Escape");
@@ -170,7 +171,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       const discard = review.discard!;
       expect(discard.maximumFlights).toBe(1);
       expect(discard.backs).toBe(true);
-      expect(discard.flips.length).toBeGreaterThan(3);
+      expect(discard.flips.some((angle) => angle > 0 && angle < 180)).toBe(true);
       expect(discard.flips.at(-1)).toBeCloseTo(180, 0);
       for (let i = 1; i < discard.flips.length; i++)
         expect(discard.flips[i]!).toBeGreaterThanOrEqual(discard.flips[i - 1]! - 0.1);

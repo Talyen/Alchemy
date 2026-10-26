@@ -63,13 +63,14 @@ export function resolveCardEffectChain(
   const reacted = resolvePendingBattleReactions(talentPlay, combatTexts);
   const damageEffects = options.damageEffects ?? [];
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
-  const concussion = reacted.flags.concussionReady;
   let nextState = reacted;
   let attackAttempted = false;
   let repeatAttackAttempted = false;
   for (let copy = 0; copy < (options.playTwice ? 2 : 1); copy++) {
     // The first copy can be accepted during victory grace; repeats require a live fight.
     if (copy > 0 && getBattleOutcome(nextState) !== null) break;
+    // Each copy starts an attack; an earlier copy may have spent the penalty.
+    const concussion = nextState.flags.concussionReady;
     // Dodged packets mark the attempt cell without joining the resolved damage
     // that Unique repeats and Archery echoes replay.
     const attemptCell = { value: false };

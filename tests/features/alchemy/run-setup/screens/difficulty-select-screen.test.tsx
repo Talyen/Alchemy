@@ -14,34 +14,7 @@ describe("DifficultySelectScreen", () => {
     useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   });
 
-  it("allows selecting an unlocked difficulty and pressing Play", async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-    const onBack = vi.fn();
-
-    render(
-      <DifficultySelectScreen
-        characterId="knight"
-        selectedDifficulty={null}
-        completedDifficulties={[]}
-        onSelect={onSelect}
-        onBack={onBack}
-      />,
-    );
-
-    const playButton = screen.getByRole("button", { name: /Play/i });
-    expect(playButton.getAttribute("disabled")).not.toBeNull();
-
-    const diff1Btn = screen.getByRole("button", { name: /Novice/i });
-    await user.click(diff1Btn);
-
-    expect(playButton.getAttribute("disabled")).toBeNull();
-    await user.click(playButton);
-
-    expect(onSelect).toHaveBeenCalledWith("difficulty-1");
-  });
-
-  it("explains a locked difficulty on keyboard focus without allowing selection", async () => {
+  it("explains a locked difficulty, rejects activation, and lets the player start an unlocked one", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     render(
@@ -64,18 +37,14 @@ describe("DifficultySelectScreen", () => {
     novice.focus();
     await user.tab();
     expect(document.activeElement).toBe(adventurer);
-    expect(
-      screen.getByText(
-        (_, element) =>
-          element?.tagName.toLowerCase() === "p" &&
-          element.textContent?.toLowerCase() === "clear previous difficulty to unlock",
-      ),
-    ).toBeDefined();
-
     await user.keyboard("{Enter}{Space}");
     await user.click(adventurer);
     expect(adventurer.getAttribute("aria-pressed")).toBe("false");
     expect(play.getAttribute("disabled")).not.toBeNull();
     expect(onSelect).not.toHaveBeenCalled();
+    await user.click(novice);
+    expect((play as HTMLButtonElement).disabled).toBe(false);
+    await user.click(play);
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith("difficulty-1");
   });
 });

@@ -208,14 +208,14 @@ function damageLines(
   return lines;
 }
 
-function resourceChoices(
+function resourceChoice(
   effect: BattleCardEffect,
   address: CardEffectAddress,
-): Array<{ label: string; amount: number; reference: CardMagnitudeReference }> | null {
+): { label: string; amount: number; reference: CardMagnitudeReference } | null {
   if (effect.kind === "restore-mana" && !effect.allowOverflow)
-    return [{ label: "Mana", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } }];
+    return { label: "Mana", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } };
   if (effect.kind === "gain-gold" && !effect.ifEnemyStunned)
-    return [{ label: "Gold", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } }];
+    return { label: "Gold", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } };
   if (
     effect.kind === "player-status" &&
     effect.status === "block" &&
@@ -223,14 +223,7 @@ function resourceChoices(
     effect.perManaCrystal === undefined &&
     effect.convertCurrentMana === undefined
   )
-    return [{ label: "Block", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } }];
-  if (effect.kind === "chance" && effect.successEffects.length === 1 && effect.failureEffects.length === 1) {
-    const successEffect = effect.successEffects[0];
-    const failureEffect = effect.failureEffects[0];
-    const success = successEffect && resourceChoices(successEffect, childAddress(address, 0));
-    const failure = failureEffect && resourceChoices(failureEffect, childAddress(address, 1));
-    return success && failure ? [...success, ...failure] : null;
-  }
+    return { label: "Block", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } };
   return null;
 }
 
@@ -254,28 +247,28 @@ function chanceLines(
     !failure.ifEnemyStunned
   )
     return [["Gain ", value(failure, childAddress(address, 1), "amount"), " Gold or Wish"]];
-  const choices = resourceChoices(effect, address);
-  const firstChoice = choices?.[0];
   // A flat "Gain X A, B, or C" line reads as one shared draw, so it must only
   // collapse a single even chance. Nested trees carry per-level odds (Luck
   // Potion is 50% Mana, then 50% Gold within the remainder); collapsing them
   // would advertise three equal outcomes for a 50/25/25 split.
-  const hasNestedChance =
-    effect.successEffects.some((child) => child.kind === "chance") ||
-    effect.failureEffects.some((child) => child.kind === "chance");
   if (
-    !hasNestedChance &&
     effect.probability === 0.5 &&
-    firstChoice &&
-    choices.every((choice) => choice.amount === firstChoice.amount)
-  )
-    return [
-      [
-        "Gain ",
-        cardMagnitude(firstChoice.reference, { shared: choices.slice(1).map((choice) => choice.reference) }),
-        ` ${joinOptions(choices.map((choice) => choice.label))}`,
-      ],
-    ];
+    effect.successEffects.length === 1 &&
+    effect.failureEffects.length === 1 &&
+    success &&
+    failure
+  ) {
+    const first = resourceChoice(success, childAddress(address, 0));
+    const second = resourceChoice(failure, childAddress(address, 1));
+    if (first && second && first.amount === second.amount)
+      return [
+        [
+          "Gain ",
+          cardMagnitude(first.reference, { shared: [second.reference] }),
+          ` ${joinOptions([first.label, second.label])}`,
+        ],
+      ];
+  }
   if (!effect.successEffects.length) throw new Error("Chance effect needs a success outcome");
   const lines: EffectDescription = [
     [

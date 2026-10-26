@@ -14,8 +14,9 @@ import { DestinationPage } from "../../pages/destination-page";
 import { MenuPage } from "../../pages/menu-page";
 import { ShopPage } from "../../pages/shop-page";
 import { controllerInput } from "../controller-input";
+import { critical } from "../../playwright-tags";
 
-test.describe("Steam demo edition", () => {
+test.describe("Steam demo edition", critical, () => {
   // oxlint-disable-next-line playwright/no-skipped-test -- the full renderer cannot exercise demo-only restrictions
   test.skip(process.env.ALCHEMY_EDITION !== "demo", "Requires an explicit demo renderer");
 

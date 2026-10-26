@@ -1,3 +1,4 @@
+import { isPlayerDefeated } from "./battle-outcome";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -15,9 +16,8 @@ import {
   getBleedLowHealthDamageMultiplier,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
-import { addGoldWithCombatText, payKillPayouts } from "./player-rewards";
-import { rollBattleChance } from "./chance-roll";
-import { resolveBleedGoldReward } from "./resource-reward-resolution";
+import { payKillPayouts } from "./player-rewards";
+import { resolveBleedGoldReward } from "./bonus-effects";
 import { mergeCombatText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
@@ -58,10 +58,8 @@ export function applyEnemyDotDamage(
   const bleedHealthDamage = bleedIndex >= 0 ? pulseHealthDamage(pulses, bleedIndex, previousHealth) : 0;
   if (bleedHealthDamage > 0) {
     nextState = applyBleedDamageDraw(nextState, bleedHealthDamage, combatTexts);
-    nextState = resolveBleedGoldReward(nextState, bleedHealthDamage, combatTexts, {
-      chance: rollBattleChance,
-      gold: addGoldWithCombatText,
-    });
+    if (isPlayerDefeated(nextState)) return nextState;
+    nextState = resolveBleedGoldReward(nextState, bleedHealthDamage, combatTexts);
   }
 
   let earlierDamage = 0;
@@ -177,17 +175,24 @@ export function detonateEnemyStatuses(
   if (pulses.length === 0) return state;
 
   const previousHealth = state.enemyHealth;
-  return applyEnemyDotDamage(state, pulses, combatTexts, (nextState) => {
-    for (const pulse of pulses) {
+  let reported = false;
+  const reportDamage = () => {
+    reported = true;
+    for (const [index, pulse] of pulses.entries()) {
       if (pulse.finalDamage > 0) {
+        const healthLost = pulseHealthDamage(pulses, index, previousHealth);
         mergeCombatText(combatTexts, {
           target: "enemy",
           kind: "damage",
           stat: pulse.status,
           amount: pulse.finalDamage,
+          ...(healthLost !== pulse.finalDamage ? { healthLost } : {}),
         });
       }
     }
+  };
+  const result = applyEnemyDotDamage(state, pulses, combatTexts, (nextState) => {
+    reportDamage();
     const poisonPulse = pulses.find((pulse) => pulse.status === "poison");
     if (poisonPulse) {
       // Attribute overkill in pulse order so Poison cannot Leech Health already lost to Bleed.
@@ -205,4 +210,7 @@ export function detonateEnemyStatuses(
       pulseHealthDamage(pulses, pulses.indexOf(bleedPulse), previousHealth),
     );
   });
+  // A fatal nested draw skips riders, but the already-landed pulses still need feedback.
+  if (!reported) reportDamage();
+  return result;
 }

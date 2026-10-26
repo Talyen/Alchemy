@@ -8,7 +8,6 @@ import {
 import type { CardHitRequest, HitFacts, HitRequest } from "./player-hit-core";
 import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyHitEpilogue } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
 import { computeReflectedHolyDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
@@ -54,7 +53,7 @@ function resolveReflectedHolyHit(state: BattleState, blockLost: number, combatTe
   const preDamageStatuses = mitigated.enemyStatuses;
   const { state: damaged, facts } = applyHitHealth(mitigated, remainingDamage, state);
   let nextState = decayArmorAfterDamage(damaged, remainingDamage, "enemy", combatTexts);
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: remainingDamage });
+  reportEnemyHitDamage(facts, "holy", combatTexts);
   nextState = applyDamageStatuses(
     nextState,
     { kind: "damage", damageType: "holy", amount: remainingDamage },
@@ -155,6 +154,10 @@ function resolveCardHit(
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
 
   nextState = applyCardHitReactions(nextState, request, facts, combatTexts);
+  if (isPlayerDefeated(nextState)) {
+    reportEnemyHitDamage(facts, effect.damageType, combatTexts, request.feedback);
+    return nextState;
+  }
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
   if (
     facts.critical &&

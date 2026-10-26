@@ -25,5 +25,5 @@ export const talentPoolByKeyword: ReadonlyMap<KeywordId, TalentDefinition[]> = t
 }, new Map());
 
 export function getTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {
-  return talentPoolByKeyword.get(keywordId) ?? [];
+  return [...(talentPoolByKeyword.get(keywordId) ?? [])];
 }

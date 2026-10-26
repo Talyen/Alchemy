@@ -245,104 +245,16 @@ jobs:
           if-no-files-found: ignore
 
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          sparse-checkout: |
-            /*
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-      - run: npm run build
-
-      - name: Check bundle budget
-        run: node scripts/check-bundle-budget.mjs
-
-      - name: Smoke test production build
-        run: npm run smoke:preview
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: dist
-          path: dist/
-          compression-level: 0
-          retention-days: 1
-
-      - name: Retain build failure diagnostics
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: build-diagnostics-ci-build
-          path: |
-            reports/compact/
-            reports/current-run.*
-            reports/runs/
-          retention-days: 1
-          if-no-files-found: ignore
+    uses: ./.github/workflows/web-build.yml
+    with:
+      diagnostics: build-diagnostics-ci-build
 
   e2e:
     needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Record test job setup start
-        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          sparse-checkout: |
-            /*
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Smoke test downloaded build including music
-        run: npm run smoke:preview
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-
-      - run: mkdir -p reports
-
-      - name: Run critical e2e tests
-        run: npm run test:e2e:critical
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-          CI: true
-          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-results.json
-
-      - name: Summarize e2e tests
-        id: playwright-summary
-        if: always()
-        run: node scripts/ci-summarize.mjs --playwright reports/playwright-results.json
-
-      - name: Upload Playwright results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-critical-results
-          path: reports/playwright-results.json
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload Playwright report
-        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-critical
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 1
+    uses: ./.github/workflows/web-e2e.yml
+    with:
+      command: npm run test:e2e:critical
+      artifact: playwright-report-critical
 
   localization:
     needs: build
@@ -389,33 +301,9 @@ jobs:
           retention-days: 1
 
   localization-demo:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      ALCHEMY_EDITION: demo
-      ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: ./.github/actions/setup
-      - uses: ./.github/actions/setup-playwright
-      - run: npm run build:desktop
-      - run: npm run check:bundle
-      - name: Qualify production demo and localized endings
-        run: npm run test:e2e -- tests/e2e/specs/steam-demo.spec.ts tests/e2e/specs/localization-demo.spec.ts
-      - name: Ensure Electron binary
-        run: node scripts/ensure-electron.mjs
-      - name: Qualify native localized quit and resume
-        run: xvfb-run -a npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
-        env:
-          PLAYWRIGHT_ELECTRON_FULL: "1"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        if: failure()
-        with:
-          name: localization-demo-diagnostics
-          path: |
-            reports/
-            test-results/
-          retention-days: 1
+    uses: ./.github/workflows/demo-e2e.yml
+    with:
+      artifact: localization-demo-diagnostics
 
   ship-gate:
     needs: changes
@@ -556,77 +444,13 @@ jobs:
           if-no-files-found: ignore
 
   electron-e2e:
-    needs: [changes, ship-gate]
+    needs:
+      - changes
+      - ship-gate
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop_renderer == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Record test job setup start
-        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          sparse-checkout: |
-            /*
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: dist-desktop
-          path: dist/
-
-      - name: Cache Electron binary
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        id: electron-binary-cache
-        with:
-          path: |
-            ~/.cache/electron
-            node_modules/electron/dist
-            node_modules/electron/path.txt
-          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Ensure Electron binary
-        run: node scripts/ensure-electron.mjs
-
-      - name: Install Electron system dependencies
-        run: npx playwright install-deps chromium
-
-      - run: mkdir -p reports
-
-      - name: Run Electron e2e
-        run: xvfb-run --auto-servernum -- npm run test:ship:desktop
-        env:
-          CI: true
-          PLAYWRIGHT_ELECTRON_FULL: "1"
-
-      - name: Summarize Electron e2e
-        id: playwright-summary
-        if: always()
-        run: node scripts/ci-summarize.mjs --playwright reports/playwright-electron-results.json
-
-      - name: Upload Playwright results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-electron-results
-          path: reports/playwright-electron-results.json
-          retention-days: 1
-          if-no-files-found: ignore
-
-      - name: Upload Electron Playwright report
-        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-electron
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-electron-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 1
+    uses: ./.github/workflows/electron-e2e.yml
+    with:
+      artifact: playwright-report-electron
 
   visual:
     name: Player screen visual regression

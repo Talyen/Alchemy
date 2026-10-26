@@ -37,6 +37,7 @@ import { prepareEnemyDamage } from "./enemy-damage-mitigation";
 export interface EnemyAbilityContext {
   attackReduction: number;
   readonly brawlerPenalty: boolean;
+  brawlerPenaltySpent: boolean;
   vampireBonus: boolean;
   soulHarvest: "purge" | "leech" | null;
   landed: boolean;
@@ -49,6 +50,7 @@ export function createEnemyAbilityContext(state: BattleState, damaging: boolean)
         (hasEnemyTrait(state, "cowardly") && state.enemyHealth < state.enemyMaxHealth / 2 ? 1 : 0)
       : 0,
     brawlerPenalty: damaging && state.flags.enemyBrawlerDamagePenalty,
+    brawlerPenaltySpent: false,
     vampireBonus: false,
     soulHarvest: null,
     landed: false,
@@ -153,8 +155,15 @@ export function applyAbilityDamage(
       : null;
   state = applyHitPilfer(state, combatTexts);
   if (getBattleOutcome(state) !== null) return state;
+  // A Chance ability can resolve only utility. Spend the penalty on its first
+  // damage effect, retaining the captured multiplier for all hits of this ability.
+  if (context.brawlerPenalty && !context.brawlerPenaltySpent) {
+    context.brawlerPenaltySpent = true;
+    state = setFlag(state, "enemyBrawlerDamagePenalty", false);
+  }
   const condemn = hasEnemyTrait(state, "inquisitor") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
-  if (context.soulHarvest) effect = { ...effect, lifesteal: context.soulHarvest === "leech" };
+  // Purge is an additional trait reward; it cannot revoke the ability's own Leech.
+  if (context.soulHarvest === "leech") effect = { ...effect, lifesteal: true };
   effect = resolveConditionalCardDamage(effect, state.playerCC.freezeSkipTurns > 0);
   if (effect.damageTypePool) {
     effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
@@ -215,7 +224,7 @@ export function applyAbilityDamage(
     }
     nextState = applyNativeHitFollowups(nextState, context, true, combatTexts);
   }
-  if (getBattleOutcome(nextState) === null && hasEnemyTrait(nextState, "self-sacrifice")) {
+  if (result.landed && getBattleOutcome(nextState) === null && hasEnemyTrait(nextState, "self-sacrifice")) {
     const before = nextState.enemyHealth;
     nextState = damageEnemyHealth(recordEnemyAbilityActivation(nextState, "self-sacrifice"), 1).state;
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "health", amount: 1 });

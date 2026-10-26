@@ -79,6 +79,8 @@ export interface ReactionAnnouncement {
   burstId: string;
   target: CombatTextEvent["target"];
   reactionIds: ReactionId[];
+  /** One action's central direct damage and attributed payoffs share this flight and expiry. */
+  entries: FloatingCombatText[];
   firstShownAt: number;
   lifetimeMs: number;
   presentation?: CombatTextPresentation;

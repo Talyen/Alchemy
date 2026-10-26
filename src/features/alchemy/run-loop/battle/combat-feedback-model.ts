@@ -16,14 +16,20 @@ export function prepareCombatFeedback(
   const reactions: ReactionAnnouncement[] = [];
   // Resolved frames can be saved and replayed; presentation must never mutate their events.
   for (const event of events) {
+    // Immunity is already represented by the persistent control-immunity chip.
+    // Keep its engine receipt for mechanics/audio, without allocating a floating flight.
+    if (event.kind === "notice" && event.signal === "immune") continue;
     if (event.kind === "notice" && event.signal === "reaction") {
-      let announcement = reactions.find((entry) => entry.target === event.target);
+      let announcement = reactions.find(
+        (entry) => entry.target === event.target && entry.reactionIds.includes(event.reactionId),
+      );
       if (!announcement) {
         announcement = {
-          id: `reaction-${actionId}-${event.target}`,
+          id: `reaction-${actionId}-${event.target}-${event.reactionId}`,
           burstId: `combat-burst-${actionId}-${event.target}`,
           target: event.target,
           reactionIds: [],
+          entries: [],
           firstShownAt: now,
           lifetimeMs: REACTION_TEXT_LIFETIME_MS,
         };
@@ -39,12 +45,13 @@ export function prepareCombatFeedback(
           entry.impact !== false &&
           entry.target === event.target &&
           entry.stat === event.stat &&
+          entry.reactionId === event.reactionId &&
           entry.feedback === event.feedback &&
           Math.sign(entry.amount) === Math.sign(event.amount),
       );
       const previous = consolidated[index];
       if (previous?.kind === "damage") {
-        // Numeric display totals may combine non-additive reaction packets; engine facts stay untouched.
+        // Repeated packets of one origin can total; direct and different reaction payoffs stay distinct.
         const merged = [{ ...previous, impact: true, additive: true, periodic: false }];
         mergeCombatText(merged, { ...event, impact: true, additive: true, periodic: false });
         const { impact: _impact, additive: _additive, periodic: _periodic, ...aggregate } = merged[0]!;
@@ -83,7 +90,7 @@ export function prepareCombatFeedback(
     const entries = byTarget[target];
     if (entries.length === 0) continue;
     const id = `combat-burst-${actionId}-${target}`;
-    bursts.push({
+    const burst: CombatTextBurst = {
       id,
       target,
       firstShownAt: now,
@@ -94,7 +101,19 @@ export function prepareCombatFeedback(
         displayText: combatTextDisplay(event),
         ...(event.kind !== "notice" ? { reservedDigits: String(Math.abs(event.amount)).length + 1 } : {}),
       })),
-    });
+    };
+    for (const reaction of reactions.filter((entry) => entry.target === target)) {
+      reaction.entries = burst.entries.filter(
+        (entry) =>
+          entry.kind === "damage" &&
+          entry.impact !== false &&
+          DAMAGE_TYPES.includes(entry.stat as DamageType) &&
+          entry.reactionId !== undefined &&
+          reaction.reactionIds.includes(entry.reactionId),
+      );
+      burst.entries = burst.entries.filter((entry) => !reaction.entries.includes(entry));
+    }
+    if (burst.entries.length) bursts.push(burst);
     let strongest: { amount: number; visual: NonNullable<ReturnType<typeof getCombatImpactVisual>> } | undefined;
     for (const entry of events) {
       if (entry.target !== target) continue;

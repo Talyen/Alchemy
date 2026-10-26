@@ -3,6 +3,10 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CombatTextRail } from "@/features/alchemy/run-loop/battle/presentation/ui/combat-text";
 import type { CombatTextBurst } from "@/features/alchemy/shared/types";
+import {
+  advanceCombatFeedback,
+  scheduleCombatFeedback,
+} from "@/features/alchemy/run-loop/battle/combat-feedback-queue";
 
 const protectedHit: CombatTextBurst = {
   id: "protected-hit",
@@ -24,7 +28,6 @@ describe("CombatTextRail", () => {
     { stat: "freeze", text: "Frozen", signal: undefined, icons: 1, label: "Frozen" },
     { stat: "armor", text: "Purged", signal: "purge", icons: 2, label: "Purged Armor" },
     { stat: "nextHitCrit", text: "", signal: "prepared", icons: 2, label: "Predator's Focus prepared" },
-    { stat: "freeze", text: "Immune to Freeze", signal: "immune", icons: 2, label: "Immune to Freeze" },
     { stat: "phoenixFeather", text: "Revived", signal: undefined, icons: 1, label: "Revived" },
   ] as const)(
     "renders $stat notices as icons with readable accessible labels",
@@ -42,6 +45,72 @@ describe("CombatTextRail", () => {
       expect(container.querySelector('[data-testid="combat-text"]')?.getAttribute("aria-label")).toBe(label);
     },
   );
+
+  it("omits immunity flights for every intent without losing actual damage or control application", () => {
+    const events = [
+      { target: "enemy", kind: "damage", stat: "stun", amount: 8, feedback: "primary" },
+      { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" },
+      { target: "enemy", kind: "notice", stat: "stun", text: "Immune to Stun", signal: "immune", feedback: "primary" },
+      {
+        target: "player",
+        kind: "notice",
+        stat: "freeze",
+        text: "Immune to Freeze",
+        signal: "immune",
+        feedback: "secondary",
+      },
+    ] as const;
+    const original = structuredClone(events);
+    const prepared = prepareCombatFeedback(events, 1, 0, 1100);
+    expect(prepared.bursts.flatMap((burst) => burst.entries)).toHaveLength(2);
+    expect(prepareCombatFeedback(events.slice(2), 2, 0, 1100).bursts).toEqual([]);
+    // Raw/replayed presentation input must obey the same rule.
+    const raw = {
+      ...prepared.bursts[0]!,
+      entries: events.map((event, i) => ({
+        ...event,
+        id: String(i),
+        displayText: event.kind === "damage" ? "-8" : "",
+      })),
+    };
+    const { container } = render(<CombatTextRail bursts={[raw]} />);
+    expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(2);
+    expect(container.querySelector('[aria-label="Stunned"]')).not.toBeNull();
+    expect(container.querySelector('[data-kind="damage"]')?.textContent).toBe("-8");
+    expect(container.querySelector("svg.lucide-shield-check")).toBeNull();
+    expect(events).toEqual(original);
+  });
+
+  it("marks only secondary state gains for live status-row deduplication", () => {
+    const prepared = prepareCombatFeedback(
+      [
+        { target: "player", kind: "status", stat: "block", amount: 6, feedback: "primary" },
+        { target: "player", kind: "status", stat: "thorns", amount: 2, feedback: "secondary" },
+        { target: "player", kind: "status", stat: "armor", amount: 0, feedback: "secondary" },
+        { target: "player", kind: "damage", stat: "block", amount: 2, feedback: "secondary" },
+        { target: "player", kind: "notice", stat: "burn", text: "Cleansed", signal: "cleanse" },
+        { target: "enemy", kind: "notice", stat: "armor", text: "Purged", signal: "purge" },
+        { target: "player", kind: "notice", stat: "nextHitCrit", text: "", signal: "prepared", feedback: "secondary" },
+        { target: "player", kind: "notice", stat: "companion", text: "Summoned" },
+        { target: "enemy", kind: "notice", stat: "stun", text: "Stunned", feedback: "secondary" },
+      ],
+      4,
+      0,
+      1100,
+    );
+    const { container } = render(<CombatTextRail bursts={prepared.bursts} />);
+    const marked = [...container.querySelectorAll("[data-secondary-status-feedback]")].map((node) =>
+      node.getAttribute("data-secondary-status-feedback"),
+    );
+    expect(marked).toEqual(["player:nextHitCrit", "player:thorns"]);
+    expect(
+      container
+        .querySelector('[data-stat="block"][data-kind="status"]')
+        ?.closest("[data-feedback-lane]")
+        ?.getAttribute("data-feedback-lane"),
+    ).toBe("impact");
+    expect(container.querySelector('[aria-label="Stunned"]')).not.toBeNull();
+  });
 
   it("adds critical glow without changing damage text, typography, or accessible meaning", () => {
     const burst: CombatTextBurst = {
@@ -89,30 +158,82 @@ describe("CombatTextRail", () => {
   });
 });
 
-it("shows a named reaction and one Critical-inclusive total without a lone reaction icon", () => {
+it("keeps the direct flight independent while pairing the reaction name and bonus with matching shine", () => {
   const prepared = prepareCombatFeedback(
     [
       { target: "enemy", kind: "notice", stat: "physical", text: "Shatter", signal: "reaction", reactionId: "shatter" },
-      { target: "enemy", kind: "damage", stat: "physical", amount: 6, critical: true },
-      { target: "enemy", kind: "damage", stat: "physical", amount: 8, additive: false },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 6, critical: true, feedback: "primary" },
+      {
+        target: "enemy",
+        kind: "damage",
+        stat: "physical",
+        amount: 8,
+        additive: false,
+        reactionId: "shatter",
+        feedback: "secondary",
+      },
     ],
     1,
     0,
     1100,
   );
   const { container } = render(<CombatTextRail bursts={prepared.bursts} reactions={prepared.reactions} />);
-  expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
+  expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(2);
   expect(container.querySelector('[data-testid="combat-text"]')?.getAttribute("aria-label")).toBe(
-    "Physical: -14 (includes a Critical)",
+    "Critical Physical: -6",
   );
+  const bonus = container.querySelector('[data-reaction-id="shatter"]');
+  expect(bonus?.getAttribute("aria-label")).toBe("Physical: -8");
   const name = container.querySelector('[data-reaction="shatter"]');
   expect(name?.textContent).toBe("Shatter");
   expect(name?.closest('[data-testid="combat-feedback-action"]')).not.toBe(
     container.querySelector('[data-testid="combat-text"]')?.closest('[data-testid="combat-feedback-action"]'),
   );
+  expect(name?.closest('[data-testid="combat-feedback-action"]')).toBe(
+    bonus?.closest('[data-testid="combat-feedback-action"]'),
+  );
   expect((name!.firstElementChild as HTMLElement).style.webkitTextStroke).toBe("0px");
   expect(name?.querySelector("svg")).toBeNull();
-  expect(container.querySelectorAll("svg")).toHaveLength(1);
+  expect(container.querySelectorAll("svg")).toHaveLength(2);
+  expect(bonus?.closest("[data-feedback-lane]")?.getAttribute("data-feedback-lane")).toBe("announcement");
+  expect(bonus?.querySelector(".reaction-text-shine")?.getAttribute("style")).toBe(
+    name?.firstElementChild?.getAttribute("style"),
+  );
+});
+
+it("fans direct hits independently and gives simultaneous reactions separate stable routes", () => {
+  const prepared = prepareCombatFeedback(
+    [
+      { target: "enemy", kind: "damage", stat: "burn", amount: 8, feedback: "primary" },
+      { target: "enemy", kind: "damage", stat: "nature", amount: 7 },
+      { target: "enemy", kind: "notice", stat: "burn", text: "", signal: "reaction", reactionId: "frostfire" },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 6, reactionId: "frostfire" },
+      { target: "enemy", kind: "notice", stat: "burn", text: "", signal: "reaction", reactionId: "venomflash" },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 2, reactionId: "venomflash" },
+    ],
+    4,
+    0,
+    1050,
+  );
+  const scheduled = scheduleCombatFeedback(prepared.bursts, prepared.reactions, 0, 1050, false);
+  const hits = scheduled.floatingCombatBursts[0]!.entries;
+  expect(hits[0]!.presentation!.spread).not.toBe(hits[1]!.presentation!.spread);
+  expect(scheduled.reactionAnnouncements[0]!.presentation!.spread).not.toBe(
+    scheduled.reactionAnnouncements[1]!.presentation!.spread,
+  );
+  expect([...hits, ...scheduled.reactionAnnouncements].every((entry) => entry.presentation!.launchAt <= 180)).toBe(
+    true,
+  );
+  const shown = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 180);
+  const { container } = render(
+    <CombatTextRail bursts={shown.floatingCombatBursts} reactions={shown.reactionAnnouncements} />,
+  );
+  expect(container.querySelectorAll('[data-testid="combat-feedback-action"]')).toHaveLength(4);
+  for (const id of ["frostfire", "venomflash"]) {
+    const pair = container.querySelector(`[data-reaction="${id}"]`)!.closest('[data-testid="combat-feedback-action"]');
+    expect(pair?.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
+    expect(pair?.querySelector(`[data-reaction-id="${id}"]`)).not.toBeNull();
+  }
 });
 
 it("does not mount queued text early and preserves the active flight when another entry arrives", () => {

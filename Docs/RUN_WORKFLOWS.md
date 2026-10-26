@@ -8,7 +8,11 @@ behavior, then run [the task gate](../CONTRIBUTING.md#what-to-run-when-you-chang
 ## Change persisted save data
 
 1. Decide whether the change needs a version bump or a safe additive default using the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
-2. Follow its [required pattern](../src/features/alchemy/shared/storage/MIGRATIONS.md#required-pattern-automated), updating the schema, domain defaults, codecs, and fixtures together. [Defaults and resume normalization](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization) names the owners; [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion) owns clear-save modes.
+2. Update the schema, domain defaults, owning codec and fixtures together under
+   the [schema change contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#schema-change-contract).
+   Preserve exhaustive field selections and introduce ordered transformations only
+   when supported formats require them. [Default owners](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization)
+   locate initialization and recovery; clear-save changes follow [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion).
 3. Check [save expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations),
    reusing `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
 
@@ -126,7 +130,7 @@ Pure engine tests can continue to use the execution shape directly.
 
 ## Campfire brewing and Transmutation visits
 
-Start with [brewing and Transmutation rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+Start with [brewing and Transmutation rules](./GAME_RULES.md#brewing-and-transmutation)
 and [visit interaction](./UI_BROWSING.md#campfire-and-transmutation).
 
 1. Initialize offers in `run/room-visit-initialization.ts` inside room entry using

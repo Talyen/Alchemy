@@ -21,109 +21,38 @@ jobs:
   localization-qa:
     uses: ./.github/workflows/localization-qa.yml
 
+  demo-e2e:
+    uses: ./.github/workflows/demo-e2e.yml
+    with:
+      artifact: demo-e2e-nightly-diagnostics
+      full: true
+
   prepare:
     name: Prepare build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          sparse-checkout: |
-            /*
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-
-      - run: npm run build
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: dist
-          path: dist/
-          compression-level: 0
-          retention-days: 1
-
-      - name: Retain build failure diagnostics
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: build-diagnostics-nightly-prepare
-          path: |
-            reports/compact/
-            reports/current-run.*
-            reports/runs/
-          retention-days: 1
-          if-no-files-found: ignore
+    uses: ./.github/workflows/web-build.yml
+    with:
+      diagnostics: build-diagnostics-nightly-prepare
+      acceptance: false
+      timeout: 15
 
   e2e-web:
     name: Web E2E (${{ matrix.shard }}/4)
     needs: prepare
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      ALCHEMY_RUN_VARIANT: shard-${{ matrix.shard }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
-    steps:
-      - name: Record test job setup start
-        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          sparse-checkout: |
-            /*
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Smoke test downloaded build including music
-        run: npm run smoke:preview
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-
-      - name: Prepare reports dir
-        run: mkdir -p reports
-
-      - name: Run web e2e shard
-        run: npm run test:e2e:nightly -- --shard=${{ matrix.shard }}/4
-        env:
-          CI: true
-          ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
-
-      - name: Summarize web e2e shard
-        id: playwright-summary
-        if: always()
-        run: node scripts/ci-summarize.mjs --playwright
-
-      - name: Upload Playwright results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-nightly-web-${{ matrix.shard }}-results
-          path: reports/playwright-results.json
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload Playwright report
-        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-nightly-web-${{ matrix.shard }}
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 1
+        shard:
+          - 1
+          - 2
+          - 3
+          - 4
+    uses: ./.github/workflows/web-e2e.yml
+    with:
+      command: npm run test:e2e:nightly -- --shard=${{ matrix.shard }}/4
+      artifact: playwright-report-nightly-web-${{ matrix.shard }}
+      timeout: 15
+      variant: shard-${{ matrix.shard }}
+      layout-review: true
 
   performance-discovery:
     name: Seeded desktop performance discovery (${{ matrix.slot }})
@@ -162,11 +91,6 @@ jobs:
 
       - name: Install Electron system dependencies
         run: npx playwright install-deps chromium
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
 
       - name: Select rotating seed
         id: seed
@@ -217,85 +141,12 @@ jobs:
 
   ship-gate-full:
     name: Ship gate (full)
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Record test job setup start
-        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          fetch-depth: 0
-
-      - uses: ./.github/actions/setup
-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        id: electron-binary-cache
-        with:
-          path: |
-            ~/.cache/electron
-            node_modules/electron/dist
-            node_modules/electron/path.txt
-          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Ensure Electron binary
-        run: node scripts/ensure-electron.mjs
-
-      - name: Install Electron system dependencies
-        run: npx playwright install-deps chromium
-
-      - name: Install native window manager for focus canaries
-        run: sudo apt-get install -y --no-install-recommends openbox
-
-      - run: npm run check:ship
-
-      - run: mkdir -p reports
-
-      - name: Run Electron e2e
-        run: xvfb-run --auto-servernum -- sh -c 'openbox >/tmp/alchemy-openbox.log 2>&1 & npm run test:ship:desktop'
-        env:
-          CI: true
-          PLAYWRIGHT_ELECTRON_FULL: "1"
-          ALCHEMY_INTERACTION_TIER: nightly
-
-      - name: Summarize Electron e2e
-        id: playwright-summary
-        if: always()
-        run: node scripts/ci-summarize.mjs --playwright reports/playwright-electron-results.json
-
-      - name: Upload Playwright results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-nightly-electron-results
-          path: reports/playwright-electron-results.json
-          retention-days: 1
-          if-no-files-found: ignore
-
-      - name: Upload Electron Playwright report
-        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-report-nightly-electron
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-electron-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 1
-
-      - name: Retain build failure diagnostics
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: build-diagnostics-nightly-ship-gate-full
-          path: |
-            reports/compact/
-            reports/current-run.*
-            reports/runs/
-          retention-days: 1
-          if-no-files-found: ignore
+    uses: ./.github/workflows/electron-e2e.yml
+    with:
+      artifact: playwright-report-nightly-electron
+      renderer: ""
+      timeout: 45
+      full: true
 
   deadcode-entry-exports:
     name: Knip entry exports

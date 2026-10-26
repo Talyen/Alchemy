@@ -30,6 +30,13 @@ describe("effect dispatch registry", () => {
       ],
     };
     expect(BattleCardEffectSchema.parse(scheduled)).toEqual(scheduled);
+    const failureOnly = {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [],
+      failureEffects: scheduled.effects,
+    };
+    expect(BattleCardEffectSchema.parse(failureOnly)).toEqual(failureOnly);
   });
 
   it.each([{ equalToBlockPercent: 50 }, { equalToBlock: true, equalToArmor: true }])(

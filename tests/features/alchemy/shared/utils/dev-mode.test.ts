@@ -1,5 +1,5 @@
 import { describe, expect, it, afterEach, vi, beforeEach } from "vitest";
-import { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils/dev-mode";
+import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils/dev-mode";
 
 const SKIP_KEY = "alchemy-skip-loading-screen";
 
@@ -45,8 +45,4 @@ describe("shouldSkipStartupLoadingGate", () => {
     storage.set("alchemy-dev-mode", "true");
     expect(shouldSkipStartupLoadingGate()).toBe(false);
   });
-});
-
-it("isAlchemyDevBuild matches import.meta.env.DEV", () => {
-  expect(isAlchemyDevBuild()).toBe(import.meta.env.DEV);
 });

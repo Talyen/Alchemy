@@ -1,15 +1,19 @@
 import { allRegisteredSoundFiles, battleEventSounds, getCardSounds, uiSounds } from "./sound-registry";
+import { releaseAudioElement } from "./element";
 import { scheduleIdle } from "../preload";
 import { getSoundUrl, resetSoundUrlCache } from "./url";
+import { SOUND_PRELOAD_TIMEOUT_MS } from "../game-constants";
 
 const IDLE_PRELOAD_TIMEOUT_MS = 5000;
 
 const warmedSounds = new Set<string>();
+const pendingWarmups = new Set<() => void>();
 let preloadAllSoundsStarted = false;
 let preloadGeneration = 0;
 
 export function resetSoundPreloadCache() {
   preloadGeneration += 1;
+  for (const cancel of [...pendingWarmups]) cancel();
   warmedSounds.clear();
   preloadAllSoundsStarted = false;
   resetSoundUrlCache();
@@ -22,19 +26,30 @@ export function preloadSounds(names: readonly string[]) {
     // Marked before warming so a failed name never retry-storms; a missed
     // warmup only costs a cold first play, never correctness.
     warmedSounds.add(name);
+    let el: HTMLAudioElement | undefined;
+    let settled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const cancel = () => finish(false);
+    const finish = (loaded: boolean) => {
+      if (settled) return;
+      settled = true;
+      if (timeout !== undefined) globalThis.clearTimeout(timeout);
+      pendingWarmups.delete(cancel);
+      if (!el) return;
+      el.oncanplaythrough = null;
+      el.onerror = null;
+      if (!loaded) releaseAudioElement(el);
+    };
     try {
-      const el = new Audio();
+      el = new Audio();
+      pendingWarmups.add(cancel);
       el.preload = "auto";
-      el.oncanplaythrough = () => {
-        el.oncanplaythrough = null;
-        el.onerror = null;
-      };
-      el.onerror = () => {
-        el.oncanplaythrough = null;
-        el.onerror = null;
-      };
+      el.oncanplaythrough = () => finish(true);
+      el.onerror = cancel;
+      timeout = globalThis.setTimeout(cancel, SOUND_PRELOAD_TIMEOUT_MS);
       el.src = getSoundUrl(name);
     } catch {
+      finish(false);
       // Warmup is optional; one failed element must not abort app/battle startup.
     }
   }

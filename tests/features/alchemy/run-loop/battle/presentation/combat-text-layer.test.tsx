@@ -6,12 +6,24 @@ import { resetBattlePresentationAndRun } from "../battle-test-reset";
 import { mutateRunForTest, setBattleActiveForTest } from "../../../../../helpers/run-domain-store-test";
 import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import type { BattleRefs, CombatTextBurst } from "@/features/alchemy/shared/types";
+import { secondaryStatusFeedbackKey } from "@/features/alchemy/run-loop/battle/presentation/combat-status-feedback";
+import { combatTextLane } from "@/features/alchemy/run-loop/battle/combat-feedback-motion";
 
 vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/combat-text", () => ({
   CombatTextRail: ({ bursts }: { bursts: CombatTextBurst[] }) => (
     <div>
       {bursts.map((burst) => (
-        <span key={burst.id} data-burst-id={burst.target} />
+        <span key={burst.id} data-burst-id={burst.target}>
+          {burst.entries.map((entry) => (
+            <span
+              key={entry.id}
+              data-stat={entry.stat}
+              data-kind={entry.kind}
+              data-intent={entry.feedback}
+              data-secondary-status-feedback={secondaryStatusFeedbackKey(entry, combatTextLane(entry))}
+            />
+          ))}
+        </span>
       ))}
     </div>
   ),
@@ -73,6 +85,82 @@ describe("CombatTextLayer geometry", () => {
     frames.clear();
     act(() => pending.forEach((callback) => callback(16)));
   }
+
+  function statusRow(target: "player" | "enemy", ids: string[]) {
+    const row = document.createElement("div");
+    row.dataset.combatStatusTarget = target;
+    for (const id of ids) {
+      const chip = document.createElement("button");
+      chip.dataset.combatStatusId = id;
+      vi.spyOn(chip, "getBoundingClientRect").mockReturnValue(new DOMRect(140, 420, 36, 36));
+      row.append(chip);
+    }
+    scene.append(row);
+    return row;
+  }
+
+  it("deduplicates only visible same-recipient secondary gains and restores their fallback as the row changes", () => {
+    const row = statusRow("player", ["block", "thorns"]);
+    battlePresentation.getState().clearFloatingCombatTexts();
+    battlePresentation.getState().showCombatTexts([
+      { target: "player", kind: "status", stat: "block", amount: 6, feedback: "primary" },
+      { target: "player", kind: "status", stat: "thorns", amount: 2, feedback: "secondary" },
+      { target: "enemy", kind: "status", stat: "thorns", amount: 2, feedback: "secondary" },
+      { target: "player", kind: "heal", stat: "health", amount: 3, feedback: "secondary" },
+      { target: "player", kind: "damage", stat: "block", amount: 2, feedback: "secondary" },
+    ]);
+    const { container } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
+    const own = container.querySelector<HTMLElement>('[data-secondary-status-feedback="player:thorns"]')!;
+    const other = container.querySelector<HTMLElement>('[data-secondary-status-feedback="enemy:thorns"]')!;
+    expect(own.style.visibility).toBe("hidden");
+    expect(own.getAttribute("aria-hidden")).toBe("true");
+    expect(other.style.visibility).toBe("");
+    expect(container.querySelector('[data-stat="block"][data-intent="primary"]')?.getAttribute("style")).toBeNull();
+    expect(container.querySelectorAll("[data-secondary-status-feedback]")).toHaveLength(2);
+
+    row.hidden = true;
+    nextFrame();
+    expect(own.style.visibility).toBe("");
+    expect(own.hasAttribute("aria-hidden")).toBe(false);
+    row.hidden = false;
+    nextFrame();
+    expect(own.style.visibility).toBe("hidden");
+    row.remove();
+    nextFrame();
+    expect(own.style.visibility).toBe("");
+    // A newly rendered status can replace its fallback during the same receipt.
+    statusRow("player", ["thorns"]);
+    nextFrame();
+    expect(own.style.visibility).toBe("hidden");
+    expect(container.querySelector('[data-secondary-status-feedback="player:thorns"]')).toBe(own);
+  });
+
+  it("keeps the sole feedback for overflow, offscreen, transparent and unrendered statuses", () => {
+    const row = statusRow("player", ["thorns"]);
+    row.style.overflow = "hidden";
+    const clip = vi.spyOn(row, "getBoundingClientRect").mockReturnValue(new DOMRect(130, 410, 35, 50));
+    battlePresentation.getState().clearFloatingCombatTexts();
+    battlePresentation
+      .getState()
+      .showCombatTexts([{ target: "player", kind: "status", stat: "thorns", amount: 2, feedback: "secondary" }]);
+    const { container } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
+    const feedback = container.querySelector<HTMLElement>("[data-secondary-status-feedback]")!;
+    expect(feedback.style.visibility).toBe("");
+    clip.mockReturnValue(new DOMRect(130, 410, 100, 50));
+    nextFrame();
+    expect(feedback.style.visibility).toBe("hidden");
+    row.style.opacity = "0";
+    nextFrame();
+    expect(feedback.style.visibility).toBe("");
+    row.style.opacity = "1";
+    const chip = row.firstElementChild as HTMLElement;
+    vi.spyOn(chip, "getBoundingClientRect").mockReturnValue(new DOMRect(-10, 420, 36, 36));
+    nextFrame();
+    expect(feedback.style.visibility).toBe("");
+    chip.remove();
+    nextFrame();
+    expect(feedback.style.visibility).toBe("");
+  });
 
   it("keeps both overlays pinned through movement and portrait replacement using one scene read per frame", () => {
     const { container } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);

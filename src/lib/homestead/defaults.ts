@@ -2,9 +2,9 @@ import { defaultCompanionBondLevels } from "@/lib/game-data";
 import { HOMESTEAD_BATTLE_NUMERIC_KEYS, type HomesteadEffectManifest } from "./types";
 import { createNumericManifest } from "@/lib/manifest-utils";
 
-export const defaultHomesteadEffects: HomesteadEffectManifest = {
+export const defaultHomesteadEffects: Readonly<HomesteadEffectManifest> = Object.freeze({
   ...createNumericManifest(HOMESTEAD_BATTLE_NUMERIC_KEYS),
-  companionBondLevels: { ...defaultCompanionBondLevels },
+  companionBondLevels: Object.freeze({ ...defaultCompanionBondLevels }),
   herbFindBonus: 0,
   woodFindBonus: 0,
   stoneFindBonus: 0,
@@ -14,4 +14,4 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   removeCardDiscount: 0,
   mixPotionDiscount: 0,
   gearAstralChanceBonus: 0,
-};
+});

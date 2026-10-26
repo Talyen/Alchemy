@@ -150,7 +150,7 @@
 
 @keyframes statusChipPop {
   from {
-    opacity: 0;
+    opacity: 1;
     transform: translateY(4px) scale(0.82);
   }
   to {

@@ -22,10 +22,11 @@ export function visitBattleCardEffects(
   return false;
 }
 
-/** Map one level, reusing unchanged wrappers; callers own recursion and leaf behavior. */
+/** Map one level; ownership copies can opt out of reusing unchanged wrappers. */
 export function mapEffectChildren(
   effect: BattleCardEffect,
   map: (child: BattleCardEffect, index: number) => BattleCardEffect,
+  reuseUnchanged = true,
 ): BattleCardEffect {
   if (effect.kind === "chance") {
     const successEffects = effect.successEffects.map(map);
@@ -33,6 +34,7 @@ export function mapEffectChildren(
       map(child, effect.successEffects.length + index),
     );
     if (
+      reuseUnchanged &&
       successEffects.every((child, index) => child === effect.successEffects[index]) &&
       failureEffects.every((child, index) => child === effect.failureEffects[index])
     )
@@ -45,7 +47,9 @@ export function mapEffectChildren(
   }
   if (effect.kind === "repeat-over-turns") {
     const effects = effect.effects.map(map);
-    return effects.every((child, index) => child === effect.effects[index]) ? effect : { ...effect, effects };
+    return reuseUnchanged && effects.every((child, index) => child === effect.effects[index])
+      ? effect
+      : { ...effect, effects };
   }
   return effect;
 }

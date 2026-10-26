@@ -50,10 +50,25 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   let bossPreviewKey: string | null = null;
   let playAttempt: object | null = null;
 
+  function reportFailure(message: string): void {
+    try {
+      deps.reportFailure(message);
+    } catch {
+      // Diagnostics cannot interrupt playback cleanup or reject an async handler.
+    }
+  }
+
   function cancelTransition(): void {
-    if ("timer" in playback && playback.timer !== null) deps.cancel(playback.timer);
-    // Replacing the state also invalidates already queued timer callbacks.
+    const timer = "timer" in playback ? playback.timer : null;
+    // Revoke callbacks before cancellation, which can fail at the scheduler seam.
     playback = playback.phase === "idle" ? { phase: "idle" } : { phase: "playing", track: playback.track };
+    if (timer !== null) {
+      try {
+        deps.cancel(timer);
+      } catch {
+        reportFailure("Music fade could not be cancelled");
+      }
+    }
   }
 
   function applyTrackVolume(track: MusicTrackRecord, fadeGain = track.fadeGain): void {
@@ -71,7 +86,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   function syncMusicSettings(): void {
     if (playback.phase === "idle") return;
     applyTrackVolume(playback.track);
-    playback.track.element.muted = deps.readSettings().muted;
+    playback.track.element.muted = playback.phase === "paused" || !deps.canPlay() || deps.readSettings().muted;
   }
 
   function playElement(el: MusicElement): void {
@@ -82,13 +97,13 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
       el.pause();
       return;
     }
-    const reportFailure = () => {
-      if (playAttempt === attempt) deps.reportFailure("Music playback blocked until user interaction");
+    const reportPlayFailure = () => {
+      if (playAttempt === attempt) reportFailure("Music playback blocked until user interaction");
     };
     try {
-      void Promise.resolve(el.play()).catch(reportFailure);
+      void Promise.resolve(el.play()).catch(reportPlayFailure);
     } catch {
-      reportFailure();
+      reportPlayFailure();
     }
   }
 
@@ -96,16 +111,17 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     const cached = musicTracks.get(key);
     if (cached) return cached;
     const catalog = MUSIC_CATALOG[key];
-    const file = deps.selectFile(catalog?.files ?? []);
-    if (!catalog || !file) return undefined;
+    if (!catalog) return undefined;
     let element: MusicElement | undefined;
     try {
+      const file = deps.selectFile(catalog.files);
+      if (!file) return undefined;
       element = deps.createElement(file);
       element.loop = true;
       if (catalog.skipSeconds) element.currentTime = catalog.skipSeconds;
     } catch {
       if (element) releaseAudioElement(element);
-      deps.reportFailure("Music track could not be initialized");
+      reportFailure("Music track could not be initialized");
       return undefined;
     }
     const track = { key, element, fadeGain: 1 };
@@ -114,7 +130,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   }
 
   function activateTrack(track: MusicTrackRecord, gain: number): void {
-    if (playback.phase !== "idle" && playback.track !== track) playback.track.element.pause();
+    if (playback.phase !== "idle" && playback.track !== track) pauseTrack(playback.track.element);
     playback = { phase: "playing", track };
     applyTrackVolume(track, gain);
     track.element.muted = deps.readSettings().muted;
@@ -130,17 +146,25 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   ): void {
     playback = state;
     const startTime = deps.now();
-    state.timer = deps.schedule(() => {
-      if (playback !== state) return;
-      const elapsed = deps.now() - startTime;
-      if (elapsed < delayMs) return;
-      const progress = Math.min(1, (elapsed - delayMs) / durationMs);
-      apply(progress);
-      if (progress >= 1) {
-        cancelTransition();
-        complete();
-      }
-    }, MUSIC_FADE_TICK_MS);
+    try {
+      state.timer = deps.schedule(() => {
+        if (playback !== state) return;
+        const elapsed = deps.now() - startTime;
+        if (elapsed < delayMs) return;
+        const progress = Math.min(1, (elapsed - delayMs) / durationMs);
+        apply(progress);
+        if (progress >= 1) {
+          cancelTransition();
+          complete();
+        }
+      }, MUSIC_FADE_TICK_MS);
+    } catch {
+      // Optional fades cannot leave a playing track silent or trap navigation.
+      cancelTransition();
+      apply(1);
+      complete();
+      reportFailure("Music fade could not be scheduled");
+    }
   }
 
   function fadeIn(track: MusicTrackRecord): void {
@@ -212,15 +236,29 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     );
   }
 
+  function pauseTrack(element: MusicElement): void {
+    // Muting and pausing are independent attempts. An outgoing source must
+    // stay silent even when pause fails, without blocking its replacement.
+    try {
+      element.muted = true;
+    } catch {
+      reportFailure("Music track could not be muted");
+    }
+    try {
+      element.pause();
+    } catch {
+      reportFailure("Music track could not be paused");
+    }
+  }
+
   function pauseAllMusic(): void {
     playAttempt = null;
     cancelTransition();
     bossPreviewKey = null;
-    for (const { element } of musicTracks.values()) {
-      element.muted = true;
-      element.pause();
-    }
     if (playback.phase !== "idle") playback = { phase: "paused", track: playback.track };
+    for (const { element } of musicTracks.values()) {
+      pauseTrack(element);
+    }
   }
 
   function invalidateCacheForKey(key: string): void {

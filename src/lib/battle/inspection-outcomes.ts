@@ -1,44 +1,6 @@
-import {
-  areBattleCardEffectsEqual,
-  type BattleCard,
-  type BattleCardEffect,
-  type BattleCardEffectKind,
-} from "@/lib/game-data";
+import { areBattleCardEffectsEqual, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import type { RandomDecision, Rng } from "@/lib/rng";
 import type { BattleResolutionObserver, ObservedAttack, ObservedDirectAmount } from "./resolution-observer";
-
-/** Classification is exhaustive; execution, including draws and scheduling, stays with the registry. */
-const INSPECTION_EFFECT_POLICY = {
-  damage: "resolve",
-  "random-damage": "branch",
-  "self-damage": "resolve",
-  "remove-enemy-armor": "resolve",
-  "restore-mana": "resolve",
-  "lose-mana": "resolve",
-  "gain-max-mana": "resolve",
-  "lose-max-mana": "resolve",
-  heal: "resolve",
-  "lose-health": "resolve",
-  "player-status": "branch",
-  "remove-harmful-status": "resolve",
-  "remove-player-status": "resolve",
-  "multiply-enemy-status": "resolve",
-  "cleanse-player-status-to-damage": "resolve",
-  "summon-companion": "resolve",
-  "companion-action": "branch",
-  "random-draw": "branch",
-  "gain-gold": "resolve",
-  wish: "branch",
-  "draw-cards": "resolve",
-  "next-hit-crit": "resolve",
-  "next-hit-leech": "resolve",
-  "play-next-card-twice": "resolve",
-  "next-hit-poison": "resolve",
-  "next-archery-free": "resolve",
-  "dodge-next-attack": "resolve",
-  chance: "branch",
-  "repeat-over-turns": "deferred",
-} as const satisfies Record<BattleCardEffectKind, "resolve" | "branch" | "deferred">;
 
 type InspectedAttacks =
   | { kind: "exact"; packets: readonly ObservedAttack[] }
@@ -192,23 +154,17 @@ export function inspectResolutionOutcomes(
       : feedbackExact
         ? { kind: "exact", amounts }
         : { kind: "alternatives", outcomes: feedback.map((outcome) => outcome.directAmounts.get(effect) ?? []) };
-    const packets: Array<readonly ObservedAttack[]> = [];
-    let unknown = INSPECTION_EFFECT_POLICY[effect.kind] === "deferred";
-    if (!unknown) {
-      for (const outcome of outcomes) {
-        if (!outcome.eligible.has(effect)) continue;
-        if (!outcome.complete && !outcome.packets.has(effect)) {
-          unknown = true;
-          break;
-        }
-        packets.push(outcome.packets.get(effect) ?? []);
-      }
-    }
-    if (unknown || packets.length === 0) {
+    // Scheduling resolves now, but future-turn packets remain authored values.
+    if (
+      effect.kind === "repeat-over-turns" ||
+      feedback.length === 0 ||
+      feedback.some((outcome) => !outcome.complete && !outcome.packets.has(effect))
+    ) {
       inspected.set(effect, { kind: "unknown", directAmounts });
       continue;
     }
-    const first = packets[0] ?? [];
+    const packets = feedback.map((outcome) => outcome.packets.get(effect) ?? []);
+    const first = packets[0]!;
     const exact = packets.every(
       (candidate) =>
         candidate === first ||

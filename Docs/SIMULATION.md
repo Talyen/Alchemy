@@ -187,10 +187,11 @@ The `firstVictoryRunCensored` metric records careers without a victory as
 routes, spending and RNG consumption: matched seeds do not guarantee matched
 encounters. Fixture cohorts remain targeted evidence.
 
-The actor exposes shop mixing, distilling, buying and refreshing, and campfire
-new-potion or combining choices through production commands. Shop mixing and
-distilling share the production once-per-visit service limit. Campfire brewing
-and resting are mutually exclusive. Observation previews never advance RNG.
+The actor exposes shop brewing, mixing, distilling, buying and refreshing, and
+campfire new-potion or combining choices through production commands. Service
+availability follows [brewing rules](./GAME_RULES.md#brewing-and-transmutation);
+the actor checks each service’s spent flag independently. Observation previews
+never advance RNG.
 
 Preparation uses visible-effect estimates rather than combat forecasts. The
 [brewing policy](../src/app/playthrough/brewing-policy.ts) owns utility weights,

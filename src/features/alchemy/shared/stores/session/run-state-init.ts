@@ -10,7 +10,7 @@ import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import type { BuildingId, FarmId, HomesteadEffectManifest, MaterialInventory, ResearchId } from "@/lib/homestead/types";
-import { createRunRngState, type RunRngState } from "@/lib/rng";
+import { createRunRngState } from "@/lib/rng";
 import { filterValidDestinationRounds, filterValidDestinations, type Destination } from "@/lib/routing";
 import type { PersistedRunProgress } from "@/lib/active-run-session";
 export type ActiveRunProgressFields = Omit<
@@ -46,56 +46,6 @@ export function pickActiveRunView(run: {
   return { ...run.activeRun, initialized: run.initialized };
 }
 
-function hydrateDestinations(initialActiveRun: ActiveRunData): {
-  completedDestinations: Destination[];
-  lastOfferedDestinations: Destination[];
-  destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
-} {
-  return {
-    completedDestinations: filterValidDestinations(initialActiveRun.completedDestinations),
-    lastOfferedDestinations: filterValidDestinations(initialActiveRun.lastOfferedDestinations),
-    destinationRoundsSinceOffered: filterValidDestinationRounds(initialActiveRun.destinationRoundsSinceOffered),
-  };
-}
-
-// Collection fields with fresh empty defaults, shared by the fresh-run and
-// resume constructors. Tied to ACTIVE_RUN_PROGRESS_KEYS so a new collection
-// field cannot be added to the interface without deciding its default here.
-const EMPTY_ACTIVE_RUN_COLLECTION_KEYS = [
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-  "runBoons",
-  "encounteredRunEnemyIds",
-  "runTalentXP",
-  "runMaterialsEarned",
-  "runCurrenciesEarned",
-  "runObtainedItems",
-  "runHistory",
-] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
-
-function createEmptyActiveRunCollections(): Pick<
-  ActiveRunProgressFields,
-  (typeof EMPTY_ACTIVE_RUN_COLLECTION_KEYS)[number]
-> {
-  return {
-    completedDestinations: [],
-    lastOfferedDestinations: [],
-    destinationRoundsSinceOffered: {},
-    runBoons: [],
-    encounteredRunEnemyIds: [],
-    runTalentXP: {},
-    runMaterialsEarned: emptyInventory(),
-    runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
-    runObtainedItems: [],
-    runHistory: [],
-  };
-}
-
-function createFreshRunRngState(generateSeed: () => number): RunRngState {
-  return createRunRngState(generateSeed());
-}
-
 // Explicit seed seam for new runs: crypto-random per run (persisted in
 // `rng` from here on, so every later draw is reproducible), injectable in
 // tests via `runtimeInputs.generateRunSeed` or the `generateSeed` parameter.
@@ -126,15 +76,23 @@ function createFreshActiveRunFields(
     runGoldEarned: 0,
     currentAct: 1,
     destinationIndexInAct: 0,
-    ...createEmptyActiveRunCollections(),
+    completedDestinations: [],
+    lastOfferedDestinations: [],
+    destinationRoundsSinceOffered: {},
+    runBoons: [],
+    encounteredRunEnemyIds: [],
+    runTalentXP: {},
+    runMaterialsEarned: emptyInventory(),
+    runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
+    runObtainedItems: [],
+    runHistory: [],
     selectedDifficulty: null,
     contentSystemType: "campaign",
-    rng: createFreshRunRngState(generateSeed),
+    rng: createRunRngState(generateSeed()),
   };
 }
 
 function createResumeActiveRunFields(activeRun: ActiveRunData, generateSeed: () => number): ActiveRunProgressFields {
-  const empty = createEmptyActiveRunCollections();
   // Detach every nested collection: the committed aggregate is frozen on
   // publish, so retaining a caller-owned branch would freeze the caller's
   // save (including nested battle and visit data).
@@ -151,18 +109,20 @@ function createResumeActiveRunFields(activeRun: ActiveRunData, generateSeed: () 
     roomsEncountered: activeRun.roomsEncountered,
     currentAct: activeRun.currentAct,
     destinationIndexInAct: activeRun.destinationIndexInAct,
-    ...hydrateDestinations(activeRun),
+    completedDestinations: filterValidDestinations(activeRun.completedDestinations),
+    lastOfferedDestinations: filterValidDestinations(activeRun.lastOfferedDestinations),
+    destinationRoundsSinceOffered: filterValidDestinationRounds(activeRun.destinationRoundsSinceOffered),
     runBoons: [...activeRun.runBoons],
     encounteredRunEnemyIds: [...activeRun.encounteredRunEnemyIds],
     selectedDifficulty: activeRun.selectedDifficulty,
     contentSystemType: activeRun.contentSystemType,
     rng: activeRun.rng
       ? { seed: activeRun.rng.seed, counters: { ...activeRun.rng.counters } }
-      : createFreshRunRngState(generateSeed),
-    runTalentXP: { ...(activeRun.runTalentXP ?? empty.runTalentXP) },
-    runMaterialsEarned: { ...(activeRun.runMaterialsEarned ?? empty.runMaterialsEarned) },
-    runCurrenciesEarned: { ...(activeRun.runCurrenciesEarned ?? empty.runCurrenciesEarned) },
-    runObtainedItems: [...(activeRun.runObtainedItems ?? empty.runObtainedItems)],
+      : createRunRngState(generateSeed()),
+    runTalentXP: { ...(activeRun.runTalentXP ?? {}) },
+    runMaterialsEarned: { ...(activeRun.runMaterialsEarned ?? emptyInventory()) },
+    runCurrenciesEarned: { ...(activeRun.runCurrenciesEarned ?? EMPTY_CRAFTING_CURRENCIES) },
+    runObtainedItems: [...(activeRun.runObtainedItems ?? [])],
   };
 }
 
@@ -194,30 +154,9 @@ export function createInitialPermanentFields(): PermanentProgressFields {
   };
 }
 
-// Fields a fresh-run snapshot provides. Everything else (rng, talent/material
-// tallies, obtained items) starts empty via hydrateFromSnapshot. Tied to
-// ACTIVE_RUN_PROGRESS_KEYS like the collections above.
-export const RUN_SNAPSHOT_FIELD_KEYS = [
-  "characterId",
-  "contentSystemType",
-  "runDeck",
-  "selectedDifficulty",
-  "runPlayerHealth",
-  "runMaxHealth",
-  "runMetaMaxHealth",
-  "roomsEncountered",
-  "currentAct",
-  "destinationIndexInAct",
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-  "runBoons",
-  "encounteredRunEnemyIds",
-] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
-
-export function runFieldsFromSnapshot(
-  snapshot: RunStartSnapshot,
-): Pick<ActiveRunProgressFields, (typeof RUN_SNAPSHOT_FIELD_KEYS)[number]> {
+// The projection itself owns its field list; keep its exact inferred shape
+// while checking each value against the live progress contract.
+export function runFieldsFromSnapshot(snapshot: RunStartSnapshot) {
   return {
     characterId: snapshot.characterId,
     contentSystemType: snapshot.contentSystemType,
@@ -234,5 +173,5 @@ export function runFieldsFromSnapshot(
     destinationRoundsSinceOffered: {},
     runBoons: snapshot.runBoons,
     encounteredRunEnemyIds: [],
-  };
+  } satisfies Partial<ActiveRunProgressFields>;
 }

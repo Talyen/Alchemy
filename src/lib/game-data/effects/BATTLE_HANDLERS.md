@@ -1,5 +1,9 @@
 # Battle handlers for card effects
 
+[Card descriptions](../../../../Docs/CONTENT_AUTHORING.md#card-descriptions) own
+wording, magnitude bindings, numeric editing and parity. This guide owns handler
+registration, execution and inspection.
+
 ## Adding a kind
 
 1. Add its schema to the matching `<group>-schemas.ts` under this directory.
@@ -12,7 +16,8 @@
 4. For recursive shapes, also extend `types.ts`, recursive schema construction and
    `effect-tree.ts` before cloning, mixing or Corruption can traverse them safely.
    Child order is success effects followed by failure effects; it defines target paths.
-5. Update `INSPECTION_EFFECT_POLICY` under [inspection ownership](#battle-inspection-ownership).
+5. Check [inspection ownership](#battle-inspection-ownership) for finite decisions,
+   unknown draws and future-turn execution.
 6. Verify consequential schema refinements, runtime behavior and independently
    expected descriptions. [Tests](#tests) identify existing protection; the shared
    formatter cannot serve as its own correctness oracle.
@@ -39,15 +44,6 @@ unknown kinds warn and return unchanged state.
 `companion-action` stays in the runtime registry to avoid an import cycle with
 `companion-effects`. Non-card pulses use the `processCompanionTurnStart` binder in
 `battle/companion.ts`.
-
-## Description contract
-
-The parity checker compares authored mechanic lines with generated text, including
-summon summaries and added effects. Mixed Potion placeholders and Steal/Gain Gold
-have narrow wording exceptions. Missing keyword/Consume lines warn; unrenderable
-effects fail. Potion mixing renders traversed effects through `describeCardEffects`.
-Outside battle, previews use authored amounts except summon lines recomputed with
-Bond and damage bonuses.
 
 ## Potion scaling
 
@@ -139,9 +135,12 @@ Corruption-mark mapping. Repeated references to one authored effect object still
 have independent packet identities. Import boundaries keep the description adapter
 on action owners and keep the alternative collector free of combat rules.
 
-When adding a kind, update the exhaustive `INSPECTION_EFFECT_POLICY` classification
-and the production handler. Add independent outcome assertions when the mechanic
-can change later packets. No second inspection handler should be introduced.
+The production handler owns execution and finite decisions; inspection branches
+through its RNG seam without a second effect catalog. The collector keeps
+`repeat-over-turns` packets unknown because their execution is deferred. When
+adding a kind, extend that future-turn boundary only if it also defers execution.
+Add independent outcome assertions when the mechanic can change later packets.
+No second inspection handler should be introduced.
 
 ## Resource reward ownership
 
@@ -153,22 +152,30 @@ helpers and the existing resource exports. Inspection runs that same production 
 healing, and Holy draw behavior; the inspection decision source preserves finite
 alternatives without consuming gameplay RNG. Unknown draws stop dependent projection.
 
-`battle/resource-reward-resolution.ts` owns Leech restoration facts and riders,
-Nature resource payouts, Cutpurse Gold, and Bloodfire's Leech eligibility. Both
-execution and inspection use these rules. Inspection carries earned resources
-between damage packets, including Gold, so later ingredients use the resulting
-purse, Mana, Block, and Health. Rendering owns only damage summaries and presentation copies; it must not execute
-the displayed card.
+`battle/damage-rider-leech.ts` owns Leech restoration facts and riders;
+`elemental-hit-reactions.ts` owns Nature and Holy resource payouts, and
+`damage-status-riders.ts` owns Poison rewards and Bloodfire's Leech eligibility.
+`bonus-effects.ts` shares Cutpurse Gold and ordinary Gold/Mana rewards across hit
+and tick callers. These owners call the production operations directly, so
+inspection carries earned resources between damage packets using the same rules.
+Rendering owns only summaries and presentation copies.
+
+Wish reward ordering lives in `wish-rewards.ts`; Companion action scope, Bond
+scaling and captured hit facts live in `companion-effects.ts`. The Companion effect
+interpreter callback avoids an import cycle with the registry. Card cloning and
+Companion scaling use `mapEffectChildren`; reward selection uses
+`isCompanionSummonCard`. Chance effects may have an empty branch, including
+failure-only damage retained by filtering and save conversion.
 
 ## Crowd-control ownership
 
-`battle/crowd-control-resolution.ts` owns enemy Stun and Freeze eligibility,
-retained buildup, trait reactions, and reward ordering. Inspection runs the live resource and hit policies through the same recipes. `status-stun-core.ts` binds
-live Stun reactions without importing its Leech orchestrator; Freeze binds through
-`damage-status-riders.ts`. Guaranteed Thunderstone Mana and Gold rewards carry
-into later inspected packets. `scaled-damage.ts` shares pacing, vulnerability,
-Block spending, and Armor mitigation before host-specific hit reactions. Unknown
-draws remain unprojected.
+`battle/status-stun-core.ts` owns enemy Stun eligibility, retained buildup, trait
+reactions and reward ordering. Its Thunderstone Leech callback avoids importing
+the Leech orchestrator. `damage-status-riders.ts` owns Freeze eligibility and
+rewards; both use `bonus-effects.ts` for ordered crowd-control grants.
+Inspection runs these production recipes. `scaled-damage.ts` shares pacing,
+vulnerability, Block spending and Armor mitigation. Unknown draws stop dependent
+projection.
 
 ## Ordering and semantics
 
@@ -189,8 +196,6 @@ draws remain unprojected.
 - `gain-gold` with `ifEnemyStunned` requires positive live `enemyCC.stunSkipTurns`; it does not compare against a pre-card snapshot. An enemy already Stunned before the card qualifies, as does one Stunned by an earlier effect on that card.
 
 - Effect structure belongs to `game-data/effect-tree.ts`. Description generation, Potion mixing, and Corruption use `areBattleCardEffectsEqual` to compare complete payloads, including cloned pools and recursive branches. Object field order does not matter; field presence, array order, branch grouping, and numeric values do. Corruption additions derive their structured descriptions from `createEffectDescription` rather than maintaining a second wording table.
-- Numeric upgrades and Corruption share `updateCardNumericValue` in `src/lib/corruption/numeric.ts`. `game-data/effect-description.ts` builds prose and magnitude bindings together; `card-description-model.ts` owns serializable lines, typed effect references, formatting, and derived highlights. Each magnitude explicitly declares every effect field it changes, including shared chance outcomes, repeated or scheduled hits, and doubled Frozen damage. Target discovery in `corruption/numeric-targets.ts` reads these bindings and captures exact addresses, expected values, and multipliers. It never parses wording or matches equal numbers. Mutation rejects the entire edit if any reference or expected field is stale, then renders strings and highlights again. Powerful Wish identifies costs from all referenced effect kinds, including a shared damage/Health-cost magnitude. Targets are transient; descriptions and corruption marks persist with the card. Nested paths index success effects followed by failure effects; probabilities and schedule durations remain fixed. Custom single-valued Random damage must explicitly bind both bounds. Independently authored delayed values own independent references. “Draw a card” binds one draw while fixed rules stay non-editable. Keep original catalog effects and descriptions immutable.
-- Immediate and delayed damage may share a description line: “Deal 1 Freeze damage now and 3 at the start of your next turn” retains two independently editable magnitudes. “Deal 2 Stun damage now and at the start of your next turn” shares one magnitude across both hits.
 
 ## Enemy abilities
 
@@ -226,17 +231,11 @@ including uncertainty, resource changes and unchanged live RNG/state.
 
 ## Gear and trinket effects
 
-Equipment does not use the card-effect registry above. Gear affixes resolve to
-[`GEAR_EFFECT_KEYS`](../../gear/gear-effect-manifest.ts) via `gear/affixes.ts`
-(description formatting shared in `formatAffixDescription`), uniques contribute
-canonical rolls from `gear/unique-catalog.ts`, and `computeGearManifest`
-snapshots the equipped loadout into battle (`rebindLiveRunMeta`); see
-[ARMORY battle integration](../../../../Docs/ARMORY.md#battle-integration).
-Trinket effects resolve to `TrinketManifest` via `computeTrinketManifest` in
-`lib/trinkets.ts`; every key has a documented consumer pinned by the manifest
-coverage test in `tests/lib/content-validation/trinket-validation.test.ts`.
-`battle/scaled-damage.ts` holds only shared helpers, not a dispatch table —
-each battle consumer reads the manifests where its effect applies.
+Equipment effects use manifests rather than the card-effect registry.
+[Armory battle integration](../../../../Docs/ARMORY.md#battle-integration) owns
+Gear/Trinket snapshotting, live rebinding and manifest coverage. Shared hit and
+resource recipes stay in [game rules](../../../../Docs/GAME_RULES.md#direct-player-hit-resolution);
+consumers read their manifest where the effect applies.
 
 ## Conditional damage and feedback
 
@@ -244,13 +243,9 @@ Damage supports paired `damageTypeIfTargetFrozen`/`amountIfTargetFrozen`
 for the current Frozen alternative. Resolve it before hit processing changes
 control state. Other resource selectors remain mutually exclusive.
 
-Conditional descriptions share one formatter with numeric editing and parity
-validation. Block cost is a fixed rule; base damage, Block damage bonus, and Frozen
-alternative damage are editable. Damage pools and repeated immediate-hit lines
-share one displayed amount; “Deal N damage twice” updates both hit effects.
-The loader currently preserves complete saved conditional/chance effects.
-Preserve valid current-run modifications as a unit; retirement of obsolete
-card mechanics follows the [save baseline](../../../features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
+Conditional descriptions use the shared [numeric-editing contract](../../../../Docs/CONTENT_AUTHORING.md#numeric-editing).
+Base damage, Block damage bonuses and Frozen alternatives are editable; valid
+saved conditional/chance modifications follow [save recovery](../../../features/alchemy/shared/storage/MIGRATIONS.md#implementation-rules).
 
 Boolean preparations, draw/summon/Wish, cleansing, and scheduling emit meaningful
 combat events. Unsupported effects still warn without inventing a successful

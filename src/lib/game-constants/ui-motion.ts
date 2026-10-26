@@ -37,7 +37,8 @@ export const COMBAT_TEXT_MOTION = {
   riseStartMs: 240,
   riseMs: 810,
   risePx: 76,
-  reactionOffsetPx: 76,
+  reactionOffsetPx: 0,
+  reactionRisePx: 24,
   shrinkMs: 760,
   fadeMs: 280,
   statusSize: 0.8,
@@ -104,6 +105,7 @@ export const HAND_HOVER_TOOLTIP_PADDING_PX = 16;
 export const HAND_REFLOW_MOTION_MS = 320;
 export const HAND_CARD_BASE_Z_INDEX = 10;
 export const HAND_CARD_HOVER_Z_INDEX = 40;
+export const CARD_FLIGHT_Z_INDEX = 120;
 
 export const WISH_OVERLAY_Z_INDEX = 90;
 

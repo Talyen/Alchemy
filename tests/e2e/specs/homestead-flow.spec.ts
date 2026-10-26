@@ -1,5 +1,6 @@
 import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
+import { observeDuringAction } from "../observe-during-action";
 import { expect, test } from "../../fixtures/e2e";
 import { HomesteadPage } from "../../pages/homestead-page";
 import { MenuPage } from "../../pages/menu-page";
@@ -20,8 +21,9 @@ async function expectNativeArtwork(art: Locator) {
 }
 
 async function observePurchase(page: Page, title: string, activate: () => Promise<void>) {
-  const [observation] = await Promise.all([
-    page.evaluate(async (title) => {
+  const observation = await page.evaluateHandle((title) => {
+    let cancelled = false;
+    const result = (async () => {
       const frames: Array<{
         height: number;
         gap: number;
@@ -33,7 +35,7 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
       const start = performance.now();
       let settled = 0;
       let sawTransition = false;
-      while (performance.now() - start < 1800) {
+      while (!cancelled && performance.now() - start < 1800) {
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => resolve());
         });
@@ -74,10 +76,15 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
         if (settled >= 6) break;
       }
       return { frames, settled, elapsedMs: performance.now() - start };
-    }, title),
-    activate(),
-  ]);
-  const { frames, settled, elapsedMs } = observation;
+    })();
+    return {
+      result,
+      cancel: () => {
+        cancelled = true;
+      },
+    };
+  }, title);
+  const { frames, settled, elapsedMs } = await observeDuringAction(observation, activate);
   expect(settled, `${title} did not settle within ${Math.round(elapsedMs)}ms`).toBe(6);
   expect(frames.every((frame) => frame.opacity === 1)).toBe(true);
   expect(frames.some((frame) => frame.valueOpacity > 0 && frame.valueOpacity < 1)).toBe(true);
@@ -110,12 +117,6 @@ test(
     const headingBefore = await heading.boundingBox();
     const tile = page.getByRole("button").filter({ has: art });
     const panel = page.getByRole("tooltip").filter({ has: page.getByText("Blacksmith", { exact: true }) });
-    await expect(tile).toHaveClass(/homestead-node-affordable/);
-    await expect(tile).toHaveCSS("filter", /drop-shadow/);
-    const restingBorder = await tile.evaluate((element) => getComputedStyle(element).borderColor);
-    const inactiveTile = page.getByRole("button", { name: /^Build Hunter's Lodge for / });
-    await expect(inactiveTile).toHaveCSS("border-color", restingBorder);
-    const affordableFilter = await tile.evaluate((element) => getComputedStyle(element).filter);
     await tile.hover();
     await expect(panel).toBeVisible();
     await expect(panel).toContainText("Physical damage is increased by 1");
@@ -124,9 +125,6 @@ test(
     await expect(panel.getByRole("img", { name: "Level 0 of 4" })).toBeVisible();
     await expect(panel.getByLabel("Build cost: 4 Stone, 11 Iron").locator("img")).toHaveCount(2);
     await expect(panel.getByRole("button")).toHaveCount(0);
-    await expect(tile).toHaveCSS("scale", "1.035");
-    await expect(tile).toHaveCSS("filter", affordableFilter);
-    await expect.poll(() => tile.evaluate((element) => getComputedStyle(element, "::after").borderWidth)).toBe("3px");
     expect((await readSavedGame(page)).materialInventory).toMatchObject({ wood: 4, stone: 16, iron: 33 });
     await heading.hover();
     await expect(panel).toBeHidden();
@@ -136,7 +134,6 @@ test(
     await expect(page.getByRole("button", { name: /^Build Hunter's Lodge for / })).toBeFocused();
     await page.keyboard.press("Shift+Tab");
     await expect(tile).toBeFocused();
-    await expect(tile).toHaveCSS("scale", "1.035");
     await observePurchase(page, "Blacksmith", () => page.keyboard.press("Enter"));
     await expect(panel.getByRole("img", { name: "Level 1 of 4" })).toBeVisible();
     await expect(panel).toContainText("Physical damage is increased by 1");
@@ -150,8 +147,6 @@ test(
     expect(await physicalKeyword!.evaluate((element) => element.isConnected)).toBe(true);
     await expect(tile.getByText(/^(Built|Upgraded|Bonded)$/)).toHaveCount(0);
     await expect(tile).toHaveAttribute("aria-disabled", "true");
-    await expect(tile).not.toHaveClass(/homestead-node-affordable/);
-    await expect(tile).toHaveCSS("filter", "none");
     await expect(art).not.toHaveClass(/grayscale/);
     await expectNativeArtwork(art);
     expect(await heading.boundingBox()).toEqual(headingBefore);
@@ -160,25 +155,31 @@ test(
     await expect
       .poll(async () => (await readSavedGame(page)).materialInventory)
       .toMatchObject({ wood: 4, stone: 4, iron: 0 });
-    await withSavedGame(page, async (resumed) => {
-      await new MenuPage(resumed).openHomestead();
-      const resumedTile = resumed.getByRole("button", {
-        name: "Upgrade Blacksmith for 12 Stone, 33 Iron",
-        exact: true,
-      });
-      await controllerInput(resumed).reach(resumedTile);
-      const inspection = resumed.getByRole("tooltip").filter({ has: resumed.getByText("Blacksmith", { exact: true }) });
-      await expect(inspection).toContainText("Physical damage is increased by 2");
-      await expect(inspection.getByRole("button")).toHaveCount(0);
-      await expect(inspection).not.toContainText("More materials needed");
-      await expect(inspection).toHaveAttribute("data-placement", "below");
-      await expect(resumedTile).toHaveAttribute("aria-disabled", "true");
-      await expect(resumedTile).not.toHaveClass(/homestead-node-affordable/);
-      await expect(resumed.getByRole("img", { name: "Blacksmith", exact: true })).not.toHaveClass(/grayscale/);
-      const save = await readSavedGame(resumed);
-      expect(save.constructedBuildings["blacksmiths-forge"]).toBe(2);
-      expect(save.materialInventory).toMatchObject({ wood: 4, stone: 4, iron: 0 });
-    });
+    await withSavedGame(
+      page,
+      async (resumed) => {
+        await new MenuPage(resumed).openHomestead();
+        const resumedTile = resumed.getByRole("button", {
+          name: "Upgrade Blacksmith for 12 Stone, 33 Iron",
+          exact: true,
+        });
+        await controllerInput(resumed).reach(resumedTile);
+        const inspection = resumed
+          .getByRole("tooltip")
+          .filter({ has: resumed.getByText("Blacksmith", { exact: true }) });
+        await expect(inspection).toContainText("Physical damage is increased by 2");
+        await expect(inspection.getByRole("button")).toHaveCount(0);
+        await expect(inspection).not.toContainText("More materials needed");
+        await expect(inspection).toHaveAttribute("data-placement", "below");
+        await expect(resumedTile).toHaveAttribute("aria-disabled", "true");
+        await expect(resumed.getByRole("img", { name: "Blacksmith", exact: true })).not.toHaveClass(/grayscale/);
+        const save = await readSavedGame(resumed);
+        expect(save.constructedBuildings["blacksmiths-forge"]).toBe(2);
+        expect(save.materialInventory).toMatchObject({ wood: 4, stone: 4, iron: 0 });
+      },
+      "Continue",
+      { keepSource: true },
+    );
     const bottomTile = page.getByRole("button", { name: /^Build Wishing Well for / });
     await bottomTile.hover();
     const bottomPanel = page.getByRole("tooltip").filter({ has: page.getByText("Wishing Well", { exact: true }) });

@@ -6,14 +6,14 @@ Make the viewer want to build a strategy and test it against Alchemy's bosses.
 The first image is a real card battle, with the hand and HUD visible. The film
 then follows a small player story: choose a hero, shape a deck, make risky choices,
 invest in the next run, and face a succession of stronger opponents. End on the
-Blood Countess and the Alchemy logo. This is a 63.9-second first cut for review.
+Blood Countess and the Alchemy logo. This first cut is for review.
 
 The executable edit is [alchemy-cinematic.json](./alchemy-cinematic.json).
-Each of its 28 takes is an independent 4.5-second, 3840×2160, 60 fps lossless
-master. The initial cut uses 19 of those takes; the other nine are alternate
-coverage, not discarded footage. Delivery is 1920×1080 at 60 fps. Retain the
-entire source bundle. Editing the shot list never overwrites a take or a prior
-export. Capture is automated; no desktop capture or full video editor is used.
+It owns take IDs, durations, dimensions, frame rates, music offsets and camera
+paths. Use [the plan command](../Docs/TRAILERS.md#cinematic-feature-compilation)
+for its current capture inventory and resolved timeline. Retain the entire source
+bundle, including unused takes; editing the shot list must not overwrite a master
+or earlier export.
 
 ## Research translated into direction
 
@@ -56,13 +56,13 @@ claim beat-perfect editing before listening to the rendered mix.
 - Keep a full, locked combat frame for the opening and most boss actions. When
   moving on menus, use slow 1.0–1.17× pushes or small pans. Never crop the only
   evidence of a card's outcome, a critical control, or the hovered description.
-- Each input is a real mouse event. Inspect a card for roughly 1.35 seconds before
-  playing; then retreat above the hand. No visible cursor, accidental hand sweeps,
+- Each input is a real mouse event. Inspect each card long enough to read it before
+  playing, then retreat above the hand; the recipe owns exact dwell times. No visible cursor, accidental hand sweeps,
   injected damage, invented cards, speed changes, or altered combat rules.
 - Current main's Balanced floating combat text is captured as rendered: icon and
   number, independent lanes, normal pop/rise/fade, and native reaction names.
   The recorder synchronizes native animation time; it does not rewrite the game.
-- Use the Blood Countess music from 20.68 seconds. Keep it continuous across menu
+- Use the Blood Countess music at the recipe’s offset. Keep it continuous across menu
   and battle cuts, with native game sounds providing punctuation. The first verse
   supplies the premise; the chorus supports the final sequence. Fade the closing
   musical tail rather than leaving an abrupt audio cut.
@@ -75,85 +75,37 @@ claim beat-perfect editing before listening to the rendered mix.
 - Use the existing logo only at the end, with “Wishlist on Steam.” No release date,
   awards, review scores, or unsupported marketing claims are invented.
 
-## Directorial paper cut
+## Story beats and coverage
 
-Times below are output time, including transition overlaps. Every shot uses a
-separate take. Source in/out points retain handles for fine cutting. Most camera
-moves remain modest so the viewer sees the actual interface.
+The recipe’s ordered shots implement these editorial purposes:
 
-| Shot | Time (s)    | Take                   | Direction and purpose                                           | Camera / incoming transition         |
-| ---- | ----------- | ---------------------- | --------------------------------------------------------------- | ------------------------------------ |
-| 01   | 00.00–04.00 | `countess-hook`        | Hook: inspect Sunder, strike the Countess; readable full battle | Locked full frame; cut               |
-| 02   | 04.00–07.00 | `heroes-roster`        | Choose an identity: roster and Knight inspection                | 1.00→1.12× slow push / pan; cut      |
-| 03   | 07.00–10.00 | `draft-choice`         | Build the deck: inspect and select a real Wildwood offer        | 1.10→1.16× slow push / pan; cut      |
-| 04   | 10.00–13.00 | `cards-library`        | Card variety: hold a readable inspection                        | 1.14→1.14× slow push / pan; cut      |
-| 05   | 13.00–16.50 | `wizard-battle`        | Payoff: a different hero fights a real enemy                    | Locked full frame; cut               |
-| 06   | 16.50–19.50 | `card-shop`            | Adapt: inspect and purchase a generated card                    | 1.00→1.12× slow push / pan; cut      |
-| 07   | 19.50–22.70 | `potion-brewing`       | Craft: show the Brew / Mix / Distill choices                    | 1.10→1.17× slow push / pan; cut      |
-| 08   | 22.50–25.50 | `campfire-rest`        | Breathing space: Campfire and its real services                 | 1.05→1.12× slow push / pan; dissolve |
-| 09   | 25.50–28.50 | `corruption-risk`      | Risk: the Altar of Corruption                                   | 1.04→1.12× slow push / pan; cut      |
-| 10   | 28.50–31.70 | `labyrinth-route`      | Choose your path: inspect a reachable chamber                   | 1.08→1.12× slow push / pan; cut      |
-| 11   | 31.70–34.70 | `three-modes`          | Replayability: show the three mode choices                      | 1.02→1.10× slow push / pan; cut      |
-| 12   | 34.70–37.90 | `armory-loadout`       | Prepare: inspect and equip a Longsword                          | 1.00→1.10× slow push / pan; cut      |
-| 13   | 37.90–40.90 | `talents-block`        | Grow: the Block talent tree                                     | 1.00→1.13× slow push / pan; cut      |
-| 14   | 40.90–44.10 | `homestead-build`      | Invest: build the Blacksmith through its purchase control       | 1.00→1.10× slow push / pan; cut      |
-| 15   | 43.90–46.90 | `homestead-companions` | Bond: companion sanctuary and available companions              | 1.06→1.10× slow push / pan; dissolve |
-| 16   | 46.90–49.90 | `treant-druid`         | Escalate: Druid against the Blight Treant                       | Locked full frame; cut               |
-| 17   | 49.90–52.90 | `seraph-wizard`        | Escalate: Wizard against Seraph                                 | Locked full frame; cut               |
-| 18   | 52.90–55.90 | `titan-knight`         | Escalate: Knight against the Stone Titan                        | Locked full frame; cut               |
-| 19   | 55.90–59.90 | `countess-finale`      | Button: Countess, native lyrics and a final damage pop          | Locked full frame; cut               |
-| End  | 59.90–63.90 | Logo                   | Alchemy / Wishlist on Steam                                     | Gentle logo settle                   |
+- **Hook:** Countess combat identifies the game immediately. Show inspection,
+  accepted play and its damage outcome with the hand and HUD readable.
+- **Identity and deck:** hero selection, drafting and Collection establish player
+  choice; the Wizard battle pays off that setup before the first shop.
+- **Decisions and breathing space:** shopping, Potion preparation, Campfire and
+  Corruption alternate investment, relief and risk. The first short dissolve
+  changes mood rather than obscuring an action.
+- **The next run:** Labyrinth and modes lead into Armory, Talents, Homestead and
+  Companion bonds. Modest menu camera moves keep the feature’s control and
+  consequence visible. The second dissolve joins the Homestead beats.
+- **Escalation:** Treant, Seraph and Titan build toward a longer Countess finale.
+  Keep clear damage and sound accents before each cut; avoid identical shot
+  intervals purely to demonstrate an effect.
+- **Invitation:** the existing logo and Wishlist on Steam end the cut without an
+  invented release date or unsupported claim.
 
-The closing boss sequence uses three clean cuts, then a longer Countess hold.
-Preserve the damage pop before cutting away; use the impact sound as the accent.
-Do not cut every shot at an identical interval merely to demonstrate an effect.
-The two dissolves are short changes of mood; the rest are hard cuts. Future fine
-cuts can shorten the boss accents to 1–2 seconds if they remain legible.
+Capture independent alternate takes for hero, Bestiary, Trinket, Unique,
+Campaign-destination and Potion-shop coverage. The recipe’s `clips` list is the
+complete inventory; `timeline.shots` from the plan identifies the selected takes.
+Unused coverage remains available for alternate cuts.
 
-## Separate coverage library
-
-| Take ID                | Starting screen | Hero / opponent | Initial use        |
-| ---------------------- | --------------- | --------------- | ------------------ |
-| `countess-hook`        | boss            | blood-countess  | Selected           |
-| `heroes-roster`        | heroes          | knight          | Selected           |
-| `heroes-wizard`        | heroes          | knight          | Alternate coverage |
-| `draft-choice`         | draft           | knight          | Selected           |
-| `cards-library`        | collection      | knight          | Selected           |
-| `bestiary-library`     | collection      | knight          | Alternate coverage |
-| `trinkets-library`     | collection      | knight          | Alternate coverage |
-| `uniques-library`      | collection      | knight          | Alternate coverage |
-| `wizard-battle`        | combat          | wizard          | Selected           |
-| `campaign-route`       | destination     | knight          | Alternate coverage |
-| `card-shop`            | shop            | knight          | Selected           |
-| `potion-brewing`       | alchemist       | knight          | Selected           |
-| `potion-shop`          | alchemist       | knight          | Alternate coverage |
-| `campfire-rest`        | campfire        | knight          | Selected           |
-| `corruption-risk`      | corruption      | knight          | Selected           |
-| `labyrinth-route`      | labyrinth       | knight          | Selected           |
-| `three-modes`          | modes           | knight          | Selected           |
-| `armory-loadout`       | armory          | knight          | Selected           |
-| `armory-gear`          | armory          | knight          | Alternate coverage |
-| `talents-overview`     | talents         | knight          | Alternate coverage |
-| `talents-block`        | talents         | knight          | Selected           |
-| `homestead-build`      | homestead       | knight          | Selected           |
-| `homestead-farm`       | homestead       | knight          | Alternate coverage |
-| `homestead-companions` | homestead       | knight          | Selected           |
-| `treant-druid`         | boss            | blight-treant   | Selected           |
-| `seraph-wizard`        | boss            | seraph          | Selected           |
-| `titan-knight`         | boss            | stone-titan     | Selected           |
-| `countess-finale`      | boss            | blood-countess  | Selected           |
-
-The Armory take equips an actual available item through the production inventory
-UI. The shop take purchases an actual generated offer. The Homestead take builds
-through its purchase control and production material costs. Staged progression,
-Gold, discoveries and inventory are explicitly authored checkpoints in an isolated
-browser profile. The meta profile has 95 Gold; 24 Wood, 14 Stone, 18 Iron, 24 Food, 12 Herbs,
-9 Hide and 4 Gems; a few existing buildings, farms and bonds; three basic gear
-items; and partial discoveries. Shops start with 85 Gold. No 999-resource
-fixtures or full-inventory debug profile appears in the footage.
-They represent valid game situations rather than a continuous
-claimed playthrough. No user's save is opened or modified. Labyrinth uses the
-existing legal fixture map. Unused coverage is still retained for alternate cuts.
+[Scene staging](../tests/trailers/scenarios.ts) owns exact checkpoint resources,
+progression, discoveries and inventory. Armory equips an available item, shops
+purchase generated offers, and Homestead builds at production costs through
+normal controls. Staged checkpoints represent valid situations, not a continuous
+earned playthrough. No player save is opened or modified; Labyrinth uses its
+existing legal fixture. Keep that distinction explicit when reviewing footage.
 
 ## Capture and revision workflow
 

@@ -4,6 +4,7 @@ import type { BattleRefs, CardRect, CombatTextBurst, ReactionAnnouncement } from
 import { getBattleSceneLocalRect, viewportRectToBattleSceneRect, type BattleSceneLocalRect } from "../controller-utils";
 import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
+import { updateStatusFeedbackVisibility, visibleCombatStatusKeys } from "./combat-status-feedback";
 
 export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; presentation: BattlePresentationStore }) {
   const bursts = useStore(presentation, (state) => state.floatingCombatBursts);
@@ -34,8 +35,11 @@ export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; pres
       const sceneRect = scene?.isConnected ? getBattleSceneLocalRect(scene) : null;
       const nextPlayer = playerActive ? measureAnchor(playerPanelRef.current, sceneRect) : null;
       const nextEnemy = enemyActive ? measureAnchor(enemyPanelRef.current, sceneRect) : null;
+      const visibleStatuses = visibleCombatStatusKeys(scene);
       previousPlayer = positionLayer(playerLayerRef.current, nextPlayer, previousPlayer);
       previousEnemy = positionLayer(enemyLayerRef.current, nextEnemy, previousEnemy);
+      updateStatusFeedbackVisibility(playerLayerRef.current, visibleStatuses);
+      updateStatusFeedbackVisibility(enemyLayerRef.current, visibleStatuses);
       frame = requestAnimationFrame(measure);
     };
     measure();
@@ -43,6 +47,14 @@ export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; pres
       if (frame !== null) cancelAnimationFrame(frame);
     };
   }, [playerPanelRef, enemyPanelRef, battleSceneRef, playerActive, enemyActive]);
+
+  // New receipts can arrive while both geometry loops are already active. Resolve
+  // their row visibility before the next paint, rather than flashing one corner frame.
+  useLayoutEffect(() => {
+    const visible = visibleCombatStatusKeys(battleSceneRef.current);
+    updateStatusFeedbackVisibility(playerLayerRef.current, visible);
+    updateStatusFeedbackVisibility(enemyLayerRef.current, visible);
+  }, [bursts, battleSceneRef]);
 
   return (
     <>
@@ -100,7 +112,7 @@ function CombatTextTarget({
   reactions: ReactionAnnouncement[];
 }) {
   if (bursts.length === 0 && reactions.length === 0) return null;
-  // Portraits establish their own transform stacking contexts. Text must sit above card flights in the scene.
+  // Portrait transforms must not trap feedback; card flights remain above this scene layer.
   return (
     <div
       ref={layerRef}

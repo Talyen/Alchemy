@@ -5,6 +5,7 @@ import { preloadSounds, preloadAllSounds, preloadBattleSounds, resetSoundPreload
 import { audioState } from "@/lib/audio/state";
 import { createdFakeAudio, soundedFakeAudio, installFakeAudio } from "../../helpers/fake-audio";
 import { installCleanAudio } from "../../helpers/audio-fixture";
+import { SOUND_PRELOAD_TIMEOUT_MS } from "@/lib/game-constants";
 
 beforeEach(() => {
   installCleanAudio();
@@ -51,6 +52,22 @@ describe("getSoundUrl", () => {
 });
 
 describe("preloadSounds", () => {
+  it("releases stalled warmups while retaining completed sources and ignoring late completion", () => {
+    vi.useFakeTimers();
+    preloadSounds(["stalled.ogg", "completed.ogg"]);
+    const [stalled, completed] = createdFakeAudio.filter((element) => element.preload === "auto");
+    const lateCompletion = stalled!.oncanplaythrough!;
+    completed!.oncanplaythrough!();
+    vi.advanceTimersByTime(SOUND_PRELOAD_TIMEOUT_MS);
+    expect(stalled!.removeAttribute).toHaveBeenCalledWith("src");
+    expect(stalled!.oncanplaythrough).toBeNull();
+    expect(stalled!.onerror).toBeNull();
+    expect(completed!.removeAttribute).not.toHaveBeenCalled();
+    lateCompletion();
+    expect(stalled!.load).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("continues warming later sounds after an Audio constructor fails", () => {
     const WorkingAudio = Audio;
     let first = true;

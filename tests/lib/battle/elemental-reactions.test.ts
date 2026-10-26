@@ -53,14 +53,14 @@ function notices(texts: CombatTextEvent[]) {
 describe("CC reaction payoffs", () => {
   it("Shatter breaks defenses, preserves Freeze, and pays the setup bonus instead of a guaranteed Critical", () => {
     const prepared = controlled("freeze");
-    expect(prepared.reactions).toMatchObject({ shatterDamage: 3, frostfireDamage: 3 });
+    expect(prepared.reactions).toMatchObject({ shatterDamage: 6, frostfireDamage: 6 });
     const state = { ...prepared, enemyMitigation: { ...prepared.enemyMitigation, block: 8, armor: 5 } };
     const texts: CombatTextEvent[] = [];
     const result = hit(state, attack("physical"), texts);
-    expect(result.enemyHealth).toBe(81);
+    expect(result.enemyHealth).toBe(78);
     expect(result.enemyMitigation).toMatchObject({ block: 0, armor: 0 });
     expect(result.enemyCC.freezeSkipTurns).toBe(1);
-    expect(result.reactions).toMatchObject({ shatterDamage: 0, frostfireDamage: 3 });
+    expect(result.reactions).toMatchObject({ shatterDamage: 0, frostfireDamage: 6 });
     expect(notices(texts)).toContain("Shatter");
     expect(texts.some((event) => event.kind === "damage" && event.critical)).toBe(false);
     expect(state.enemyMitigation).toMatchObject({ block: 8, armor: 5 });
@@ -69,7 +69,7 @@ describe("CC reaction payoffs", () => {
   it("uses ordinary prepared Criticals on the attack, without multiplying or spending bonuses on Shatter damage", () => {
     const state = controlled("freeze");
     const result = hit({ ...state, flags: { ...state.flags, nextHitCrit: true, nextPhysicalCrit: true } });
-    expect(result.enemyHealth).toBe(77); // 88 - (4 * 2) - 3
+    expect(result.enemyHealth).toBe(74); // 88 - (4 * 2) - 6
     expect(result.flags).toMatchObject({ nextHitCrit: false, nextPhysicalCrit: false });
   });
 
@@ -85,8 +85,8 @@ describe("CC reaction payoffs", () => {
       attack("freeze", 16),
     );
     expect(prepared.enemyHealth).toBe(56);
-    expect(prepared.reactions).toMatchObject({ shatterDamage: 8, frostfireDamage: 8 });
-    expect(hit(prepared, attack("physical", 1)).enemyHealth).toBe(47);
+    expect(prepared.reactions).toMatchObject({ shatterDamage: 16, frostfireDamage: 16 });
+    expect(hit(prepared, attack("physical", 1)).enemyHealth).toBe(39);
   });
 
   it("a small Companion receives the full earned bonus and cannot spend the hero's prepared Critical", () => {
@@ -100,7 +100,7 @@ describe("CC reaction payoffs", () => {
           origin: "companion",
         }),
     );
-    expect(result.enemyHealth).toBe(84);
+    expect(result.enemyHealth).toBe(81);
     expect(result.flags.nextHitCrit).toBe(true);
     expect(result.reactions.shatterDamage).toBe(0);
   });
@@ -114,14 +114,14 @@ describe("CC reaction payoffs", () => {
       ],
     });
     const result = hit(state, twice);
-    expect(result.enemyHealth).toBe(77);
+    expect(result.enemyHealth).toBe(74);
     const haste = endPlayerTurn({ ...result, playerStatuses: { ...result.playerStatuses, haste: 1 } });
     expect(haste.kind).toBe("haste");
     expect(haste.state.enemyCC.freezeSkipTurns).toBe(1);
-    expect(hit(haste.state).enemyHealth).toBe(73);
+    expect(hit(haste.state).enemyHealth).toBe(70);
     const extended = reduceSkipTurns({ ...result, enemyCC: { ...result.enemyCC, freezeSkipTurns: 2 } });
     expect(extended.enemyCC.freezeSkipTurns).toBe(1);
-    expect(hit(advanceToPlayerTurn(extended)).enemyHealth).toBe(73);
+    expect(hit(advanceToPlayerTurn(extended)).enemyHealth).toBe(70);
   });
 
   it("expires both Freeze opportunities on thaw and earns fresh ones only on a new successful Freeze", () => {
@@ -137,7 +137,7 @@ describe("CC reaction payoffs", () => {
       },
       attack("freeze", 8),
     );
-    expect(fresh.reactions).toMatchObject({ shatterDamage: 2, frostfireDamage: 2 });
+    expect(fresh.reactions).toMatchObject({ shatterDamage: 4, frostfireDamage: 4 });
   });
 
   it("Dodge and zero attacks preserve defenses and opportunities", () => {
@@ -161,22 +161,22 @@ describe("CC reaction payoffs", () => {
       { source: "talent-derived", damageType: "stun", amount: 12 },
       [],
     );
-    expect(prepared.reactions.thunderclapDamage).toBe(3);
-    expect(hit(prepared, attack("nature")).enemyHealth).toBe(81);
+    expect(prepared.reactions.thunderclapDamage).toBe(6);
+    expect(hit(prepared, attack("nature")).enemyHealth).toBe(78);
   });
 
   it("non-damaging CC uses the minimum reward and extending existing CC does not replace its setup", () => {
     const state = base();
     const status = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }] });
     const prepared = hit({ ...state, enemyStatuses: { ...state.enemyStatuses, freeze: 30 } }, status);
-    expect(prepared.reactions.shatterDamage).toBe(1);
-    expect(hit(prepared, attack("freeze", 20)).reactions.shatterDamage).toBe(1);
+    expect(prepared.reactions.shatterDamage).toBe(2);
+    expect(hit(prepared, attack("freeze", 20)).reactions.shatterDamage).toBe(2);
   });
 
   it("Thunderclap preserves Stun and cannot spend a new Stun produced by the same Nature hit", () => {
     const prepared = controlled("stun");
     const result = hit(prepared, attack("nature"));
-    expect(result.enemyHealth).toBe(81);
+    expect(result.enemyHealth).toBe(78);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
     expect(result.reactions.thunderclapDamage).toBe(0);
     expect(reduceSkipTurns(prepared).reactions.thunderclapDamage).toBe(0);
@@ -190,7 +190,7 @@ describe("CC reaction payoffs", () => {
       attack("nature"),
     );
     expect(created.enemyCC.stunSkipTurns).toBe(1);
-    expect(created.reactions.thunderclapDamage).toBe(1);
+    expect(created.reactions.thunderclapDamage).toBe(2);
   });
 
   it("Frostfire pays on freezing a Burning enemy and leaves Shatter independently available", () => {
@@ -201,22 +201,22 @@ describe("CC reaction payoffs", () => {
       attack("freeze", 12),
       texts,
     );
-    expect(result.enemyHealth).toBe(85);
+    expect(result.enemyHealth).toBe(82);
     expect(result.enemyStatuses.burn).toBe(8);
     expect(result.enemyCC.freezeSkipTurns).toBe(1);
-    expect(result.reactions).toMatchObject({ frostfireDamage: 0, shatterDamage: 3 });
+    expect(result.reactions).toMatchObject({ frostfireDamage: 0, shatterDamage: 6 });
     expect(notices(texts)).toContain("Frostfire");
-    expect(hit(result).enemyHealth).toBe(78);
+    expect(hit(result).enemyHealth).toBe(72);
     expect(notices(texts).filter((text) => text === "Frostfire")).toHaveLength(1);
   });
 
   it("Frostfire's Burn route keeps new Burn stacks and cannot repeat through its other route", () => {
     const prepared = controlled("freeze");
     const first = hit(prepared, attack("burn"));
-    expect(first.enemyHealth).toBe(81);
+    expect(first.enemyHealth).toBe(78);
     expect(first.enemyStatuses.burn).toBe(4); // bonus damage adds no Burn
-    expect(first.reactions).toMatchObject({ frostfireDamage: 0, shatterDamage: 3 });
-    expect(hit(first, attack("freeze", 4)).enemyHealth).toBe(77);
+    expect(first.reactions).toMatchObject({ frostfireDamage: 0, shatterDamage: 6 });
+    expect(hit(first, attack("freeze", 4)).enemyHealth).toBe(74);
   });
 });
 
@@ -225,9 +225,9 @@ describe("Wildfire preparation and resolution", () => {
     const state = wildfire();
     expect(state.enemyHealth).toBe(88);
     expect(state.enemyStatuses.burn).toBe(2);
-    expect(state.reactions).toMatchObject({ wildfireDamage: 3, wildfirePendingTickDamage: null });
+    expect(state.reactions).toMatchObject({ wildfireDamage: 6, wildfirePendingTickDamage: null });
     const result = hit(state, attack("nature"));
-    expect(result.enemyHealth).toBe(81);
+    expect(result.enemyHealth).toBe(78);
     expect(result.enemyStatuses.burn).toBe(2);
     expect(result.reactions.wildfireDamage).toBe(0);
   });
@@ -240,19 +240,19 @@ describe("Wildfire preparation and resolution", () => {
     const repeated = tickEnemyStatuses(restored, []);
     expect(repeated.reactions.wildfirePendingTickDamage).toBe(8);
     expect(repeated.reactions.wildfireDamage).toBe(0);
-    expect(tickEnemyStatuses({ ...repeated, turn: repeated.turn + 1 }, []).reactions.wildfireDamage).toBe(3);
+    expect(tickEnemyStatuses({ ...repeated, turn: repeated.turn + 1 }, []).reactions.wildfireDamage).toBe(5);
   });
 
   it("banks multiple rounded pairs, retains unmatched ticks, and releases after Burn disappears", () => {
     let state = wildfire();
     state = endPlayerTurn(state).state; // 2, unmatched
-    expect(state.reactions).toMatchObject({ wildfireDamage: 3, wildfirePendingTickDamage: 2 });
+    expect(state.reactions).toMatchObject({ wildfireDamage: 6, wildfirePendingTickDamage: 2 });
     const first = hit(state, attack("nature", 1));
     expect(first.reactions).toMatchObject({ wildfireDamage: 0, wildfirePendingTickDamage: 2 });
-    state = endPlayerTurn(state).state; // 1, pair rounds to 1
+    state = endPlayerTurn(state).state; // 1, pair rounds to 2
     expect(state.enemyStatuses.burn).toBe(0);
-    expect(state.reactions).toMatchObject({ wildfireDamage: 4, wildfirePendingTickDamage: null });
-    expect(hit(state, attack("nature", 1)).enemyHealth).toBe(state.enemyHealth - 5);
+    expect(state.reactions).toMatchObject({ wildfireDamage: 8, wildfirePendingTickDamage: null });
+    expect(hit(state, attack("nature", 1)).enemyHealth).toBe(state.enemyHealth - 9);
   });
 
   it("keeps unmatched progress across extinguished fires and counts ticks on CC-skipped enemy turns", () => {
@@ -269,7 +269,7 @@ describe("Wildfire preparation and resolution", () => {
     expect(empty.reactions.wildfirePendingTickDamage).toBe(1);
     const relit = hit(empty, attack("burn", 1));
     const paired = endPlayerTurn(relit).state;
-    expect(paired.reactions).toMatchObject({ wildfireDamage: 1, wildfirePendingTickDamage: null });
+    expect(paired.reactions).toMatchObject({ wildfireDamage: 2, wildfirePendingTickDamage: null });
   });
 
   it("does not advance on Haste, direct Burn hits, detonations, or zero-damage natural ticks", () => {
@@ -301,7 +301,7 @@ describe("Wildfire preparation and resolution", () => {
     state = tickEnemyStatuses(state, []); // 16 Burn; Bleed expires
     state = { ...state, turn: state.turn + 1, enemyStatuses: { ...state.enemyStatuses, bleed: 1 } };
     state = tickEnemyStatuses(state, []); // 8 Burn
-    expect(state.reactions.wildfireDamage).toBe(6);
+    expect(state.reactions.wildfireDamage).toBe(12);
     const texts: CombatTextEvent[] = [];
     state = {
       ...state,
@@ -309,10 +309,10 @@ describe("Wildfire preparation and resolution", () => {
       flags: { ...state.flags, nextHitCrit: true },
     };
     const result = hit(state, attack("nature", 1), texts);
-    expect(result.enemyHealth).toBe(state.enemyHealth - 8); // Critical Nature 2 + fixed bonus 6
+    expect(result.enemyHealth).toBe(state.enemyHealth - 14); // Critical Nature 2 + fixed bonus 12
     expect(result.enemyStatuses.burn).toBe(state.enemyStatuses.burn);
     expect(texts.filter((event) => event.kind === "damage" && event.stat === "burn")).toEqual([
-      expect.objectContaining({ amount: 6 }),
+      expect.objectContaining({ amount: 12, reactionId: "wildfire" }),
     ]);
   });
 
@@ -321,7 +321,7 @@ describe("Wildfire preparation and resolution", () => {
     const prepared = hit({ ...state, enemyStatuses: { ...state.enemyStatuses, stun: 40 } }, attack("stun", 12));
     const texts: CombatTextEvent[] = [];
     const result = hit(prepared, attack("nature", 1), texts);
-    expect(result.enemyHealth).toBe(prepared.enemyHealth - 7);
+    expect(result.enemyHealth).toBe(prepared.enemyHealth - 13);
     expect(notices(texts)).toMatchObject(["Thunderclap", "Wildfire"]);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
     expect(result.enemyStatuses.burn).toBe(2);
@@ -335,7 +335,7 @@ describe("Wildfire preparation and resolution", () => {
       { ...base, enemyMitigation: { ...base.enemyMitigation, block: 20 } },
       { ...base, enemyHealth: 1 },
     ])
-      expect(hit(state, attack("nature")).reactions.wildfireDamage).toBe(3);
+      expect(hit(state, attack("nature")).reactions.wildfireDamage).toBe(6);
   });
 
   it("fatal retaliation prevents the burst, while Death's Door survival permits it", () => {
@@ -348,7 +348,7 @@ describe("Wildfire preparation and resolution", () => {
     };
     const fatal = hit(base, attack("nature"));
     expect(fatal.playerHealth).toBe(0);
-    expect(fatal.reactions.wildfireDamage).toBe(3);
+    expect(fatal.reactions.wildfireDamage).toBe(6);
     expect(hit({ ...base, deathsDoorActive: true }, attack("nature")).reactions.wildfireDamage).toBe(0);
   });
 
@@ -450,11 +450,11 @@ describe("reaction persistence and selection", () => {
         { kind: "damage", damageType: "nature", amount: 1 },
       ],
     });
-    expect(getEffectiveDamageScore(twice, state)).toBe(4.5);
+    expect(getEffectiveDamageScore(twice, state)).toBe(7.5);
     const random = makeTestCard({
       effects: [{ kind: "random-damage", damageTypePool: ["nature", "holy"], minAmount: 1, maxAmount: 1 }],
     });
-    expect(getEffectiveDamageScore(random, state)).toBe(2.5);
+    expect(getEffectiveDamageScore(random, state)).toBe(4);
     const companion = {
       id: "skeleton" as const,
       title: "Companion",
@@ -462,7 +462,7 @@ describe("reaction persistence and selection", () => {
       turnStartEffects: [{ kind: "damage" as const, damageType: "nature" as const, amount: 1 }],
     };
     const command = makeTestCard({ effects: [{ kind: "companion-action", amount: 2 }] });
-    expect(getEffectiveDamageScore(command, { ...state, activeCompanion: companion })).toBe(5);
+    expect(getEffectiveDamageScore(command, { ...state, activeCompanion: companion })).toBe(8);
     const zero = {
       ...companion,
       turnStartEffects: [{ kind: "damage" as const, damageType: "nature" as const, amount: 0 }],
@@ -473,7 +473,7 @@ describe("reaction persistence and selection", () => {
         activeCompanion: zero,
         flags: { ...state.flags, companionNextAttackBonus: 1 },
       }),
-    ).toBe(3);
+    ).toBe(6);
   });
 
   it("keeps long random-type cards bounded and carries defense changes into the next finisher", () => {
@@ -482,9 +482,9 @@ describe("reaction persistence and selection", () => {
     const card = makeTestCard({
       effects: Array.from({ length: 6 }, () => ({ kind: "random-damage" as const, minAmount: 1, maxAmount: 1 })),
     });
-    // Venomflash also pays 1 when Poison precedes the first Burn in the sequence.
+    // Venomflash also pays at least 2 when Poison precedes the first Burn in the sequence.
     const firstPoisonThenBurn = 1 - (7 / 8) ** 6 - 0.5 * (1 - (6 / 8) ** 6);
-    expect(getEffectiveDamageScore(card, state)).toBeCloseTo(6 + 3 * (1 - (7 / 8) ** 6) + firstPoisonThenBurn);
+    expect(getEffectiveDamageScore(card, state)).toBeCloseTo(6 + 6 * (1 - (7 / 8) ** 6) + 2 * firstPoisonThenBurn);
     const before = wildfire();
     const kingbreaker = {
       ...before,
@@ -497,14 +497,14 @@ describe("reaction persistence and selection", () => {
         { kind: "damage", damageType: "nature", amount: 1 },
       ],
     });
-    expect(getEffectiveDamageScore(follow, kingbreaker)).toBe(4);
+    expect(getEffectiveDamageScore(follow, kingbreaker)).toBe(7);
   });
 
   it("scores defense removal and does not count blocked, zero, delayed, or converted attacks as reaction finishers", () => {
     const prepared = controlled("freeze");
     const physical = attack("physical", 4);
     const state = { ...prepared, enemyMitigation: { ...prepared.enemyMitigation, block: 8, armor: 5 } };
-    expect(getEffectiveDamageScore(physical, state)).toBe(20);
+    expect(getEffectiveDamageScore(physical, state)).toBe(23);
     expect(getEffectiveDamageScore(attack("physical", 0), state)).toBe(0);
     expect(getEffectiveDamageScore(physical, { ...state, flags: { ...state.flags, nextHitPoison: true } })).toBe(4);
     const delayed = makeTestCard({
