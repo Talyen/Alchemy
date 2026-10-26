@@ -657,7 +657,7 @@
   "catalog.gearDefinitions.staff-astral.displayName": {"text":"Bâton astral","sourceHash":"065b8d5d903e8cc79af36c825c63b6ec0e2f63bd3c0001d0789fbf78608b85a6","reviewed":true},
   "catalog.gearDefinitions.topaz-amulet-astral.displayName": {"text":"Amulette astrale de topaze","sourceHash":"d659a961f713e8e8d948e3f013047295eb59ec756dec6303f6f0f07b4426a0e1","reviewed":true},
   "catalog.gearDefinitions.topaz-ring-astral.displayName": {"text":"Anneau astral de topaze","sourceHash":"3217df644d9f349d9b4a529f2a30d359c6f9df4e127f59532221ca9aec2e5c79","reviewed":true},
-  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Incantation jumelle","sourceHash":"be2b806c3592c57a89b7cbe02585626a18abb2f0b4cf58f7cf8c945c1406cb25","reviewed":true},
+  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Solstice","sourceHash":"d19589b20698d2eff8dce69aaa7b122727c508aa8e88275a2f3d0131bcbcd0d6","reviewed":true},
   "catalog.gearDefinitions.wand-astral.displayName": {"text":"Baguette astrale","sourceHash":"1f13eef06b0d0ffcd94ae11713c11c9818d5a83e33ed05226403d64962b31456","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.displayName": {"text":"Briseur de garde","sourceHash":"5d3e5ef43879610f58d16710aad6cf9409bb7d56fbf3e6d16e01cc43dc755d06","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.line0": {"text":"Une fois par tour, les attaques dissipent un effet de statut bénéfique","sourceHash":"f64d20beb2d0ac20cb45f851f47596333f3bef8f546c74452d7eed5e712de919","reviewed":true},

@@ -657,7 +657,7 @@
   "catalog.gearDefinitions.staff-astral.displayName": {"text":"星界法杖","sourceHash":"de025518407953b966c1f9dfe4616b8e058845a83f365725e44e661e9ac18834","reviewed":true},
   "catalog.gearDefinitions.topaz-amulet-astral.displayName": {"text":"星界黄玉项链","sourceHash":"ee30c7fa55cff5eac46f5a6e4b5c98de4fa38ee8ee8faf3e1e9fc951666b9ec0","reviewed":true},
   "catalog.gearDefinitions.topaz-ring-astral.displayName": {"text":"星界黄玉戒指","sourceHash":"9d016c3ddb64fbe9c38509ba828d2a84dab62c2b2238a00ba6e21ab80e499b92","reviewed":true},
-  "catalog.gearDefinitions.twin-casting.displayName": {"text":"双重施法","sourceHash":"2a7d6dee1221ca6b78aed6f0e614ebc3f3525103beac762abe2c75fce4401ce1","reviewed":true},
+  "catalog.gearDefinitions.twin-casting.displayName": {"text":"至日","sourceHash":"67d0435ee6d1e18b96fc59b6f77869fb5eff8db35c1390fa545aa4bf68496459","reviewed":true},
   "catalog.gearDefinitions.wand-astral.displayName": {"text":"星界魔杖","sourceHash":"4a2c5dbae42c2c0ac1d63f825abac78ef364d853778a64d7e1c37e298586e6ec","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.displayName": {"text":"破障者","sourceHash":"9ab1e388169211b5a9a2de03e8dd58fe20b956f5f9e5cd44b01e313a217f6367","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.line0": {"text":"每回合一次，攻击清除一个增益状态效果","sourceHash":"c65d48e07c616b1e37c7145d83b692ec0e2f70c2979fac8bf86f70805c288f9b","reviewed":true},

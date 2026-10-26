@@ -657,7 +657,7 @@
   "catalog.gearDefinitions.staff-astral.displayName": {"text":"Bastón astral","sourceHash":"e4068e9dbd84ae8b1128f60bb426cf60f3d6619574921756477fc8b3c8c50927","reviewed":true},
   "catalog.gearDefinitions.topaz-amulet-astral.displayName": {"text":"Amuleto astral de topacio","sourceHash":"4b8547c802ad7c0056b9f25b2dff20679e823295b9dcdaaa8018155b7129a637","reviewed":true},
   "catalog.gearDefinitions.topaz-ring-astral.displayName": {"text":"Anillo astral de topacio","sourceHash":"de0a8953bdc9cd4f0cba4b082a0c271584abc2b6a6cb34cf87ce9526029ff1ab","reviewed":true},
-  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Lanzamiento doble","sourceHash":"ad4263499760c2a65f791cb36a8992ca05144333440ab135108dfd265db7d2c2","reviewed":true},
+  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Solsticio","sourceHash":"46c91a364b6143f04c9c67928e6f8f2c254df843ac83592cfc6f5cf6e1c44290","reviewed":true},
   "catalog.gearDefinitions.wand-astral.displayName": {"text":"Varita astral","sourceHash":"437922d2ebb235ea72637214c47e4ccd7afff0724cc12751196685f4c4b96fbc","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.displayName": {"text":"Romperresguardos","sourceHash":"f48b521231552b089934cfc825fb7a9588e5cea41799fc1365cb0bf50ab1ae71","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.line0": {"text":"Una vez por turno, los ataques eliminan un efecto de estado beneficioso","sourceHash":"78815c2f5c32ed9af03d0f9db27fca4c05bca60243ea7b549f9bcd6377feb126","reviewed":true},
