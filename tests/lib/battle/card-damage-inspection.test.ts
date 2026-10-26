@@ -87,6 +87,40 @@ describe("rule-preserving tooltip inspection", () => {
     const result = getBattleCardDescriptionInspection(card, patchBattleState({ deck: [makeTestCard()] }));
     expect(result.descriptionLines).toEqual(card.descriptionLines);
   });
+
+  it("inlines shared magnitudes only when every referenced effect resolves to the same value", () => {
+    const ray = cardById["ray-of-frost"]!;
+    expect(
+      getBattleCardDescriptionInspection(ray, patchBattleState({ gearEffects: { flatFreezeDamage: 2 } }))
+        .descriptionLines,
+    ).toEqual(["Deal 3 Freeze damage twice"]);
+
+    const doubleHit = effectsCard({ id: "double-hit", art: "", effects: [hit(4), hit(4)] });
+    expect(
+      getBattleCardDescriptionInspection(doubleHit, patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }))
+        .descriptionLines,
+    ).toEqual(["Deal 4 Physical damage twice"]);
+
+    for (const id of ["earthquake", "blizzard"] as const) {
+      const card = cardById[id]!;
+      const result = getBattleCardDescriptionInspection(
+        card,
+        patchBattleState({ playerStatuses: { forge: 4 }, gearEffects: { flatFreezeDamage: 2 } }),
+      );
+      expect(result.descriptionLines).toEqual(card.descriptionLines);
+      expect(result.effects).toEqual(card.effects);
+    }
+
+    const dealAndReceive = effectsCard({
+      id: "reckless",
+      art: "",
+      effects: [hit(3), { kind: "self-damage", damageType: "physical", amount: 3 }],
+    });
+    expect(
+      getBattleCardDescriptionInspection(dealAndReceive, patchBattleState({ playerStatuses: { forge: 2 } }))
+        .descriptionLines,
+    ).toEqual(["Deal and Receive 3 Physical damage"]);
+  });
 });
 
 describe("battle damage inspection", () => {
@@ -305,8 +339,10 @@ describe("battle damage inspection", () => {
       patchBattleState({ playerStatuses: { forge: 4, block: 6, armor: 3 }, mana: 7, maxMana: 7 }),
     );
     const before = JSON.stringify(cardById);
-    for (const card of Object.values(cardById))
+    for (const card of Object.values(cardById)) {
       expect(() => getBattleDamageInspectionCard(card, state), card.id).not.toThrow();
+      expect(() => getBattleCardDescriptionInspection(card, state), card.id).not.toThrow();
+    }
     expect(JSON.stringify(cardById)).toBe(before);
   });
 
