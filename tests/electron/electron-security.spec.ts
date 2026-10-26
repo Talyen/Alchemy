@@ -3,101 +3,97 @@ import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { desktop } from "../playwright-tags";
 
 test.describe("packaged Electron security boundary", { tag: [desktop.tag] }, () => {
-  test("boots through alchemy:// with CSP and blocks renderer escape routes", async () => {
+  test("packaged renderer blocks network, window, and IPC escape routes", async () => {
     const electronApp = await launchElectronApp({ packagedRenderer: true });
     try {
       const page = await getElectronMainWindow(electronApp);
       expect(page.url()).toBe("alchemy://app/");
       expect(await page.evaluate(() => window.alchemyDesktop?.isDesktop)).toBe(true);
 
-      const results = await page.evaluate(async () => {
-        const blockedConnections: string[] = [];
-        document.addEventListener("securitypolicyviolation", (event) => {
-          if (event.effectiveDirective === "connect-src") blockedConnections.push(event.blockedURI);
+      await test.step("blocks renderer escape routes and enforces CSP", async () => {
+        const results = await page.evaluate(async () => {
+          const blockedConnections: string[] = [];
+          document.addEventListener("securitypolicyviolation", (event) => {
+            if (event.effectiveDirective === "connect-src") blockedConnections.push(event.blockedURI);
+          });
+          let externalFetchBlocked = false;
+          try {
+            await fetch("https://example.com/blocked-localization-probe");
+          } catch {
+            externalFetchBlocked = true;
+          }
+          const marker = "__alchemyInlineScriptExecuted";
+          const script = document.createElement("script");
+          script.textContent = `window.${marker} = true`;
+          document.body.appendChild(script);
+
+          const popup = window.open("https://example.com", "_blank");
+          const permission = await navigator.permissions.query({ name: "geolocation" });
+
+          const navigation = document.createElement("a");
+          navigation.href = "https://example.com";
+          navigation.textContent = "navigate";
+          document.body.appendChild(navigation);
+          navigation.click();
+
+          const download = document.createElement("a");
+          download.href = "data:text/plain,blocked";
+          download.download = "blocked.txt";
+          document.body.appendChild(download);
+          download.click();
+          await new Promise((resolve) => {
+            setTimeout(resolve, 100);
+          });
+
+          return {
+            externalFetchBlocked,
+            connectionBlockedByCsp: blockedConnections.some((uri) => uri.startsWith("https://example.com")),
+            inlineRan: (window as unknown as Record<string, unknown>)[marker] === true,
+            permission: permission.state,
+            popupOpened: popup !== null,
+            url: location.href,
+          };
         });
-        let externalFetchBlocked = false;
-        try {
-          await fetch("https://example.com/blocked-localization-probe");
-        } catch {
-          externalFetchBlocked = true;
-        }
-        const marker = "__alchemyInlineScriptExecuted";
-        const script = document.createElement("script");
-        script.textContent = `window.${marker} = true`;
-        document.body.appendChild(script);
 
-        const popup = window.open("https://example.com", "_blank");
-        const permission = await navigator.permissions.query({ name: "geolocation" });
-
-        const navigation = document.createElement("a");
-        navigation.href = "https://example.com";
-        navigation.textContent = "navigate";
-        document.body.appendChild(navigation);
-        navigation.click();
-
-        const download = document.createElement("a");
-        download.href = "data:text/plain,blocked";
-        download.download = "blocked.txt";
-        document.body.appendChild(download);
-        download.click();
-        await new Promise((resolve) => {
-          setTimeout(resolve, 100);
+        expect(results).toEqual({
+          externalFetchBlocked: true,
+          connectionBlockedByCsp: true,
+          inlineRan: false,
+          permission: "denied",
+          popupOpened: false,
+          url: "alchemy://app/",
         });
-
-        return {
-          externalFetchBlocked,
-          connectionBlockedByCsp: blockedConnections.some((uri) => uri.startsWith("https://example.com")),
-          inlineRan: (window as unknown as Record<string, unknown>)[marker] === true,
-          permission: permission.state,
-          popupOpened: popup !== null,
-          url: location.href,
-        };
       });
 
-      expect(results).toEqual({
-        externalFetchBlocked: true,
-        connectionBlockedByCsp: true,
-        inlineRan: false,
-        permission: "denied",
-        popupOpened: false,
-        url: "alchemy://app/",
-      });
-    } finally {
-      await electronApp.close();
-    }
-  });
+      await test.step("rejects IPC from another window", async () => {
+        await page.evaluate(() => window.alchemyDesktop?.clearSave());
 
-  test("rejects IPC from a window other than the current main top frame", async () => {
-    const electronApp = await launchElectronApp({ packagedRenderer: true });
-    try {
-      const page = await getElectronMainWindow(electronApp);
-      await page.evaluate(() => window.alchemyDesktop?.clearSave());
-
-      const attempts = await electronApp.evaluate(async ({ BrowserWindow, app }) => {
-        const attacker = new BrowserWindow({
-          show: false,
-          webPreferences: {
-            contextIsolation: true,
-            nodeIntegration: false,
-            preload: `${app.getAppPath()}/desktop/preload.cjs`,
-            sandbox: true,
-          },
-        });
-        try {
-          await attacker.loadURL("data:text/html,<main>untrusted</main>");
-          return await attacker.webContents.executeJavaScript(`Promise.all([
+        const attempts = await electronApp.evaluate(async ({ BrowserWindow, app }) => {
+          const attacker = new BrowserWindow({
+            show: false,
+            webPreferences: {
+              contextIsolation: true,
+              nodeIntegration: false,
+              preload: `${app.getAppPath()}/desktop/preload.cjs`,
+              sandbox: true,
+            },
+          });
+          try {
+            await attacker.loadURL("data:text/html,<main>untrusted</main>");
+            return await attacker.webContents.executeJavaScript(`Promise.all([
             window.alchemyDesktop.writeSave("attacker").then(() => false, () => true),
             window.alchemyDesktop.steamGetName().then(() => false, () => true),
             window.alchemyDesktop.steamGetGameLanguage().then(() => false, () => true),
             window.alchemyDesktop.quit().then(() => false, () => true)
           ])`);
-        } finally {
-          attacker.destroy();
-        }
-      });
+          } finally {
+            attacker.destroy();
+          }
+        });
 
-      expect(attempts).toEqual([true, true, true, true]);
-      expect(await page.evaluate(() => window.alchemyDesktop?.listSaveCandidates())).toEqual([]);
+        expect(attempts).toEqual([true, true, true, true]);
+        expect(await page.evaluate(() => window.alchemyDesktop?.listSaveCandidates())).toEqual([]);
+      });
     } finally {
       await electronApp.close();
     }

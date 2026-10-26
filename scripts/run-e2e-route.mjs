@@ -27,7 +27,7 @@ export const E2E_ROUTES = Object.freeze({
   collection: e2eRoute("collection Playwright flow", ["enemy-inspection"], "Bestiary"),
   talents: e2eRoute("talents Playwright flow", ["talents-flow"]),
   options: e2eRoute("options Playwright flow", ["menu-navigation"], "controller-equivalent options"),
-  locks: e2eRoute("progression locks Playwright flow", ["menu-navigation"], "Progression Locks"),
+  locks: e2eRoute("progression locks Playwright flow", ["save-error-paths"], "a fresh profile opens the menu"),
   shop: e2eRoute("shop Playwright flow", ["shop-and-rewards"]),
   battle: e2eRoute("battle Playwright flows", ["core-gameplay"]),
   save: e2eRoute("save Playwright flows", ["save-persistence", "save-error-paths", "battle-end-turn-canary"]),
