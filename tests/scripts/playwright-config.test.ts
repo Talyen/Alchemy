@@ -181,6 +181,8 @@ it("gates every localization risk once and keeps QA coverage out of production s
         "--reporter=json",
         "tests/e2e/specs/localization.spec.ts",
         "tests/e2e/specs/localization-gameplay.spec.ts",
+        "tests/e2e/specs/localization-demo.spec.ts",
+        "tests/e2e/specs/steam-demo.spec.ts",
       ],
       {
         cwd: path.resolve(import.meta.dirname, "../.."),
@@ -206,8 +208,14 @@ it("gates every localization risk once and keeps QA coverage out of production s
   const journeys = new Map<string, Spec[]>();
   const locales = new Set<string>();
   const gameplay = new Map<string, string[]>();
+  const demoCore: Spec[] = [];
   const collect = (suite: Suite) => {
     for (const spec of suite.specs ?? []) {
+      if (suite.title === "Steam demo edition") {
+        demoCore.push(spec);
+        expect(spec.tags).toContain("critical");
+        continue;
+      }
       expect(spec.tags).toContain("localization");
       expect(spec.tags).not.toContain("critical");
       const locale = spec.title.match(/^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA) /u)?.[1] ?? suite.title;
@@ -216,11 +224,7 @@ it("gates every localization risk once and keeps QA coverage out of production s
         locales.add(locale!);
       }
       expect(spec.tags.includes("localization-qa")).toBe(locale === "en-XA");
-      // Each font family has its own loading risk; other journeys have one
-      // representative locale rather than repeating the same flow in all locales.
-      const risk = spec.title.includes("uses a bundled font")
-        ? spec.title
-        : spec.title.replace(/^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA) /u, "");
+      const risk = spec.title.replace(/^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA) /u, "");
       journeys.set(risk, [...(journeys.get(risk) ?? []), spec]);
       if (suite.title && /^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA)$/u.test(suite.title)) {
         gameplay.set(risk, [...(gameplay.get(risk) ?? []), locale!]);
@@ -229,6 +233,7 @@ it("gates every localization risk once and keeps QA coverage out of production s
     for (const child of suite.suites ?? []) collect(child);
   };
   collect(report);
+  expect(demoCore).toHaveLength(5);
   expect([...locales].sort()).toEqual(["de", "es", "fr", "ja", "pt-BR", "ru", "zh-Hans"]);
   expect(journeys.size).toBeGreaterThan(0);
   expect(gameplay.size).toBe(9);
@@ -237,9 +242,10 @@ it("gates every localization risk once and keeps QA coverage out of production s
     expect(languages, risk).toContain("en-XA");
   }
   for (const [risk, variants] of journeys) {
-    expect(
-      variants.filter((spec) => spec.tags.includes("localization-smoke")),
-      risk,
-    ).toHaveLength(1);
+    const representatives = variants.filter((spec) => spec.tags.includes("localization-smoke"));
+    // Options also loads each independent bundled script font in the renderer.
+    if (risk === "Options tabs fit and keep translated controls usable") {
+      expect(representatives.map((spec) => spec.title.split(" ")[0]).sort()).toEqual(["ja", "ru", "zh-Hans"]);
+    } else expect(representatives, risk).toHaveLength(1);
   }
 }, 30_000);

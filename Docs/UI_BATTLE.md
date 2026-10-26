@@ -98,9 +98,9 @@ their actual outcome; a valid ineffective action can show its effect icon with 0
 Nonzero results suppress redundant zero entries in the same action.
 
 Phoenix Feather revival shows its Feather notice and the Health restored, even
-when revival leaves the final Health unchanged. Rejected Stun/Freeze buildup
-during immunity pairs a shield icon with the affected status and an accessible
-immunity label; it does not play a successful control cue. Zero damage retains
+when revival leaves the final Health unchanged. Control immunity appears only in
+the persistent status row below Health; blocked buildup never creates a floating
+immunity notice or a successful control cue. Zero damage retains
 ineffective-action feedback without shaking a portrait.
 
 Matching additive entries can sum across effects, cards, and actions during the
@@ -122,12 +122,24 @@ Direct emitters mark intent before aggregation, keeping a proc separate even whe
 grants the same status. Secondary benefits use the lower-left corner and setbacks
 the lower-right. Corner placement reserves the label's actual width and peak pop
 footprint inside the measured portrait, rather than fixed fractions of portrait width.
-Resource costs and removals belong to setbacks. Secondary Cleanse, immunity, and preparations
+Resource costs and removals belong to setbacks. Secondary Cleanse and preparations
 belong to benefits; Purge and harmful control notices belong to setbacks. Unattributed
 turn feedback retains its existing damage, healing, Block-loss and Dodge center route. Status
 entries use a smaller, stationary pop. Within an action, notices precede losses
 and gains; each lane preserves arrival order. Impact and audio cues remain immediate
 and follow actual incoming events, never accumulated display totals.
+
+Primary intent resolves before display deduplication, so a card's main Block or
+other authored result remains central even when its status is also below Health.
+Positive secondary status gains and armed preparations omit their redundant corner
+flight only while the same recipient's semantic status chip is actually rendered
+and fully visible within the viewport and overflow clips. Missing, hidden or clipped
+chips keep the ordinary corner feedback. Damage, healing, reaction payoffs, zero or
+failed outcomes, removals, consumption, expiry, Cleanse, Purge and actual Stunned/Frozen
+application notices retain their feedback. Receipts and expiry remain unchanged;
+the renderer checks live row visibility without changing combat math or status values.
+Status chips stay opaque through their existing entrance pop, so an entering or
+updated chip never briefly reintroduces its redundant corner feedback.
 
 Direct typed damage retains its independent fan flights, including actions that
 trigger reactions. Each reaction has a separate central portrait-anchored pair:

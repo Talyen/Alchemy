@@ -98,39 +98,10 @@ jobs:
 
   demo-e2e:
     needs: [lint, test]
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      ALCHEMY_EDITION: demo
-      PLAYWRIGHT_VITE_MODE: preview
-    steps:
-      - name: Record test job setup start
-        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: ./.github/actions/setup
-      - uses: ./.github/actions/setup-playwright
-      - run: npm run build:desktop
-      - run: npm run check:bundle
-      - name: Qualify production demo and localized endings
-        run: npm run test:e2e -- tests/e2e/specs/steam-demo.spec.ts tests/e2e/specs/localization-demo.spec.ts
-        env:
-          ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
-      - name: Ensure Electron binary
-        run: node scripts/ensure-electron.mjs
-      - name: Qualify native localized quit and resume
-        run: xvfb-run -a npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
-        env:
-          PLAYWRIGHT_ELECTRON_FULL: "1"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        if: failure()
-        with:
-          name: demo-e2e-diagnostics
-          path: |
-            playwright-report/
-            test-results/
-            reports/
-          retention-days: 1
+    uses: ./.github/workflows/demo-e2e.yml
+    with:
+      artifact: demo-e2e-diagnostics
+      full: true
 
   package:
     needs:
