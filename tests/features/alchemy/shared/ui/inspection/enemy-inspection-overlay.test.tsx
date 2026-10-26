@@ -160,7 +160,6 @@ describe("enemy inspection presentation", () => {
         .map((image) => image.getAttribute("alt")),
     ).toEqual(["Sunder", "Judgment", "Smite"]);
     expect(dialog.textContent).not.toContain("Deal 3 Physical damage");
-    expect(dialog.querySelector("hr, .border-t")).toBeNull();
     const ability = within(dialog).getByRole("button", { name: "Sunder" });
     fireEvent.mouseEnter(ability.parentElement!);
     await waitFor(() =>

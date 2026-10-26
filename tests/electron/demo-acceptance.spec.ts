@@ -1,4 +1,3 @@
-import { mkdirSync } from "node:fs";
 import { saveEnvelopeFixture } from "../fixtures/saves";
 import { expect, test } from "@playwright/test";
 import type { ElectronApplication, Page } from "@playwright/test";
@@ -29,8 +28,7 @@ test.describe("isolated offline demo acceptance", () => {
     await application?.close();
   });
 
-  test("menu/footer and Options fit minimum resolutions and size extremes", async ({ browserName }, testInfo) => {
-    void browserName;
+  test("menu/footer and Options fit minimum resolutions and size extremes", async () => {
     const errors = failOnRuntimeErrors(page);
     await new MenuPage(page).expectMainMenuAfterColdStart();
     expect(await page.evaluate(() => window.alchemyDesktop?.edition)).toBe("demo");
@@ -71,11 +69,6 @@ test.describe("isolated offline demo acceptance", () => {
         await assertStageFitsViewport(page);
         for (const name of ["Play", "Options", "Quit", "Wishlist on Steam"])
           await expect(page.getByRole("button", { name, exact: true })).toBeInViewport({ ratio: 0.99 });
-        mkdirSync("reports/demo-acceptance/ui", { recursive: true });
-        const screenshot = await page.screenshot({
-          path: `reports/demo-acceptance/ui/menu-${height}-${gameSizePercent}.png`,
-        });
-        await testInfo.attach(`menu-${height}-${gameSizePercent}`, { body: screenshot, contentType: "image/png" });
       }
     }
     await exerciseControllerOptions(page);

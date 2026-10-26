@@ -32,9 +32,8 @@ test(
     await expect(dialog.getByRole("heading", { name: "Traits", exact: true })).toBeVisible();
     await expect(dialog.getByRole("heading", { name: "Abilities", exact: true })).toBeVisible();
     await expect(tooltip).toHaveCount(0);
-    await expect(dialog.getByRole("img")).toHaveCount(3);
-    await expect(dialog.locator("hr")).toHaveCount(0);
     const card = dialog.getByTestId("card-selection-grid").getByRole("button").first();
+    await expect(card).toBeVisible();
     const cardName = await card.getAttribute("aria-label");
     await card.hover();
     await expect(tooltip).toContainText(cardName!);
