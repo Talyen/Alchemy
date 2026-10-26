@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GameModeSelectScreen } from "@/features/alchemy/meta/screens/game-mode-select-screen";
 import { installCatalogs, localization, text, displayText } from "@/lib/localization/runtime";
@@ -23,7 +24,8 @@ describe("GameModeSelectScreen", () => {
     onSelectWildwood: vi.fn(),
   };
 
-  it("routes unlocked modes and blocks the same actions after progression is locked", () => {
+  it("routes unlocked modes and blocks the same actions after progression is locked", async () => {
+    const user = userEvent.setup();
     const onSelectCampaign = vi.fn();
     const onSelectLabyrinth = vi.fn();
     const onSelectWildwood = vi.fn();
@@ -62,8 +64,8 @@ describe("GameModeSelectScreen", () => {
       const locked = screen.getByRole("button", { name });
       expect(locked.getAttribute("aria-disabled")).toBe("true");
       fireEvent.click(locked);
-      fireEvent.keyDown(locked, { key: "Enter" });
-      fireEvent.keyDown(locked, { key: " " });
+      act(() => locked.focus());
+      await user.keyboard("{Enter} ");
     }
     expect(onSelectLabyrinth).not.toHaveBeenCalled();
     expect(onSelectWildwood).not.toHaveBeenCalled();

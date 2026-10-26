@@ -77,7 +77,10 @@ describe("ArmoryScreen core", () => {
     expect(playUISound).toHaveBeenCalledWith("error");
     expect(screen.getByRole("alert").textContent).toBe(COMBAT_LOCKED_MESSAGE);
     await user.click(screen.getByLabelText("Main-hand equipment slot"));
+    vi.mocked(playUISound).mockClear();
+    await user.click(screen.getByLabelText("Main-hand equipment slot"));
     expect(onUnequip).not.toHaveBeenCalled();
+    expect(playUISound).toHaveBeenCalledExactlyOnceWith("error");
     expect(screen.getByRole("alert").textContent).toBe(COMBAT_LOCKED_MESSAGE);
   });
 

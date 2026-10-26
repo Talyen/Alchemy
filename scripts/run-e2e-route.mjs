@@ -30,7 +30,7 @@ export const E2E_ROUTES = Object.freeze({
   locks: e2eRoute("progression locks Playwright flow", ["menu-navigation"], "Progression Locks"),
   shop: e2eRoute("shop Playwright flow", ["shop-and-rewards"]),
   battle: e2eRoute("battle Playwright flows", ["core-gameplay"]),
-  save: e2eRoute("save Playwright flows", ["save-persistence", "save-error-paths"]),
+  save: e2eRoute("save Playwright flows", ["save-persistence", "save-error-paths", "battle-end-turn-canary"]),
   labyrinth: e2eRoute("labyrinth Playwright flow", ["labyrinth"]),
   wildwood: e2eRoute("wildwood Playwright flow", ["wildwood"]),
   outcomes: e2eRoute("run-outcome Playwright flows", ["run-outcomes"]),

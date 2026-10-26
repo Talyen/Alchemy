@@ -1,4 +1,4 @@
-import { type Locator, type Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { startAtDestination } from "../e2e/battle-setup";
 
 export class CorruptionPage {

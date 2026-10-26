@@ -44,6 +44,20 @@ removal combines resize continuity with cancellation, exact deck/Gold settlement
 repeat-input protection and fresh-page resume. Its DOM counterpart uses the real
 picker for rejected-command recovery and pending-save admission.
 
+Battle resume shares the real End Turn/SFX canary in
+`specs/battle-end-turn-canary.spec.ts`: spend a card, accept one turn despite
+repeated input, then restore Health, enemy Health, hand and turn on an unseeded
+page and play again. The `save` route and `test:ship:e2e` both include that owner.
+The other save specs retain current-format destination/reward recovery, cold
+boot, corrupt JSON and future-version protection.
+
+Hand inspection combines edge targeting, raised-card hit testing, draw/reflow,
+and pointer-to-keyboard switching in one live journey. Size-boundary journeys
+retain crowded maximum-size and ultrawide minimum-size hands; the standard-size
+journey owns normal timing. Armory DOM tests retain mutation admission, failed
+commands, transfer/selection lifetime and pagination, while exact empty-slot
+filler counts and development-only spawn buttons have no permanent coverage.
+
 ## Rendered accessibility and visual regression
 
 `specs/accessibility.spec.ts` runs axe WCAG A/AA checks on the live menu,
