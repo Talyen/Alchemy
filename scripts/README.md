@@ -158,7 +158,13 @@ linked dependency ancestors into another checkout's shared caches.
 `npm run prune:transient` automatically expires only reproducible Git diff
 inventories in `reports/agent-diff/` after 24 hours of inactivity. It preserves
 verification, failure, performance, visual, integration and experimental evidence,
-including current-run pointers. Tool environments belong under `.cache/`, not
+including current-run pointers. At producer completion it also writes a bounded
+`reports/retention-review.json`: a 1 GiB review threshold, latest success/failure per
+command retained, pins/owners and referenced baselines protected, and at most 64
+exact historical run candidates. Dry runs return this plan without writing it.
+Candidates remain intact: unique diagnostics require explicit exact-batch approval;
+this threshold never authorizes irreversible age/size purges. Production footage,
+portable trailer bundles and release artifacts are outside this reviewer. Tool environments belong under `.cache/`, not
 inside reports. Legacy `reports/boss-lyrics/venv` remains usable in place until its
 owner stops; worktree finishing excludes that known rebuildable environment.
 
@@ -217,6 +223,26 @@ when invoked from a task. The original workspace's management entry point forwar
 to the dedicated main checkout so retained workspace source can stay unchanged.
 
 ### Dedicated integration checkout
+
+New task checkouts default to omitting `assets/sources/` when the target
+revision supports output-only development/build validation and has prepared art,
+music and sounds. Committed runtime media, generated code, test inputs and desktop
+icons remain present. Older/incomplete revisions use full assets. Use
+`create --task <slug> --full-assets` for asset production, or run
+`git sparse-checkout disable` in a task before source checks/preparation/authoring.
+`--code-only` remains an alias for automatic defaults; it cannot be combined with
+`--full-assets`. Missing-source preparation preserves outputs and prints restoration guidance.
+
+Large retained tracked assets (at least 256 KiB) automatically use per-file APFS
+copy-on-write from clean same-commit files in the dedicated main checkout (primary
+before adoption). No peer task is a source. An optional Python standard-library
+bridge calls Apple's `clonefile` directly; unavailable Python, unsupported
+platforms/volumes, dirty/mismatched sources and checkout filters use ordinary Git.
+Clones are checked against target blob bytes/modes. Git owns fresh indexes and
+normal status/stat checks; dependencies/build databases are not copied. Git's
+registration/index locks arbitrate concurrent creation. The report includes omitted
+and cloned logical bytes and population/first-status time, not unique physical
+savings on APFS. Existing task checkouts retain their configuration.
 
 One-time adoption uses `node scripts/agent-worktree.mjs setup-integration`.
 This explicitly moves main ownership to `.worktrees/integration`: the original

@@ -8,6 +8,7 @@ export {
   pickHighestScoring,
 } from "./autoplay-policy";
 export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";
+export { getBattleCardAnimationTarget } from "./card-animation-target";
 export { computeCardPayment } from "./card-cost-rules";
 export { canPlayCard, type CardPlayOptions } from "./card-play";
 export { mergeCombatText } from "./combat-text-events";

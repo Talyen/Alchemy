@@ -19,8 +19,8 @@ const UNFINISHED_GIT_STATES = [
   "rebase-apply",
 ];
 
-// Creation and recovery work from a copied single file in minimal checkouts.
-// Integration loads the merged task's command launcher only for verification.
+// Recovery commands remain usable from a copied single file. Creation loads
+// only its dependency-free storage helper; integration loads the task launcher.
 function isMainEntry() {
   const entry = process.argv[1];
   if (!entry) return false;
@@ -180,7 +180,7 @@ export function removeIntegratedWorktree(main, task, branch, head) {
 
 function usage() {
   console.log(`Usage:
-  node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached] [--code-only]
+  node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached] [--full-assets]
   node scripts/agent-worktree.mjs integrate --task <slug> [--keep-worktree]
   node scripts/agent-worktree.mjs finish --task <slug>
   node scripts/agent-worktree.mjs setup-integration
@@ -191,7 +191,8 @@ function usage() {
 Creates isolated worktrees under .worktrees/<slug> on branch agent/<slug>.
 Use one worktree per implementation chat to avoid shared-checkout races.
 Add --detached for verification-only detached HEAD.
-Add --code-only to omit assets/sources from this worktree. Prepared game assets stay available.
+Source masters are omitted automatically when this revision supports prepared-only builds.
+Add --full-assets for asset authoring; --code-only remains an alias for the default.
 Restore masters in that checkout with: git sparse-checkout disable
 setup-integration moves main to .worktrees/integration; preserves the original
 checkout's files/index on a workspace branch. Run once when adopting this layout.
@@ -222,22 +223,6 @@ export function linkDependencies(mainRoot, targetWorktree) {
   return false;
 }
 
-function configureCodeOnlyWorktree(worktreePath) {
-  // Worktree-local sparse configuration keeps the original and peer checkouts full.
-  // --no-checkout on creation avoids materializing masters just to remove them.
-  const result = runGit(["-C", worktreePath, "sparse-checkout", "set", "--no-cone", "--stdin"], {
-    input: "/*\n!/assets/sources/\n",
-  });
-  if (result.status !== 0)
-    throw new Error(`Code-only checkout setup failed; worktree preserved at ${worktreePath}: ${result.stderr}`);
-  // --no-checkout leaves the index empty; populate it through the sparse rules.
-  // A merge-style read refuses conflicting local files rather than overwriting them.
-  const checkout = runGit(["-C", worktreePath, "read-tree", "-mu", "HEAD"]);
-  if (checkout.status !== 0)
-    throw new Error(`Code-only materialization failed; worktree preserved at ${worktreePath}: ${checkout.stderr}`);
-  console.log("  asset masters omitted; restore with git sparse-checkout disable before asset authoring");
-}
-
 export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
@@ -246,7 +231,7 @@ export async function main(argv = process.argv.slice(2)) {
       cmd === "create" ? ["--task", "--base"] : ["remove", "integrate", "finish"].includes(cmd) ? ["--task"] : [];
     const flagOptions =
       cmd === "create"
-        ? ["--detached", "--code-only"]
+        ? ["--detached", "--code-only", "--full-assets"]
         : cmd === "remove"
           ? ["--force"]
           : cmd === "integrate"
@@ -502,7 +487,21 @@ export async function main(argv = process.argv.slice(2)) {
       process.exit(1);
     }
     const detached = hasFlag("--detached");
-    const codeOnly = hasFlag("--code-only");
+    if (hasFlag("--code-only") && hasFlag("--full-assets"))
+      throw new Error("Choose --full-assets or --code-only, not both");
+    const { storageProfile, populateWorktree } = await import("./lib/worktree-storage.mjs");
+    // Only the primary and dedicated main checkout are sources; never borrow a peer task.
+    const mainSource = path.join(WORKTREE_ROOT, "integration");
+    const source = fs.existsSync(mainSource) ? mainSource : root;
+    const populate = () => {
+      const commit = runGit(["-C", worktreePath, "rev-parse", "HEAD"]);
+      if (commit.status !== 0) throw new Error("Could not resolve new checkout commit");
+      populateWorktree(
+        source,
+        worktreePath,
+        storageProfile(source, commit.stdout.trim(), { fullAssets: hasFlag("--full-assets") }),
+      );
+    };
     const base = getArg("--base") ?? "main";
     const worktreePath = path.join(WORKTREE_ROOT, task);
     const branch = `agent/${task}`;
@@ -530,11 +529,11 @@ export async function main(argv = process.argv.slice(2)) {
     fs.mkdirSync(WORKTREE_ROOT, { recursive: true });
 
     if (detached) {
-      const args = ["worktree", "add", ...(codeOnly ? ["--no-checkout"] : []), "--detach", worktreePath, base];
+      const args = ["worktree", "add", "--no-checkout", "--detach", worktreePath, base];
       console.log(`▸ git ${args.join(" ")}`);
       const r = runGit(args, { stdio: "inherit" });
       if (r.status !== 0) process.exit(r.status ?? 1);
-      if (codeOnly) configureCodeOnlyWorktree(worktreePath);
+      populate();
       const linked = linkDependencies(root, worktreePath);
       console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
       console.log(`  cd "${worktreePath}"`);
@@ -552,13 +551,13 @@ export async function main(argv = process.argv.slice(2)) {
 
     const args =
       branchExists.status === 0
-        ? ["worktree", "add", ...(codeOnly ? ["--no-checkout"] : []), worktreePath, branch]
-        : ["worktree", "add", ...(codeOnly ? ["--no-checkout"] : []), "-b", branch, worktreePath, base];
+        ? ["worktree", "add", "--no-checkout", worktreePath, branch]
+        : ["worktree", "add", "--no-checkout", "-b", branch, worktreePath, base];
 
     console.log(`▸ git ${args.join(" ")}`);
     const r = runGit(args, { stdio: "inherit" });
     if (r.status !== 0) process.exit(r.status ?? 1);
-    if (codeOnly) configureCodeOnlyWorktree(worktreePath);
+    populate();
     const linked = linkDependencies(root, worktreePath);
     // Keep the original base across commits, main merges and checkout recreation.
     // Older retained branches use their common ancestor so existing task work is included.

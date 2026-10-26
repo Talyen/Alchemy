@@ -35,7 +35,7 @@ export async function requireAssetSources(entries) {
       }
     } catch (cause) {
       throw new Error(
-        `Cannot read repository asset source "${source}". Restore it under assets/sources or update its selection. Existing outputs were preserved.`,
+        `Cannot read repository asset source "${source}". Restore it under assets/sources (git sparse-checkout disable in a code-only task) or update its selection. Existing outputs were preserved.`,
         { cause },
       );
     }

@@ -4,6 +4,7 @@ import {
   canPlayCard as canPlayCardInBattle,
   computeCardPayment,
   isAttackCard,
+  getBattleCardAnimationTarget,
   type BattleSnapshot,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
@@ -81,6 +82,7 @@ export function createBattleCardPlay(
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
     handLength: number,
+    target: "player" | "enemy",
   ) {
     const centerOffset = index - (handLength - 1) / 2;
     animateCardActivation(
@@ -91,6 +93,7 @@ export function createBattleCardPlay(
       ctx.enemyPanelRef,
       ctx.battleSceneRef,
       getPresentation().spawnCardGhost,
+      target,
     );
   }
 
@@ -153,6 +156,7 @@ export function createBattleCardPlay(
       return false;
     }
     const sessionNum = ctx.playback.id;
+    const animationTarget = getBattleCardAnimationTarget(handCard, currentState);
     const played = ctx.battle.playCard(currentState, index, card.id);
     if (!played) {
       if (!options?.silentReject) playUISound("error");
@@ -168,7 +172,7 @@ export function createBattleCardPlay(
     } else {
       getPresentation().telegraphCast("player");
     }
-    animatePlayedCard(card, index, sourceRect, currentState.hand.length);
+    animatePlayedCard(card, index, sourceRect, currentState.hand.length, animationTarget);
     const focalSound = playResolvedCardSound(
       card.id,
       played.combatTexts,

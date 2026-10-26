@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Remove stale local test, diagnostic, and report artifacts without touching source. */
 import fs from "node:fs";
+import { reportRetentionPlan, writeRetentionReview } from "./lib/report-retention.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
@@ -69,6 +70,7 @@ export function pruneExpiredArtifacts({
 } = {}) {
   if (!Number.isFinite(days) || days < 0) throw new Error("days must be non-negative");
   const cutoff = now - days * 86_400_000;
+  const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
   const consider = (pathname) => {
     const info = bundleInfo(pathname);
@@ -101,7 +103,7 @@ export function pruneExpiredArtifacts({
   }
   const reportsStats = fs.lstatSync(path.join(rootDir, "reports"), { throwIfNoEntry: false });
   if (!transientDirs.includes("reports") || !reportsStats?.isDirectory() || reportsStats.isSymbolicLink())
-    return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false };
+    return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false, review };
   const pointer = path.join(rootDir, "reports/current-run.json");
   if (fs.lstatSync(pointer, { throwIfNoEntry: false })?.isFile()) {
     let run;
@@ -129,7 +131,7 @@ export function pruneExpiredArtifacts({
     const markdown = path.join(rootDir, "reports/current-run.md");
     if (fs.lstatSync(markdown, { throwIfNoEntry: false })) consider(markdown);
   }
-  return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false };
+  return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false, review };
 }
 
 export async function pruneTransientArtifacts(options = {}) {

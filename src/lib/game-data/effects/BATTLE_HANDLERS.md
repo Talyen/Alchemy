@@ -122,6 +122,18 @@ rewards keep the production recipe and order. `battleSnapshot` removes observers
 Wish samplers, RNG, and action callbacks. Inspection also strips borrowed execution
 capabilities before running; it cannot invoke a live empty-draw callback.
 
+Card-flight presentation uses these same observations through
+`battle/card-animation-target.ts`. Inspection captures authored numeric feedback
+per effect before display merging; costs and unmarked/secondary proc feedback
+are excluded. The largest single direct point/count magnitude wins, rather than
+the sum toward either recipient. Damage uses its first offensive packet before
+enemy defenses and Critical/Dodge rolls; healing uses adjusted power before its
+Health cap. Status multiplication compares gained stacks, never its factor;
+Haste/Phoenix Feather durations or charges and other nonnumeric actions do not
+compete. Ties, uncertain mixed-target branches and unresolved numeric outcomes
+retain the first non-cost authored recipient. The choice affects only the card
+travel ghost, never combat targeting, resolution, state or live RNG.
+
 Effect occurrence addresses, including both Chance branches, own observation and
 Corruption-mark mapping. Repeated references to one authored effect object still
 have independent packet identities. Import boundaries keep the description adapter
