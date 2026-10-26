@@ -10,28 +10,29 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 
 export interface ResolvedBattleStart {
   state: BattleSnapshot;
+  startingTexts: CombatTextEvent[];
+  openingDrawTexts: CombatTextEvent[];
   companion: BattleTurnFrame["companion"];
   outcome: BattleOutcome | null;
 }
 
 /** Opening Companions act before the hand is drawn in every battle host. */
 export function resolveBattleStart(
-  options: Omit<CreateBattleStateOptions, "rng"> & { trackMetrics?: boolean },
+  options: Omit<CreateBattleStateOptions, "rng">,
   context: BattleResolutionContext,
 ): ResolvedBattleStart {
-  let state = createBattleStartState({ ...options, rng: getBattleRng(context) });
-  if (options.trackMetrics) {
-    state = { ...state, battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {}, enemyAbilityUses: {} } };
-  }
   const startingTexts: CombatTextEvent[] = [];
+  let state = createBattleStartState({ ...options, rng: getBattleRng(context) }, startingTexts);
   state = resolvePendingBattleReactions(applyTurnStartPurge(state, startingTexts), startingTexts);
-  const companionId = state.activeCompanion?.id ?? null;
+  const companionId = getBattleOutcome(state) === null ? (state.activeCompanion?.id ?? null) : null;
+  const companionTexts: CombatTextEvent[] = [];
   if (companionId) {
-    state = processCompanionTurnStart(state, startingTexts);
-    if (state.encounterBenefits.includes("eager-pack")) state = processCompanionTurnStart(state, startingTexts);
+    state = processCompanionTurnStart(state, companionTexts);
+    if (state.encounterBenefits.includes("eager-pack")) state = processCompanionTurnStart(state, companionTexts);
   }
-  const companion = companionId ? { id: companionId, texts: startingTexts, state: battleSnapshot(state) } : null;
-  const opening = drawOpeningHand(state);
+  const companion = companionId ? { id: companionId, texts: companionTexts, state: battleSnapshot(state) } : null;
+  const openingDrawTexts: CombatTextEvent[] = [];
+  const opening = drawOpeningHand(state, openingDrawTexts);
   const outcome = getBattleOutcome(opening);
-  return { state: battleSnapshot(opening), companion, outcome };
+  return { state: battleSnapshot(opening), startingTexts, openingDrawTexts, companion, outcome };
 }

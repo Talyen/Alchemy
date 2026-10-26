@@ -14,7 +14,7 @@ import {
 import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { createEmptyGearEffectManifest } from "@/lib/gear";
-import type { BattleState, EnemyMitigation } from "./types";
+import type { BattleState, CombatTextEvent, EnemyMitigation } from "./types";
 import { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { applyEmergencyWish } from "./wish";
@@ -44,6 +44,7 @@ export interface CreateBattleStateOptions {
   contentSystemType?: ContentSystemId;
   appliesFightPacing?: boolean;
   encounterBenefits?: EncounterRewardTraitId[];
+  trackMetrics?: boolean;
 }
 
 function initializePlayerHealthAndBlock(
@@ -60,7 +61,8 @@ function initializePlayerHealthAndBlock(
   return { startingHealth, maxHealth, startingBlock, startingArmor };
 }
 
-export function drawOpeningHand(state: BattleState): BattleState {
+export function drawOpeningHand(state: BattleState, combatTexts: CombatTextEvent[] = []): BattleState {
+  if (getBattleOutcome(state) !== null) return state;
   const drawn = applyDrawResult(
     state,
     drawCards(
@@ -78,7 +80,7 @@ export function drawOpeningHand(state: BattleState): BattleState {
     drawn.hand.length === 0 &&
     drawn.deck.length === 0 &&
     drawn.discard.length === 0
-    ? resolvePendingBattleReactions(applyEmergencyWish(drawn), [])
+    ? resolvePendingBattleReactions(applyEmergencyWish(drawn, combatTexts), combatTexts)
     : drawn;
 }
 
@@ -126,7 +128,10 @@ function resolveStartingEnemyThorns(traits: BestiaryEntry["traits"]): number {
   return 0;
 }
 
-export function createBattleStartState(options: CreateBattleStateOptions): BattleState {
+export function createBattleStartState(
+  options: CreateBattleStateOptions,
+  combatTexts: CombatTextEvent[] = [],
+): BattleState {
   const {
     runDeck,
     gold: battleGold = 0,
@@ -140,6 +145,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     rng: optionsRng,
     contentSystemType: battleContentSystem = "campaign",
     appliesFightPacing: battleAppliesFightPacing = true,
+    trackMetrics = false,
   } = options;
 
   if (!battleEnemy) {
@@ -187,6 +193,9 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   );
   const state: BattleState = {
     ...baseState,
+    ...(trackMetrics
+      ? { battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {}, enemyAbilityUses: {} } }
+      : {}),
     deck,
     hand: [],
     discard: [],
@@ -224,27 +233,31 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   // precedes Block so Tempered Guard sees the Forge already granted.
   let equipped = state;
   const openingForge = openingStatuses.forge + (equipped.encounterBenefits.includes("white-heat") ? 2 : 0);
-  if (openingForge > 0) equipped = addForgeToPlayer(equipped, openingForge, []);
-  if (openingStatuses.armor > 0) equipped = applyArmorReward(equipped, openingStatuses.armor, []);
+  if (openingForge > 0) equipped = addForgeToPlayer(equipped, openingForge, combatTexts);
+  if (openingStatuses.armor > 0) equipped = applyArmorReward(equipped, openingStatuses.armor, combatTexts);
   if (openingStatuses.block > 0)
-    equipped = applyBlockReward(equipped, openingStatuses.block, [], { skipFightPacing: true });
+    equipped = applyBlockReward(equipped, openingStatuses.block, combatTexts, { skipFightPacing: true });
   const healedState = resolvePendingBattleReactions(
-    applyHealingWithCombatText(equipped, battleTalents.startHealth + battleGearEffects.startHeal, [], {
+    applyHealingWithCombatText(equipped, battleTalents.startHealth + battleGearEffects.startHeal, combatTexts, {
       skipFightPacing: true,
     }),
-    [],
+    combatTexts,
   );
   const startFreeze = battleGearEffects.startFreeze;
   let started = healedState;
   if (startFreeze > 0 && started.enemyHealth > 0 && started.playerHealth > 0) {
     started = resolvePendingBattleReactions(
-      resolveFollowUpHit(started, { source: "player-follow-up", damageType: "freeze", amount: startFreeze }, []),
-      [],
+      resolveFollowUpHit(
+        started,
+        { source: "player-follow-up", damageType: "freeze", amount: startFreeze },
+        combatTexts,
+      ),
+      combatTexts,
     );
   }
   if (started.enemyHealth <= 0 || started.playerHealth <= 0 || !battleTalents.drawNatureCardAtCombatStart)
     return started;
-  return drawKeywordCard(started, "nature");
+  return drawKeywordCard(started, "nature", { combatTexts });
 }
 
 export function createBattleState(options: CreateBattleStateOptions): BattleState {

@@ -78,28 +78,31 @@ function resolveEnemyPostTickResolution(
   state: BattleState,
   texts: CombatTextEvent[],
   skipped: boolean,
-): { state: BattleState; afterAbilityState?: BattleState } {
+): { state: BattleState; skipped: boolean; afterAbilityState?: BattleState } {
   let nextState = processEnemyTraits(processEncounterTraitActionStart(state, texts), texts);
+  if (getBattleOutcome(nextState) !== null) return { state: nextState, skipped };
+  // Turn-start retaliation can control the enemy before it selects an ability.
+  skipped ||= isCcControlled(nextState.enemyCC);
   let afterAbilityState: BattleState | undefined;
   if (!skipped) {
     nextState = processEnemyAbility(nextState, texts);
     afterAbilityState = nextState;
-    if (getBattleOutcome(nextState) !== null) return { state: nextState, afterAbilityState };
+    if (getBattleOutcome(nextState) !== null) return { state: nextState, skipped, afterAbilityState };
   } else {
     nextState = reduceSkipTurns(nextState, texts);
   }
   nextState = tickPlayerStatuses(nextState, texts);
   if (getBattleOutcome(nextState) !== null || isPlayerDefeated(nextState)) {
-    return afterAbilityState ? { state: nextState, afterAbilityState } : { state: nextState };
+    return afterAbilityState ? { state: nextState, skipped, afterAbilityState } : { state: nextState, skipped };
   }
   if (!skipped) {
     nextState = processEncounterTraitActionDamage(nextState, texts);
     if (isPlayerDefeated(nextState)) {
-      return afterAbilityState ? { state: nextState, afterAbilityState } : { state: nextState };
+      return afterAbilityState ? { state: nextState, skipped, afterAbilityState } : { state: nextState, skipped };
     }
   }
   nextState = processEnemyRegeneration(resolveDeathsDoorGraceExpiry(nextState, texts), texts);
-  return afterAbilityState ? { state: nextState, afterAbilityState } : { state: nextState };
+  return afterAbilityState ? { state: nextState, skipped, afterAbilityState } : { state: nextState, skipped };
 }
 
 function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, { kind: "haste" }> {
@@ -129,13 +132,13 @@ function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, 
   // the final phase rather than existing only in the combined engine result.
   const finalized = finalizePlayerTurn(result.state, enemyResolutionCombatTexts, { manaAtTurnEnd: state.mana });
   return {
-    kind: skipped ? "skipped" : "standard",
+    kind: result.skipped ? "skipped" : "standard",
     ...finalized,
     combatTexts: [...enemyTurnStartCombatTexts, ...finalized.combatTexts],
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts,
-    enemyPerformedAbility: !skipped,
+    enemyPerformedAbility: result.afterAbilityState !== undefined,
     ...(result.afterAbilityState ? { afterAbilityState: result.afterAbilityState } : {}),
   };
 }
@@ -146,7 +149,20 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
     hasEncounterBenefit(state, "restorative") && getBattleOutcome(state) === null
       ? applyHealingWithCombatText(state, LABYRINTH_MODIFIER_CONFIG.healingPerTurn, endingTexts)
       : state;
-  const turnEndedState = reducePlayerSkipTurns(resolvePendingBattleReactions(healedState, endingTexts));
+  const settled = resolvePendingBattleReactions(healedState, endingTexts);
+  if (getBattleOutcome(settled) !== null) {
+    return {
+      kind: "standard" as const,
+      state: settled,
+      combatTexts: endingTexts,
+      playerTurnSkipped: false,
+      enemyTurnStartState: settled,
+      enemyTurnStartCombatTexts: endingTexts,
+      enemyResolutionCombatTexts: [],
+      enemyPerformedAbility: false,
+    };
+  }
+  const turnEndedState = reducePlayerSkipTurns(settled);
   const nextState = beginEnemyPhase(turnEndedState);
 
   if (turnEndedState.playerStatuses.haste > 0) {
