@@ -238,7 +238,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   if (anomalies) {
     sampleAnomalies(opening.companion?.state ?? initialState, opening.startingTexts, anomalies);
     if (opening.companion) sampleAnomalies(opening.companion.state, opening.companion.texts, anomalies);
-    sampleAnomalies(initialState, [], anomalies);
+    sampleAnomalies(initialState, opening.openingDrawTexts, anomalies);
   }
 
   let state = initialState;
