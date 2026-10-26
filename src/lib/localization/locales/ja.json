@@ -657,7 +657,7 @@
   "catalog.gearDefinitions.staff-astral.displayName": {"text":"アストラル杖","sourceHash":"729c08d5a200be48e8f1f095c977cc239fe77a2e6d87ad707f7ac4ecef8e1083","reviewed":true},
   "catalog.gearDefinitions.topaz-amulet-astral.displayName": {"text":"アストラルトパーズのアミュレット","sourceHash":"a8a4f13df6a736290a7c098cc0dbbf651ba585b79b95d7797f60f521a359f8b0","reviewed":true},
   "catalog.gearDefinitions.topaz-ring-astral.displayName": {"text":"アストラルトパーズの指輪","sourceHash":"af1cc95b91ea8e99ac60f7e1de11bf8d44e0924346a2048ede0d9013e3f2eb2c","reviewed":true},
-  "catalog.gearDefinitions.twin-casting.displayName": {"text":"双子の詠唱","sourceHash":"2786a18ee26cbf53d0ef12befcc1909d9dafecb9bb854f05384ae10be0a096c3","reviewed":true},
+  "catalog.gearDefinitions.twin-casting.displayName": {"text":"ソルスティス","sourceHash":"2181ca96ba02543aa08425402754fb2058580bc62b70b613a265d883dc7c3903","reviewed":true},
   "catalog.gearDefinitions.wand-astral.displayName": {"text":"アストラルの小杖","sourceHash":"7a624edf5adfe8ed8056ef5d7e34da722bfce948fb25569e13afd21131582bd0","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.displayName": {"text":"守護破り","sourceHash":"b43d1f452df2ce299dea04c5ab8c213f94077fdd7f155de56737ca210c2fbaf0","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.line0": {"text":"毎ターン一回、攻撃時に有益な状態効果を一つ除去する","sourceHash":"8287b244333b9a5afe97c9e0363bdcd08ad8be5273b8ff2905abfa468cf454ab","reviewed":true},

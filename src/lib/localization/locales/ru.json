@@ -657,7 +657,7 @@
   "catalog.gearDefinitions.staff-astral.displayName": {"text":"Астральный посох","sourceHash":"3c3d55d5271a3e38890e822269367af8b5bfeed6c4cc79a474dbf7d749ae99f5","reviewed":true},
   "catalog.gearDefinitions.topaz-amulet-astral.displayName": {"text":"Астральный топазовый амулет","sourceHash":"cef9547d43d9d9d661a604b7297c67aa2d536ec22161ae1d4b6df9448ed1045d","reviewed":true},
   "catalog.gearDefinitions.topaz-ring-astral.displayName": {"text":"Астральное топазовое кольцо","sourceHash":"a6fd1a140039df6abbf298a73daa55bdc42b64b8eeac5e3d8fb21e191b93b128","reviewed":true},
-  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Двойное заклинание","sourceHash":"5785de3c4a8be2f6dd5f9747ca7d2bd69a3c95c751a5c8522e6b3c7aa42784b9","reviewed":true},
+  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Солнцестояние","sourceHash":"3ee09151197a7b3286b82e3e9202c77fc84253460f71ed5bd8f87b5413fde659","reviewed":true},
   "catalog.gearDefinitions.wand-astral.displayName": {"text":"Астральная волшебная палочка","sourceHash":"dc9244847fa9b29b96ad5cb106d50994ff66b8f6b79eb63a47cee8ed6aa466ab","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.displayName": {"text":"Разрушитель оберегов","sourceHash":"b97f68795f9e226cb5522acf790b01e37d0fb41e7cd4b0d323c5e049cc8de9c1","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.line0": {"text":"Раз в ход атаки снимают один положительный эффект состояния","sourceHash":"4c2fa090cc4434c82bd049897485bc2e874871be50e8540cb1f22374a91502a7","reviewed":true},

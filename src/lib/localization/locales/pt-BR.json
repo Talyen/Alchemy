@@ -657,7 +657,7 @@
   "catalog.gearDefinitions.staff-astral.displayName": {"text":"Cajado astral","sourceHash":"57e17a33b89fc8fa563afe255404e754702cf3e335ca8aa9ba97d39064b5165d","reviewed":true},
   "catalog.gearDefinitions.topaz-amulet-astral.displayName": {"text":"Colar astral de topázio","sourceHash":"978e1558d96461b560b2b799b20291c08b8bc65268eeebea66c5162f43ccdfd6","reviewed":true},
   "catalog.gearDefinitions.topaz-ring-astral.displayName": {"text":"Anel astral de topázio","sourceHash":"82e2c9872880c1220fe5e783e0dd115ff6c1e430a935ea09257a44616f50813d","reviewed":true},
-  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Lançamento duplo","sourceHash":"ac72a8119456347d217888f108a9b0c32ec1740f33f47a24157331c6ecfbd304","reviewed":true},
+  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Solstício","sourceHash":"759acd0554a66a6e997d7f34161eeaffbeebfa8ae2ba06443861c6002b0fd684","reviewed":true},
   "catalog.gearDefinitions.wand-astral.displayName": {"text":"Varinha astral","sourceHash":"4dde2aac6948deff3dd2e4f941884c6c37812d512df07ca4fa965fdfc8ba04b3","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.displayName": {"text":"Quebra-proteções","sourceHash":"faff8132cd3ace68d2e4021dd1d7039af32050e62550185289e9d4a8b0f0042e","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.line0": {"text":"Uma vez por turno, ataques removem um efeito de status benéfico","sourceHash":"aae899c61e92fa0a651716d61c011b8498dae9ccfde77c3ca6664a8b9f335c55","reviewed":true},

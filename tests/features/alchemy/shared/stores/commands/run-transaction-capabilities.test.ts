@@ -1,5 +1,9 @@
 import { createCleanup } from "@/lib/cleanup";
-import { initializeBattleForTest as initializeActiveBattle } from "../../../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  mutateGameplayForTest,
+  initializeBattleForTest as initializeActiveBattle,
+} from "../../../../../helpers/run-domain-store-test";
 import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,7 +14,7 @@ import {
   type RunTransaction,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/commands/run-session-command";
-import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/session/gameplay-command";
+
 import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import {
   addGold,
@@ -114,26 +118,17 @@ describe("feature transaction capabilities", () => {
   it("owns functional setter results and typed visit inputs while preserving unchanged updater identity", () => {
     const cards = [makeTestCard()];
     const offers = [makeTestCard()];
-    dispatchRunSessionCommand(
-      (transaction) => {
-        setRunDeck(transaction, () => cards);
-        setRunActivityData(transaction, "campfire", { offers, result: null, original: null, completed: false });
-        cards.length = 0;
-        offers.length = 0;
-        expect(transaction.run.activeRun.runDeck).toHaveLength(1);
-        expect(transaction.session.activity.kind).toBe("campfire");
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((transaction) => {
+      setRunDeck(transaction, () => cards);
+      setRunActivityData(transaction, "campfire", { offers, result: null, original: null, completed: false });
+      cards.length = 0;
+      offers.length = 0;
+      expect(transaction.run.activeRun.runDeck).toHaveLength(1);
+      expect(transaction.session.activity.kind).toBe("campfire");
+    });
     const before = readGameplayState(defaultGameSession);
     expect(before.session.activity).toMatchObject({ kind: "campfire", data: { offers: [makeTestCard()] } });
-    dispatchRunSessionCommand(
-      (transaction) => acceptCommand(setRunDeck(transaction, (deck) => deck)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((transaction) => setRunDeck(transaction, (deck) => deck));
     expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 
@@ -158,11 +153,7 @@ describe("feature transaction capabilities", () => {
   });
 
   it.each(forbiddenWrites)("rolls back earlier operations and RNG when an untyped caller writes %s", (_name, write) => {
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState())),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => initializeActiveBattle(draft, makeTestBattleState()));
     const before = readGameplayState(defaultGameSession);
     const effect = vi.fn();
     const commit = vi.fn();
@@ -188,35 +179,27 @@ describe("feature transaction capabilities", () => {
   it("keeps transaction reads current while Gold operations settle purse, battle, and run earnings once", () => {
     setRunProgress({ gold: 100, selectedDifficulty: "difficulty-2", runGoldEarned: 0 });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ gold: 100 }))),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => initializeActiveBattle(draft, makeTestBattleState({ gold: 100 })));
     const before = readGameplayState(defaultGameSession);
     const commit = vi.fn();
     const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
     let retained!: RunTransaction;
-    const result = dispatchRunSessionCommand(
-      (transaction) => {
-        retained = transaction;
-        const expectedEarned = Math.round(
-          5 * getGoldMultiplier(transaction.run.activeRun.characterId, transaction.run.activeRun.selectedDifficulty),
-        );
-        addGold(transaction, 5);
-        expect(transaction.runProfile.gold).toBe(100 + expectedEarned);
-        deductGold(transaction, 3);
-        if (transaction.session.activity.kind !== "battle") throw new Error("Fixture battle is missing");
-        expect(transaction.session.activity.data.battleState.gold).toBe(transaction.runProfile.gold);
-        expect(transaction.run.activeRun.runGoldEarned).toBe(expectedEarned);
-        return acceptCommand({
-          purse: transaction.runProfile.gold,
-          battle: transaction.session.activity.data.battleState,
-        });
-      },
-      undefined,
-      defaultGameSession,
-    );
+    const result = mutateRunForTest((transaction) => {
+      retained = transaction;
+      const expectedEarned = Math.round(
+        5 * getGoldMultiplier(transaction.run.activeRun.characterId, transaction.run.activeRun.selectedDifficulty),
+      );
+      addGold(transaction, 5);
+      expect(transaction.runProfile.gold).toBe(100 + expectedEarned);
+      deductGold(transaction, 3);
+      if (transaction.session.activity.kind !== "battle") throw new Error("Fixture battle is missing");
+      expect(transaction.session.activity.data.battleState.gold).toBe(transaction.runProfile.gold);
+      expect(transaction.run.activeRun.runGoldEarned).toBe(expectedEarned);
+      return {
+        purse: transaction.runProfile.gold,
+        battle: transaction.session.activity.data.battleState,
+      };
+    });
     unsubscribe();
     expect(commit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
     expect(result.battle.gold).toBe(result.purse);
@@ -230,36 +213,22 @@ describe("feature transaction capabilities", () => {
 
   it("protects functional setter reads and detaches reused nested values before publication", () => {
     const card = makeTestCard({ effects: [{ kind: "damage", amount: 5, damageType: "physical" }] });
-    dispatchRunSessionCommand(
-      (transaction) => acceptCommand(setRunDeck(transaction, [card])),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((transaction) => setRunDeck(transaction, [card]));
     const before = readGameplayState(defaultGameSession);
     expect(() =>
-      dispatchRunSessionCommand(
-        (transaction) => {
-          setRunDeck(transaction, (deck) => {
-            Reflect.set(deck[0]!.effects[0]!, "amount", 999);
-            return deck;
-          });
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      ),
+      mutateRunForTest((transaction) => {
+        setRunDeck(transaction, (deck) => {
+          Reflect.set(deck[0]!.effects[0]!, "amount", 999);
+          return deck;
+        });
+      }),
     ).toThrow(/readonly/);
     expect(readGameplayState(defaultGameSession)).toBe(before);
-    dispatchRunSessionCommand(
-      (transaction) => {
-        setRunDeck(transaction, (deck) => [...deck, { ...deck[0]!, id: "copied" }]);
-        setRunActivityData(transaction, "campfire", { offers: [], result: null, original: null, completed: false });
-        setRunActivityData(transaction, "campfire", (visit) => ({ ...visit, completed: true }));
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((transaction) => {
+      setRunDeck(transaction, (deck) => [...deck, { ...deck[0]!, id: "copied" }]);
+      setRunActivityData(transaction, "campfire", { offers: [], result: null, original: null, completed: false });
+      setRunActivityData(transaction, "campfire", (visit) => ({ ...visit, completed: true }));
+    });
     expect(readGameplayState(defaultGameSession).run.activeRun.runDeck.map((entry) => entry.id)).toEqual([
       card.id,
       "copied",
@@ -267,17 +236,12 @@ describe("feature transaction capabilities", () => {
     expect(() => JSON.stringify(readGameplayState(defaultGameSession))).not.toThrow();
     const committed = readGameplayState(defaultGameSession);
     expect(() =>
-      dispatchRunSessionCommand(
-        (transaction) => {
-          setRunActivityData(transaction, "campfire", (visit) => {
-            Reflect.set(visit, "completed", false);
-            return visit;
-          });
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      ),
+      mutateRunForTest((transaction) => {
+        setRunActivityData(transaction, "campfire", (visit) => {
+          Reflect.set(visit, "completed", false);
+          return visit;
+        });
+      }),
     ).toThrow(/readonly/);
     expect(readGameplayState(defaultGameSession)).toBe(committed);
   });
@@ -291,20 +255,15 @@ describe("feature transaction capabilities", () => {
     setRunProgress({ runMaxHealth: 30, runMetaMaxHealth: 30, runPlayerHealth: 30 });
     setRunSession({ hasActiveRun: true });
     const beforeRevision = readGameplayState(defaultGameSession).revision;
-    dispatchRunSessionCommand(
-      (transaction) => {
-        mutateGearWithRunHealthSync(transaction, {
-          mutate: (gear) => {
-            gear.addInstance(armor, "knight");
-            return gear.equip("knight", "body", armor);
-          },
-        });
-        expect(transaction.run.activeRun.runMaxHealth).toBe(37);
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((transaction) => {
+      mutateGearWithRunHealthSync(transaction, {
+        mutate: (gear) => {
+          gear.addInstance(armor, "knight");
+          return gear.equip("knight", "body", armor);
+        },
+      });
+      expect(transaction.run.activeRun.runMaxHealth).toBe(37);
+    });
     expect(readGameplayState(defaultGameSession).revision).toBe(beforeRevision + 1);
     const inventory = dispatchGearMutationWithRunHealthSync(
       { mutate: (gear) => gear.inventories.knight },
@@ -312,11 +271,7 @@ describe("feature transaction capabilities", () => {
     );
     expect(() => JSON.stringify(inventory)).not.toThrow();
     expect(inventory).toEqual([armor]);
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ playerMaxHealth: 37 }))),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => initializeActiveBattle(draft, makeTestBattleState({ playerMaxHealth: 37 })));
     const before = readGameplayState(defaultGameSession);
     expect(
       dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.unequip("knight", "body") }, defaultGameSession),
@@ -474,7 +429,7 @@ describe("feature transaction capabilities", () => {
 
 describe("reward claim gating", () => {
   const transact = (operate: (transaction: RunTransaction) => boolean | void): boolean | void =>
-    dispatchRunSessionCommand((transaction) => acceptCommand(operate(transaction)), undefined, defaultGameSession);
+    mutateRunForTest((transaction) => operate(transaction));
 
   it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
     const rewardCard = makeTestCard({

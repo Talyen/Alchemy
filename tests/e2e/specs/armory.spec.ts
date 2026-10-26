@@ -2,18 +2,20 @@ import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
 import { BattlePage } from "../../pages/battle-page";
 import { expect } from "@playwright/test";
-import { bodyGear, equipmentSlotLocator, gearItemLocator, openArmory, selectArmorySlot } from "../armory";
+import { bodyGear, gearItemLocator, openArmory, selectArmorySlot } from "../armory";
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
-import { injectActiveBattle, makeGoblinBattleState, makeHighDamageCard, withSavedGame } from "../../browser-helpers";
-import { MenuPage } from "../../pages/menu-page";
+import {
+  buildActiveRunSave,
+  injectExactSave,
+  resumeInjectedRun,
+  makeGoblinBattleState,
+  makeHighDamageCard,
+  readSavedGame,
+  withSavedGame,
+} from "../../browser-helpers";
+import { savedActivityFixture } from "../../fixtures/run-activity";
 import { test } from "../../fixtures/e2e";
 import { critical } from "../../playwright-tags";
-
-async function inputPointAndClick(page: import("@playwright/test").Page, target: import("@playwright/test").Locator) {
-  const input = controllerInput(page);
-  await input.point(target);
-  await input.click();
-}
 
 const affixedSword = {
   instanceId: "gear-sword",
@@ -21,47 +23,8 @@ const affixedSword = {
   affixes: [{ id: "flat-physical" as const, value: 1 }],
 };
 
-test.describe("Armory equip", () => {
-  test(
-    "keeps the battling hero browse-only while other heroes remain editable",
-    critical,
-    async ({ page, fastBattle }) => {
-      void fastBattle;
-      const gearInventories = createEmptyGearInventories();
-      gearInventories.knight = [bodyGear];
-      const menu = new MenuPage(page);
-
-      await menu.gotoWithUnlockedMeta({
-        gearInventories,
-        gearLoadouts: createEmptyGearLoadouts(),
-      });
-      await menu.expectMainMenuAfterColdStart();
-      await injectActiveBattle(page, makeGoblinBattleState());
-
-      await page.getByRole("button", { name: "Open game menu" }).click();
-      await page.getByRole("button", { name: "Armory" }).click();
-      await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
-      await selectArmorySlot(page, "body");
-      const bodyItem = gearItemLocator(page, "Leather Armor");
-      await expect(bodyItem).toBeVisible();
-      await expect(bodyItem.getByRole("button", { name: "Leather Armor", exact: true })).toHaveAttribute(
-        "aria-disabled",
-        "true",
-      );
-      await expect(page.getByTestId("armory-item-picker").locator('[data-artwork-pending="true"]')).toHaveCount(0);
-      await inputPointAndClick(page, bodyItem.getByRole("button", { name: "Leather Armor", exact: true }));
-      await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
-      await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(1);
-      await page.getByRole("button", { name: "Rogue", exact: true }).click();
-      await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
-      await gearItemLocator(page, "Leather Armor").getByRole("button", { name: "Leather Armor", exact: true }).click();
-      await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(2);
-    },
-  );
-});
-
 test(
-  "reserves shared equipment across reload and releases it after victory",
+  "combat locks the battling hero, preserves other loadouts through resume, and releases reserved gear after victory",
   critical,
   async ({ page, fastBattle }) => {
     void fastBattle;
@@ -69,19 +32,40 @@ test(
     gearInventories.knight = [affixedSword, bodyGear];
     const gearLoadouts = createEmptyGearLoadouts();
     gearLoadouts.knight["main-hand"] = affixedSword.instanceId;
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta({ gearInventories, gearLoadouts });
-    await menu.expectMainMenuAfterColdStart();
-    await injectActiveBattle(
-      page,
-      makeGoblinBattleState({
-        hand: [makeHighDamageCard()],
-        deck: Array.from({ length: 6 }, () => makeHighDamageCard()),
+    await injectExactSave(page, {
+      ...buildActiveRunSave({
+        activity: savedActivityFixture("battle", {
+          battleState: makeGoblinBattleState({
+            hand: [makeHighDamageCard()],
+            deck: Array.from({ length: 6 }, () => makeHighDamageCard()),
+          }),
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
+        }),
       }),
-    );
+      gearInventories,
+      gearLoadouts,
+    });
+    await page.goto("/");
+    await resumeInjectedRun(page);
     await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Armory", exact: true }).click();
+    await selectArmorySlot(page, "body");
+    const body = gearItemLocator(page, "Leather Armor").getByRole("button", { name: "Leather Armor", exact: true });
+    const rejection = page.getByText("Equipment cannot be changed during Combat.", { exact: true });
+    await expect(rejection).toHaveCount(0);
+    await expect(body).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByTestId("armory-item-picker").locator('[data-artwork-pending="true"]')).toHaveCount(0);
+    const input = controllerInput(page);
+    await input.point(body);
+    await input.click();
+    await expect(rejection).toBeVisible();
+    expect((await readSavedGame(page)).gearLoadouts.knight.body).toBeNull();
     await page.getByRole("button", { name: "Rogue", exact: true }).click();
+    await expect(rejection).toHaveCount(0);
+    await body.click();
+    await expect.poll(async () => (await readSavedGame(page)).gearLoadouts.rogue.body).toBe(bodyGear.instanceId);
+    await selectArmorySlot(page, "main-hand");
     const reserved = page.getByRole("button", { name: /Longsword. Reserved for Knight/ });
     await expect(reserved).toHaveAttribute("aria-disabled", "true");
     await reserved.hover();
@@ -92,6 +76,7 @@ test(
       await resumed.getByRole("button", { name: "Rogue", exact: true }).click();
       const restoredReserved = resumed.getByRole("button", { name: /Longsword. Reserved for Knight/ });
       await expect(restoredReserved).toHaveAttribute("aria-disabled", "true");
+      expect((await readSavedGame(resumed)).gearLoadouts.rogue.body).toBe(bodyGear.instanceId);
       await resumed.getByRole("button", { name: "Open game menu" }).click();
       await resumed.getByRole("button", { name: "Return to Battle", exact: true }).click();
       const battle = new BattlePage(resumed);
@@ -102,7 +87,9 @@ test(
       await expect(resumed.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
       await resumed.getByRole("button", { name: "Rogue", exact: true }).click();
       await gearItemLocator(resumed, "Longsword").getByRole("button", { name: "Longsword", exact: true }).click();
-      await expect(equipmentSlotLocator(resumed, "main-hand").locator("img")).toHaveCount(2);
+      await expect
+        .poll(async () => (await readSavedGame(resumed)).gearLoadouts.rogue["main-hand"])
+        .toBe(affixedSword.instanceId);
     });
   },
 );

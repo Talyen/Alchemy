@@ -105,6 +105,20 @@ describe("fixed Unique compatibility", () => {
     expect(getGearInstanceTooltipEntries(original)).toEqual(getGearInstanceTooltipEntries(normalized));
   });
 
+  it("shows Solstice for an existing staff without changing its saved identity or Twincasting signature", () => {
+    const saved: GearInstance = { instanceId: "owned-staff", definitionId: "twin-casting", affixes: [] };
+    const restored = normalizeGearInstance(saved)!;
+
+    expect(restored).toEqual(saved);
+    expect(getGearInstanceTitle(restored)).toBe("Solstice");
+    expect(getGearInstanceTooltipEntries(restored)[0]).toMatchObject({
+      affixId: "twin-casting",
+      name: "Twincasting",
+      text: "Playing a Burn card draws a Freeze card, and vice versa",
+    });
+    expect(effectsForInstance(restored).elementalTwinCasting).toBe(1);
+  });
+
   it("keeps UNIQUE_GEAR_COMBAT magnitudes in sync with signature descriptions", () => {
     const descriptionOf = (id: GearAffixId) => gearAffixCatalog[id].descriptionTemplate;
     // Numeric prose: the number in text must equal the combat constant.

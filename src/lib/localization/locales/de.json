@@ -657,7 +657,7 @@
   "catalog.gearDefinitions.staff-astral.displayName": {"text":"Astraler Stab","sourceHash":"a701974223b20a62661912247e2d1dd0a15dc435fa9e0aa4f138715f5393f614","reviewed":true},
   "catalog.gearDefinitions.topaz-amulet-astral.displayName": {"text":"Astrales Topasamulett","sourceHash":"ae94b9bedc1fe334557d0bc75957a7e73c375226fbacbe74ea75c5b9085714f2","reviewed":true},
   "catalog.gearDefinitions.topaz-ring-astral.displayName": {"text":"Astraler Topasring","sourceHash":"9094b17dffc2b63b0146efb948e02d3344da32daf69a4bab9ced01f009eb15c5","reviewed":true},
-  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Doppelwirkung","sourceHash":"1bb60dc78dfa3e0c13a3ec50c11a193ced0e64101a25bc94cef60736e906a1fc","reviewed":true},
+  "catalog.gearDefinitions.twin-casting.displayName": {"text":"Sonnenwende","sourceHash":"408fc9dcc26253cbdd2e158598153f4216e60ddf72ad6e267a27e6414af253ad","reviewed":true},
   "catalog.gearDefinitions.wand-astral.displayName": {"text":"Astraler Zauberstab","sourceHash":"1a9f6c42ea4066eeefad3df068da940f80809664cbc6bfceab0a8f2e5452c093","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.displayName": {"text":"Schutzbrecher","sourceHash":"2405e65e97e542a1ba17430f46465ab8d7bf002df868bb387446a27efa296285","reviewed":true},
   "catalog.gearDefinitions.wardbreaker.line0": {"text":"Einmal pro Runde bannen Angriffe einen positiven Statuseffekt","sourceHash":"c9bf4aa6c4df84945205d02084f8d77f939bbbd0e42b920caa8a757bcc423f95","reviewed":true},
