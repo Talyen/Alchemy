@@ -3,7 +3,7 @@ import { readCombatFlag } from "./action-context";
 import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, REACTIVE_REWARD_CHANCES } from "../game-constants";
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { processEncounterTraitCardAction } from "./encounter-trait-events";
+import { processEncounterTraitsForCardCopies } from "./encounter-trait-events";
 import { mergeCombatText } from "./combat-text-events";
 import { addGoldWithCombatText, applyHealingWithCombatText } from "./player-rewards";
 import { processCompanionTurnStart } from "./companion";
@@ -42,16 +42,13 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   const playTwice = shouldElementalTalentRepeat(nextState, drawn.card);
   const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts, { playTwice });
   nextState = chained.state;
-  nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
-  if (playTwice) {
-    nextState = processEncounterTraitCardAction(
-      nextState,
-      { ...drawn.card, consume: false },
-      combatTexts,
-      chained.repeatAttackAttempted,
-      { cardPlayed: false },
-    );
-  }
+  nextState = processEncounterTraitsForCardCopies(
+    nextState,
+    drawn.card,
+    combatTexts,
+    chained.attackAttempted,
+    playTwice ? chained.repeatAttackAttempted : undefined,
+  );
   nextState = handlePostPlayCardDestination(nextState, drawn.card, {
     triggerConsumeRiders: !isPlayerDefeated(nextState),
     combatTexts,

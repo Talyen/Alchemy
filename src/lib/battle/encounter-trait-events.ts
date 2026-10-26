@@ -162,6 +162,21 @@ export function processEncounterTraitCardAction(
   return resolvePendingBattleReactions(nextState, combatTexts);
 }
 
+export function processEncounterTraitsForCardCopies(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  attackAttempted: boolean,
+  repeatAttackAttempted: boolean | undefined,
+): BattleState {
+  const next = processEncounterTraitCardAction(state, card, combatTexts, attackAttempted);
+  return repeatAttackAttempted === undefined
+    ? next
+    : processEncounterTraitCardAction(next, { ...card, consume: false }, combatTexts, repeatAttackAttempted, {
+        cardPlayed: false,
+      });
+}
+
 export function applyEncounterThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.enemyHealth <= 0 || state.enemyStatuses.thorns <= 0) return state;
   const id = hasEnemyTrait(state, "briar-crown")

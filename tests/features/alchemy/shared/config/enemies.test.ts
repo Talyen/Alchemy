@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import { getBossById, getBossEnemy, getCurrentEnemy, rollFreshBossId } from "@/features/alchemy/shared/config/enemies";
 
@@ -81,4 +81,18 @@ describe("getBossById", () => {
 it("rollFreshBossId returns a valid boss enemy ID", () => {
   const bossId = rollFreshBossId();
   expect(["forge-golem", "frostwarden", "blight-treant", "iron-bear"]).toContain(bossId);
+});
+
+it.each(["normal", "elite", "boss"] as const)("keeps %s pool order and RNG draws when avoiding encounters", (type) => {
+  const pool = enemyBestiary.filter((enemy) => enemy.enemyType === type);
+  const select = type === "boss" ? getBossEnemy : (ids: string[], rng: () => number) => getCurrentEnemy(type, ids, rng);
+  const rng = vi.fn(() => 0.99);
+  expect(select([pool[pool.length - 1]!.id], rng)).toBe(pool[pool.length - 2]);
+  expect(
+    select(
+      pool.map((enemy) => enemy.id),
+      rng,
+    ),
+  ).toBe(pool[pool.length - 1]);
+  expect(rng).toHaveBeenCalledTimes(2);
 });
