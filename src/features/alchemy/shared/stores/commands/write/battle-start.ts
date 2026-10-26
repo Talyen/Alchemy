@@ -76,7 +76,7 @@ export function initializeBattle(draft: GameplayDraft, request: BattleStartReque
   setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
   setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
 
-  const startingTexts = [...(opening.companion?.texts ?? [])];
+  const startingTexts = [...opening.startingTexts, ...(opening.companion?.texts ?? [])];
   if (opening.state.enemyMitigation.armor > 0) {
     startingTexts.push({
       target: "enemy",

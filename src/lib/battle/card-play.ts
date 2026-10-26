@@ -5,7 +5,7 @@ import { mergeCombatText } from "./combat-text-events";
 import { harmfulPlayerStatusIds, type BattleCard } from "@/lib/game-data";
 import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, CombatTextEvent } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
-import { processEncounterTraitCardAction } from "./encounter-trait-events";
+import { processEncounterTraitsForCardCopies } from "./encounter-trait-events";
 import { deliverPendingHandCards } from "./draw";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { finishUniqueCardDamage, prepareUniqueCardPlay } from "./unique-card-effects";
@@ -206,15 +206,13 @@ function resolveCardPlay(
     manaAtStart: paymentState.mana,
   });
   let nextState = finishUniqueCardDamage(played.state, card, prepared, combatTexts);
-  nextState = processEncounterTraitCardAction(nextState, card, combatTexts, played.attackAttempted);
-  if (playTwice)
-    nextState = processEncounterTraitCardAction(
-      nextState,
-      { ...card, consume: false },
-      combatTexts,
-      played.repeatAttackAttempted,
-      { cardPlayed: false },
-    );
+  nextState = processEncounterTraitsForCardCopies(
+    nextState,
+    card,
+    combatTexts,
+    played.attackAttempted,
+    playTwice ? played.repeatAttackAttempted : undefined,
+  );
 
   if (!isPlayerDefeated(nextState) && state.talentEffects.wishCardRefundsMana && cardHasKeyword(card, "wish")) {
     nextState = resolvePendingBattleReactions(

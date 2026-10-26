@@ -49,6 +49,32 @@ describe("encounter event regressions", () => {
     expect(result.enemyPhysicalDamageBonus).toBe(1);
   });
 
+  it.each(["manual", "automatic"] as const)("%s repeated cards trigger play and Consume reactions once", (source) => {
+    const played = makeTestCard({
+      consume: true,
+      effects: [{ kind: "damage", damageType: "nature", amount: 1 }],
+    });
+    const state = regressionBattle({
+      currentEnemy: { traits: ["insatiable", "rooted"].map((id) => ({ id, title: id, description: "" })) },
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      hand: source === "manual" ? [played] : [],
+      deck: source === "automatic" ? [played] : [],
+      flags: { playNextCardTwice: true },
+      gearEffects: { dodgeDrawAndPlay: 1, dodgeChance: 100 },
+      talentEffects: { natureCardPlayTwiceChance: 100 },
+      rng: () => 0,
+    });
+    const result =
+      source === "manual"
+        ? playBattleCardResolved(state, played.id, 0).state
+        : resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 1 }, [], { canDodge: true })
+            .state;
+    expect(result.enemyPhysicalDamageBonus).toBe(1);
+    expect(result.enemyMitigation.block).toBe(1);
+    expect(result.exhausted).toHaveLength(1);
+  });
+
   it("automatic cards do not reuse Follow-through from the previous manual card", () => {
     const arrow = makeTestCard({
       tags: ["archery"],

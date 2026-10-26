@@ -10,12 +10,6 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { pickRandom } from "@/lib/rng";
 
-function withoutEncountered(pool: readonly BestiaryEntry[], encounteredEnemyIds: readonly string[]): BestiaryEntry[] {
-  if (encounteredEnemyIds.length === 0) return [...pool];
-  const encountered = new Set(encounteredEnemyIds);
-  return pool.filter((enemy) => !encountered.has(enemy.id));
-}
-
 export { enemyById, isEnemyId };
 
 function resolveEnemyFallback(): BestiaryEntry {
@@ -24,23 +18,24 @@ function resolveEnemyFallback(): BestiaryEntry {
   return fallback;
 }
 
+function selectEnemy(pool: readonly BestiaryEntry[], encounteredEnemyIds: readonly string[], rng?: () => number) {
+  const encountered = new Set(encounteredEnemyIds);
+  const preferred = pool.filter((enemy) => !encountered.has(enemy.id));
+  const candidates = preferred.length > 0 ? preferred : pool;
+  return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? resolveEnemyFallback();
+}
+
 export function getCurrentEnemy(
   enemyType?: EnemyType,
   encounteredEnemyIds: readonly string[] = [],
   rng?: () => number,
 ): BestiaryEntry {
   const pool: readonly BestiaryEntry[] = enemyType ? enemiesByType[enemyType] : encounterEnemies;
-  const available = pool.length > 0 ? pool : encounterEnemies;
-  const preferred = withoutEncountered(available, encounteredEnemyIds);
-  const candidates = preferred.length > 0 ? preferred : available;
-  return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? resolveEnemyFallback();
+  return selectEnemy(pool.length > 0 ? pool : encounterEnemies, encounteredEnemyIds, rng);
 }
 
 export function getBossEnemy(encounteredEnemyIds: readonly string[] = [], rng?: () => number): BestiaryEntry {
-  const pool = bossEnemies;
-  const preferred = withoutEncountered(pool, encounteredEnemyIds);
-  const candidates = preferred.length > 0 ? preferred : pool;
-  return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? resolveEnemyFallback();
+  return selectEnemy(bossEnemies, encounteredEnemyIds, rng);
 }
 
 export function getBossById(bossId: string): BestiaryEntry | undefined {

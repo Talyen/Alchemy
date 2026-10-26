@@ -61,6 +61,7 @@ function initializePlayerHealthAndBlock(
 }
 
 export function drawOpeningHand(state: BattleState): BattleState {
+  if (getBattleOutcome(state) !== null) return state;
   const drawn = applyDrawResult(
     state,
     drawCards(

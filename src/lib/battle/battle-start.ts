@@ -10,6 +10,7 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 
 export interface ResolvedBattleStart {
   state: BattleSnapshot;
+  startingTexts: CombatTextEvent[];
   companion: BattleTurnFrame["companion"];
   outcome: BattleOutcome | null;
 }
@@ -25,13 +26,14 @@ export function resolveBattleStart(
   }
   const startingTexts: CombatTextEvent[] = [];
   state = resolvePendingBattleReactions(applyTurnStartPurge(state, startingTexts), startingTexts);
-  const companionId = state.activeCompanion?.id ?? null;
+  const companionId = getBattleOutcome(state) === null ? (state.activeCompanion?.id ?? null) : null;
+  const companionTexts: CombatTextEvent[] = [];
   if (companionId) {
-    state = processCompanionTurnStart(state, startingTexts);
-    if (state.encounterBenefits.includes("eager-pack")) state = processCompanionTurnStart(state, startingTexts);
+    state = processCompanionTurnStart(state, companionTexts);
+    if (state.encounterBenefits.includes("eager-pack")) state = processCompanionTurnStart(state, companionTexts);
   }
-  const companion = companionId ? { id: companionId, texts: startingTexts, state: battleSnapshot(state) } : null;
+  const companion = companionId ? { id: companionId, texts: companionTexts, state: battleSnapshot(state) } : null;
   const opening = drawOpeningHand(state);
   const outcome = getBattleOutcome(opening);
-  return { state: battleSnapshot(opening), companion, outcome };
+  return { state: battleSnapshot(opening), startingTexts, companion, outcome };
 }
