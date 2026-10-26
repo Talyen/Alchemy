@@ -18,6 +18,13 @@ import { getEncounterEnemyAbility } from "./enemy-description";
 import { inspectResolutionOutcomes, type InspectedPackets } from "./inspection-outcomes";
 import type { ObservedAttack, ObservedDirectAmount } from "./resolution-observer";
 import type { BattleSnapshot } from "./types";
+import {
+  describeKnownConditionalDamage,
+  describeKnownStatusOptions,
+  projectCardDescription,
+} from "./card-description-projection";
+import { applyPotionMultiplier, cardPotionMultiplier } from "./amount-helpers";
+import { scaleGoldReward } from "./resource-state";
 
 type DamageEffect = ObservedAttack;
 
@@ -202,7 +209,7 @@ function withKnownUtilityAmount(
   outcome: InspectedPackets | undefined,
 ): BattleCardEffect | undefined {
   const direct = outcome?.directAmounts;
-  if (direct?.kind !== "exact") return;
+  if (!direct || direct.kind === "unknown") return;
   let stat: ObservedDirectAmount["stat"];
   let kind: ObservedDirectAmount["kind"] = "status";
   if (effect.kind === "player-status") {
@@ -225,10 +232,22 @@ function withKnownUtilityAmount(
   else return;
   // Match this authored effect's own result, never a total of other resources,
   // overheal conversions, existing stacks or separately triggered rewards.
-  const matching = direct.amounts.filter(
-    (entry) => entry.target === "player" && entry.kind === kind && entry.stat === stat,
+  const alternatives = direct.kind === "exact" ? [direct.amounts] : direct.outcomes;
+  const amounts = alternatives.map((entries) =>
+    entries.filter((entry) => entry.target === "player" && entry.kind === kind && entry.stat === stat),
   );
-  return matching.length === 1 ? { ...effect, amount: matching[0]!.amount } : undefined;
+  // Random extra grants are not promised. Keep the guaranteed direct amount,
+  // including its known modifiers, rather than reverting to the unmodified card.
+  return amounts.length && amounts.every((entries) => entries.length === 1)
+    ? { ...effect, amount: Math.min(...amounts.map((entries) => entries[0]!.amount)) }
+    : undefined;
+}
+
+function firstAttack(outcome: InspectedPackets | undefined): BattleCardEffect | undefined {
+  if (!outcome || outcome.kind === "unknown") return;
+  const alternatives = outcome.kind === "exact" ? [outcome.packets] : outcome.outcomes;
+  if (!alternatives.length || alternatives.some((packets) => !packets[0])) return;
+  return summarize(alternatives.map((packets) => packets[0]!));
 }
 
 /** Adjust known fixed literals inline without replacing scaling or conditional rules. */
@@ -239,56 +258,152 @@ export function getBattleCardDescriptionInspection(
 ): BattleCard {
   const rules = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
   const inspected = inspectBattleCardDamage(card, snapshot, side);
-  function inlineKnownAmount(
-    effect: BattleCardEffect,
-    path: number[],
-    skipPaths?: ReadonlySet<string>,
-  ): BattleCardEffect {
-    const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index], skipPaths));
+  let rebuild = false;
+  const statusOptions: Array<{ path: number[]; amounts: ReadonlyMap<string, number> }> = [];
+  const conditionalDamage: Array<{
+    path: number[];
+    amount: number;
+    damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"];
+    condition: "bleeding" | "not-burning";
+  }> = [];
+
+  function damageAlternative(replacement: Extract<BattleCardEffect, { kind: "damage" }>, path: number[]) {
+    const replace = (candidate: BattleCardEffect, location: number[]): BattleCardEffect =>
+      location.join(".") === path.join(".")
+        ? replacement
+        : mapEffectChildren(candidate, (child, index) => replace(child, [...location, index]));
+    const variant = { ...card, effects: card.effects.map((candidate, index) => replace(candidate, [index])) };
+    const hand = snapshot.hand.map((candidate) => (candidate === card ? variant : candidate));
+    const outcome = inspectBattleCardDamage(variant, { ...snapshot, hand }, side).outcomes.get(path.join("."));
+    const attack = firstAttack(outcome);
+    return attack?.kind === "damage" ? attack : undefined;
+  }
+
+  function inlineKnownAmount(effect: BattleCardEffect, path: number[]): BattleCardEffect {
+    const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index]));
     const key = path.join(".");
-    if (skipPaths?.has(key)) return view;
     const outcome = inspected.outcomes.get(key);
+    if (outcome?.magnitudes.size) {
+      const amounts = Object.fromEntries(outcome.magnitudes);
+      if (
+        effect.kind === "random-draw" &&
+        (amounts.minAmount !== effect.minAmount || amounts.maxAmount !== effect.maxAmount)
+      )
+        rebuild = true;
+      return { ...view, ...amounts };
+    }
+    // Draw identities can stop the replay, but cannot change these nominal
+    // capacities or the Potion multiplier frozen for this authored execution.
+    if (outcome?.kind === "unknown") {
+      const potionMult = cardPotionMultiplier(snapshot, card);
+      if (effect.kind === "wish" || effect.kind === "draw-cards" || effect.kind === "companion-action")
+        return { ...effect, amount: applyPotionMultiplier(effect.amount, potionMult) };
+      if (effect.kind === "gain-gold")
+        return {
+          ...effect,
+          amount: scaleGoldReward(applyPotionMultiplier(effect.amount, potionMult), snapshot.gearEffects),
+        };
+    }
     const utility = withKnownUtilityAmount(effect, outcome);
     if (utility) return utility;
+    if (effect.kind === "player-status" && effect.statusPool && outcome?.directAmounts.kind !== "unknown") {
+      const direct = outcome?.directAmounts;
+      const alternatives =
+        direct?.kind === "exact" ? [direct.amounts] : direct?.kind === "alternatives" ? direct.outcomes : [];
+      const amounts = new Map<string, number>();
+      for (const entries of alternatives) {
+        for (const entry of entries) {
+          if (
+            entry.target === "player" &&
+            entry.kind === "status" &&
+            effect.statusPool.some((status) => status === entry.stat)
+          )
+            amounts.set(entry.stat, Math.min(amounts.get(entry.stat) ?? Infinity, entry.amount));
+        }
+      }
+      if (effect.statusPool.every((status) => amounts.has(status))) statusOptions.push({ path, amounts });
+      return view;
+    }
+    if (effect.kind === "damage" && effect.damageTypeIfTargetFrozen && outcome && outcome.kind !== "unknown") {
+      const { damageTypeIfTargetFrozen, amountIfTargetFrozen: frozenAmount, ...base } = effect;
+      const ordinary = damageAlternative(base, path);
+      const frozen = damageAlternative({ ...base, damageType: damageTypeIfTargetFrozen, amount: frozenAmount! }, path);
+      if (!ordinary || !frozen) return view;
+      if (ordinary.damageType !== effect.damageType || frozen.damageType !== effect.damageTypeIfTargetFrozen)
+        rebuild = true;
+      return {
+        ...effect,
+        amount: ordinary.amount,
+        damageType: ordinary.damageType,
+        amountIfTargetFrozen: frozen.amount,
+        damageTypeIfTargetFrozen: frozen.damageType,
+      };
+    }
+    if (effect.kind === "damage" && (effect.doubleIfEnemyBleeding || effect.tripleIfEnemyNotBurning)) {
+      if (!outcome || outcome.kind === "unknown" || (effect.doubleIfEnemyBleeding && effect.tripleIfEnemyNotBurning))
+        return view;
+      const ordinary = damageAlternative(
+        { ...effect, doubleIfEnemyBleeding: false, tripleIfEnemyNotBurning: false },
+        path,
+      );
+      const actual = firstAttack(outcome);
+      if (!ordinary || actual?.kind !== "damage") return view;
+      if (ordinary.damageType !== effect.damageType) rebuild = true;
+      if (actual.amount !== ordinary.amount)
+        conditionalDamage.push({
+          path,
+          amount: actual.amount,
+          damageType: actual.damageType,
+          condition: effect.doubleIfEnemyBleeding ? "bleeding" : "not-burning",
+        });
+      return { ...effect, amount: ordinary.amount, damageType: ordinary.damageType };
+    }
     if (
-      effect.kind !== "damage" ||
-      effect.equalToBlock ||
-      effect.equalToArmor ||
-      effect.forgeBonusPercent !== undefined ||
-      effect.damageTypeIfTargetFrozen ||
-      effect.doubleIfEnemyBleeding ||
-      effect.tripleIfEnemyNotBurning ||
-      effect.damageTypePool
+      (effect.kind !== "damage" && effect.kind !== "random-damage") ||
+      (effect.kind === "damage" &&
+        (effect.equalToBlock ||
+          effect.equalToArmor ||
+          effect.forgeBonusPercent !== undefined ||
+          effect.damageTypeIfTargetFrozen ||
+          effect.doubleIfEnemyBleeding ||
+          effect.tripleIfEnemyNotBurning))
     )
       return view;
     // The first packet is the intended attack. Follow-ups stay owned by their
     // existing status/tooltips, and unknown alternatives retain the authored rule.
-    const attack = outcome?.kind === "exact" ? outcome.packets[0] : undefined;
-    return attack?.kind === "damage" && attack.damageType === effect.damageType
-      ? { ...effect, amount: attack.amount }
-      : view;
-  }
-  const description = getCardDescription(rules);
-  const candidateEffects = rules.effects.map((effect, index) => inlineKnownAmount(effect, [index]));
-  // Shared magnitudes ("... twice", "... this turn and next", "Deal and Receive ...")
-  // bind multiple effect fields to one displayed literal; inline only when every
-  // referenced field still agrees on the same value.
-  const inconsistentPaths = new Set<string>();
-  for (const part of description.flatMap((line) => line.parts)) {
-    if (typeof part === "string" || part.references.length < 2) continue;
-    const values = part.references.map((reference) => {
-      const effect = getCardEffect(candidateEffects, reference);
-      const fieldValue =
-        effect && effect.kind === reference.kind ? (effect as Record<string, unknown>)[reference.field] : undefined;
-      return typeof fieldValue === "number" ? fieldValue / (reference.multiplier ?? 1) : NaN;
-    });
-    if (values.some((value) => value !== values[0])) {
-      for (const reference of part.references)
-        inconsistentPaths.add([reference.effectIndex, ...(reference.effectPath ?? [])].join("."));
+    const attack = firstAttack(outcome);
+    if (!attack) return view;
+    if (effect.kind === "random-damage")
+      return attack.kind === "random-damage"
+        ? { ...effect, minAmount: attack.minAmount, maxAmount: attack.maxAmount, damageTypePool: attack.damageTypePool }
+        : attack.kind === "damage"
+          ? { ...effect, minAmount: attack.amount, maxAmount: attack.amount, damageTypePool: [attack.damageType] }
+          : view;
+    if (attack.kind === "random-damage") {
+      rebuild = true;
+      return attack;
     }
+    if (attack.kind === "damage") {
+      const types = attack.damageTypePool;
+      if (attack.damageType !== effect.damageType || JSON.stringify(types) !== JSON.stringify(effect.damageTypePool))
+        rebuild = true;
+      return { ...effect, amount: attack.amount, damageType: attack.damageType, damageTypePool: types };
+    }
+    return view;
   }
-  const effects = inconsistentPaths.size
-    ? rules.effects.map((effect, index) => inlineKnownAmount(effect, [index], inconsistentPaths))
-    : candidateEffects;
-  return withCardDescription({ ...rules, effects }, description);
+  let result = projectCardDescription(
+    rules,
+    rules.effects.map((effect, index) => inlineKnownAmount(effect, [index])),
+    rebuild,
+  );
+  for (const option of statusOptions) result = describeKnownStatusOptions(result, option.path, option.amounts);
+  for (const conditional of conditionalDamage)
+    result = describeKnownConditionalDamage(
+      result,
+      conditional.path,
+      conditional.amount,
+      conditional.damageType,
+      conditional.condition,
+    );
+  return result;
 }

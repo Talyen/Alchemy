@@ -119,7 +119,7 @@ describe("rule-preserving tooltip inspection", () => {
     ).toEqual(["Gain 6 Gold"]);
   });
 
-  it("uses exact Armor and Forge bonuses but preserves authored values for uncertain grants", () => {
+  it("uses known Armor and Forge bonuses without promising random extra grants", () => {
     const armor = cardById["stoneskin-potion"]!;
     const state = patchBattleState({
       playerHealth: 10,
@@ -133,7 +133,7 @@ describe("rule-preserving tooltip inspection", () => {
         ...state,
         talentEffects: { ...state.talentEffects, armorDoubleChance: 25 },
       }).descriptionLines,
-    ).toEqual(armor.descriptionLines);
+    ).toEqual(["Gain 15 Armor", "Consume"]);
     const forge = cardById.anvil!;
     expect(
       getBattleCardDescriptionInspection(
@@ -146,9 +146,8 @@ describe("rule-preserving tooltip inspection", () => {
   it.each([
     { kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 },
     { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 2 },
-    { kind: "player-status", status: "armor", amount: 3, statusPool: ["block", "armor"] },
     { kind: "player-status", status: "haste", amount: 1 },
-  ] satisfies BattleCardEffect[])("keeps the authored $status formula, random choice or duration", (effect) => {
+  ] satisfies BattleCardEffect[])("keeps the authored $status formula or duration", (effect) => {
     const card = effectsCard({ id: "utility-rule", art: "", effects: [effect] });
     const result = getBattleCardDescriptionInspection(
       card,
@@ -226,9 +225,6 @@ describe("rule-preserving tooltip inspection", () => {
   it.each([
     { kind: "damage", damageType: "physical", amount: 0, equalToArmor: true },
     { kind: "damage", damageType: "stun", amount: 3, forgeBonusPercent: 50 },
-    { kind: "damage", damageType: "physical", amount: 3, damageTypeIfTargetFrozen: "freeze", amountIfTargetFrozen: 8 },
-    { kind: "damage", damageType: "physical", amount: 3, doubleIfEnemyBleeding: true },
-    { kind: "damage", damageType: "burn", amount: 3, tripleIfEnemyNotBurning: true },
   ] as const)("retains the complete $damageType scaling/conditional rule", (effect) => {
     const card = effectsCard({ id: "formula", art: "", effects: [effect] });
     const result = getBattleCardDescriptionInspection(
@@ -256,7 +252,7 @@ describe("rule-preserving tooltip inspection", () => {
     expect(result.descriptionLines).toEqual(card.descriptionLines);
   });
 
-  it("inlines shared magnitudes only when every referenced effect resolves to the same value", () => {
+  it("splits shared clauses when their known magnitudes differ while retaining every effect", () => {
     const ray = cardById["ray-of-frost"]!;
     expect(
       getBattleCardDescriptionInspection(ray, patchBattleState({ gearEffects: { flatFreezeDamage: 2 } }))
@@ -267,7 +263,7 @@ describe("rule-preserving tooltip inspection", () => {
     expect(
       getBattleCardDescriptionInspection(doubleHit, patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }))
         .descriptionLines,
-    ).toEqual(["Deal 4 Physical damage twice"]);
+    ).toEqual(["Deal 8 Physical damage", "Deal 4 Physical damage"]);
 
     for (const id of ["earthquake", "blizzard"] as const) {
       const card = cardById[id]!;
@@ -275,8 +271,11 @@ describe("rule-preserving tooltip inspection", () => {
         card,
         patchBattleState({ playerStatuses: { forge: 4 }, gearEffects: { flatFreezeDamage: 2 } }),
       );
-      expect(result.descriptionLines).toEqual(card.descriptionLines);
-      expect(result.effects).toEqual(card.effects);
+      expect(result.descriptionLines).toEqual(
+        id === "earthquake"
+          ? ["Deal 6 Stun damage", "Deal 2 Stun damage next turn"]
+          : ["Deal 4 Freeze damage", "Deal 2 Freeze damage next turn"],
+      );
     }
 
     const dealAndReceive = effectsCard({
@@ -287,7 +286,7 @@ describe("rule-preserving tooltip inspection", () => {
     expect(
       getBattleCardDescriptionInspection(dealAndReceive, patchBattleState({ playerStatuses: { forge: 2 } }))
         .descriptionLines,
-    ).toEqual(["Deal and Receive 3 Physical damage"]);
+    ).toEqual(["Deal 5 Physical damage", "Take 3 Physical damage"]);
   });
 });
 

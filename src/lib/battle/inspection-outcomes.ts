@@ -1,6 +1,11 @@
 import { areBattleCardEffectsEqual, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import type { RandomDecision, Rng } from "@/lib/rng";
-import type { BattleResolutionObserver, ObservedAttack, ObservedDirectAmount } from "./resolution-observer";
+import type {
+  BattleResolutionObserver,
+  ObservedAttack,
+  ObservedDirectAmount,
+  ObservedMagnitudeField,
+} from "./resolution-observer";
 
 type InspectedAttacks =
   | { kind: "exact"; packets: readonly ObservedAttack[] }
@@ -8,6 +13,7 @@ type InspectedAttacks =
   | { kind: "unknown" };
 
 export type InspectedPackets = InspectedAttacks & {
+  magnitudes: ReadonlyMap<ObservedMagnitudeField, number>;
   directAmounts:
     | { kind: "exact"; amounts: readonly ObservedDirectAmount[] }
     | { kind: "alternatives"; outcomes: ReadonlyArray<readonly ObservedDirectAmount[]> }
@@ -38,6 +44,7 @@ function walk(effects: readonly BattleCardEffect[], visit: (effect: BattleCardEf
 interface Outcome {
   packets: Map<BattleCardEffect, ObservedAttack[]>;
   directAmounts: Map<BattleCardEffect, readonly ObservedDirectAmount[]>;
+  magnitudes: Map<BattleCardEffect, Map<ObservedMagnitudeField, number>>;
   eligible: Set<BattleCardEffect>;
   complete: boolean;
 }
@@ -58,6 +65,7 @@ export function inspectResolutionOutcomes(
     const outcome: Outcome = {
       packets: new Map(),
       directAmounts: new Map(),
+      magnitudes: new Map(),
       eligible: new Set(sources),
       complete: false,
     };
@@ -96,6 +104,12 @@ export function inspectResolutionOutcomes(
       directFeedback: (amounts) => {
         if (current) outcome.directAmounts.set(current, amounts);
       },
+      descriptionMagnitude: (field, amount) => {
+        if (!current) return;
+        const magnitudes = outcome.magnitudes.get(current) ?? new Map<ObservedMagnitudeField, number>();
+        magnitudes.set(field, amount);
+        outcome.magnitudes.set(current, magnitudes);
+      },
     };
     const decide = (decision: RandomDecision): number => {
       // Offensive inspection has always excluded random critical strikes and Dodge.
@@ -131,6 +145,11 @@ export function inspectResolutionOutcomes(
   const inspected = new Map<BattleCardEffect, InspectedPackets>();
   for (const effect of sources) {
     const feedback = outcomes.filter((outcome) => outcome.eligible.has(effect));
+    const magnitudes = new Map<ObservedMagnitudeField, number>();
+    for (const [field, amount] of feedback[0]?.magnitudes.get(effect) ?? []) {
+      if (feedback.every((outcome) => outcome.magnitudes.get(effect)?.get(field) === amount))
+        magnitudes.set(field, amount);
+    }
     const amounts = feedback[0]?.directAmounts.get(effect) ?? [];
     const feedbackKnown =
       feedback.length > 0 && feedback.every((outcome) => outcome.complete || outcome.directAmounts.has(effect));
@@ -160,7 +179,7 @@ export function inspectResolutionOutcomes(
       feedback.length === 0 ||
       feedback.some((outcome) => !outcome.complete && !outcome.packets.has(effect))
     ) {
-      inspected.set(effect, { kind: "unknown", directAmounts });
+      inspected.set(effect, { kind: "unknown", directAmounts, magnitudes });
       continue;
     }
     const packets = feedback.map((outcome) => outcome.packets.get(effect) ?? []);
@@ -174,8 +193,8 @@ export function inspectResolutionOutcomes(
     inspected.set(
       effect,
       exact
-        ? { kind: "exact", packets: first, directAmounts }
-        : { kind: "alternatives", outcomes: packets, directAmounts },
+        ? { kind: "exact", packets: first, directAmounts, magnitudes }
+        : { kind: "alternatives", outcomes: packets, directAmounts, magnitudes },
     );
   }
   return inspected;
