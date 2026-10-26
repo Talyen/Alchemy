@@ -7,7 +7,8 @@ export function getNextTierCost(
   currentLevel: number,
 ): MaterialInventory | null {
   if (!item || currentLevel < 0 || currentLevel >= item.tiers.length) return null;
-  return item.tiers[currentLevel]?.cost ?? null;
+  const cost = item.tiers[currentLevel]?.cost;
+  return cost ? { ...cost } : null;
 }
 
 export function canUpgradeTierItem(

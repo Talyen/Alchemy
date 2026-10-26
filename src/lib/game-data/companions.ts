@@ -133,5 +133,7 @@ export function getModifiedCompanionEffects(
       effects.push({ kind: "heal", amount: bondLevel });
     }
   }
-  return effects;
+  // Utility leaves and nested type pools can still belong to the catalog.
+  // Callers own the modified tree, including when Bond leaves it unchanged.
+  return structuredClone(effects);
 }
