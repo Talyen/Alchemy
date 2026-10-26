@@ -41,6 +41,8 @@ const estimate =
 if (free - estimate < 18 * 1024 ** 3)
   throw new Error("Capture budget would leave less than 18 GiB free; reduce bounded windows before recording");
 const source = captureSourceDigest({ rootDir: root });
+const foregroundLyrics = args.includes("--foreground-lyrics");
+source.presentation = { foregroundNativeLyrics: foregroundLyrics };
 source.captureEncoder = CAPTURE_ENCODER_POLICY;
 source.storageBudget = { estimatedBytes: Math.ceil(estimate), freeBytes: free, reserveBytes: 18 * 1024 ** 3 };
 source.commit = runGit(root, ["rev-parse", "HEAD"]).stdout.trim();
@@ -70,5 +72,5 @@ if (captureWindows) {
     { clip: clip.id, in: 0, duration: last, speed: 1, framing: {}, transition: { kind: "cut", duration: 0 } },
   ];
 }
-await captureRecipe({ root, recipe, out, source, captureWindows, pinVideoStart: true });
+await captureRecipe({ root, recipe, out, source, captureWindows, pinVideoStart: true, foregroundLyrics });
 log(`Captured: ${out}`);

@@ -80,6 +80,7 @@ async function captureClip({
   recover = false,
   captureWindows,
   pinVideoStart = false,
+  foregroundLyrics = false,
 }) {
   const output = path.join(out, `${clip.id}.mp4`);
   const receiptFile = path.join(out, `${clip.id}.json`);
@@ -206,7 +207,8 @@ async function captureClip({
       }
     }
     await page.evaluate(
-      ({ music, videoFrameRates, pinVideoStart }) => {
+      ({ music, videoFrameRates, pinVideoStart, foregroundLyrics }) => {
+        globalThis.__trailerCapture.foregroundLyrics = foregroundLyrics;
         globalThis.__trailerCapture.start = globalThis.performance.now();
         globalThis.__trailerCapture.music = music;
         globalThis.__trailerCapture.videoFrameRates = videoFrameRates;
@@ -218,7 +220,7 @@ async function captureClip({
           }
         }
       },
-      { music, videoFrameRates, pinVideoStart },
+      { music, videoFrameRates, pinVideoStart, foregroundLyrics },
     );
     await sampleFrame(page, 0);
     const width = settings.viewport.width * (draft ? 1 : settings.scale);
@@ -512,6 +514,7 @@ async function captureClip({
       frameCount,
       elapsedPhaseMs: costs,
       method: "offline-js-css-video-sampling",
+      ...(foregroundLyrics ? { presentationOverride: "Same-clock native lyric DOM composited above card ghosts" } : {}),
       ...(pinVideoStart ? { mediaPhase: "active native video buffers pinned to frame zero before sampling" } : {}),
       startState,
       endState,
@@ -610,6 +613,7 @@ export async function captureRecipe({
   clipIds,
   captureWindows,
   pinVideoStart = false,
+  foregroundLyrics = false,
 }) {
   if (!recover)
     writeJson(path.join(out, "capture-start.json"), {
@@ -617,6 +621,7 @@ export async function captureRecipe({
       draft,
       source,
       pinVideoStart,
+      foregroundLyrics,
       ...(captureWindows ? { captureWindows } : {}),
     });
   fs.mkdirSync(path.join(out, "clips"), { recursive: true });
@@ -687,6 +692,7 @@ export async function captureRecipe({
         recover,
         captureWindows: captureWindows?.[clip.id],
         pinVideoStart,
+        foregroundLyrics,
         music:
           offsets[clip.id] === undefined
             ? null
