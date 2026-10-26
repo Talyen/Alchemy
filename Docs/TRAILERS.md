@@ -70,13 +70,19 @@ social media. The workflow can later be moved to a dedicated GPU runner.
 
 ## Cinematic feature compilation
 
-[The directing script](../trailers/alchemy-cinematic-direction.md) explains the
-research, shot-by-shot paper cut, 28 separate 4.5-second takes, capture truth rules,
-and revision workflow for [the cinematic recipe](../trailers/alchemy-cinematic.json).
-The first cut mixes real battle with heroes, drafting, cards, shops, brewing,
-Campfires, Corruption, Labyrinth, modes, Armory, Talents, Homestead and Companions.
-Source takes are 4K60; Steam delivery is 1080p60. Camera paths and transitions are
-applied during composition, leaving the independent masters unchanged.
+[The directing script](../trailers/alchemy-cinematic-direction.md) owns the
+creative brief, story beats and review criteria for
+[the cinematic recipe](../trailers/alchemy-cinematic.json). The recipe owns the
+clip inventory, inputs, capture settings and edit. Inspect its current values
+without building or launching a browser:
+
+```sh
+npm run trailer -- plan --recipe trailers/alchemy-cinematic.json
+```
+
+The result includes the complete recipe, resolved shot/frame timeline and render
+chunks. Source takes stay independent; composition applies camera paths and
+transitions without modifying those masters.
 
 Capture a few takes per resource lease with `capture --clips id,id --bundle <path>`.
 Repeat against the same source and recipe to build the library incrementally;
@@ -99,36 +105,23 @@ with release feature flags, so development spawn controls are absent.
 
 ## Blood Countess battle prototype
 
-`trailers/blood-countess-battle.json` records exactly 60 seconds of battle at the
-normal full-screen framing. It uses her current five idle animations, her own
-music starting at the first verse, the native battle lyric display, and natural
-card inspections and plays. There are no cuts, camera moves or end card. The
-pointer travels above the hand over 0.3 seconds, enters the selected card
-vertically and pauses for roughly 1.3 seconds (50% faster decisions than the
-original prototype). It anchors focus on the inspected card, clicks without
-moving to another card, then leaves the hand immediately before cards reflow
-beneath it. Its appearance is hidden while hover feedback
-remains visible. Enemy responses retain normal timing.
-
-The Knight inspects and plays available cards in this authored priority:
-Anvil, Plate Mail, Sunder, Spiked Shield, Block, Shield Bash, Bash. This places
-Forge and permanent Armor before attacks, armor removal before later damage,
-and Block generation before Shield Bash. Four cards are played per full turn
-when available. This is a directed starter-deck sequence, not a general combat AI.
-Each play must match the inspected hand identity after at least one second of
-inspection; recording fails if that condition or card acceptance is missing.
-This continuous Mac prototype captures native 1920×1080 at 60 fps, matching Steam
-delivery without upscaling. Set capture scale to 2 for a 4K source on a production
-worker with a longer recording window. Lyrics stay inside the boss portrait.
+[The continuous-battle recipe](../trailers/blood-countess-battle.json) keeps the
+normal full-screen framing, native Countess idle clips, music and lyrics. It has
+no editorial cuts, camera moves or end card. Its Knight priority establishes
+Forge/Armor before attacks and Block before Shield Bash; read exact card order,
+input times, capture scale and duration in the recipe or its plan:
 
 ```sh
+npm run trailer -- plan --recipe trailers/blood-countess-battle.json
 npm run trailer -- capture --recipe trailers/blood-countess-battle.json --bundle output/trailers/countess
 npm run trailer -- render --bundle output/trailers/countess
 ```
 
-Use separate bounded host-lane leases on the shared Mac, as above. This continuous
-shot encodes directly from the sampled master without a second browser composition
-or temporary PNG cache. Directed compilations still use Remotion.
+Use separate bounded capture/render leases on the shared Mac. This continuous
+shot encodes from the sampled master without a second browser composition or
+temporary PNG cache; directed compilations use Remotion. Both retain the
+[input truth](#direction-recipe) and [quality checks](#quality-and-verification)
+below.
 
 ## Capture once, revise the edit
 

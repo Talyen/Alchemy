@@ -6,9 +6,11 @@ Canonical owner for game rules, content-system behavior, and shared domain terms
 
 - [Every player action receives feedback](./UI.md#every-player-action-receives-feedback) governs gameplay presentation: communicate accepted, rejected, and ineffective actions while keeping resolution independent of animation and sound.
 - [Combat rules](#battle-implementation-rules) and [engine invariants](#engine-invariants).
-- [Talent rules](./TALENT_RULES.md): progression, action rewards, triggers, and card-specific interactions.
+- [Shared healing](#healing-and-leech), [resource rewards](#armor-forge-and-gold), and [triggered hits](#triggered-and-copied-damage).
+- [Talent rules](./TALENT_RULES.md): progression and talent-specific action/event eligibility.
 - [Unique items](./UNIQUE_ITEMS.md): signature effects and combat exceptions.
 - [Corruption altars](#corruption-altars).
+- [Shops](#shops), [brewing and Transmutation](#brewing-and-transmutation), and [universal reactions](#universal-reactions).
 - [Modes, saved runs, and Labyrinth exploration](#content-systems).
 - [Terminology](./GLOSSARY.md#domain-glossary).
 
@@ -69,6 +71,19 @@ card-origin Wishes exclude the real originating card.
 - **Draw / deck** — Ecosystem tutors one Nature card before the ordinary opening draw. Battle initialization then commits the opening 4 plus other battle-start bonus draws before their animation; later turns draw 4. Max hand 7; ordinary and keyword draws reserve actual cards in an ordered battle-only queue when the hand is full, and Wishes queue chosen cards the same way. Queued cards enter the hand oldest first when space opens, before later draws, and survive turn changes and save/resume. A draw with no eligible card grants nothing. The previous hand is discarded at player turn end, while cards drawn during the enemy phase remain alongside the next four draws; discard reshuffles immediately when the draw pile empties, including after the final requested draw. Cards discarded while the draw pile is empty also refill it immediately. Overflow cards remain reserved and are never included in the shuffle. Consumed cards are removed for the remainder of the battle. If a player-turn draw finds the hand, queue, draw pile, and discard empty, an Emergency Wish opens the normal Wish choices and the selected card enters the hand; this can recur whenever the piles are empty.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
 - **Haste** — extra turns skip the enemy phase; both blocks hold until a real attack window resolves, then halve once each.
+
+### Persistent Forge
+
+Player and enemy Forge add 1 Physical/Stun damage per stack and survive attacks;
+Purge removes the entire category. Overlapping Forge conversions take the
+strongest applicable permission, never their sum. Read exact conversion values
+in the Talent, Homestead and Unique catalogs.
+
+Icebreaker, Emberforged, Sunder and Oathkeeper resolve once per eligible attack
+action, not per packet; that action-local bookkeeping is not saved. Authored
+per-turn limits, including Vanguard’s Crest and Obsidian Hammer, survive reload.
+[Resource gains](#armor-forge-and-gold) own the nonrecursive Forge award recipe;
+[Unique signatures](./UNIQUE_ITEMS.md#combat-semantics) own turn-specific grants.
 
 ### Companion Bond
 
@@ -156,11 +171,47 @@ separate cutoffs.
 
 ### Unique item interactions
 
-[Healing/resource rewards](./TALENT_RULES.md#selective-feedback-rewards) and
-[Gold rewards](./TALENT_RULES.md#armor-forge-and-gold) own Holy/Nature payout bases,
+[Talent-specific eligibility](./TALENT_RULES.md#selective-feedback-rewards) and
+[shared resource rewards](#armor-forge-and-gold) own Holy/Nature payout bases,
 including actual Health loss, overkill and lethal-hit eligibility.
 [Unique items](./UNIQUE_ITEMS.md#combat-semantics) own signatures, automatic-play
 limits, repeated damage, Blackfletch detonation and saved opportunities.
+
+### Triggered and copied damage
+
+- **Typed talent procs** — Entangle and Heavy Blows can create equal-to-packet Stun. Lacerate and Briar Patch can create derived Bleed hits; Toxic Pollen can create a derived Poison hit. Each scales from the triggering packet. Scorching Light and Hemotoxin retain their existing typed conversions. Derived hits round their base amount, apply target resistance, Block, and applicable Armor once, and do not reuse offensive bonuses, pacing, critical strikes, or reserved card bonuses. Secondary Talent hits cannot roll the same new chance recursively.
+- **Critical and copied damage** — Rupture detonates Bleed only after a positive Critical Physical packet. Parting Cut still copies half the resolved Physical damage as Bleed. Damage-matching Stun procs from Physical/Burn/Nature/Poison hits or Companion damage still copy the full amount. These effects use the same derived-hit resolver; their input damage has already been scaled and cannot apply Forge, critical strikes, damage bonuses, or fight pacing a second time. Viper’s Courtesy retains its separately documented typed-bonus behavior in [Unique items](./UNIQUE_ITEMS.md#combat-semantics).
+- **Triggered damage** — Burning Wish resolves its talent damage through the typed trigger path, including Burn buildup, mitigation, Armor decay, and kill rewards; Gear-only Wish pulses retain their existing behavior. Mana Flare uses the same fixed Talent hit path, respecting enemy Block before adding Burn buildup and decaying Armor from its resolved damage. Icy Heart checks enemy half-Health reactions before kill rewards. Crowd-control Gear/Trinket packets receive Brittle Ice and Corrosive before pacing and mitigation. Sundering Charm removes Armor before Physical/Stun mitigation on these packets and fixed/derived Talent hits. Scaled damage against an already defeated enemy does nothing, including its damage rewards and reaction callbacks.
+
+### Healing and Leech
+
+- **Cleansing rewards** — removing multiple harmful statuses with a cleanse grants Sin-Eater’s Lantern and Renewal healing once per status actually removed. Empty status slots grant nothing. Unburdened counts Stun and Freeze separately. Clean Getaway retains its single reward per Dodge.
+
+- **Mending** — increases every battle Health grant once, including card healing, Leech, cleansing, Gear/Trinket healing, and the combined start-of-combat heal. Opening healing retains its unpaced amount, respects the Health cap, and triggers ordinary healing reactions. Apply its multiplier after source-specific healing bonuses; overheal rewards use the increased amount.
+- **Deep Siphon** — adds 1 Health to each positive player Leech healing packet, including card, Companion, incidental, repeated/scheduled, and deferred Bleed Leech. Mixed card/incidental Bleed receives the bonus once per payout. Apply the flat bonus after Desperate/Gear scaling and before Blood Feast and Affliction Siphon. The saved `pendingCardBleedLeechHealing` subset still attributes explicit card Bleed for Clean Slate; Deep Siphon no longer depends on that attribution.
+- **Sanguine** — Bleed hits roll their Leech chance when they add buildup. Successful hits queue healing for the resulting Bleed damage; ticks and detonations pay that queued credit rather than rolling a new Sanguine chance.
+- **Healing and reaction sources** — Blood Debt rolls 10% on each positive Leech-healing event and grants Gold equal to actual Health restored. Mana Siphon and Siphoning Gear each roll once per positive player Leech healing event, even at full Health; damage-only Leech-hit rewards remain limited to hits. Sanguine Overflow requires actual Leech healing from below full to full Health and grants 1 Mana, refreshed rather than stacked within that event. Affliction Siphon increases Leech healing against Poisoned or Bleeding enemies once, including normal Bleed ticks and detonations. Clean Slate reacts only to overhealing from card healing effects or a card's explicit Leech, including Gear damage repeats and echoes, never healing awarded by cleansing, gear, or talents.
+- **Enemy healing reduction** — Necrosis and Mortal Wound each halve every enemy Health grant while their matching status is present, including Leech, Regeneration, Overgrowth, and Second Wind. Apply each reduction once, before fight pacing, with nearest-integer rounding. Mortal Wound’s matching status is Bleed.
+
+### Armor, Forge, and Gold
+
+Counterplate also reacts to Armor explicitly stripped by Caustic, including when
+its Poison damage is fully prevented. Capture the removal before Reactive Guard
+or another reward replaces the Armor.
+
+- **Opening resource gains** — starting Forge, Armor, and Block use ordinary gain bonuses and reactions without fight pacing. Grant Forge before Armor and Block so Tempered Guard sees opening Forge; apply flat Gear bonuses once. Last Stand, Desperate Forge, Ironwood Buckler, and Radiant Guard also apply to their matching opening gains. Resume does not replay these grants.
+- **Armor rewards** — Armor earned during battle is unpaced and passes through Last Stand, Reinforced’s doubling roll and Purification’s one-status cleanse roll. Armored Surge rolls on playing a Block-keyword card to grant its catalog Armor amount, including automatic plays, never again for repeated effects or secondary Block gains; Iron Guard rolls 10% on positive resolved Physical Health damage and grants Armor equal to that damage. Armor Siphon removes only the stated amount from the enemy before applying hero gain bonuses.
+- **Reactive Guard** — a surviving hero gains its Block reward whenever positive Armor falls to zero, including normal decay, Sunder, Caustic, and Banshee's purge. Partial removal and removal from zero grant nothing; Ironclad prevents decay but not explicit removal. Counterplate uses Armor actually removed by the attack before later defensive rewards. Caustic removes enemy Armor equal to each resolved Poison packet from direct Poison hits, natural ticks, and detonations.
+- **Forge rewards** — Each positive Forge grant independently rolls Overheat while Burning, Intensify, and Desperate Forge strictly below half Health. Each success adds its catalog bonus to the same award; bonus Forge does not roll again. Smithguard grants Block once for that combined award. Forge gains are unpaced, including Vanguard’s Crest and Burn rewards. Golden Crucible rolls per positive combat Gold award through the same gain owner. Current Forge Talents have no threshold reactions or deferred reward queue. Emberforged eligibility follows the [Gear battle rules](./ARMORY.md#battle-integration). Sunder removes Armor equal to rounded half the pre-hit Forge after a positive Physical hit, once per attack action, preserving Forge.
+- **Block depletion** — Second Wind and Resolute restore their combined Health amount, and Briarward grants Thorns when positive Block reaches zero. These rewards also apply to turn decay, Laughing Guard spending, and enemy purges. Forged Bulwark grants 1 Forge only when an enemy attack depletes positive Block, even if an earlier defensive reward refills it; non-attack removal grants none. Partial removal and removal from zero grant nothing; Winter’s Credit payment retains its explicit depletion-reward exception. Attack-only retaliation and Watchdog still require an enemy attack.
+- **Sun-Struck Shield** — reflects 30% of the Block actually lost when an enemy attack depletes Block, including Block removed by Sundered Guard before absorption. Reflection respects enemy Holy resistance/weakness and Block, without attack bonuses, critical strikes, Forge spending, or a second pacing multiplier. Holy damage rewards still apply, but neither reflected damage nor secondary enemy reactions trigger another retaliation.
+- **Gold rewards** — Seed Money rolls on positive resolved Nature damage, including Thunderstone, and pays from actual Health damage. Golden Wish rolls per Wish. Coinmail rolls on positive Armor gains and pays from actual Armor gained; victory payouts do not trigger it. Fetch adds its reward when a Companion is present at victory, including Wildwood. Exact chances and fixed payouts belong to the [Talent catalog](../src/lib/game-data/talents/talent-rows.ts).
+- **Lucky Clover** — rolls on positive Nature Health loss and grants Gold equal to that loss, including Thorns retaliation, Thunderstone, and triggered Nature hits. Overkill and fully prevented damage grant no Gold; lethal hits retain their reward. Physical damage from Stun or Freeze Gear cannot grant its Gold.
+
+### Card costs and payment
+
+- **Card base costs** — every playable catalog card costs 1 Mana. Effects may make a card free; valid saved cost overrides remain supported. Richer cards trade output, timing, conditions, or Consume rather than a higher base cost.
+- **Card payment** — `card-cost-rules.ts` calculates cost, affordability, Block payment, and all cost-only allowance changes (including Unique Gear) once against the original state. `card-play.ts` applies that payment result; Unique damage preparation must not independently consume cost-only allowances. Combined damage/free-card opportunities such as Wildheart remain damage-owned. A successful play consumes those flags, prepares unique effects, then pays resources before resolving effects. Preview checks are pure and never cache payment for a later play. Saved zero-cost cards do not spend first-card-free perks, the Labyrinth Quickdraw discount, The Knight’s Answer, or an armed cost reduction; an armed reduction survives when a first-card-free perk pays the cost.
 
 ### Strategic card conditions
 
@@ -191,6 +242,11 @@ Healing feedback shows the effective pre-cap amount, including overflow, after
 all applicable modifiers and rounding. Actual restoration and overflow remain
 separate for healing rewards and conversions; Clean Slate uses that same modified
 healing calculation. Full-Health healing never fabricates actual restoration.
+
+- **Delayed cards** — Prayer costs 1 Mana and Consumes after Wish and healing. Stargaze deals 1 Freeze damage and resolves Wish 1 immediately; Bread restores Health immediately and does not queue a future pulse. Other delayed effects retain their source card ID, Consume property, and tags so card-specific, Consume, and Archery bonuses still apply. They remain battle-local, survive save/resume, and do not execute after battle completion.
+- **Delayed healing** — scheduled card healing retains card-healing reactions such as Clean Slate. Check that the battle remains active before each queued pulse and subsequent Gear regeneration, including after turn-start Trinket damage. Plague Doctor’s Mask damage preserves bonuses reserved for the next attack; its legitimate kill rewards still resolve. Its cleanse rewards require removing the last Poison stack. Hero Thorns retaliation also preserves next-card bonuses. Thorns damage rewards use Health lost to their own packet; Second Wind healing cannot cancel them.
+- **Armor and Forge cards** — Stab deals 3 Physical damage while bypassing Armor reduction and preserving Block; it still respects Dodge and causes ordinary Armor decay on damage. Sunder follows the [Forge reward rule](#armor-forge-and-gold). Caustic Jab removes fixed Armor before its Poison hit. Acid Potion halves current enemy Armor before its Poison hit. Burning Blade deals base 1 Burn damage plus rounded half live Forge, without generating Forge or applying another Forge conversion. Player and enemy Forge survive the hit; see [enemy resolution](#repertoire-and-resolution).
+- **Roll the Dice** — Consumes and draws the result of one fair six-sided die, subject to the ordinary hand limit and reshuffle rules; its fixed die faces do not change through numerical upgrades.
 
 ### Labyrinth exceptions
 
@@ -229,7 +285,7 @@ Classification queries use [Card classification](#card-classification).
 - **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. Player Forge grants resolve authored amounts and independent +1 talent bonuses once, then Smithguard and Everkeen reactions; bonus Forge cannot recursively activate gain bonuses. Initialization and hydration retain raw state construction.
 - **Damage module ownership** — `player-damage-base.ts` constructs player damage packets from base amounts, Forge, and flat typed bonuses. `player-damage-multipliers.ts` owns additive multipliers and first-Burn bonus flags. `damage-calc.ts` orders those stages, then applies pacing, critical strikes, mitigation, and final resolution. `player-defensive-reactions.ts` owns Block/Health-triggered defensive rewards; `enemy-attack-damage.ts` retains incoming-hit orchestration and reaction ordering.
 - **Armor gain limits** — Layered adds its flat Armor bonus only to the first positive Armor grant each player turn, including opening grants and reactions. Ironroot grants Armor only for the first Nature card played each player turn, including automatic plays. Each limit has its own persisted combat flag and resets at the next player turn; save/resume cannot refresh either allowance.
-- **Leech bonuses** — [Healing and Leech](./TALENT_RULES.md#healing-and-leech) owns Deep Siphon’s payout order and card attribution.
+- **Leech bonuses** — [Healing and Leech](#healing-and-leech) owns Deep Siphon’s payout order and card attribution.
 - **Meteor** — its Mana-loss effect is additional to its card cost; it neither removes a Mana Crystal nor triggers Mana Flare. Its effects and magnitudes belong to the [card catalog](../src/lib/game-data/cards/library/core.ts).
 - **Resource scaling** — Talent bonuses from Forge, Armor, and Block, including below-half-Health Armor gains, use percentage fields in the talent manifest. Retired boolean overrides are absent from defaults and ignored during load. Homestead and Gear retain their distinct permissions and never add the same Forge contribution twice.
 - **Homestead** — Wheat Field restores purchased-tier Health after each combat, stacking with post-combat recovery and clamping to maximum Health in every mode. Orchard adds purchased-tier starting Thorns alongside gear/encounter grants; resume never repeats starting grants. Crystal Garden scales Freeze damage from current Mana, stacking with talents at normal damage-resolution timing; its tier magnitudes belong to the [Homestead catalog](../src/lib/homestead/data.ts). Homestead resource bonuses increase eligible reward quantities by 10 percentage points per node tier; they never grant per-room or run-end resources.
@@ -270,33 +326,61 @@ Wishes settle with their enclosing hit. `wish-rewards.ts` retains Wish eligibili
 and reward ordering, and `companion-resolution.ts` retains Companion action scope,
 Bond scaling, captured damage facts, and fatal cutoffs.
 
-Battle inspection replays those production rules through `card-play.ts` or
-`enemy-turn-attack.ts`. It bypasses only action admission. Execution observers
-report offensive power before defenses and critical strikes; intermediate state
-still reflects defenses and prepared critical consequences for later packets.
-Random critical strikes and Dodge remain excluded from displayed inspection.
-
-Tooltips retain the authored effect sentences, including Block/Armor ratios,
-Forge scaling, conditions, conversions and costs. Known deterministic bonuses
-adjust fixed attack numbers within those sentences; dynamic formulas and unknown
-outcomes retain their rule text. There is no additional preview section. Display
-projections are transient and must never be executed or saved.
-
-`inspection-outcomes.ts` branches finite decisions into complete correlated
-worlds, without consuming gameplay RNG. Fractional procs and dependent damage
-retain ranges; disagreeing facts never fall back to the initial snapshot as
-computed truth. Unresolved draws, future-turn effects, or exceeded work budgets
-retain authored descriptions and explicit unknown projection results. Wish offer
-identities are deferred while immediate rewards resolve through their normal
-owner. The [handler guide](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
-owns projection limits, effect classification, observation boundaries, and the
-workflow for adding previewable mechanics.
+Battle inspection replays production resolution with isolated inputs. Its
+[execution and uncertainty contract](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
+owns observation boundaries and projection limits; [battle inspection UI](./UI_BATTLE.md#damage-values-in-battle-inspection)
+owns displayed values. Projections are transient: never execute or save them.
 
 Pending Cinder Skin and Emberwake settlement remains in `enemy-attack-damage.ts`,
 using the existing damage path. Hit-specific preconditions and depth-first ordering
 remain unchanged.
 
+### Effect origins and flag lifetimes
+
+`CardEffectResolutionContext.origin` distinguishes played cards, triggered cards,
+and Companions. Card healing applies to the two card origins; first-play bonuses
+apply only to played cards. The execution-only secondary action scope separately
+protects next-card bonuses during repeats, retaliation, and delayed effects.
+
+`combat-flags.ts` owns defaults, secondary-action eligibility, and lifetime for
+every flag. Player-turn flags reset through `resetTurnFlags`; combat and
+until-consumed flags survive that reset. Save field names and values are unchanged.
+
+Attack packet ordering remains attempt bonuses, Dodge, contact-only flag
+consumption, magnitude and mitigation, riders, follow-up hits, then settled
+reactions. `damage.ts` spends the action-local Coordinated Strike bonus on the
+Companion's first attempted damage packet, including a Dodge; utility actions
+retain it. Next-hit flags commit only after the packet passes Dodge. This
+ordering is separate from the detailed
+hit-stage ordering above and must not reorder RNG or feedback.
+
 ---
+
+## Shops
+
+`runShopTransaction` guards validation, payment, acquisition and visit writes.
+Commands bind a session and take a shelf slot key (instance ID for equipment),
+then derive item, price and Talent/Homestead effects from the live transaction.
+Quotes read current progression; callers supply no cached manifests, allowance or
+price override. SFX runs only after confirmed success. Kind `merchant` means Card Shop.
+
+Slot identity helpers stay independent of command/audio modules.
+Preserve the per-visit `firstPurchaseUsed` reset. Compose `mutateGearWithRunHealthSync` with
+the open transaction; the dispatching Gear wrapper is for the outer boundary.
+[Armory write paths](./ARMORY.md#write-paths) owns that composition.
+
+Refreshes use `createShopRefreshAction` and a `shop-state-init.ts` sampler:
+
+- Activity selects pricing and write target. Before RNG, validate remaining
+  refreshes and affordability at the displayed price.
+- Restock rolls only for affordable positive-price refreshes with its free refresh
+  unused. A success waives payment but still spends a refresh slot.
+- The sampler applies offering modifiers, including potency, before returning a
+  typed shelf that preserves service/purchase flags. Only success clears purchased
+  slots and consumes a refresh; rejection never samples.
+- Avoid current offers when alternatives permit. Equipment compares bases across
+  rarities and preserves room themes. Nearly exhausted pools still fill the shelf
+  while maximizing novel offers.
 
 ## Corruption altars
 
@@ -387,7 +471,8 @@ Discovery derives from completion: completed rooms, their cardinal neighbors,
 and the boss are visible. Unknown room types, artwork, Traits, and interaction
 themes remain concealed. The boss can be inspected from the start but requires
 a completed adjacent room before fighting. Boss victory leaves the floor open
-for exploration; Descend is available from its inspector without backtracking.
+for exploration; activating the completed boss descends without backtracking
+under the [map interaction contract](./UI_LABYRINTH.md#labyrinth-map).
 Descent advances once and generates the next floor only when needed;
 already-generated next floors are reused. Prior floors cannot be entered.
 
@@ -438,26 +523,7 @@ Corruption chambers reuse the Campaign altar rules and their green modifier
 changes the corruption roll. Leaving before corrupting returns to the maze with
 the chamber still reachable.
 
-### Effect origins and flag lifetimes
-
-`CardEffectResolutionContext.origin` distinguishes played cards, triggered cards,
-and Companions. Card healing applies to the two card origins; first-play bonuses
-apply only to played cards. The execution-only secondary action scope separately
-protects next-card bonuses during repeats, retaliation, and delayed effects.
-
-`combat-flags.ts` owns defaults, secondary-action eligibility, and lifetime for
-every flag. Player-turn flags reset through `resetTurnFlags`; combat and
-until-consumed flags survive that reset. Save field names and values are unchanged.
-
-Attack packet ordering remains attempt bonuses, Dodge, contact-only flag
-consumption, magnitude and mitigation, riders, follow-up hits, then settled
-reactions. `damage.ts` spends the action-local Coordinated Strike bonus on the
-Companion's first attempted damage packet, including a Dodge; utility actions
-retain it. Next-hit flags commit only after the packet passes Dodge. This
-ordering is separate from the detailed
-hit-stage ordering above and must not reorder RNG or feedback.
-
-## Brewing, Transmutation, and elemental reactions
+## Brewing and Transmutation
 
 [Visit interaction](./UI_BROWSING.md#campfire-and-transmutation) owns layout,
 selection, feedback and completion presentation.
@@ -479,6 +545,11 @@ All seven standard Potions can be distilled. Mixed and previously strengthened
 Potions remain eligible for brewing at later visits; refreshing or reloading does
 not restore any of the current visit's spent services or reroll Brew offers.
 
+Potion mixing scales amounts in every chance branch, preserving probabilities and
+all alternative descriptions. Same-ID ingredients double only with matching effects;
+different-potency copies retain both effect lists so ingredient order cannot change
+potency.
+
 Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
 cost, Consume, probabilities, draw counts, durations, and percentage effects stay
 unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation
@@ -494,7 +565,7 @@ Damage converts to another damage type; Block, Armor, Forge, and Thorns convert 
 
 Transmute commits the exact saved preview once. Cards keep their identity and artwork, gain the keyword's title prefix, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
 
-### Universal reactions
+## Universal reactions
 
 Shatter, Frostfire, Thunderclap, Wildfire, Consecration, Bloodboil, and Venomflash
 reward earned preparation. Direct
@@ -505,9 +576,9 @@ any source can prepare a payoff. Reaction damage never removes Burn, shortens
 crowd control, or spends another reaction's opportunity.
 
 Successful enemy Freeze prepares independent Shatter and Frostfire bonuses;
-successful Stun prepares Thunderclap. Each bonus is 25% of the actual Health
-damage dealt by the packet causing that CC, rounded once, with a minimum of 1.
-Non-damaging CC prepares the minimum. The amount is fixed when CC begins, so a
+successful Stun prepares Thunderclap. Each bonus is 50% of the actual Health
+damage dealt by the packet causing that CC, rounded once, with a minimum of 2.
+Non-damaging CC prepares the minimum of 2. The amount is fixed when CC begins, so a
 small finishing hit or Companion receives the full reward. Each opportunity
 expires when its CC ends. Haste, duration extensions, additional buildup, and
 player-turn resets cannot replenish it; only a fresh successful CC can.
@@ -524,8 +595,8 @@ player-turn resets cannot replenish it; only a fresh successful CC can.
   releases its stored Nature bonus, once per Stun. The finishing hit must deal
   positive Health damage.
 - **Wildfire:** two positive natural enemy-turn Burn ticks prepare bonus Burn
-  damage equal to 25% of their combined actual Health damage, rounded once. Ticks
-  of 8 and 4 prepare 3; ticks of 4 and 2 prepare 2. Only normal enemy-turn ticks
+  damage equal to 50% of their combined actual Health damage, rounded once, minimum 2. Ticks
+  of 8 and 4 prepare 6; ticks of 4 and 2 prepare 3. Only normal enemy-turn ticks
   count, including CC-skipped enemy turns; Haste, extra ticks, direct hits, and
   detonations do not. A Nature hit dealing positive Health damage releases all
   completed pairs without consuming Burn. Additional pairs accumulate while
@@ -534,20 +605,20 @@ player-turn resets cannot replenish it; only a fresh successful CC can.
 
 - **Consecration:** an eligible Holy hit dealing positive Health damage to an
   already Bleeding enemy consecrates its next natural Bleed tick. The tick releases
-  Holy damage equal to 25% of its actual Health damage, rounded, minimum 1. More
+  Holy damage equal to 50% of its actual Health damage, rounded, minimum 2. More
   Holy hits do not stack marks. Capture and consume the mark when the tick begins;
   clearing or detonating Bleed cancels it. Preserved Bleed can be consecrated again
   for a later tick. Current-format resume preserves the mark without replaying it.
 - **Bloodboil:** when Burn and Bleed both deal positive natural tick damage in the
-  same enemy phase, release Burn damage equal to 25% of their combined actual
-  Health damage, rounded once, minimum 1. A final Burn stack counts even if it
+  same enemy phase, release Burn damage equal to 50% of their combined actual
+  Health damage, rounded once, minimum 2. A final Burn stack counts even if it
   expires before Bleed resolves. Separate phases, extra ticks, and detonations
   cannot combine. CC-skipped natural phases count. Bloodboil and Consecration
   resolve after the Bleed tick and its riders, Consecration first.
 - **Venomflash:** an eligible Burn hit dealing positive Health damage newly ignites
   an already Poisoned enemy: Burn was zero before that packet and the packet adds
-  Burn. Release Burn damage equal to 25% of the pre-hit Poison stacks, rounded,
-  minimum 1. Existing fires cannot trigger it; extinguishing and igniting again
+  Burn. Release Burn damage equal to 50% of the pre-hit Poison stacks, rounded,
+  minimum 2. Existing fires cannot trigger it; extinguishing and igniting again
   can. Ordered effects in one card can establish Poison before ignition. Poison
   and Burn stacks remain intact from the bonus itself. Combustion's fresh
   ignition still qualifies when its own detonation consumes the new Burn.
@@ -560,16 +631,13 @@ qualifying attack reactions. Standard health-threshold
 handling and once-only kill rewards still apply, including Archery attribution.
 
 Persist reaction progress in battle snapshots; reload cannot refresh spent
-opportunities or replay earned damage. Resolved reactions reuse existing battle
-audio assets and announce their names with the keyword-colored text shine and
-independent 1.6-second floating motion described in [battle feedback](./UI_BATTLE.md#battle-feedback).
-Numeric presentation totals ordinary and reaction damage by type within each
-action, preserving separate engine packets. Add no readiness UI, explanations,
+opportunities or replay earned damage. Already-earned stored bonuses retain their
+amounts across resume. Resolved reactions reuse existing battle audio. Each action
+shows one central feedback group: its direct typed damage, then each reaction name
+with its separately attributed typed bonus, using the same keyword shine on the
+name and bonus number. The group shares one portrait anchor, flight and 1.6-second
+lifetime; see [battle feedback](./UI_BATTLE.md#battle-feedback). Repeated packets
+with the same reaction origin can total for display; direct damage and different
+reactions remain distinct, preserving separate engine packets. Add no readiness UI, explanations,
 tutorials, or card-description/keyword previews; see the
 [authoring contract](./CONTENT_AUTHORING.md#add-a-new-card).
-
-### Persistent Forge
-
-Player and enemy Forge add 1 Physical/Stun damage per stack and survive attacks; Purge removes the entire category. Whitehot grants enemies 1 starting Forge. Burning Blade deals base 1 plus rounded half Forge, without generating Forge or applying another Forge conversion. Avatar selects Block 5, Forge 2, or Armor 5 with equal odds. Blacksmith converts 10/20/30/40% of Forge to Burn; Ignite, Sanctify, Rust and Tempered Guard use 25%, and unique Holy permissions use 50%. Overlapping conversions take the strongest permission.
-
-Forge gain bonuses each roll once for the base grant and add at most 1 Forge; all successes form one nonrecursive award. Matching ordinary affixes contribute independently in equipped order. Icebreaker, Emberforged, Sunder and Oathkeeper resolve once per eligible attack action, not per packet. Their action-local bookkeeping is not saved. Vanguard’s Crest and Obsidian Hammer retain their authored per-turn limits, saved through reload. The Patient Edge grants 1 Forge on turns 3, 6, 9 and later multiples of 3. Last Supper independently rolls 10% for 1 Forge whenever a card is Consumed, regardless of hand size.

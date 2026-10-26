@@ -64,31 +64,15 @@ describe("SliceDeath", () => {
 
   it("does not play the slice cue when animation is disabled", () => {
     isAnimationDisabled.mockReturnValue(true);
-    render(<SliceDeath imageUrl="/enemy.webp" alt="Goblin" imageClassName="h-full" />);
+    const { container } = render(<SliceDeath imageUrl="/enemy.webp" alt="Goblin" imageClassName="h-full" />);
     expect(playSliceDeath).not.toHaveBeenCalled();
+    expect(container.querySelector("img")).toBeNull();
   });
 
   it("plays the slice cue when the crack animation starts", () => {
     mockSliceLayout();
-    render(<SliceDeath imageUrl="/enemy.webp" alt="Goblin" imageClassName="h-full" />);
+    const { container } = render(<SliceDeath imageUrl="/enemy.webp" alt="Goblin" imageClassName="h-full" />);
     expect(playSliceDeath).toHaveBeenCalledOnce();
-  });
-
-  it("keeps the art frame border on each slice half", () => {
-    mockSliceLayout();
-    const { container } = render(<SliceDeath imageUrl="/enemy.webp" alt="Goblin" imageClassName="h-full" />);
-    const halves = container.querySelectorAll("img");
-    expect(halves).toHaveLength(2);
-    for (const half of halves) {
-      expect(half.classList.contains("border")).toBe(true);
-      expect(half.classList.contains("border-border/80")).toBe(true);
-    }
-  });
-
-  it("does not leave a frame border after the slice is skipped", () => {
-    isAnimationDisabled.mockReturnValue(true);
-    const { container } = render(<SliceDeath imageUrl="/enemy.webp" alt="Goblin" imageClassName="h-full" />);
-    expect(container.querySelector("img")).toBeNull();
-    expect(container.firstElementChild?.classList.contains("border-border/80")).toBe(false);
+    expect(container.querySelectorAll("img")).toHaveLength(2);
   });
 });

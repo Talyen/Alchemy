@@ -24,7 +24,8 @@ workflows. Functional checks assert state and geometry without screenshot encodi
 or attachment I/O. Motion checks observe frames or actual transition events and
 stop when the animation settles; declared CSS properties alone cannot prove motion.
 Arm short-lived feedback samplers in the renderer before sending input, then
-read their captured result after the action. Locator assertions and protocol
+read their captured result after the action. `observe-during-action.ts` consumes
+those handles and cancels/disposes them when either observation or input fails. Locator assertions and protocol
 round trips can outlast the feedback being measured. For transition sampling,
 remember that motion started and check settled visual values independently of
 temporary feedback flags; those flags may clear before enough stable frames arrive.
@@ -50,6 +51,25 @@ repeated input, then restore Health, enemy Health, hand and turn on an unseeded
 page and play again. The `save` route and `test:ship:e2e` both include that owner.
 The other save specs retain current-format destination/reward recovery, cold
 boot, corrupt JSON and future-version protection.
+
+Wildwood's final draft pick also verifies the live deck viewer before and after
+selection and the committed modified battle. The empty viewer stays in the
+inspection DOM suite. One connected Wildwood journey wins a battle, checks no
+Health recovery, resumes its actual reward offers, and skips into the next boss
+without changing the deck. The menu/meta-detour journey owns open-menu resize
+reachability without another battle boot.
+
+Options control-to-store wiring lives in `tests/app/options-screen-route.test.tsx`
+with the real screen. It protects independent audio/size settings, gameplay
+preferences, reset and clear-save cancellation/confirmation; separate callback-only
+screen renders and a stubbed route no longer duplicate that protection.
+
+Real draw/discard timing belongs to `specs/draw-discard-animations.spec.ts`.
+The opening-deal journey also checks inspection admission and hand-dock stability;
+the discard journey checks flipping, landing and affordable-card coloring through
+the next draw. Observe transient admission before input and disconnect observers
+when their evidence is collected. Options keyboard navigation, minimum-height
+confirmation reachability and saved volume share the menu journey.
 
 Hand inspection combines edge targeting, raised-card hit testing, draw/reflow,
 and pointer-to-keyboard switching in one live journey. Size-boundary journeys
@@ -232,9 +252,9 @@ tag representative tests individually so secondary variants stay nightly-only.
 
 Localization functional coverage has a separate every-push job, independent of
 critical gameplay. `localizationCoverage(locale, representative)` assigns one
-shipped language to gate each journey via `@localization-smoke`; the three script
-font checks also gate pushes. This samples all seven shipped translations in 15
-cases. Locale battle/resume checks have
+shipped language to gate each journey via `@localization-smoke`; Chinese, Japanese
+and Cyrillic font checks share the matching Options journeys. Those three Options locales gate pushes, sampling all seven shipped
+translations in 14 cases. Locale battle/resume checks have
 one owner here and do not carry `@critical`.
 
 Nightly/release retain all shipped locales for live switching/resume, Options and
@@ -245,7 +265,7 @@ retain generated descriptions, movable keyword slots, translated accessible targ
 and cross-language saves; unit/DOM tests own mechanics and catalog correctness.
 Both workflows also call the expanded-English acceptance workflow, which runs
 only `@localization-qa` against development source because QA catalogs are absent
-from production. These jobs cover 33 production cases and 12 QA cases.
+from production. These jobs cover 30 production cases and 12 QA cases.
 `ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1` enables minimum-viewport, maximum-size
 geometry and reachability checks. Passing screenshots additionally require
 `ALCHEMY_LOCALIZATION_SCREENSHOTS=1` for an explicit visual review; functional CI

@@ -55,7 +55,12 @@ describe("CollectionScreen", () => {
       encounteredEnemyIds: [id],
       collectionPages: { ...defaultProps.collectionPages, bestiary: page },
     };
-    const { rerender, unmount } = render(<CollectionScreen {...props} />);
+    const { rerender, unmount } = render(<CollectionScreen {...props} encounteredEnemyIds={[]} />);
+    const index = sorted.findIndex((entry) => entry.id === id) % 6;
+    fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[index]!);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(audio.previewBossMusic).not.toHaveBeenCalled();
+    rerender(<CollectionScreen {...props} />);
     const portrait = screen.getByRole("button", { name: "Inspect The Forge Golem" });
     fireEvent.click(portrait);
     expect(audio.playCardSound).not.toHaveBeenCalled();
@@ -88,38 +93,16 @@ describe("CollectionScreen", () => {
     expect(audio.endBossPreview).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps an undiscovered Boss silent while allowing a discovered Boss preview", () => {
-    const sorted = [...enemyBestiary].sort((a, b) => a.title.localeCompare(b.title));
-    const index = sorted.findIndex((entry) => entry.id === "forge-golem");
-    const props = {
-      ...defaultProps,
-      collectionTab: "bestiary" as const,
-      encounteredEnemyIds: [],
-      collectionPages: { ...defaultProps.collectionPages, bestiary: Math.floor(index / 6) },
-    };
-    const { rerender } = render(<CollectionScreen {...props} />);
-    fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[index % 6]!);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(audio.previewBossMusic).not.toHaveBeenCalled();
-    rerender(<CollectionScreen {...props} encounteredEnemyIds={["forge-golem"]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Inspect The Forge Golem" }));
-    expect(audio.previewBossMusic).toHaveBeenCalledWith(getBossMusicKey("forge-golem"));
-  });
-
   it("reveals a newly discovered card's authored description without remounting Collection", () => {
     const { rerender } = render(<CollectionScreen {...defaultProps} discoveredCardIds={[]} />);
     expect(screen.queryByRole("button", { name: "Inspect Anvil" })).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[0]!);
+    expect(audio.playCardSound).not.toHaveBeenCalled();
     rerender(<CollectionScreen {...defaultProps} discoveredCardIds={["anvil"]} />);
     const anvil = screen.getByRole("button", { name: "Inspect Anvil" });
     fireEvent.mouseEnter(anvil.parentElement!);
     expect(screen.getByRole("tooltip").textContent).toMatch(/Gain \d+ Forge/);
     fireEvent.click(anvil);
     expect(audio.playCardSound).toHaveBeenCalledExactlyOnceWith("anvil");
-  });
-
-  it("does not reveal an undiscovered card through its sound", () => {
-    render(<CollectionScreen {...defaultProps} discoveredCardIds={[]} />);
-    fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[0]!);
-    expect(audio.playCardSound).not.toHaveBeenCalled();
   });
 });

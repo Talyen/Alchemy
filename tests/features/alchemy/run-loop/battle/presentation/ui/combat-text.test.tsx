@@ -89,30 +89,44 @@ describe("CombatTextRail", () => {
   });
 });
 
-it("shows a named reaction and one Critical-inclusive total without a lone reaction icon", () => {
+it("shares one flight for direct damage and the named typed reaction with matching shine", () => {
   const prepared = prepareCombatFeedback(
     [
       { target: "enemy", kind: "notice", stat: "physical", text: "Shatter", signal: "reaction", reactionId: "shatter" },
-      { target: "enemy", kind: "damage", stat: "physical", amount: 6, critical: true },
-      { target: "enemy", kind: "damage", stat: "physical", amount: 8, additive: false },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 6, critical: true, feedback: "primary" },
+      {
+        target: "enemy",
+        kind: "damage",
+        stat: "physical",
+        amount: 8,
+        additive: false,
+        reactionId: "shatter",
+        feedback: "secondary",
+      },
     ],
     1,
     0,
     1100,
   );
   const { container } = render(<CombatTextRail bursts={prepared.bursts} reactions={prepared.reactions} />);
-  expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
+  expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(2);
   expect(container.querySelector('[data-testid="combat-text"]')?.getAttribute("aria-label")).toBe(
-    "Physical: -14 (includes a Critical)",
+    "Critical Physical: -6",
   );
+  const bonus = container.querySelector('[data-reaction-id="shatter"]');
+  expect(bonus?.getAttribute("aria-label")).toBe("Physical: -8");
   const name = container.querySelector('[data-reaction="shatter"]');
   expect(name?.textContent).toBe("Shatter");
-  expect(name?.closest('[data-testid="combat-feedback-action"]')).not.toBe(
+  expect(name?.closest('[data-testid="combat-feedback-action"]')).toBe(
     container.querySelector('[data-testid="combat-text"]')?.closest('[data-testid="combat-feedback-action"]'),
   );
   expect((name!.firstElementChild as HTMLElement).style.webkitTextStroke).toBe("0px");
   expect(name?.querySelector("svg")).toBeNull();
-  expect(container.querySelectorAll("svg")).toHaveLength(1);
+  expect(container.querySelectorAll("svg")).toHaveLength(2);
+  expect(bonus?.closest("[data-feedback-lane]")?.getAttribute("data-feedback-lane")).toBe("announcement");
+  expect(bonus?.querySelector(".reaction-text-shine")?.getAttribute("style")).toBe(
+    name?.firstElementChild?.getAttribute("style"),
+  );
 });
 
 it("does not mount queued text early and preserves the active flight when another entry arrives", () => {

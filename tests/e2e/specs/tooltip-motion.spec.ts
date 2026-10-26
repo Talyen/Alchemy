@@ -3,6 +3,7 @@ import type { Page } from "@playwright/test";
 import { injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
+import { observeDuringAction } from "../observe-during-action";
 
 async function observeMotion(page: Page, entering: boolean, activate: () => Promise<void>) {
   const observation = await page.evaluateHandle((entering) => {
@@ -46,13 +47,7 @@ async function observeMotion(page: Page, entering: boolean, activate: () => Prom
     });
     return { result, cancel };
   }, entering);
-  try {
-    await activate();
-    return await observation.evaluate(async ({ result }) => result);
-  } finally {
-    await observation.evaluate(({ cancel }) => cancel());
-    await observation.dispose();
-  }
+  return observeDuringAction(observation, activate);
 }
 
 test("tooltips visibly fade and move on entry and exit", slow, async ({ page }) => {

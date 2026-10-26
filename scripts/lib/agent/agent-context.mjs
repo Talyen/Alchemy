@@ -46,7 +46,11 @@ export const CONTEXT_TASKS = {
   },
   shop: {
     matches: /(?:\/shop\/|shop-(?:screen|persistence|offering)|-shop-screen)/,
-    docs: [owner("Docs/ARCHITECTURE.md", "Shop commands"), owner("Docs/WORKFLOWS.md", "Change a shop")],
+    docs: [
+      owner("Docs/ARCHITECTURE.md", "Shop commands"),
+      owner("Docs/GAME_RULES.md", "Shops"),
+      owner("Docs/WORKFLOWS.md", "Change a shop"),
+    ],
     entrypoints: ["src/features/alchemy/run-loop/shop/shop-commands-core.ts"],
   },
   progression: {

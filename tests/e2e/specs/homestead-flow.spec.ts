@@ -1,5 +1,6 @@
 import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
+import { observeDuringAction } from "../observe-during-action";
 import { expect, test } from "../../fixtures/e2e";
 import { HomesteadPage } from "../../pages/homestead-page";
 import { MenuPage } from "../../pages/menu-page";
@@ -20,8 +21,9 @@ async function expectNativeArtwork(art: Locator) {
 }
 
 async function observePurchase(page: Page, title: string, activate: () => Promise<void>) {
-  const [observation] = await Promise.all([
-    page.evaluate(async (title) => {
+  const observation = await page.evaluateHandle((title) => {
+    let cancelled = false;
+    const result = (async () => {
       const frames: Array<{
         height: number;
         gap: number;
@@ -33,7 +35,7 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
       const start = performance.now();
       let settled = 0;
       let sawTransition = false;
-      while (performance.now() - start < 1800) {
+      while (!cancelled && performance.now() - start < 1800) {
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => resolve());
         });
@@ -74,10 +76,15 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
         if (settled >= 6) break;
       }
       return { frames, settled, elapsedMs: performance.now() - start };
-    }, title),
-    activate(),
-  ]);
-  const { frames, settled, elapsedMs } = observation;
+    })();
+    return {
+      result,
+      cancel: () => {
+        cancelled = true;
+      },
+    };
+  }, title);
+  const { frames, settled, elapsedMs } = await observeDuringAction(observation, activate);
   expect(settled, `${title} did not settle within ${Math.round(elapsedMs)}ms`).toBe(6);
   expect(frames.every((frame) => frame.opacity === 1)).toBe(true);
   expect(frames.some((frame) => frame.valueOpacity > 0 && frame.valueOpacity < 1)).toBe(true);

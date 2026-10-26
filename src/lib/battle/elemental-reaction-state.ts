@@ -1,4 +1,8 @@
-import { ELEMENTAL_REACTION_DAMAGE_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
+import {
+  ELEMENTAL_REACTION_DAMAGE_PERCENT,
+  ELEMENTAL_REACTION_MIN_DAMAGE,
+  PERCENT_DENOMINATOR,
+} from "../game-constants";
 import type { BattleSnapshot, BattleState } from "./types";
 
 /** Earned damage, independent of turn flags and the size of the finishing hit. */
@@ -33,11 +37,13 @@ export function getReactionBonus(...amounts: readonly number[]): number {
     whole += (amount - (amount % divisor)) / divisor;
     remainder += amount % divisor;
   }
-  return amounts.some((amount) => amount > 0) ? Math.max(1, whole + Math.round(remainder / divisor)) : 0;
+  return amounts.some((amount) => amount > 0)
+    ? Math.max(ELEMENTAL_REACTION_MIN_DAMAGE, whole + Math.round(remainder / divisor))
+    : 0;
 }
 
 export function prepareCcReactions(state: BattleState, stat: "freeze" | "stun", healthDamage: number): BattleState {
-  const damage = Math.max(1, Math.round(healthDamage * (ELEMENTAL_REACTION_DAMAGE_PERCENT / PERCENT_DENOMINATOR)));
+  const damage = Math.max(ELEMENTAL_REACTION_MIN_DAMAGE, getReactionBonus(healthDamage));
   return {
     ...state,
     reactions: {

@@ -190,8 +190,8 @@ it("Hawk Eye crits the next packet when the first packet of a card Freezes", () 
   });
   const next = playBattleCardResolved(state, card.id, 0).state;
   expect(next.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
-  expect(next.enemyHealth).toBe(54); // Freeze 30, Critical Physical 8, Shatter 8.
-  expect(next.reactions).toMatchObject({ shatterDamage: 0, frostfireDamage: 8 });
+  expect(next.enemyHealth).toBe(47); // Freeze 30, Critical Physical 8, Shatter 15.
+  expect(next.reactions).toMatchObject({ shatterDamage: 0, frostfireDamage: 15 });
   expect(next.flags.hawkEyeReady).toBe(false);
 });
 

@@ -37,6 +37,7 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
     return (
       event.kind !== "notice" &&
       nextEvent.kind !== "notice" &&
+      event.reactionId === nextEvent.reactionId &&
       event.impact === nextEvent.impact &&
       !!event.periodic === !!nextEvent.periodic &&
       event.additive !== false &&

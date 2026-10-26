@@ -119,9 +119,9 @@ digest, so omitted or corrupted bundled catalogs cannot pass packaging.
 Font regeneration is an explicit authoring operation, separate from offline checks:
 
 ```sh
-python3 -m venv reports/font-tools
-reports/font-tools/bin/python -m pip install fonttools==4.60.1
-ALCHEMY_FONT_PYTHON=reports/font-tools/bin/python npm run i18n:fonts
+python3 -m venv .cache/font-tools
+.cache/font-tools/bin/python -m pip install fonttools==4.60.1
+ALCHEMY_FONT_PYTHON=.cache/font-tools/bin/python npm run i18n:fonts
 npm run i18n:check
 ```
 

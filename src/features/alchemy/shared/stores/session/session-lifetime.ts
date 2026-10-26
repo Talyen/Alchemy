@@ -31,30 +31,34 @@ export function createSessionLifetime() {
         setTimeout(callback, delay) {
           assertActive();
           let active = true;
-          let release: () => void = () => {};
-          const timer = source.setTimeout(() => {
-            if (!active || disposed) return;
-            active = false;
-            release();
-            callback();
-          }, delay);
-          // An injected clock can finish (and even close this owner) before
-          // returning its ID. Completed work needs no cleanup registration.
-          if (!active) return timer;
-          if (disposed) {
-            active = false;
-            source.clearTimeout(timer);
-            return timer;
-          }
-          release = track(() => {
-            timers.delete(timer);
+          let cancelled = false;
+          let timer: { id: ReturnType<SessionClock["setTimeout"]> } | undefined;
+          const release = track(() => {
+            if (timer && timers.get(timer.id) === release) timers.delete(timer.id);
             if (active) {
               active = false;
-              source.clearTimeout(timer);
+              cancelled = true;
+              if (timer) source.clearTimeout(timer.id);
             }
           });
-          timers.set(timer, release);
-          return timer;
+          try {
+            timer = {
+              id: source.setTimeout(() => {
+                if (!active || disposed) return;
+                active = false;
+                release();
+                callback();
+              }, delay),
+            };
+            // A synchronous callback can schedule a new timer with the same ID.
+            // Never replace that timer's ownership with this completed timer.
+            if (active) timers.set(timer.id, release);
+            else if (cancelled) source.clearTimeout(timer.id);
+            return timer.id;
+          } catch (error) {
+            release();
+            throw error;
+          }
         },
         clearTimeout(timer) {
           // Cleanup remains safe and idempotent after disposal.

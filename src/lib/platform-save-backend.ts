@@ -86,7 +86,17 @@ async function clearDesktop(
   cloudSyncEnabled: boolean,
   forceLocalWipe: boolean,
 ): Promise<SaveBackendWriteResult> {
-  if (desktop.steamIsCloudEnabled) cloudSyncEnabled = await desktop.steamIsCloudEnabled();
+  if (desktop.steamIsCloudEnabled) {
+    try {
+      cloudSyncEnabled = await desktop.steamIsCloudEnabled();
+    } catch (error) {
+      if (!forceLocalWipe) throw error;
+      // A forced local wipe remains available when Steam is unavailable.
+      // Treat Cloud as potentially enabled and attempt deletion best effort.
+      cloudSyncEnabled = true;
+      logStorageFailure("Steam Cloud status unavailable during local wipe", error);
+    }
+  }
   if (!forceLocalWipe) {
     if (desktop.completeDemoInitialization && !(await desktop.completeDemoInitialization())) {
       return { ok: false, error: new Error("Could not preserve demo initialization before clearing progress") };

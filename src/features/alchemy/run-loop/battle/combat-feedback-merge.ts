@@ -17,6 +17,7 @@ function combinedEntry(existing: FloatingCombatText, incoming: FloatingCombatTex
     return;
   }
   if (existing.kind === "notice" || incoming.kind === "notice") return;
+  if (existing.reactionId !== incoming.reactionId) return;
   if (
     existing.additive === false ||
     incoming.additive === false ||

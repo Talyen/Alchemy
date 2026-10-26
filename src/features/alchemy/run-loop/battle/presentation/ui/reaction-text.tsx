@@ -6,6 +6,7 @@ import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-p
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { cn } from "@/lib/utils";
 import { ShineText } from "../../../../shared/ui/shine-text";
+import { CombatTextEntry } from "./combat-text-entry";
 import type { ReactionAnnouncement } from "../../../../shared/types";
 
 export function ReactionTextRail({ announcements }: { announcements: ReactionAnnouncement[] }) {
@@ -24,7 +25,10 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
         const glyphs = name.firstElementChild as HTMLElement | null;
         if (!glyphs || glyphs.offsetWidth <= 0) continue;
         const current = Number.parseFloat(getComputedStyle(name).fontSize);
-        fitted = Math.min(fitted, ((current * name.clientWidth) / (glyphs.offsetWidth * 1.08)) * 0.98);
+        const row = name.parentElement!;
+        const bonus = row.querySelector<HTMLElement>("[data-reaction-payoff]");
+        const available = rail.clientWidth - (bonus?.offsetWidth ?? 0) - 12;
+        fitted = Math.min(fitted, ((current * available) / (glyphs.offsetWidth * 1.08)) * 0.98);
       }
       setFontSize((previous) => (previous !== undefined && Math.abs(previous - fitted) < 0.2 ? previous : fitted));
     };
@@ -44,8 +48,8 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
     <div
       ref={railRef}
       data-testid="reaction-text-rail"
-      className="pointer-events-none relative z-40 flex w-full flex-col items-center gap-2 py-1 [&_*]:transition-none"
-      style={{ fontSize: `calc(${COMBAT_TEXT_BASE_SIZE_PX * 1.25}px * var(--content-scale, 1))` }}
+      className="pointer-events-none relative z-40 flex w-full flex-col items-center gap-1 py-1 [&_*]:transition-none"
+      style={{ fontSize: `calc(${COMBAT_TEXT_BASE_SIZE_PX * 1.1}px * var(--content-scale, 1))` }}
     >
       {announcements.map((announcement) => (
         <div
@@ -54,29 +58,43 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
           data-announcement-id={announcement.id}
           data-target={announcement.target}
           data-first-shown-at={announcement.firstShownAt}
-          className={cn(
-            "grid w-full justify-items-center gap-x-3 gap-y-1 leading-tight font-bold tracking-wide",
-            "[filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
-            announcement.reactionIds.length >= 3 && "grid-cols-2",
-          )}
-          style={{ fontSize: fontSize ?? "inherit" }}
+          className="flex w-full flex-col items-center gap-1 leading-tight font-bold tracking-wide [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]"
         >
+          <div className="flex max-w-full flex-wrap items-center justify-center gap-2" style={{ fontSize: "1.45em" }}>
+            {announcement.entries
+              .filter((entry) => entry.kind !== "notice" && !entry.reactionId)
+              .map((entry) => (
+                <CombatTextEntry key={entry.id} entry={entry} staticMotion={staticMotion} />
+              ))}
+          </div>
           {announcement.reactionIds.map((id) => {
             const definition = REACTION_DEFINITIONS[id];
             return (
-              <span
+              <div
                 key={id}
-                data-testid="reaction-text"
-                data-reaction={id}
-                className="block w-full min-w-0 text-center whitespace-nowrap"
+                className="flex max-w-full items-center justify-center gap-2"
+                style={{ fontSize: fontSize ?? "inherit" }}
               >
-                <ShineText
-                  colors={getKeywordTextShineColors(definition.keywords)}
-                  className={cn("reaction-text-shine", staticMotion && "reaction-text-static")}
+                <span
+                  data-testid="reaction-text"
+                  data-reaction={id}
+                  className="block min-w-0 text-center whitespace-nowrap"
                 >
-                  {i18n.displayText(definition.text)}
-                </ShineText>
-              </span>
+                  <ShineText
+                    colors={getKeywordTextShineColors(definition.keywords)}
+                    className={cn("reaction-text-shine", staticMotion && "reaction-text-static")}
+                  >
+                    {i18n.displayText(definition.text)}
+                  </ShineText>
+                </span>
+                <div data-reaction-payoff={id} className="flex shrink-0 items-center justify-center">
+                  {announcement.entries
+                    .filter((entry) => entry.kind !== "notice" && entry.reactionId === id)
+                    .map((entry) => (
+                      <CombatTextEntry key={entry.id} entry={entry} staticMotion={staticMotion} />
+                    ))}
+                </div>
+              </div>
             );
           })}
         </div>

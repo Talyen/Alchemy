@@ -35,7 +35,7 @@ export function isNonPlayerAudioHost(): boolean {
 
   if (navigator.webdriver || navigator.userAgent.includes("HeadlessChrome")) return true;
 
-  if (hasVisibleWindowArea() && hasZeroOuterSize()) return true;
+  if (!hasVisibleWindowArea() || hasZeroOuterSize()) return true;
 
   return navigator.userAgent.includes("Electron") && !isDesktopApiAvailable();
 }
