@@ -152,7 +152,7 @@ export function dealSelfDamage(
       : processContagion(
           decayArmorAfterDamage(postDamage, resolvedDamage, "player", combatTexts),
           statLabel,
-          healthLost,
+          amount,
           combatTexts,
         ),
     healthLost,

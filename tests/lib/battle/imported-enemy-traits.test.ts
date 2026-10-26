@@ -454,6 +454,14 @@ describe("native enemy identities", () => {
       [],
     );
     expect(resisted.enemyHealth).toBe(51);
+    const selfResisted = dealSelfDamage(
+      { ...state, talentEffects: { ...state.talentEffects, poisonDamageReduction: 100 } },
+      3,
+      "poison",
+      [],
+    );
+    expect(selfResisted.healthLost).toBe(0);
+    expect(selfResisted.state.enemyHealth).toBe(51);
     expect(applyEnemyAbility(state, attack, []).enemyHealth).toBe(50);
     const lethal = applyEnemyAbility({ ...state, playerHealth: 1, deathsDoorUsed: true }, poison, []);
     expect(lethal.playerHealth).toBe(0);
