@@ -123,9 +123,9 @@ it("keeps direct and reaction damage distinct while retaining packet facts for i
   ];
   const original = structuredClone(events);
   const prepared = prepareCombatFeedback(events, 8, 100, 1100);
-  expect(prepared.bursts[1]!.entries).toHaveLength(2);
+  expect(prepared.bursts[1]!.entries).toHaveLength(3);
+  expect(prepared.bursts[1]!.entries[0]).toMatchObject({ amount: 6, critical: true, feedback: "primary" });
   expect(prepared.reactions[0]!.entries).toMatchObject([
-    { amount: 6, displayText: "-6", critical: true, feedback: "primary" },
     { amount: 8, displayText: "-8", reactionId: "shatter", feedback: "secondary" },
   ]);
   expect(prepared.impacts.enemyImpactCue).toMatchObject({ amount: 8 });
@@ -134,7 +134,7 @@ it("keeps direct and reaction damage distinct while retaining packet facts for i
   expect(events).toEqual(original);
 });
 
-it("keeps natural Burn separate from Bloodboil while sharing one group", () => {
+it("keeps natural Burn in its own fan flight and pairs only the bonus with Bloodboil", () => {
   const prepared = prepareCombatFeedback(
     [
       { target: "enemy", kind: "damage", stat: "burn", amount: 8, periodic: true },
@@ -145,11 +145,8 @@ it("keeps natural Burn separate from Bloodboil while sharing one group", () => {
     0,
     1100,
   );
-  expect(prepared.bursts).toEqual([]);
-  expect(prepared.reactions[0]!.entries).toMatchObject([
-    { amount: 8, displayText: "-8", periodic: true },
-    { amount: 6, displayText: "-6", reactionId: "bloodboil" },
-  ]);
+  expect(prepared.bursts[0]!.entries).toMatchObject([{ amount: 8, displayText: "-8", periodic: true }]);
+  expect(prepared.reactions[0]!.entries).toMatchObject([{ amount: 6, displayText: "-6", reactionId: "bloodboil" }]);
   expect(prepared.impacts.enemyImpactCue).toMatchObject({ amount: 8, periodic: true });
 });
 
@@ -188,12 +185,12 @@ it("totals repeated packets only within their exact reaction origin, retaining o
   ];
   const original = structuredClone(events);
   const prepared = prepareCombatFeedback(events, 2, 0, 1050);
-  expect(prepared.bursts).toEqual([]);
-  expect(prepared.reactions[0]!.reactionIds).toEqual(["frostfire", "venomflash"]);
-  expect(prepared.reactions[0]!.entries).toMatchObject([
-    { amount: 8, feedback: "primary" },
-    { amount: 4, reactionId: "frostfire" },
-    { amount: 4, reactionId: "venomflash" },
+  expect(prepared.bursts[0]!.entries).toMatchObject([{ amount: 8, feedback: "primary" }]);
+  expect(prepared.reactions.map((reaction) => reaction.reactionIds)).toEqual([["frostfire"], ["venomflash"]]);
+  expect(prepared.reactions.map((reaction) => reaction.entries)).toMatchObject([
+    [{ amount: 4, reactionId: "frostfire" }],
+    [{ amount: 4, reactionId: "venomflash" }],
   ]);
+  expect(new Set(prepared.reactions.map((reaction) => reaction.id)).size).toBe(2);
   expect(events).toEqual(original);
 });

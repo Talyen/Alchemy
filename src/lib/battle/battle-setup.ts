@@ -5,6 +5,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   companionLibrary,
+  createEmptyTalentEffectManifest,
   type BattleCard,
   type BestiaryEntry,
   type DifficultyModifier,
@@ -19,7 +20,7 @@ import { getBattleOutcome } from "./battle-outcome";
 import { applyEmergencyWish } from "./wish";
 import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards, drawKeywordCard } from "./draw";
-import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
+import { defaultBattleState } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
 import { shuffle, getBattleRng } from "@/lib/rng";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -131,7 +132,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     gold: battleGold = 0,
     totalRooms: battleRooms = 0,
     currentEnemy: battleEnemy,
-    talentEffects: battleTalents = defaultTalentEffects,
+    talentEffects: battleTalents = createEmptyTalentEffectManifest(),
     discoveredCardIds: battleDiscovered = [],
     trinketIds: battleBoons = [],
     gearEffects: battleGearEffects = createEmptyGearEffectManifest(),

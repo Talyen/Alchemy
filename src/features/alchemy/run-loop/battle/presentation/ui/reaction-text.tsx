@@ -60,13 +60,6 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
           data-first-shown-at={announcement.firstShownAt}
           className="flex w-full flex-col items-center gap-1 leading-tight font-bold tracking-wide [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]"
         >
-          <div className="flex max-w-full flex-wrap items-center justify-center gap-2" style={{ fontSize: "1.45em" }}>
-            {announcement.entries
-              .filter((entry) => entry.kind !== "notice" && !entry.reactionId)
-              .map((entry) => (
-                <CombatTextEntry key={entry.id} entry={entry} staticMotion={staticMotion} />
-              ))}
-          </div>
           {announcement.reactionIds.map((id) => {
             const definition = REACTION_DEFINITIONS[id];
             return (

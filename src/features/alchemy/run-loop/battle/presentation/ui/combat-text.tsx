@@ -64,8 +64,9 @@ export function CombatTextRail({
   const staticMotion = useReducedMotionPreference();
   const staticRows = new Map<CombatTextLane, number>();
   const nextStaticRow = (lane: CombatTextLane, rows = 1) => {
-    const row = staticRows.get(lane) ?? 0;
-    staticRows.set(lane, row + rows);
+    const key = lane === "announcement" ? "impact" : lane;
+    const row = staticRows.get(key) ?? 0;
+    staticRows.set(key, row + rows);
     return staticMotion ? row : 0;
   };
   return (

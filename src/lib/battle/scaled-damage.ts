@@ -64,8 +64,14 @@ export function dealEnemyScaledDamage(
     options.multiplier,
   );
   if (finalDamage <= 0) return sundered;
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   const hit = damageEnemyHealth(sundered, finalDamage);
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "damage",
+    stat,
+    amount: finalDamage,
+    ...(hit.healthDamage !== finalDamage ? { healthLost: hit.healthDamage } : {}),
+  });
   const rewarded = decayArmorAfterDamage(
     applyIronGuardReward(hit.state, stat, hit.healthDamage, combatTexts),
     finalDamage,

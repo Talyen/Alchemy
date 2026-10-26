@@ -251,7 +251,7 @@ describe("independent combat feedback launches", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("keeps direct and reaction results in one stable central flight within the launch budget", () => {
+  it("retains the independent direct flight and a stable named reaction within the launch budget", () => {
     const feedback = makeFeedback();
     const events = [
       { target: "enemy", kind: "notice", stat: "burn", text: "", signal: "reaction", reactionId: "frostfire" },
@@ -268,8 +268,10 @@ describe("independent combat feedback launches", () => {
     ] as const;
     feedback.showCombatTexts([...events]);
     const group = feedback.store.getState().reactionAnnouncements[0]!;
-    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
-    expect(group.entries).toHaveLength(2);
+    expect(feedback.store.getState().floatingCombatBursts[0]!.entries).toMatchObject([
+      { amount: 8, stat: "freeze", feedback: "primary", presentation: { lane: "impact" } },
+    ]);
+    expect(group.entries).toHaveLength(1);
     expect(group.presentation).toMatchObject({ lane: "announcement", phase: "visible", lifetimeMs: 1600 });
     const firstPath = group.presentation;
     feedback.showCombatTexts([...events]);

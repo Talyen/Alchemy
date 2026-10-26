@@ -13,7 +13,7 @@ import { defaultMeasureVisualCardRect, getCardRotation } from "./scene-geometry"
 import { Surface } from "../../../shared/ui/surface";
 import type { BattleSnapshot } from "@/lib/battle";
 import { getHandCardKey, getPlayableHandCardKeys } from "../playable-hand";
-import { HAND_CARD_BASE_Z_INDEX } from "@/lib/game-constants";
+import { CARD_FLIGHT_Z_INDEX } from "@/lib/game-constants";
 
 type TransferRefs = Pick<BattleRefs, "handCardRefs" | "battleSceneRef">;
 
@@ -86,7 +86,7 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
         rotate,
         // Cascades depart right-to-left; insertion order would put each later
         // flight in front of the card that previously covered it in the hand.
-        zIndex: HAND_CARD_BASE_Z_INDEX + handIndex,
+        zIndex: CARD_FLIGHT_Z_INDEX + handIndex,
       }}
     >
       <Surface

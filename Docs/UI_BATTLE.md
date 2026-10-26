@@ -129,9 +129,9 @@ entries use a smaller, stationary pop. Within an action, notices precede losses
 and gains; each lane preserves arrival order. Impact and audio cues remain immediate
 and follow actual incoming events, never accumulated display totals.
 
-Universal reactions share one central portrait-anchored feedback group per action.
-Direct typed damage stays on its own first row; each localized reaction name sits
-beside its actual typed bonus on a following row. Damage packets carry their exact
+Direct typed damage retains its independent fan flights, including actions that
+trigger reactions. Each reaction has a separate central portrait-anchored pair:
+the localized name beside its actual typed bonus. Damage packets carry their exact
 reaction ID through display aggregation: prerequisite keywords never imply extra
 damage types. Shatter's Block and Armor losses remain separate defense feedback.
 The name and bonus number use the same keyword text shine, with a dark shadow and
@@ -140,12 +140,12 @@ the payoff's damage type. Shatter uses Freeze/Physical, Frostfire Freeze/Burn,
 Thunderclap Stun/Nature, Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil
 Burn/Bleed, and Venomflash Poison/Burn.
 
-The complete group pops, settles, rises up to 24 scaled pixels, then holds and
+Each complete pair pops, settles, rises up to 24 scaled pixels, then holds and
 fades together over 1600 ms. Each localized name and its bonus fit the portrait
 width without wrapping or truncation. Multiple reactions retain their actual
-resolution order in the same group. Group footprints participate in the existing
+resolution order with independent queued routes. Pair footprints participate in the existing
 clearance queue; new actions never move or restart an active group. Reduced or
-disabled motion keeps a static group and the same keyword colors. The shared
+disabled motion keeps static, separately reserved rows and the same keyword colors. The shared
 [reaction renderer](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
 owns fitting and grouping; [combat text entries](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text-entry.tsx)
 render the typed numbers and accessible labels.
@@ -169,7 +169,9 @@ The Balanced treatment uses 38.4px base text, an 85 ms pop to 1.85×, a settle t
 1.55×, and a smooth shrink toward 1.2×. Travel begins at 240 ms, slows over 810 ms,
 and ends 76 scaled pixels above the launch point. Numeric entries last 1050 ms
 with a smooth final 280 ms fade. Benefits and setbacks use 80% of the base size.
-All coordinates and travel follow Game Size and remain above card flights.
+All coordinates and travel follow Game Size. Played cards and draw/discard flights
+remain in the foreground above combat feedback and boss lyrics; modal tooltips
+keep their existing inspection layer.
 
 The [feedback owner](../src/features/alchemy/run-loop/battle/combat-feedback.ts)
 assigns each entry a waiting/visible phase, launch time, and post-launch lifetime.

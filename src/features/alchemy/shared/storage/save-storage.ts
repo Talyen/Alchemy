@@ -102,7 +102,8 @@ export class SaveStorage {
       let loaded = selection.state;
 
       if (primaryCandidates.length === 0 && recoveryCandidates.length === 0) {
-        const readFailed = !primary.ok && !recovery.ok;
+        // Empty candidates establish a new career only when every source was read.
+        const readFailed = primaryUnreadable || recoveryUnreadable;
         loaded = { data: createDefaultSaveData(), status: { kind: readFailed ? "unavailable" : "ok" } };
         if (!IS_DEMO && this.writeKeys[0] === SAVE_KEY && !readFailed && this.backend.readDemoImportSource) {
           this.demoInitialization ??= this.initializeDemoProgress();

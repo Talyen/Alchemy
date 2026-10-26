@@ -3,21 +3,19 @@ import { HALF_DIVISOR } from "../game-constants";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { damageOnlyEffects } from "./card-classification";
 import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
-import type { BattleState, CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent, BattleResourceReward } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
-
-type Reward = (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
 
 /** Shared action scope, captured hit facts, reward ordering, and fatal cutoffs. */
 export interface CompanionResolutionPort {
   chance: (chance: number, state: BattleState) => boolean;
   afterAction: (state: BattleState, card: BattleCard, texts: CombatTextEvent[], attacked: boolean) => BattleState;
-  forge: Reward;
-  heal: Reward;
-  stun: Reward;
-  leech: Reward;
-  mana: Reward;
+  forge: BattleResourceReward;
+  heal: BattleResourceReward;
+  stun: BattleResourceReward;
+  leech: BattleResourceReward;
+  mana: BattleResourceReward;
   settle: (state: BattleState, texts: CombatTextEvent[]) => BattleState;
 }
 
