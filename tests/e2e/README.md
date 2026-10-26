@@ -94,6 +94,16 @@ the next draw. Observe transient admission before input and disconnect observers
 when their evidence is collected. Options keyboard navigation, minimum-height
 confirmation reachability and saved volume share the menu journey.
 
+Armory combat locking, editing another hero, reservation persistence and release
+share one journey seeded with one complete checkpoint; it checks exact saved
+loadout identities as well as rejection feedback. Talent allocation spends the
+last point through the keyboard, checks stable tree geometry, then verifies both
+purchases on a fresh page. Separate
+boots for those same states add no distinct protection. Tooltip movement, content
+resize, coalescing and disposal share one DOM lifecycle; asynchronous placement
+races retain their own focused cases. The startup skip-flag unit uses Node because
+it needs a storage seam, not rendered DOM.
+
 Hand inspection combines edge targeting, raised-card hit testing, draw/reflow,
 and pointer-to-keyboard switching in one live journey. Size-boundary journeys
 retain crowded maximum-size and ultrawide minimum-size hands; the standard-size

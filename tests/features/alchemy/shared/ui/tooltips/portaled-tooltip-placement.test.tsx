@@ -54,6 +54,7 @@ describe("usePortaledTooltipPlacement", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it.each([
@@ -178,15 +179,31 @@ describe("usePortaledTooltipPlacement", () => {
     }
   });
 
-  it("coalesces repeated resize notifications into one frame and disposes it on unmount", () => {
+  it("coalesces movement and content resizes, resizes the panel, and cancels pending work on unmount", async () => {
     let remeasure!: () => void;
+    const stop = vi.fn();
     vi.spyOn(floatingUi, "autoUpdate").mockImplementation((_trigger, _tooltip, update) => {
       remeasure = update;
-      return () => {};
+      return stop;
     });
+    let resize!: ResizeObserverCallback;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resize = callback;
+        }
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    let height = 700;
+    vi.spyOn(document.documentElement, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 1000, 600));
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => new DOMRect(0, 0, 200, height));
     const compute = vi.spyOn(floatingUi, "computePosition").mockResolvedValue({
-      x: 0,
-      y: 0,
+      x: 20,
+      y: 30,
       placement: "top",
       strategy: "fixed",
       middlewareData: {},
@@ -194,18 +211,31 @@ describe("usePortaledTooltipPlacement", () => {
     const frames: FrameRequestCallback[] = [];
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => frames.push(callback));
     const cancel = vi.spyOn(window, "cancelAnimationFrame");
-    const { unmount } = render(<Harness placement="above" />);
+    let view!: ReturnType<typeof render>;
+    await act(async () => {
+      view = render(<Harness placement="above" />);
+    });
+    const tooltip = screen.getByTestId("tip-floating");
+    expect(Number.parseFloat(tooltip.style.width)).toBeGreaterThan(0);
+    expect(tooltip.style.left).toBe("20px");
+    compute.mockResolvedValue({ x: 40, y: 60, placement: "top", strategy: "fixed", middlewareData: {} });
+    height = 200;
     act(() => {
       remeasure();
       remeasure();
-      remeasure();
+      resize([{ target: tooltip } as ResizeObserverEntry], {} as ResizeObserver);
     });
     expect(frames).toHaveLength(1);
     expect(cancel).not.toHaveBeenCalled();
-    act(() => frames[0]!(0));
+    await act(async () => frames[0]!(0));
     expect(compute).toHaveBeenCalledTimes(2);
+    expect(tooltip.style.width).toBe("");
+    expect(tooltip.style.left).toBe("40px");
+    expect(tooltip.style.top).toBe("60px");
     act(() => remeasure());
-    unmount();
+    view.unmount();
     expect(cancel).toHaveBeenCalledExactlyOnceWith(2);
+    expect(disconnect).toHaveBeenCalledOnce();
+    expect(stop).toHaveBeenCalledOnce();
   });
 });
