@@ -16,7 +16,8 @@ registration, execution and inspection.
 4. For recursive shapes, also extend `types.ts`, recursive schema construction and
    `effect-tree.ts` before cloning, mixing or Corruption can traverse them safely.
    Child order is success effects followed by failure effects; it defines target paths.
-5. Update `INSPECTION_EFFECT_POLICY` under [inspection ownership](#battle-inspection-ownership).
+5. Check [inspection ownership](#battle-inspection-ownership) for finite decisions,
+   unknown draws and future-turn execution.
 6. Verify consequential schema refinements, runtime behavior and independently
    expected descriptions. [Tests](#tests) identify existing protection; the shared
    formatter cannot serve as its own correctness oracle.
@@ -134,9 +135,12 @@ Corruption-mark mapping. Repeated references to one authored effect object still
 have independent packet identities. Import boundaries keep the description adapter
 on action owners and keep the alternative collector free of combat rules.
 
-When adding a kind, update the exhaustive `INSPECTION_EFFECT_POLICY` classification
-and the production handler. Add independent outcome assertions when the mechanic
-can change later packets. No second inspection handler should be introduced.
+The production handler owns execution and finite decisions; inspection branches
+through its RNG seam without a second effect catalog. The collector keeps
+`repeat-over-turns` packets unknown because their execution is deferred. When
+adding a kind, extend that future-turn boundary only if it also defers execution.
+Add independent outcome assertions when the mechanic can change later packets.
+No second inspection handler should be introduced.
 
 ## Resource reward ownership
 
