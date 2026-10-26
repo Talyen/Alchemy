@@ -11,7 +11,7 @@ export const CRAFTING_CURRENCY_IDS = [
 
 export type CraftingCurrencyId = (typeof CRAFTING_CURRENCY_IDS)[number];
 
-export const EMPTY_CRAFTING_CURRENCIES = createNumericManifest(CRAFTING_CURRENCY_IDS);
+export const EMPTY_CRAFTING_CURRENCIES = Object.freeze(createNumericManifest(CRAFTING_CURRENCY_IDS));
 
 function sanitizeCurrencyValue(value: unknown): number {
   if (typeof value !== "number" || value <= 0) return 0;
