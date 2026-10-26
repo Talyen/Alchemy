@@ -36,6 +36,36 @@ const git = (cwd, args, input) => {
 };
 const inside = (file, roots) => roots.some((root) => file.startsWith(root + "/"));
 const pattern = (file) => "/" + file.replace(/[\\*?[\]#! ]/g, "\\$&");
+const documentation = (entry) =>
+  ["100644", "100755"].includes(entry.mode) &&
+  (/\.(?:md|mdx)$/iu.test(entry.file) || /(?:^|\/)(?:README|LICENSE|COPYING|NOTICE)(?:\.txt)?$/iu.test(entry.file));
+
+/** Omit source masters while retaining their tracked authoring documentation. */
+export function storageSparsePatterns(profile) {
+  const patterns = ["/*"];
+  for (const root of profile.omit) {
+    const docs = profile.tracked.filter((entry) => inside(entry.file, [root]) && documentation(entry));
+    if (!docs.length) {
+      patterns.push(`!${pattern(root)}/`);
+      continue;
+    }
+    const directories = new Set([root]);
+    for (const entry of docs) {
+      for (
+        let directory = path.posix.dirname(entry.file);
+        directory !== root;
+        directory = path.posix.dirname(directory)
+      )
+        directories.add(directory);
+    }
+    // Re-include only the ancestors needed to reach a document. Excluding each
+    // directory's children keeps adjacent and nested masters out of the checkout.
+    for (const directory of [...directories].sort())
+      patterns.push(`${pattern(directory)}/`, `!${pattern(directory)}/*`);
+    patterns.push(...docs.map((entry) => pattern(entry.file)));
+  }
+  return patterns.join("\n") + "\n";
+}
 function entries(source, commit) {
   return git(source, ["ls-tree", "-rlz", commit])
     .split("\0")
@@ -66,7 +96,9 @@ export function storageProfile(source, commit, { fullAssets = false } = {}) {
     tracked,
     omit,
     capable,
-    omittedBytes: tracked.filter((entry) => inside(entry.file, omit)).reduce((sum, entry) => sum + entry.size, 0),
+    omittedBytes: tracked
+      .filter((entry) => inside(entry.file, omit) && !documentation(entry))
+      .reduce((sum, entry) => sum + entry.size, 0),
   };
 }
 
@@ -227,7 +259,7 @@ export function populateWorktree(source, target, profile, { cloneFile = null, pl
     }
   }
   const sparse = (patterns) => git(target, ["sparse-checkout", "set", "--no-cone", "--stdin"], patterns);
-  const finalPatterns = "/*\n" + profile.omit.map((root) => `!${pattern(root)}/\n`).join("");
+  const finalPatterns = storageSparsePatterns(profile);
   sparse(finalPatterns + candidates.map((entry) => `!${pattern(entry.file)}\n`).join(""));
   git(target, ["read-tree", "-mu", "HEAD"]);
   const plans = [];
