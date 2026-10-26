@@ -134,7 +134,11 @@ export function ArtPanel({
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
 
   return (
-    <div className="relative flex flex-col items-center gap-3" style={battleActorSizingStyle as CSSProperties}>
+    <div
+      className="relative flex flex-col items-center gap-3"
+      style={battleActorSizingStyle as CSSProperties}
+      data-battle-enemy-format={side === "enemy" ? (idleClips?.length ? "animated" : "static") : undefined}
+    >
       <CombatantAttackLunge
         attackToken={attackToken}
         castToken={castToken}

@@ -1,4 +1,12 @@
 @layer components {
+  .battle-actor-pair {
+    --battle-enemy-width: var(--battle-static-enemy-width);
+  }
+
+  .battle-actor-pair:has([data-battle-enemy-format="animated"]) {
+    --battle-enemy-width: var(--battle-animated-enemy-width);
+  }
+
   .destination-progress {
     --progress-node: calc(2.25 * var(--content-rem, 1rem));
     --progress-step: calc((100% - var(--progress-node)) / (var(--progress-node-count) - 1));

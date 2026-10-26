@@ -7,6 +7,15 @@ centered three-column group. Gaps follow
 [the shared battle layout](../src/features/alchemy/shared/config/layout.ts);
 the shared [display-sizing contract](./UI.md#display-sizing) governs scaling.
 
+The hero and enemy portrait centers sit at equal horizontal distances from the
+stage center in every battle. Preserve their intrinsic sizes and the action gap;
+use the displayed enemy width, including the reduced-motion static fallback.
+Center points are the anchors, not the combined outside bounds. The current
+renderer has one enemy; a Companion stays attached to the hero and extends into
+the reserved gap without shifting the hero's anchor when summoned. Health,
+status panels, targeting, card flights and impact effects follow the same
+portrait refs. The hand and corner HUD remain fixed.
+
 The hand rests against the bottom viewport edge as a centered fan, with capped
 spacing, responsive card sizing and clearance for rotated artwork. Draw Pile sits beside the hand's left edge and Discard Pile
 beside its right, both with their pile artwork in the bottom corners. Clicking either

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/hurt-spark-burst", () => ({
@@ -7,8 +7,12 @@ vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/hurt-spark-burst", (
   ),
 }));
 
+vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/boss-idle-art", () => ({
+  BossIdleArt: () => <video data-testid="boss-idle-visual" />,
+}));
+
 import { ArtPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/actor-panel";
-import type { BestiaryEntry } from "@/lib/game-data/index";
+import { enemyById, type BestiaryEntry } from "@/lib/game-data/index";
 import { installDisabledAnimationsForTests } from "../../../../../../helpers/animation-test";
 import { installFocusInputForTests } from "../../../../../../helpers/focus-input-test";
 
@@ -42,6 +46,26 @@ describe("ArtPanel hover motion", () => {
   installDisabledAnimationsForTests();
 
   afterEach(cleanup);
+
+  it("keeps the battlefield's width format in sync when reduced motion switches boss art", () => {
+    const { container } = render(
+      <ArtPanel {...baseProps} side="enemy" isBoss currentEnemy={enemyById["blood-countess"]!} />,
+    );
+    expect(container.querySelector('[data-battle-enemy-format="static"]')).toBeTruthy();
+    expect(container.querySelector("video")).toBeNull();
+    act(() => {
+      localStorage.removeItem("alchemy-disable-animations");
+      window.dispatchEvent(new StorageEvent("storage", { key: "alchemy-disable-animations" }));
+    });
+    expect(container.querySelector('[data-battle-enemy-format="animated"]')).toBeTruthy();
+    expect(container.querySelector("video")).toBeTruthy();
+    act(() => {
+      localStorage.setItem("alchemy-disable-animations", "true");
+      window.dispatchEvent(new StorageEvent("storage", { key: "alchemy-disable-animations" }));
+    });
+    expect(container.querySelector('[data-battle-enemy-format="static"]')).toBeTruthy();
+    expect(container.querySelector("video")).toBeNull();
+  });
 
   it.each([
     { id: "earth-elemental", side: "enemy", mirrored: true },

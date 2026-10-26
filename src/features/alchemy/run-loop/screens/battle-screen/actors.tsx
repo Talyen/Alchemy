@@ -4,11 +4,13 @@ import type { BattlePresentationStore } from "../../battle/battle-presentation-s
 import { isPlayerDefeated, getBattleCompanionDamageModifiers } from "@/lib/battle";
 import { BATTLE_ACTOR_TOP, BATTLE_ACTOR_VIEWPORT_OFFSET } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
+import type { CSSProperties } from "react";
 
 import {
   battleActorEnemyCellClass,
   battleActorHeroCellClass,
   battleActorSectionClass,
+  battleActorSizingStyle,
   battleCompanionCornerClass,
   getBossShineColors,
   getCharacterShineColors,
@@ -42,7 +44,6 @@ export function BattleActors({
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
   const enemyDead = battleState.enemyHealth <= 0;
-  const hasCompanion = Boolean(battleState.activeCompanion);
   const isBoss = battleState.currentEnemy.enemyType === "boss";
   const playerCcKeyword = getActiveCcKeyword(battleState.playerCC);
   const enemyCcKeyword = getActiveCcKeyword(battleState.enemyCC);
@@ -51,16 +52,12 @@ export function BattleActors({
     <section
       className={cn(aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : battleActorSectionClass.desktop)}
       style={{
+        ...(battleActorSizingStyle as CSSProperties),
         top: `calc(${BATTLE_ACTOR_TOP} + ${BATTLE_ACTOR_VIEWPORT_OFFSET}px - max(0px, calc((var(--content-scale, 1) - 1) * 120px)))`,
       }}
     >
       <div className={battleActorHeroCellClass}>
-        <div
-          className={cn(
-            "relative transition-transform duration-500 ease-out",
-            hasCompanion && "-translate-x-[clamp(0.625cqw,1.146cqw,1.2cqw)]",
-          )}
-        >
+        <div className="relative">
           <ShakingArtPanel
             presentation={presentation}
             side="player"
