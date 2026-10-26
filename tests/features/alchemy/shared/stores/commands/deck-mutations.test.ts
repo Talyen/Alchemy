@@ -172,6 +172,7 @@ describe("run acquisition with discovery", () => {
     expect(state.gear.loadouts.rogue["main-hand"]).toBe("unique-dagger");
     expect(state.gear.equippedTrinkets.rogue).toBe("bone-charm");
     expect(state.gear.ownedTrinketIds).toEqual(["bone-charm", "tattered-pages"]);
+    expect(state.profile.discoveredTrinketIds).toEqual(["bone-charm", "tattered-pages"]);
   });
 
   it("collects during combat without changing reserved equipment or queuing an equip", async () => {
