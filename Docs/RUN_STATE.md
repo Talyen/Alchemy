@@ -239,7 +239,7 @@ route adapters do not own that cleanup.
 ### Committed battle playback
 
 Battle reads expose serializable `BattleSnapshot` values. Opening draws and card
-plays commit before presentation. `commitEndTurn` resolves the turn and its
+plays commit before presentation. The opening result carries turn-start feedback independently of Companion actions, so presentation receives Purge feedback even when no Companion acts. `commitEndTurn` resolves the turn and its
 Companion follow-up with the engine-owned `resolveBattleAction` end-turn request,
 awards Dodge XP only after acceptance, and publishes the result atomically before
 discard or enemy animation.

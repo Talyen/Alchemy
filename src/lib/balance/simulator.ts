@@ -236,6 +236,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const tracking: SimulationTracking = { cardsPlayed, anomalies };
   const initialState = opening.state;
   if (anomalies) {
+    sampleAnomalies(opening.companion?.state ?? initialState, opening.startingTexts, anomalies);
     if (opening.companion) sampleAnomalies(opening.companion.state, opening.companion.texts, anomalies);
     sampleAnomalies(initialState, [], anomalies);
   }

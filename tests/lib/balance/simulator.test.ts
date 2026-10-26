@@ -33,6 +33,7 @@ describe("balance simulator", () => {
     };
     using _opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
       state,
+      startingTexts: [],
       companion: null,
       outcome: null,
     });
@@ -58,6 +59,7 @@ describe("balance simulator", () => {
       // Inject the resolved boundary snapshot, leaving simulator classification and metrics real.
       using _opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
         state: { ...battle.defaultBattleState(), ...health },
+        startingTexts: [],
         companion: null,
         outcome: battle.getBattleOutcome(health),
       });
