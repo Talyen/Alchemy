@@ -74,7 +74,16 @@ Unique and Trinket choices still exclude owned definitions. A premium Hoard is
 omitted from a newly generated map before its depth gate, and a saved Hoard
 with no eligible choices at victory falls back to the normal reward roll.
 
-Edit the source weights and progression points in `run-rewards.ts`, then run `npm run balance:loot`. The seeded report in `reports/loot-progression/report.html` compares premium availability per screen and expected offered items along explicit routes for every account tier and fresh/nearly-complete collections. It counts offers, not acquisitions; three Gear choices can expose premium loot more often than a single item roll. Gear offer rates are estimated by rolling rarities directly rather than generating full instances. The report records sampling uncertainty and holds ownership fixed along each comparison route.
+Edit the source weights and progression points in `run-rewards.ts`.
+
+### Loot progression report
+
+`npm run balance:loot` writes HTML and JSON to `reports/loot-progression/`. It uses the shared loot policy and Gear generator with deterministic per-cell seeds, comparing source/depth breakpoints, all account-clear tiers, and fresh versus nearly-complete collections. Route definitions are included in both outputs. Counts represent offered items, not acquisitions; ownership stays fixed along each route and no shop refreshes are assumed. Set `ALCHEMY_LOOT_SAMPLES` to a positive integer to change the default 1,000 samples per cell. The same command also writes `materials.html` / `materials.json` with mean homestead-material payouts per progression band and encounter type.
+
+Gear offer rates are estimated by rolling rarities directly rather than generating
+full instances. Three Gear choices can expose premium loot more often than a
+single item roll. The report records sampling uncertainty. Execution follows
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Materials tuning
 

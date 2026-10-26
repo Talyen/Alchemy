@@ -7,7 +7,7 @@ Alchemy is a fantasy roguelite deckbuilder. Use plain language and player-facing
 - Inspect status and relevant diffs before editing. Start mixed checkouts with `npm --silent run review:status`, scope patches to task paths, and re-read concurrently edited files.
 - Complete the requested behavior and small understood blockers. Reuse existing owners and libraries; preserve external contracts. Run [audits](./Docs/Audits/README.md) only on request and avoid unrelated cleanup.
 - Work independently. Message another chat only for a concrete unresolved dependency or conflict that repository inspection cannot answer. Do not send routine messages, poll other chats or wake completed chats.
-- Start unclear failures with a compact digest and a hypothesis under [failure-first triage](./Docs/REFERENCE.md#failure-first-triage). Keep only unresolved recurring issues in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md).
+- Start unclear failures with a compact digest and a hypothesis under [failure-first triage](./scripts/VERIFICATION.md#failure-first-triage). Keep only unresolved recurring issues in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md).
 
 ## Task lifecycle
 
@@ -44,7 +44,7 @@ Read known owners directly. Otherwise find filenames, scope searches, then read 
 
 - Player-facing text changes must keep every shipped language current before integration. Settle draft wording in the task worktree, then use [localization](./.agents/skills/localization/SKILL.md) to translate and review the final wording.
 - Visible changes use [frontend-design](./.agents/skills/frontend-design/SKILL.md) and its [visual review requirements](./Docs/UI_VISUAL_REVIEW.md). Preserve useful feedback, essential mechanics and accessible names; keep copy concise. Use `npm run agent:browser` for rendered review under [preview ownership](./CONTRIBUTING.md#agent-preview-ownership).
-- Avoid taglines, avoid helper text, avoid secondary labels - if a screen needs them to make sense, fix the layout instead.
+- Follow [UI copy conventions](./Docs/UI.md#show-dont-tell).
 - For common mutation work, start with [the production examples](./Docs/RUN_STATE.md#common-implementation-paths). Outside `shared/stores/`, use capability ports. Feature adapters call intent commands; command owners compose `dispatchRunSessionCommand()` and `run-session-write-port.ts` operations.
 - Pass run/battle controllers through route/shell props. Only `AppScreenChromeProvider` and `CardDescriptionProvider` are allowed providers; presentation state may use `ui-store`.
 - `BattleState` is immutable. Gameplay uses seeded `world` RNG and `Math.round` for combat magnitudes. Shared tuning belongs in `src/lib/game-constants/`; content magnitudes stay with definitions.

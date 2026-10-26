@@ -114,7 +114,7 @@ overlay activation returns void and can silently do nothing.
 Native callback and availability support are built from the pinned source and
 minimal patches described in the [native build recipe](../scripts/steamworks/README.md).
 Desktop development and packaging qualify both native exports. Packaged Windows
-Steam acceptance remains in the [blocked release plan](./Plans/SteamDemo.md#native-overlay-prerequisite).
+Steam acceptance remains in the [blocked release plan](./Plans/SteamDemo.md#outstanding-work).
 
 [Physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
 owns packaged Windows/controller/Deck evidence and public claim limits. Valve's

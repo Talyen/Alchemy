@@ -34,13 +34,8 @@ not templates to duplicate.
 | Card play         | Battle controller → [battle commands](../src/features/alchemy/shared/stores/commands/battle-commands.ts) → production resolution → committed result → route playback. Supply the offered snapshot; the command rejects stale inputs before consuming RNG.                                                                                                                                                                                                                                   | [Battle input ownership](../tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts) |
 | Saved run field   | [Save fields](../src/features/alchemy/shared/stores/persistence/run-profile-save-fields.ts) → [profile codec](../src/features/alchemy/shared/stores/persistence/run-profile-codec.ts) → [resume codec](../src/features/alchemy/shared/stores/persistence/run-resume-codec.ts) → [restore](../src/features/alchemy/shared/stores/persistence/run-restore.ts). Update schema/defaults and fixtures together under [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md). | [Resume roundtrip](../tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts)      |
 
-Run a matching example directly, then use the task gate for changed paths:
-
-```sh
-npm run test:unit -- tests/features/alchemy/run-loop/shop/shop-actions.test.ts
-npm run test:unit -- tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts
-npm run test:unit -- tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts
-```
+Use the linked tests to understand existing protection. Select checks under
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 Shop purchase/refresh recipes and `runShopTransaction` live together in
 `shop-commands-core.ts`; payment, acquisition, rollback and post-commit feedback

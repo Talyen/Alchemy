@@ -127,7 +127,7 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/lib/release/game-edition.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["game-edition.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["package.json", ["tooling"], ["desktop", "desktop_renderer", "assets"]],
-  ["Docs/REFERENCE.md", ["documentation"], []],
+  ["Docs/SIMULATION.md", ["documentation"], []],
 ];
 
 describe("CI path-filter parity", () => {

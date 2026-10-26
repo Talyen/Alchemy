@@ -1,7 +1,7 @@
 ---
 status: blocked
 reason: Steam ID verification, Steamworks configuration, physical acceptance, human feedback, and copy approvals remain unresolved.
-updated: 2026-10-23
+updated: 2026-10-25
 ---
 
 # Steam demo release readiness
@@ -9,11 +9,9 @@ updated: 2026-10-23
 Approved product scope, edition identity, and transfer behavior belong to
 [Steam demo](../STEAM_DEMO.md). This plan tracks the remaining release prerequisites.
 
-Steam ID verification is pending and no store page exists yet. The original
-AI-created assets' commercial-use entitlement and absence of third-party source
-material were confirmed by the owner on October 23, 2026; see
-[provenance](../../THIRD_PARTY_NOTICES.md). Complete the future
-[AI disclosure](../RELEASE_SETUP.md#steam-ai-disclosure) during page setup.
+Steam ID verification is pending and no store page exists yet. Complete
+[AI disclosure](../RELEASE_SETUP.md#steam-ai-disclosure) during page setup using
+the confirmed [provenance](../../THIRD_PARTY_NOTICES.md).
 
 ## Outstanding work
 
@@ -21,7 +19,9 @@ No published layout IDs, live default assignments, Proton/Deck performance or
 suspend/resume evidence have been verified. These prerequisites remain open:
 
 - [ ] Configure real demo/full [App IDs, depots and targets](../RELEASE_SETUP.md#github-secrets-one-time-setup).
-- [ ] Resolve the [native overlay binding prerequisite](#native-overlay-prerequisite).
+- [ ] Qualify the [native overlay binding](../../scripts/steamworks/README.md) in
+      packaged Windows/Steam, including custom shortcuts, availability/wishlist
+      fallback and Deck, under [physical acceptance](../STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence).
 - [ ] Configure and validate [shared Cloud/progress transfer](../STEAM_DEMO.md#save-transfer),
       preserving source saves and initialization receipts.
 - [ ] Publish [recommended layouts](../RELEASE_SETUP.md#configuration-and-validation-status)
@@ -53,20 +53,3 @@ Sources: [application identity](../../game-edition.mjs), [import notice](../../s
 [save-write notice](../../src/app/save-write-notice.tsx).
 
 Menu, recap, marketing and lock revisions remain approved under the demo contract.
-
-## Native overlay prerequisite
-
-Alchemy builds the missing callback and availability exports from steamworks.js
-0.4.0 plus two pinned upstream patches. The [native build recipe](../../scripts/steamworks/README.md)
-owns exact revisions, source checksums, platform prerequisites and export qualification.
-It excludes the availability patch's unrelated workshop declaration. Windows
-depots must use a Windows x64 native build; Proton uses that Windows build.
-
-[The pause listener](../../desktop/steam-overlay.cjs) pauses on native activation
-and leaves the menu open on deactivation. `steamworks.js.init()` owns callback
-pumping; no second timer or callback pump is added. Electron overlay GPU setup
-runs before app readiness.
-
-Physical packaged Windows/Steam acceptance is still required, including custom
-overlay shortcuts, availability/wishlist fallback and Deck. Browser/mocked
-callbacks and native export qualification cannot close this gate.

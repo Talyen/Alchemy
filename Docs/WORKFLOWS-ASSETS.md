@@ -15,7 +15,7 @@ failure and freshness contracts below.
 
 ## Repository sources and CI
 
-Alchemy's selected source masters are committed under `assets/sources/`. Preparation,
+Alchemy's selected [source masters](../assets/sources/README.md) are committed under `assets/sources/`. Preparation,
 source checks, icon generation, development and builds need no external asset library.
 The folder retains the selected `2d Assets/Game Sources` and `Sounds/Game Sources`
 paths so existing selections and transform receipts keep their identities. The

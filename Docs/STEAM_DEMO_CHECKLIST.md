@@ -36,7 +36,7 @@ Steamworks. Demo user reviews require the deferred separate demo store page.
 
 Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 [run workflows](./RUN_WORKFLOWS.md) as behavior owners. Existing
-[headless careers](./PLAYTHROUGH_SIMULATION.md) and
+[headless careers](./SIMULATION.md#headless-careers) and
 [browser journeys](../tests/e2e/README.md) provide complementary evidence.
 
 - [ ] Exercise real Knight/Rogue/Ranger starters and genuinely earned unlocks without hangs or routes into Act 2. Label fixture grants separately from earned progress.
@@ -56,7 +56,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 - [ ] Quit opens no store/browser destination. Verify that native shutdown drains admitted file writes under the [write acknowledgement contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement); distinguish those writes from unfinished renderer work and already acknowledged progress.
 - [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
 - [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep the [native-binding prerequisite](./Plans/SteamDemo.md#native-overlay-prerequisite) open until qualified.
+- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep [native-binding qualification](./Plans/SteamDemo.md#outstanding-work) open until verified.
 
 ## 5. Readability, feedback, and Options
 

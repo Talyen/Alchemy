@@ -181,8 +181,8 @@ header, gold counter, and instruction text; the Remove action retains its gold c
 
 ## Campaign destinations and Campfire
 
-Before choosing at Campfire, a heart in the Health keyword color and the actual
-recovery amount appear below Rest, including zero at full Health. Campaign
+Campfire shows current/max Health before choosing. A heart in the Health keyword
+color and the actual recovery amount appear below Rest, including zero at full Health. Campaign
 destination headers say Choose Destination without an act indicator. The named
 boss entrance keeps its existing title; reward screens say Victory.
 
@@ -200,7 +200,8 @@ its own spent state. The service name becomes the main screen heading. Mix shows
 equal-size ingredient choices and two Potion-icon slots leading to the result.
 Brew shows one Potion slot; clicking its empty or filled artwork opens a Wish-style
 recipe choice overlay. Choosing fills the slot, while cancelling preserves it.
-Distill keeps choices above its input slot and strengthened preview. Clicking or
+Distill keeps choices above its input slot and strengthened preview. Increased
+values use green in card hover tooltips, including after reload. Clicking or
 dragging fills ingredient slots. Empty and filled slots reserve identical portrait
 bounds, so selections cannot move the centered header or actions. Recipe choices,
 ingredient lists, slots, previews and purchase results share the standard collection

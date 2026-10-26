@@ -93,21 +93,21 @@ Do not hand-edit generated outputs.
 
 Start with the document for your question:
 
-| Question                                      | Start here                                                                                 |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| What do the terms mean?                       | [Glossary](./Docs/GLOSSARY.md)                                                             |
-| How do combat and progression work?           | [Game rules](./Docs/GAME_RULES.md)                                                         |
-| Where does a subsystem live?                  | [Architecture](./Docs/ARCHITECTURE.md)                                                     |
-| How does state change and persist?            | [Run state](./Docs/RUN_STATE.md)                                                           |
-| How do I add content or change a flow?        | [Workflow index](./Docs/WORKFLOWS.md)                                                      |
-| Which UI and audio conventions apply?         | [UI](./Docs/UI.md#guide-index), [Audio](./Docs/AUDIO.md)                                   |
-| Which command should I use?                   | [Commands](./Docs/COMMANDS.md)                                                             |
-| Which checks should I run?                    | [Contributing](./CONTRIBUTING.md)                                                          |
-| How do I test player interactions and layout? | [E2E guide](./tests/e2e/README.md)                                                         |
-| How do I investigate balance or performance?  | [Simulation](./Docs/REFERENCE.md#balance-simulation), [Performance](./Docs/PERFORMANCE.md) |
-| How do I ship?                                | [Release](./Docs/RELEASE.md)                                                               |
-| What is included in the Steam demo?           | [Demo contract](./Docs/STEAM_DEMO.md)                                                      |
-| How do agents work here?                      | [AGENTS.md](./AGENTS.md)                                                                   |
+| Question                                      | Start here                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------------ |
+| What do the terms mean?                       | [Glossary](./Docs/GLOSSARY.md)                                           |
+| How do combat and progression work?           | [Game rules](./Docs/GAME_RULES.md)                                       |
+| Where does a subsystem live?                  | [Architecture](./Docs/ARCHITECTURE.md)                                   |
+| How does state change and persist?            | [Run state](./Docs/RUN_STATE.md)                                         |
+| How do I add content or change a flow?        | [Workflow index](./Docs/WORKFLOWS.md)                                    |
+| Which UI and audio conventions apply?         | [UI](./Docs/UI.md#guide-index), [Audio](./Docs/AUDIO.md)                 |
+| Which command should I use?                   | [Commands](./Docs/COMMANDS.md)                                           |
+| Which checks should I run?                    | [Contributing](./CONTRIBUTING.md)                                        |
+| How do I test player interactions and layout? | [E2E guide](./tests/e2e/README.md)                                       |
+| How do I investigate balance or performance?  | [Simulation](./Docs/SIMULATION.md), [Performance](./Docs/PERFORMANCE.md) |
+| How do I ship?                                | [Release](./Docs/RELEASE.md)                                             |
+| What is included in the Steam demo?           | [Demo contract](./Docs/STEAM_DEMO.md)                                    |
+| How do agents work here?                      | [AGENTS.md](./AGENTS.md)                                                 |
 
 [Audit guides](./Docs/Audits/README.md) are on-demand review procedures.
 [Plans](./Docs/Plans/README.md) hold active work; [design inputs](./Docs/design/README.md)
