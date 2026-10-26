@@ -95,7 +95,7 @@ describe("full source-aware completion gate", () => {
       vi.stubEnv("GIT_IMPLICIT_WORK_TREE", "0");
       vi.stubEnv("GIT_SSH_COMMAND", "ssh");
       vi.spyOn(fs, "readFileSync").mockReturnValueOnce("");
-      vi.mocked(resolvePushPaths).mockReturnValueOnce(["Docs/REFERENCE.md"]);
+      vi.mocked(resolvePushPaths).mockReturnValueOnce(["Docs/SIMULATION.md"]);
       const runner = vi.fn((_label, _command, _args, env: NodeJS.ProcessEnv) => {
         for (const name of ["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE"])
           expect(env[name]).toBeUndefined();
@@ -119,7 +119,7 @@ describe("full source-aware completion gate", () => {
   it("runs documentation checks without unit, build, or browser work", async () => {
     const calls: string[] = [];
     const code = await runCheck(
-      ["Docs/REFERENCE.md", "scripts/README.md", "src/features/alchemy/shared/storage/MIGRATIONS.md"],
+      ["Docs/SIMULATION.md", "scripts/README.md", "src/features/alchemy/shared/storage/MIGRATIONS.md"],
       {
         runner: vi.fn((label: string) => {
           calls.push(label);
@@ -235,7 +235,7 @@ describe("full source-aware completion gate", () => {
 
   it("lets static checks own docs:check on executable changes only", async () => {
     const executable: unknown[][] = [];
-    await runCheck(["src/App.tsx", "Docs/REFERENCE.md"], {
+    await runCheck(["src/App.tsx", "Docs/SIMULATION.md"], {
       runner: vi.fn((...args: unknown[]) => {
         executable.push(args);
         return 0;
@@ -246,7 +246,7 @@ describe("full source-aware completion gate", () => {
     expect(verify?.[2]).toContain("--skip-docs-check");
 
     const docsOnly: unknown[][] = [];
-    await runCheck(["Docs/REFERENCE.md"], {
+    await runCheck(["Docs/SIMULATION.md"], {
       runner: vi.fn((...args: unknown[]) => {
         docsOnly.push(args);
         return 0;
@@ -258,7 +258,7 @@ describe("full source-aware completion gate", () => {
 
   it("fails when source inputs drift", async () => {
     let reads = 0;
-    const code = await runCheck(["Docs/REFERENCE.md"], {
+    const code = await runCheck(["Docs/SIMULATION.md"], {
       runner: vi.fn(() => 0),
       captureDigest: () => ({ head: "abc", hash: reads++ === 0 ? "before" : "after" }),
     });

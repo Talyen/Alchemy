@@ -157,34 +157,12 @@ existing legal fixture map. Unused coverage is still retained for alternate cuts
 
 ## Capture and revision workflow
 
-Capture in bounded batches without changing the pinned recipe or source checkout:
-
-```sh
-npm run trailer -- capture --recipe trailers/alchemy-cinematic.json \
-  --bundle /absolute/path/to/library --clips countess-hook,heroes-roster,draft-choice
-# Repeat with other IDs. Omit --clips to capture all remaining takes.
-```
-
-On the shared Mac, put each capture/render command inside the documented host
-resource lane. Completed, hashed takes are reused; incomplete masters are never
-silently accepted. `capture.json` reports whether the entire library is complete.
-
-Copy the recipe, change `shots` (order, trims, camera paths, transitions), then:
-
-```sh
-npm run trailer -- render --bundle /absolute/path/to/library \
-  --recipe trailers/my-revised-cut.json --label cut-02
-```
-
-The renderer checks source hashes, dimensions and native lyric timing. Only clips
-used by the edit are required, so a partial library can produce a small canary
-before the full assembly. Exact source frames are decoded on demand through a
-local frame server, retaining native resolution while bounding memory and avoiding
-a multi-gigabyte temporary PNG expansion. Long edits keep verified 12-second
-render chunks: use `render --chunk 1` through the last chunk reported by `plan`,
-then `render --assemble`. Each job uses a separate bounded host lane.
-Source masters and earlier exports stay
-untouched. New gameplay inputs or new starting situations require a new take.
+Use [cinematic capture](../Docs/TRAILERS.md#cinematic-feature-compilation) for
+`trailers/alchemy-cinematic.json` and [capture/revision commands](../Docs/TRAILERS.md#capture-once-revise-the-edit)
+for resource leases, partial libraries, verified chunks and retained masters.
+For a revised cut, copy the recipe and change shot order, trims, camera paths or
+transitions. Keep the source takes pinned; new gameplay inputs or starting
+situations require a new take. Review this cut against the gates below.
 
 ## Review gates
 

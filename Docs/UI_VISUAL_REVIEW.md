@@ -6,7 +6,7 @@ own illustration style and importing.
 
 ## Improve on what exists
 
-- Avoid taglines, avoid helper text, avoid secondary labels - if a screen needs them to make sense, fix the layout instead.
+- Apply [UI copy conventions](./UI.md#show-dont-tell).
 - Identify a concrete visible or interaction defect before changing the design.
   Repeated cards, small artwork or empty space alone do not establish a problem.
   Understand what the current screen does well and preserve those strengths.

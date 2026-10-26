@@ -97,8 +97,8 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
   [Corruption flow](#adding--changing-corruption-flow).
 - Preserve supported saved geography and in-flight encounters. Below-baseline development maps are disposable under the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline); no historical grid/hex migration belongs in navigation.
 - Cover the changed setup/resume route with focused unit tests using
-  `npm run test:unit -- <test-paths>` or select affected unit suites with
-  `npm run check -- <task-owned paths>` under the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change).
+  the affected setup and navigation suites. Select checks under the
+  [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Change battle playback
 

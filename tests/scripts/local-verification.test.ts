@@ -46,7 +46,7 @@ it("defers automatic tooling and save suites while retaining full verification s
   expect(filterPlanCommands(plan, new Set()).commands).toEqual([]);
   expect(filterPlanCommands(plan, new Set(["full"])).commands).toBe(plan.commands);
   expect(
-    filterPlanCommands(resolveRoutePlan(["Docs/REFERENCE.md"]), new Set()).commands.map((command) => command.key),
+    filterPlanCommands(resolveRoutePlan(["Docs/SIMULATION.md"]), new Set()).commands.map((command) => command.key),
   ).toEqual(["docs-check"]);
 });
 
@@ -80,7 +80,7 @@ it("replaces overlapping selected unit runs with one complete suite for reposito
 it("checks documentation automatically without unrelated units, localization or static work", async () => {
   const calls: string[] = [];
   expect(
-    await runCheck(["Docs/REFERENCE.md"], {
+    await runCheck(["Docs/SIMULATION.md"], {
       runner: (label) => {
         calls.push(label);
         return 0;
@@ -90,14 +90,14 @@ it("checks documentation automatically without unrelated units, localization or 
   ).toBe(0);
   expect(calls).toEqual(["changed-path verification", "selected-file format"]);
   expect(
-    filterPlanCommands(resolveRoutePlan(["Docs/REFERENCE.md"]), new Set()).commands.map((command) => command.key),
+    filterPlanCommands(resolveRoutePlan(["Docs/SIMULATION.md"]), new Set()).commands.map((command) => command.key),
   ).toEqual(["docs-check"]);
 });
 
 it("previews the same selection without executing or capturing source state", async () => {
   const runner = vi.fn(() => 0);
   const captureDigest = vi.fn(() => ({ head: "test", hash: "unchanged" }));
-  expect(await runCheck(["scripts/check.mjs", "Docs/REFERENCE.md", "--plan"], { runner, captureDigest })).toBe(0);
+  expect(await runCheck(["scripts/check.mjs", "Docs/SIMULATION.md", "--plan"], { runner, captureDigest })).toBe(0);
   expect(runner).not.toHaveBeenCalled();
   expect(captureDigest).not.toHaveBeenCalled();
 });

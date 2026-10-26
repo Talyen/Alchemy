@@ -1,4 +1,90 @@
-# Headless playthrough testing
+# Gameplay simulation
+
+Choose the runner for the question:
+
+| Question                                                           | Runner                | Guide                                                |
+| ------------------------------------------------------------------ | --------------------- | ---------------------------------------------------- |
+| How does a card, loadout or enemy perform in isolated combat?      | `balance:sim`         | [Battle simulation](#balance-simulation)             |
+| Can a career complete gameplay, progression and save/resume flows? | `balance:playthrough` | [Headless careers](#headless-careers)                |
+| How do loot and material offers change with progression?           | `balance:loot`        | [Armory report](./ARMORY.md#loot-progression-report) |
+
+Both combat runners use production gameplay. Their automated policies do not
+establish human difficulty or rendered UI correctness. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
+owns execution permissions and verification requirements; commands below describe
+runner options.
+
+## Balance simulation
+
+Headless battle simulator for overpowered or underpowered cards, classes, enemies, talents, companions, trinkets, gear, and individual item affixes. It runs isolated fights through the real battle engine (no browser, no React) using simple play policies. Its results describe the selected automated play policy, not human skill or a full run/map/shop simulation. Skipped during normal `npm test` runs.
+
+The simulator shares opening resolution and complete turn resolution with live
+commands. Forced player skips count toward `maxTurns` and never grant an extra
+Companion action. The optional simulator budget limits resolved frames, including
+forced skips; live commands omit that limit. Combat uses the seeded `world` stream; card and Wish decisions
+use a separate policy RNG. Replaying the same decisions from the same battle
+inputs therefore preserves combat outcomes and RNG counters. Existing report
+baselines may change when rerun with these lifecycle and RNG corrections.
+
+```sh
+npm run balance:sim
+
+# Run the exhaustive comparison with the original sample counts
+npm run balance:sim:full
+
+# Increase iterations per scenario
+ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
+
+# Increase independent class-deck seeds
+ALCHEMY_BALANCE_DECK_SEEDS=5 npm run balance:sim
+
+# Change the play policy (random-playable, greedy-damage, defensive-random, greedy-effective-damage)
+ALCHEMY_BALANCE_POLICY=greedy-effective-damage npm run balance:sim
+
+# Kit + tree-order talents + talent-point HP only (no homestead / gear / Vitality / core trinkets)
+ALCHEMY_BALANCE_LOADOUT=bare npm run balance:sim
+
+# Measure raw kit without hidden fight pacing
+ALCHEMY_BALANCE_PACING=off npm run balance:sim
+
+# Run the low-iteration, side-effect-free full-report check
+npm run test:balance
+```
+
+`balance:sim` runs an exploratory sweep across heroes, enemies, cards, Talents,
+Companions, Trinkets, Gear and affixes at Early/Mid/Late progression.
+`balance:sim:full` uses larger samples for tuning decisions. Both write
+`reports/balance-findings.*` and `reports/balance-full/`; small cells remain
+exploratory. Exact sample counts belong to [the balance owner](../src/lib/balance/)
+and the generated report's methodology.
+
+Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `findings-collector.ts` attaches report identity separately from metric rules and shares one sampled-median evaluator between enemy-type and class equity; candidate order remains explicit in `collectBalanceFindings`. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
+
+Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
+
+Report measurements share `RateCell` in `simulator-types.ts` and an
+extraction/aggregation record in `rate-statistics.ts`. Batch summaries and report
+aggregation use that record: counts always sum; rates and averages weight by
+battles or sampled enemy types. Adding a measurement to the contract and record
+updates projections and weighting automatically.
+Overgrowth and Regeneration count only successful Health restoration. Glacial
+Surge is a flat damage modifier and has no scheduled growth activations.
+
+Paired sweeps describe reference fights and variants in `report-sweeps.ts`.
+`report-sweep-runner.ts` manages batch configuration, matched-fight checks, reference
+simulations, and delta aggregation. A pair holds character, enemy, depth, tier,
+seed, and iterations equal; only the tested deck, talent, Trinket, or Gear varies.
+Either reference or variant may serve as baseline.
+
+Numeric values must be positive integers. Policies and loadouts must match
+supported choices; pacing accepts `on`/`1`/`true` or `off`/`0`/`false`. Invalid
+settings fail fast before report writes. `ALCHEMY_BALANCE_FINDINGS_CAP` sets the
+summary findings cap (default: 100).
+`balance:sim` and `balance:sim:full` generate reports; `test:balance` verifies finite full-report
+construction and render purity without touching `reports/`. Changed balance
+implementation is protected by the focused unit suite and this report check;
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution permissions.
+
+## Headless careers
 
 The Node runner acts through production battle commands, run navigation, rewards,
 shops, mysteries, corruption, homestead, talents, and Armory operations. It never
@@ -8,7 +94,7 @@ CLI runs each career in a fresh child process;
 progress persists between that career's runs. The parent watchdog also terminates
 synchronous hangs.
 
-## Commands
+### Commands
 
 ```bash
 npm run balance:playthrough -- --seeds 1,2,3 --runs 2
@@ -64,7 +150,7 @@ or actual healing. Exact weights belong to the policy in
 or draw gameplay RNG. Other heroes, random/minimalist policies and retained legacy
 careers keep their own scoring; production card rules and offers are unchanged.
 
-## Combat policy
+### Combat policy
 
 [Combat policy](../src/app/playthrough/combat-policy.ts) owns modern heuristic
 preferences: preserve consumables without current benefit, avoid potentially
@@ -78,7 +164,7 @@ Random-playable and legacy careers retain their original decisions; replay follo
 the recorded journal. These career heuristics add no shipping-save fields and do
 not change live autoplay or isolated-battle scoring.
 
-## Brewing coverage and comparisons
+### Brewing coverage and comparisons
 
 New CLI careers default to `--brewing on`. Use `--brewing off` for a paired
 ablation; both explicit settings use the same modern purchase, refresh, and
@@ -115,7 +201,7 @@ Health and useful brewing otherwise. It never examines unseen stock. Its estimat
 do not model every Talent/affix interaction or predict calibrated win rates.
 Random noncombat policy ignores these rankings.
 
-### Service evidence
+#### Service evidence
 
 JSON, HTML and agent summaries report distinct shop/campfire visits, per-service
 eligible/affordable/beneficial visits, committed uses, actual spending, result
@@ -131,7 +217,7 @@ Potions without paying or visiting shops. They also omit carryover Health and
 run economics. Use career experiments to judge Alchemist progression before
 proposing changes to globally available cards.
 
-## Evidence and limits
+### Evidence and limits
 
 Fresh saves must earn hero/mode unlocks. `unlocked-v1` grants access for targeted
 coverage; `economy-v1` supplies resources, a discovered Companion, and a Knight weapon for homestead and Gear coverage; `victory-v1`
@@ -189,7 +275,7 @@ existing tests. Current homestead upgrades have no elapsed-time completion;
 the harness freezes wall-clock inputs and does not simulate real-time pacing.
 Add an explicit recorded clock cadence when a covered system requires it.
 
-## Owners and verification
+### Owners and verification
 
 The integration lives in `src/app/playthrough/`, where feature orchestration
 imports are legal. It is loaded only by Node tooling, never by the application
