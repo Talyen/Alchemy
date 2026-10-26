@@ -181,9 +181,9 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         let deadline = Infinity;
         update((state) => {
           const current = advanceCombatFeedback(state.floatingCombatBursts, state.reactionAnnouncements, timestamp);
-          const result = consolidateCombatBursts(current.floatingCombatBursts, prepared.bursts, timestamp);
+          const bursts = consolidateCombatBursts(current.floatingCombatBursts, prepared.bursts, timestamp);
           const scheduled = scheduleCombatFeedback(
-            result.bursts,
+            bursts,
             [...current.reactionAnnouncements, ...prepared.reactions],
             timestamp,
             lifetimeMs,
