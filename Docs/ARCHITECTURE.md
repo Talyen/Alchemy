@@ -118,6 +118,9 @@ keeping `run-setup` and `run-loop` independent under Oxlint.
 | Pure destination eligibility and weighted offers | `shared/run-flow/resolve-available-destinations.ts`, `destination-flow.ts` |
 | Transaction-owned offer generation               | `shared/stores/commands/destination-offer-command.ts`                      |
 
+Starter offer generation lives in `src/lib/starter-draft.ts`, shared by new drafts
+and save repair. The feature entry point re-exports that recipe and owns resume targeting.
+
 Initialization commits deck, discovery, offers, activity and opening combat together;
 failure rolls all of them back. Schedule Battle before opening feedback so an
 immediate Companion outcome can supersede it. Novice Campaign starts with Skeleton;
