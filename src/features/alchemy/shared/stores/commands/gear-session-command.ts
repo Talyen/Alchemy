@@ -90,7 +90,12 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void, assertOp
   const mutation = <Args extends unknown[], Result>(operation: (...args: Args) => Result) => {
     return (...args: Args): Result => {
       assertOpen();
-      return operation(...args);
+      try {
+        return operation(...args);
+      } catch (error) {
+        // Catching an individual Gear failure cannot commit earlier writes.
+        abortGameplayCommand(state, error);
+      }
     };
   };
   // Void actions always write; boolean actions report success. Either way the

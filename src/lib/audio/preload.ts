@@ -2,6 +2,7 @@ import { allRegisteredSoundFiles, battleEventSounds, getCardSounds, uiSounds } f
 import { releaseAudioElement } from "./element";
 import { scheduleIdle } from "../preload";
 import { getSoundUrl, resetSoundUrlCache } from "./url";
+import { SOUND_PRELOAD_TIMEOUT_MS } from "../game-constants";
 
 const IDLE_PRELOAD_TIMEOUT_MS = 5000;
 
@@ -27,10 +28,12 @@ export function preloadSounds(names: readonly string[]) {
     warmedSounds.add(name);
     let el: HTMLAudioElement | undefined;
     let settled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const cancel = () => finish(false);
     const finish = (loaded: boolean) => {
       if (settled) return;
       settled = true;
+      if (timeout !== undefined) globalThis.clearTimeout(timeout);
       pendingWarmups.delete(cancel);
       if (!el) return;
       el.oncanplaythrough = null;
@@ -43,6 +46,7 @@ export function preloadSounds(names: readonly string[]) {
       el.preload = "auto";
       el.oncanplaythrough = () => finish(true);
       el.onerror = cancel;
+      timeout = globalThis.setTimeout(cancel, SOUND_PRELOAD_TIMEOUT_MS);
       el.src = getSoundUrl(name);
     } catch {
       finish(false);

@@ -50,6 +50,14 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   let bossPreviewKey: string | null = null;
   let playAttempt: object | null = null;
 
+  function reportFailure(message: string): void {
+    try {
+      deps.reportFailure(message);
+    } catch {
+      // Diagnostics cannot interrupt playback cleanup or reject an async handler.
+    }
+  }
+
   function cancelTransition(): void {
     const timer = "timer" in playback ? playback.timer : null;
     // Revoke callbacks before cancellation, which can fail at the scheduler seam.
@@ -58,11 +66,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
       try {
         deps.cancel(timer);
       } catch {
-        try {
-          deps.reportFailure("Music fade could not be cancelled");
-        } catch {
-          // Diagnostics cannot interrupt source release or the next transition.
-        }
+        reportFailure("Music fade could not be cancelled");
       }
     }
   }
@@ -82,7 +86,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   function syncMusicSettings(): void {
     if (playback.phase === "idle") return;
     applyTrackVolume(playback.track);
-    playback.track.element.muted = deps.readSettings().muted;
+    playback.track.element.muted = playback.phase === "paused" || !deps.canPlay() || deps.readSettings().muted;
   }
 
   function playElement(el: MusicElement): void {
@@ -93,13 +97,13 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
       el.pause();
       return;
     }
-    const reportFailure = () => {
-      if (playAttempt === attempt) deps.reportFailure("Music playback blocked until user interaction");
+    const reportPlayFailure = () => {
+      if (playAttempt === attempt) reportFailure("Music playback blocked until user interaction");
     };
     try {
-      void Promise.resolve(el.play()).catch(reportFailure);
+      void Promise.resolve(el.play()).catch(reportPlayFailure);
     } catch {
-      reportFailure();
+      reportPlayFailure();
     }
   }
 
@@ -117,7 +121,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
       if (catalog.skipSeconds) element.currentTime = catalog.skipSeconds;
     } catch {
       if (element) releaseAudioElement(element);
-      deps.reportFailure("Music track could not be initialized");
+      reportFailure("Music track could not be initialized");
       return undefined;
     }
     const track = { key, element, fadeGain: 1 };
@@ -159,7 +163,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
       cancelTransition();
       apply(1);
       complete();
-      deps.reportFailure("Music fade could not be scheduled");
+      reportFailure("Music fade could not be scheduled");
     }
   }
 
@@ -238,12 +242,12 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     try {
       element.muted = true;
     } catch {
-      deps.reportFailure("Music track could not be muted");
+      reportFailure("Music track could not be muted");
     }
     try {
       element.pause();
     } catch {
-      deps.reportFailure("Music track could not be paused");
+      reportFailure("Music track could not be paused");
     }
   }
 
