@@ -172,17 +172,22 @@ async function assertBattleCardArtIfPresent(page: Page): Promise<void> {
 }
 
 export const test = base.extend<PerfFixtures>({
-  perfPage: async ({ page }, use) => {
-    if (isElectron) {
-      const electronPage = await launchElectronPage();
-      await use(electronPage);
-      await electronApp?.close().catch(() => undefined);
-      electronApp = null;
-    } else {
-      await expect.poll(() => page.evaluate(() => navigator.webdriver)).toBe(false);
-      await use(page);
-    }
-  },
+  // Playwright resolves declared dependencies before entering a fixture. The
+  // Electron branch must not request `page`, which launches an unused Chromium.
+  perfPage: isElectron
+    ? // oxlint-disable-next-line no-empty-pattern -- Playwright requires a destructured dependency list; Electron needs no browser fixtures.
+      async ({}, use) => {
+        try {
+          await use(await launchElectronPage());
+        } finally {
+          await electronApp?.close().catch(() => undefined);
+          electronApp = null;
+        }
+      }
+    : async ({ page }, use) => {
+        await expect.poll(() => page.evaluate(() => navigator.webdriver)).toBe(false);
+        await use(page);
+      },
 
   measureScenario: async ({ perfPage }, use, testInfo) => {
     await use(
