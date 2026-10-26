@@ -1,4 +1,5 @@
 import { expect, test } from "../../fixtures/e2e";
+import { readSavedGame } from "../save-injection";
 import { BattlePage } from "../../pages/battle-page";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
@@ -16,9 +17,10 @@ test(
     await page.getByRole("button", { name: "Back", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
     await menu.selectCharacterAndContinue("Knight");
-    await page.getByRole("button", { name: "Novice" }).click();
+    await page.getByRole("button", { name: "Adventurer" }).click();
     await expect(play).toBeEnabled();
     await play.click();
     await new BattlePage(page).waitForOpeningHand();
+    await expect.poll(async () => (await readSavedGame(page)).activeRun?.selectedDifficulty).toBe("difficulty-2");
   },
 );

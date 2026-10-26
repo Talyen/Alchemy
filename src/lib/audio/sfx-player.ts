@@ -131,14 +131,19 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
         fail();
       }
     };
-    if (delay > 0) {
-      cue.state = { phase: "pending", timer: deps.schedule(start, delay * 1000) };
-    } else {
-      cues.add(cue);
+    cues.add(cue);
+    if (!(delay > 0)) {
       start();
       return;
     }
-    cues.add(cue);
+    try {
+      const timer = deps.schedule(start, delay * 1000);
+      // An injected clock may run the cue before returning its timer.
+      if (cue.state.phase === "ready") cue.state = { phase: "pending", timer };
+      else deps.cancel(timer);
+    } catch {
+      finish(cue);
+    }
   }
 
   return {

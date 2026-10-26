@@ -49,6 +49,7 @@ test.describe("Controller-equivalent keyboard navigation", () => {
     }
     await expect(battle.endTurnBtn).toBeFocused();
     await input.press("confirm");
+    await expect(battle.hand).toHaveCount(4);
     await expect(battle.endTurnBtn).toBeEnabled();
   });
 });

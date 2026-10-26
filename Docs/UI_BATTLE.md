@@ -217,6 +217,66 @@ the card-rejection sound. Each batch receives one cue, including fresh opening
 draws. Retained overflow, delivery into the hand, and saved-battle mount stay quiet.
 Reduced or disabled motion suppresses the shake while preserving sound settings.
 
+## Battle motion
+
+Living combatant artwork, including Companions, enlarges during its active turn
+alongside the shine border. Hover multiplies that active size. Exact scale and
+transition values belong to [component styles](../src/styles/components.css).
+
+[The playback workflow](./WORKFLOWS.md#change-battle-playback) owns wiring and lifecycle. Battle VFX live in `run-loop/battle` (visual state in
+`battle-presentation-store.ts`, overlays in `presentation/` leaves); every fight
+action presents numbers + shake + sound through `presentCombatTexts` in
+`battle/controller-utils.ts`.
+
+Player lunges occur only for cards with a damage effect and move the portrait,
+not the Health/status column. Feedback and the single portrait impact flash appear
+as soon as the action resolves, independently of the attack animation. Health
+damage takes priority over Block-only impacts; the largest eligible amount wins,
+with first occurrence breaking ties. Portrait recoil has light, normal, and heavy
+strengths: below 5%, from 5%, and from 20% of the target's maximum Health per
+selected impact. Block and periodic damage always use light recoil. Recoil stays
+on artwork, leaving Health and statuses steady; at most one recoil starts per
+target every 180ms. Every resolved impact still retains its flash, numbers, and
+sound. These effects never delay input. Each action requests each combat sound family
+at most once. Player and enemy deaths share the slice effect and battle-end delay;
+Death's Door is not defeat, and voluntary run exits remain immediate.
+
+Player and enemy dodges use a mirrored, shallow dip and backward lean on the
+artwork frame, easing back over 460ms without hit recoil or an added effect.
+Health and statuses stay steady. Existing floating Dodge text and sounds remain
+unchanged. Dodge motion never delays input; another dodge replaces the previous
+motion, and reset, death, teardown or reduced/disabled motion cancels it.
+
+The shared death effect uses a straight diagonal cut for portrait halves and
+particle origins, with a pointed white blade flash and restrained warm halo.
+[Battle timing](../src/lib/game-constants/battle-timing.ts) and the effect's styles
+own durations. Dark shading and thin warm glints
+follow the cut edges as the halves separate and fade; a small directional spark
+burst accompanies the cut, followed by the existing border dissolve. Motion-disabled
+preferences skip the effect and its sound cue.
+
+Played cards fly as artwork and finish with a small pop before fading on
+arrival, marking the activation. At most six flight ghosts overlap; the oldest
+sheds first. Motion-disabled preferences skip the flight.
+Autoplay flashes the hover lift, scale, and shine for a beat before committing,
+without the description popup; reduced motion plays instantly with no preview.
+Cancelling or restarting the battle clears its pending autoplay preview immediately
+and prevents that preview from committing a card or Wish choice.
+
+Draws fly from the bottom-left Draw Pile into measured hand slots and flip from
+back to front. Discards leave right-to-left, flip onto the bottom-right Discard
+Pile, and scale to its top card. Both follow the shallow curved path in
+[transfer motion](../src/features/alchemy/run-loop/battle/presentation/card-transfer-motion.ts),
+with batch-accelerated timing. Flights run sequentially;
+each departure starts its sound. The live card identity follows hand reflow.
+Tuning lives in `CARD_TRANSFER_CONFIG`.
+
+Existing playback owns batch completion, input gates, hidden-card handoff,
+cancellation, and timers. A batch waits for its last flight rather than pausing
+between cards. Reduced or disabled motion settles immediately. Cancellation
+revokes pending departures, flights, and sounds; absent geometry cannot leave a
+committed card hidden. Played cards retain their travel, pop, and fade animation.
+
 ## Boss lyrics
 
 Timed boss lyrics sit inside the boss portrait, centered near its bottom edge,
@@ -288,6 +348,17 @@ open it contains focus and blocks underlying input, autoplay, and automatic End
 Turn without changing saved automation preferences. Navigation, run replacement,
 battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
 button dismiss it and return focus to the toolbar or pile opener.
+
+Draw Pile, Discard Pile, and Deck inspection share the backdrop fade and upward
+panel settle defined in [component styles](../src/styles/components.css), using
+the shared [motion duration](../src/lib/game-constants/ui-motion.ts). Closing
+uses only the fade; reduced motion omits the settle. Cards appear together, and
+populated panels retain content-based sizing without animated dimensions. Empty
+collections show a centered, muted collection icon in a 10rem-high content area with a
+20rem minimum panel width, bounded by the available viewport with overflow scrolling.
+Deck, Draw Pile, and Discard Pile use the stacked-cards icon; Boons uses the trophy icon.
+Each empty icon is exposed as an image labelled Empty Deck, Empty Draw Pile,
+Empty Discard Pile, or Empty Boons.
 
 ## Enemy inspection
 

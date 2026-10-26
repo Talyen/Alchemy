@@ -5,7 +5,7 @@ import type { ReactionBoundary } from "./battle-sequence";
 import { resolveWishRewards, type WishRewardPort } from "./wish-rewards";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { hasEncounterBenefit } from "./encounter-trait-state";
-import { getOfferableCardPool, selectRewardCards, type BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool, isCompanionSummonCard, selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import { getCorruptionTargetEffect } from "@/lib/corruption/numeric";
 import { addCardToHandOrQueue, applyDrawResult, drawFromState } from "./draw";
@@ -29,7 +29,12 @@ import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-dama
 import { appendUniqueMany } from "@/lib/utils";
 
 export function upgradeWishCard(card: BattleCard): BattleCard {
-  return getEditableCorruptionTargets(card).reduce((next, target) => {
+  // Widen upper bounds before raising lower bounds: intermediate cards must
+  // remain valid even when an authored random range starts with equal bounds.
+  const targets = getEditableCorruptionTargets(card).toSorted(
+    (a, b) => Number(b.field === "maxAmount") - Number(a.field === "maxAmount"),
+  );
+  return targets.reduce((next, target) => {
     const effect = getCorruptionTargetEffect(next, target);
     // An upgrade must not raise a cost, including a shared Deal/Receive amount.
     if (!effect || target.affectsCost) return next;
@@ -48,9 +53,7 @@ export function buildWishOptions(
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
   const candidates = getOfferableCardPool().filter(
-    (candidate) =>
-      candidate.id !== card?.id &&
-      (!companionOnly || candidate.effects.some((effect) => effect.kind === "summon-companion")),
+    (candidate) => candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate)),
   );
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const discovered = new Set(state.discoveredCardIds);

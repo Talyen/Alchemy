@@ -76,17 +76,27 @@ export function preloadImage(src: string, signal?: AbortSignal): Promise<void> {
   if (pending) return waitForPending(src, pending, signal);
 
   const epoch = resetSignal;
-  const image = new Image();
-  image.decoding = "async";
-  image.src = src;
+  let image: HTMLImageElement | undefined;
+  try {
+    image = new Image();
+    image.decoding = "async";
+    image.src = src;
+  } catch {
+    // Warmup failures must not reject startup or skip the rest of its batch.
+    try {
+      image?.removeAttribute("src");
+    } catch {}
+    return Promise.resolve();
+  }
+  const loadedImage = image;
   const lifetime = new AbortController();
-  const promise = waitForImage(image, lifetime.signal).then((loaded) => {
+  const promise = waitForImage(loadedImage, lifetime.signal).then((loaded) => {
     // A reset orphaned this fetch, or a later reset already replaced it.
     if (lifetime.signal.aborted || resetSignal !== epoch) return;
     pendingLoads.delete(src);
     // Failed warmups must not keep fetching; visible artwork loads on its own element.
-    if (!loaded) image.removeAttribute("src");
-    else rememberReady(src, image);
+    if (!loaded) loadedImage.removeAttribute("src");
+    else rememberReady(src, loadedImage);
   });
   const load = { promise, image, cancel: () => lifetime.abort(), waiters: 0 };
   pendingLoads.set(src, load);

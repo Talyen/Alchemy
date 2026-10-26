@@ -96,10 +96,11 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     const cached = musicTracks.get(key);
     if (cached) return cached;
     const catalog = MUSIC_CATALOG[key];
-    const file = deps.selectFile(catalog?.files ?? []);
-    if (!catalog || !file) return undefined;
+    if (!catalog) return undefined;
     let element: MusicElement | undefined;
     try {
+      const file = deps.selectFile(catalog.files);
+      if (!file) return undefined;
       element = deps.createElement(file);
       element.loop = true;
       if (catalog.skipSeconds) element.currentTime = catalog.skipSeconds;
@@ -130,17 +131,25 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   ): void {
     playback = state;
     const startTime = deps.now();
-    state.timer = deps.schedule(() => {
-      if (playback !== state) return;
-      const elapsed = deps.now() - startTime;
-      if (elapsed < delayMs) return;
-      const progress = Math.min(1, (elapsed - delayMs) / durationMs);
-      apply(progress);
-      if (progress >= 1) {
-        cancelTransition();
-        complete();
-      }
-    }, MUSIC_FADE_TICK_MS);
+    try {
+      state.timer = deps.schedule(() => {
+        if (playback !== state) return;
+        const elapsed = deps.now() - startTime;
+        if (elapsed < delayMs) return;
+        const progress = Math.min(1, (elapsed - delayMs) / durationMs);
+        apply(progress);
+        if (progress >= 1) {
+          cancelTransition();
+          complete();
+        }
+      }, MUSIC_FADE_TICK_MS);
+    } catch {
+      // Optional fades cannot leave a playing track silent or trap navigation.
+      cancelTransition();
+      apply(1);
+      complete();
+      deps.reportFailure("Music fade could not be scheduled");
+    }
   }
 
   function fadeIn(track: MusicTrackRecord): void {
@@ -216,11 +225,21 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     playAttempt = null;
     cancelTransition();
     bossPreviewKey = null;
-    for (const { element } of musicTracks.values()) {
-      element.muted = true;
-      element.pause();
-    }
     if (playback.phase !== "idle") playback = { phase: "paused", track: playback.track };
+    for (const { element } of musicTracks.values()) {
+      // Muting and pausing are independent attempts; one failed cached element
+      // must not leave another track audible in the background.
+      try {
+        element.muted = true;
+      } catch {
+        deps.reportFailure("Music track could not be muted");
+      }
+      try {
+        element.pause();
+      } catch {
+        deps.reportFailure("Music track could not be paused");
+      }
+    }
   }
 
   function invalidateCacheForKey(key: string): void {
