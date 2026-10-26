@@ -1,10 +1,7 @@
+import { harmfulPlayerStatusIds } from "@/lib/game-data";
+import { resolvePlayerHealing } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import { rollBattleChance } from "./chance-roll";
-import {
-  resolveLeechResourceRewards,
-  resolveHolyBlockReward,
-  resolveHolyGoldReward,
-  type ResourceRewardPort,
-} from "./resource-reward-resolution";
 import { applyCardHealing, removeHarmfulPlayerStatuses } from "./status-player";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -55,7 +52,40 @@ export function applyLeechHealing(
 ): BattleState {
   if (hasEnemyTrait(state, "hollow-frame")) return state;
   const healing = leechHealingAmount(state, amount, options.afflicted);
-  return resolveLeechResourceRewards(state, healing, combatTexts, leechRewardPort, options);
+  const restoredHealth = resolvePlayerHealing(state, healing).restored;
+  const belowHalf = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
+  const restoredToFull = restoredHealth > 0 && state.playerHealth + restoredHealth >= state.playerMaxHealth;
+  let restored =
+    options.cardHealing === true
+      ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
+      : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
+  if (restoredHealth > 0) {
+    if (state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0)
+      restored = addPlayerStatusWithCombatText(
+        restored,
+        "thorns",
+        state.gearEffects.thornsOnLeechWithoutThorns,
+        combatTexts,
+      );
+    if (belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0)
+      restored = resolveStunFollowUpHit(
+        restored,
+        state.gearEffects.stunOnLeechBelowHalfHealth,
+        combatTexts,
+        applyThunderstoneLeech,
+      );
+    if (isPlayerDefeated(restored)) return restored;
+    if (rollBattleChance(state.gearEffects.leechBlockChance, state))
+      restored = addPlayerStatusWithCombatText(restored, "block", restoredHealth, combatTexts, {
+        skipFightPacing: true,
+      });
+    if (restoredToFull && state.talentEffects.manaOnLeechToFull > 0)
+      restored = gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, combatTexts);
+    if (rollBattleChance(state.talentEffects.leechGoldChance, state))
+      restored = addGoldWithCombatText(restored, restoredHealth, combatTexts);
+  }
+  if (healing <= 0 || isPlayerDefeated(restored)) return restored;
+  return applyLeechGainRewards(restored, combatTexts);
 }
 
 /** Shared base scaler: desperate → gear → Deep Siphon → blood-feast. */
@@ -79,19 +109,18 @@ export function applyThunderstoneLeech(state: BattleState, damage: number, texts
   return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
 }
 
-const leechRewardPort: ResourceRewardPort = {
-  chance: rollBattleChance,
-  heal: (state, amount, texts, cardHealing) =>
-    cardHealing
-      ? applyCardHealing(state, amount, texts, { skipFightPacing: true, allowOverhealBlock: false })
-      : applyHealingWithCombatText(state, amount, texts, { skipFightPacing: true }),
-  status: (state, status, amount, texts, unpaced) =>
-    addPlayerStatusWithCombatText(state, status, amount, texts, { skipFightPacing: unpaced === true }),
-  mana: gainManaWithCombatText,
-  gold: addGoldWithCombatText,
-  cleanse: removeHarmfulPlayerStatuses,
-  stun: (state, amount, texts) => resolveStunFollowUpHit(state, amount, texts, applyThunderstoneLeech),
-};
+function applyLeechGainRewards(state: BattleState, texts: CombatTextEvent[]): BattleState {
+  let next = state;
+  if (
+    state.talentEffects.leechCleanseChance > 0 &&
+    harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0) &&
+    rollBattleChance(state.talentEffects.leechCleanseChance, state)
+  )
+    next = removeHarmfulPlayerStatuses(next, 1, texts);
+  for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance])
+    if (rollBattleChance(chance, state)) next = gainManaWithCombatText(next, 1, texts);
+  return next;
+}
 
 export function applyLeechHitHealing(
   state: BattleState,
@@ -123,11 +152,17 @@ export function applyHolyLifesteal(
 }
 
 export function applyHolyBlockChance(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
-  return resolveHolyBlockReward(state, healthDamage, combatTexts, leechRewardPort);
+  return healthDamage > 0 && rollBattleChance(state.talentEffects.holyBlockChance, state)
+    ? addPlayerStatusWithCombatText(state, "block", healthDamage, combatTexts, { skipFightPacing: true })
+    : state;
 }
 
 export function applyHolyTithe(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
-  return resolveHolyGoldReward(state, healthDamage, combatTexts, leechRewardPort);
+  return healthDamage > 0 &&
+    state.talentEffects.holyGoldChance > 0 &&
+    rollBattleChance(state.talentEffects.holyGoldChance, state)
+    ? addGoldWithCombatText(state, healthDamage, combatTexts)
+    : state;
 }
 
 export function payPendingBleedLeech(

@@ -1,5 +1,22 @@
-import type { BattleState, CombatTextEvent, BattleResourceReward } from "./types";
-import type { FollowUpHitRequest } from "./player-hit-core";
+import type { BattleState, CombatTextEvent } from "./types";
+import { rollBattleChance } from "./chance-roll";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
+import { applyDrawResult, drawFromState } from "./draw";
+import {
+  addGoldWithCombatText,
+  applyHealingWithCombatText,
+  applyHitEpilogue,
+  gainManaWithCombatText,
+} from "./player-rewards";
+import {
+  removeHarmfulPlayerStatuses,
+  applyPlayerStatusEffect,
+  applyArmorReward,
+  applyBlockReward,
+} from "./status-player";
+import { applyDamageStatuses } from "./damage-status-riders";
+import { getEnemyDamageMultiplier } from "./status-helpers";
+import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-damage";
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
 import { getBattleOutcome } from "./battle-outcome";
 import { hasEnemyTrait } from "./encounter-trait-state";
@@ -12,26 +29,10 @@ import {
   WISH_TRINKET_FORK_PERCENT,
 } from "../game-constants";
 
-/** Hosts supply uncertainty and execution; this owner retains Wish eligibility and stage ordering. */
-export interface WishRewardPort {
-  chance: (chance: number, state: BattleState) => boolean;
-  gold: BattleResourceReward;
-  heal: BattleResourceReward;
-  cleanse: BattleResourceReward;
-  block: BattleResourceReward;
-  mana: BattleResourceReward;
-  draw: BattleResourceReward;
-  forge: BattleResourceReward;
-  armor: BattleResourceReward;
-  hit: (state: BattleState, request: FollowUpHitRequest, texts: CombatTextEvent[]) => BattleState;
-  burningEnemyHit: BattleResourceReward;
-}
-
 export function resolveWishRewards(
   state: BattleState,
   count: number,
   texts: CombatTextEvent[],
-  port: WishRewardPort,
   reactions: ReactionBoundary,
 ): BattleState {
   return resolveBattleSequence(
@@ -47,31 +48,34 @@ export function resolveWishRewards(
           enemyPhysicalDamageBonus: current.enemyPhysicalDamageBonus + scaleByRoomMultiplier(current, 1),
         };
       const gearGold =
-        current.gearEffects.goldOnWish > 0 && port.chance(REACTIVE_REWARD_CHANCES.wishfulAffix, current)
+        current.gearEffects.goldOnWish > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.wishfulAffix, current)
           ? current.gearEffects.goldOnWish
           : 0;
       const talentGold =
         current.talentEffects.goldOnWish > 0 &&
-        (current.talentEffects.goldOnWishChance <= 0 || port.chance(current.talentEffects.goldOnWishChance, current))
+        (current.talentEffects.goldOnWishChance <= 0 ||
+          rollBattleChance(current.talentEffects.goldOnWishChance, current))
           ? current.talentEffects.goldOnWish
           : 0;
-      if (gearGold + talentGold > 0) current = port.gold(current, gearGold + talentGold, texts);
+      if (gearGold + talentGold > 0) current = addGoldWithCombatText(current, gearGold + talentGold, texts);
       if (current.trinketEffects.wishingWellGoldOnWish > 0)
-        current = port.gold(current, current.trinketEffects.wishingWellGoldOnWish, texts);
+        current = addGoldWithCombatText(current, current.trinketEffects.wishingWellGoldOnWish, texts);
       current = settle(current);
       if (getBattleOutcome(current) === "defeat") return current;
 
       const health =
         current.talentEffects.healthOnWish +
         (eligibility.playerHealth < eligibility.playerMaxHealth / HALF_DIVISOR ? current.gearEffects.healthOnWish : 0);
-      if (health > 0) current = port.heal(current, health, texts);
-      if (current.talentEffects.removeHarmfulStatusOnWish) current = port.cleanse(current, 1, texts);
-      if (current.gearEffects.blockOnWish > 0) current = port.block(current, current.gearEffects.blockOnWish, texts);
+      if (health > 0) current = applyHealingWithCombatText(current, health, texts);
+      if (current.talentEffects.removeHarmfulStatusOnWish) current = removeHarmfulPlayerStatuses(current, 1, texts);
+      if (current.gearEffects.blockOnWish > 0)
+        current = applyBlockReward(current, current.gearEffects.blockOnWish, texts);
       current = settle(current);
       if (getBattleOutcome(current) === "defeat") return current;
 
-      const draw = Number(port.chance(current.talentEffects.wishDrawChance, current)) + current.gearEffects.drawOnWish;
-      if (draw > 0) current = port.draw(current, draw, texts);
+      const draw =
+        Number(rollBattleChance(current.talentEffects.wishDrawChance, current)) + current.gearEffects.drawOnWish;
+      if (draw > 0) current = applyDrawResult(current, drawFromState(current, draw), texts);
       current = settle(current);
       if (getBattleOutcome(current) === "defeat") return current;
       if (eligibility.hand.length === 0 && current.gearEffects.nextCardDiscountOnEmptyHandWish > 0)
@@ -84,17 +88,17 @@ export function resolveWishRewards(
           },
         };
 
-      current = port.hit(
+      current = resolveFollowUpHit(
         current,
         { source: "talent-fixed", damageType: "burn", amount: current.talentEffects.burnOnWish },
         texts,
       );
       if (current.gearEffects.burnOnWish > 0 && current.enemyHealth > 0 && eligibility.enemyStatuses.burn > 0)
-        current = port.burningEnemyHit(current, current.gearEffects.burnOnWish, texts);
+        current = applyWishBurnAgainstBurningEnemy(current, current.gearEffects.burnOnWish, texts);
       current = settle(current);
       if (getBattleOutcome(current) === "defeat") return current;
       if (current.gearEffects.freezeOnWish > 0)
-        current = port.hit(
+        current = resolveFollowUpHit(
           current,
           { source: "player-follow-up", damageType: "freeze", amount: current.gearEffects.freezeOnWish },
           texts,
@@ -102,20 +106,41 @@ export function resolveWishRewards(
       current = settle(current);
       if (getBattleOutcome(current) === "defeat") return current;
       if (eligibility.mana === 0 && current.gearEffects.manaOnWish > 0)
-        current = port.mana(current, current.gearEffects.manaOnWish, texts);
-      if (current.talentEffects.wishTrinketChoice && port.chance(REACTIVE_REWARD_CHANCES.wishfulTrinket, current))
-        current = port.chance(WISH_TRINKET_FORK_PERCENT, current)
-          ? port.forge(current, 1, texts)
-          : port.armor(current, 1, texts);
+        current = gainManaWithCombatText(current, current.gearEffects.manaOnWish, texts, { skipFightPacing: true });
+      if (current.talentEffects.wishTrinketChoice && rollBattleChance(REACTIVE_REWARD_CHANCES.wishfulTrinket, current))
+        current = rollBattleChance(WISH_TRINKET_FORK_PERCENT, current)
+          ? applyPlayerStatusEffect(current, { kind: "player-status", status: "forge", amount: 1 }, texts)
+          : applyArmorReward(current, 1, texts);
       const threshold = current.talentEffects.wishBlockBelowHealthPct;
       if (
         threshold > 0 &&
         current.talentEffects.wishBlockAmount > 0 &&
         eligibility.playerHealth < (eligibility.playerMaxHealth * threshold) / PERCENT_DENOMINATOR
       )
-        current = port.block(current, current.talentEffects.wishBlockAmount, texts);
+        current = applyBlockReward(current, current.talentEffects.wishBlockAmount, texts);
       return current;
     },
     reactions,
   );
+}
+
+function applyWishBurnAgainstBurningEnemy(state: BattleState, amount: number, texts: CombatTextEvent[]): BattleState {
+  return dealEnemyScaledDamage(state, amount, "burn", texts, {
+    multiplier: getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state),
+    riders: (damagedState, damage, events) =>
+      applyHitEpilogue(
+        applyDamageStatuses(
+          damagedState,
+          { kind: "damage", damageType: "burn", amount },
+          damage,
+          events,
+          state.enemyHealth,
+        ),
+        state.enemyHealth,
+        state.enemyHealth > 0,
+        events,
+        undefined,
+        state.playerStatuses.forge >= 5,
+      ),
+  });
 }

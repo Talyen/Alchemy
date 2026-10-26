@@ -317,13 +317,14 @@ of its prior and granted values. Nested scopes inherit repeat suppression and re
 `battleSnapshot` strips that metadata alongside RNG; saved flag names, including
 the legacy `uniqueRepeatActive` field, remain readable.
 
-`resource-reward-resolution.ts` owns Leech rewards and the resource reactions
-from Poison, Nature, and Holy hits. `battle-sequence.ts` owns ordered step
+`damage-rider-leech.ts` owns Leech restoration and its rewards. Poison, Nature,
+and Holy hit owners apply their resource reactions directly; `bonus-effects.ts`
+shares the Gold and Mana payouts used by hits and status ticks. `battle-sequence.ts` owns ordered step
 execution and defeat cutoffs for card sequences, enemy abilities, status ticks,
 and Wish rewards. An explicit reaction boundary selects settlement after each
 step or in the enclosing hit. Card Wishes settle between Wishes; triggered Holy
 Wishes settle with their enclosing hit. `wish-rewards.ts` retains Wish eligibility
-and reward ordering, and `companion-resolution.ts` retains Companion action scope,
+and reward ordering, and `companion-effects.ts` retains Companion action scope,
 Bond scaling, captured damage facts, and fatal cutoffs.
 
 Battle inspection replays production resolution with isolated inputs. Its
