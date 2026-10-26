@@ -2,14 +2,19 @@ import type { CombatTextEvent } from "@/lib/battle";
 import type { CombatTextLane, StatusChip } from "../../../shared/types";
 
 /** Both sides use authored status IDs, independent of translated labels or icons. */
-export function combatStatusKey(target: CombatTextEvent["target"], status: StatusChip["id"] | CombatTextEvent["stat"]) {
+function combatStatusKey(target: CombatTextEvent["target"], status: StatusChip["id"] | CombatTextEvent["stat"]) {
   return `${target}:${status}`;
 }
 
 export function secondaryStatusFeedbackKey(event: CombatTextEvent, lane: CombatTextLane): string | undefined {
   if (event.feedback === "primary" || lane === "impact" || lane === "announcement") return;
-  // Losses, failed gains, actual control application, Cleanse and Purge are outcomes,
-  // not a second display of a currently present status.
+  // Applied control uses a distinct chip ID from its damage buildup. Only explicit
+  // secondary applications deduplicate; primary control and other notice outcomes stay.
+  if (event.kind === "notice" && event.feedback === "secondary" && event.signal === undefined) {
+    if (event.stat === "stun") return combatStatusKey(event.target, "stunned");
+    if (event.stat === "freeze") return combatStatusKey(event.target, "frozen");
+  }
+  // Losses, failed gains, Cleanse and Purge are not a second display of present state.
   if (event.kind === "status" && event.amount > 0) return combatStatusKey(event.target, event.stat);
   if (event.kind === "multiply" && event.amount > 1) return combatStatusKey(event.target, event.stat);
   if (event.kind === "notice" && event.signal === "prepared") return combatStatusKey(event.target, event.stat);

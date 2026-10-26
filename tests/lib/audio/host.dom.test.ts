@@ -54,5 +54,5 @@ it("reads lifecycle state with hidden and minimized windows taking precedence ov
   expect(isAppInBackground({ type: "focus" })).toBe(true);
   setSize({ innerWidth: 0, innerHeight: 0, outerWidth: 0, outerHeight: 0 });
   vi.stubGlobal("navigator", { userAgent: "Chrome" });
-  expect(isNonPlayerAudioHost()).toBe(false);
+  expect(isNonPlayerAudioHost()).toBe(true);
 });

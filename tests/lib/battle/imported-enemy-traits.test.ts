@@ -524,7 +524,12 @@ describe("native enemy identities", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 2, haste: 2 }),
       rng: () => [0.1, 0.99, 0.99][draws++ % 3],
     });
-    const fangs = { ...cardById.fangs, effects: [...cardById.fangs.effects, ...cardById.fangs.effects] };
+    const fangs = makeEnemyTestCard({
+      effects: [
+        { kind: "damage", damageType: "bleed", amount: 2 },
+        { kind: "damage", damageType: "bleed", amount: 2 },
+      ],
+    });
     const texts: Parameters<typeof applyEnemyAbility>[2] = [];
     const result = applyEnemyAbility(state, fangs, texts);
     expect(result.enemyHealth).toBe(49);

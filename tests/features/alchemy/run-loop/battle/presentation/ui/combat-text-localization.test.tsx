@@ -116,13 +116,13 @@ describe("localized combat feedback", () => {
   });
 
   it("does not translate a completed accessible label a second time", async () => {
-    const previous = localization.getResource("de", "translation", "battle.immune");
+    const previous = localization.getResource("de", "translation", "battle.cleansed");
     try {
       // A translated result may itself match an English catalog name.
-      localization.addResource("de", "translation", "battle.immune", "Shatter");
+      localization.addResource("de", "translation", "battle.cleansed", "Shatter");
       await localization.changeLanguage("de");
       const prepared = prepareCombatFeedback(
-        [{ target: "enemy", kind: "notice", stat: "stun", signal: "immune", text: "Immune to Stun" }],
+        [{ target: "enemy", kind: "notice", stat: "stun", signal: "cleanse", text: "" }],
         1,
         0,
         1100,
@@ -130,7 +130,7 @@ describe("localized combat feedback", () => {
       const { container } = render(<CombatTextRail bursts={prepared.bursts} />);
       expect(container.querySelector('[data-testid="combat-text"]')?.getAttribute("aria-label")).toBe("Shatter");
     } finally {
-      localization.addResource("de", "translation", "battle.immune", previous);
+      localization.addResource("de", "translation", "battle.cleansed", previous);
     }
   });
 
@@ -176,7 +176,7 @@ describe("localized combat feedback", () => {
           reactionId,
         }),
       ),
-      { target: "enemy", kind: "notice", stat: "stun", signal: "immune", text: "Immune to Stun" },
+      { target: "enemy", kind: "notice", stat: "stun", signal: "cleanse", text: "" },
       { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
     ];
     const prepared = prepareCombatFeedback(events, 7, 123, 1100);
@@ -196,7 +196,9 @@ describe("localized combat feedback", () => {
       expect(burst?.getAttribute("data-burst-id")).toBe("combat-burst-7-enemy");
       expect(burst?.getAttribute("data-first-shown-at")).toBe("123");
       expect(container.querySelector('[data-kind="notice"]')).toBe(notice);
-      expect(notice?.getAttribute("aria-label")).toBe(immunityLabels[locale][0]);
+      expect(notice?.getAttribute("aria-label")).toBe(
+        catalogText(locale, "Cleansed {{label}}").replace("{{label}}", catalogText(locale, "Stun")),
+      );
       expect(notice?.textContent).toBe("");
       expect(container.querySelector('[data-kind="damage"]')).toBe(number);
       expect(number?.textContent).toBe("-5");

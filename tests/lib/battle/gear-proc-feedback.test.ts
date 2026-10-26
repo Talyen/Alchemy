@@ -33,7 +33,10 @@ describe("visible Gear and encounter procs", () => {
     const { state: next, combatTexts } = playBattleCardResolved(state, card.id, 0);
     expect(next.enemyMitigation.armor).toBe(3);
     expect(combatTexts).toContainEqual(
-      expect.objectContaining({ target: "enemy", kind: "damage", stat: "armor", amount: 6, impact: false }),
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "armor", amount: 5, impact: false }),
+    );
+    expect(combatTexts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "armor", amount: 1, impact: false }),
     );
   });
 

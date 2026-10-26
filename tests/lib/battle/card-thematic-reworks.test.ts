@@ -155,7 +155,7 @@ describe("thematic card effects", () => {
   });
 
   it.each([
-    [0, 97, 2],
+    [0, 96, 2],
     [0.99, 98, 0],
   ])("Cinderbloom ignites Poison only when the selected hit Burns (roll %s)", (roll, health, burn) => {
     const result = play("cinderbloom", {

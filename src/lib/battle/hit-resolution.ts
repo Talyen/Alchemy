@@ -159,6 +159,10 @@ function resolveCardHit(
     return nextState;
   }
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
+  if (isPlayerDefeated(nextState)) {
+    reportEnemyHitDamage(facts, effect.damageType, combatTexts, request.feedback);
+    return nextState;
+  }
   if (
     facts.critical &&
     modifiedDamage > 0 &&

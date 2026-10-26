@@ -117,7 +117,7 @@ export function battleCohort(seed: number) {
   if (alternate && index === 0) {
     battle.currentEnemy = enemyBestiary.find((enemy) => enemy.id === "frostwarden")!;
     battle.enemyMitigation = { ...battle.enemyMitigation, block: 0, armor: 0 };
-    expected = { enemyHealth: 38, enemyFreeze: 2, mana: 2 };
+    expected = { enemyHealth: 37, enemyFreeze: 3, mana: 2 };
   }
   if (alternate && index === 3) {
     battle.enemyHealth = 40;

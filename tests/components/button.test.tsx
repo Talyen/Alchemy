@@ -62,31 +62,26 @@ describe("Button", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("defaults to type button to avoid accidental form submits", async () => {
+  it("avoids accidental form submits and preserves explicit submit and reset", async () => {
     const onSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
-    render(
-      <form onSubmit={onSubmit}>
-        <Button>Action</Button>
-      </form>,
+    const onReset = vi.fn();
+    const form = (type?: "submit" | "reset") => (
+      <form onSubmit={onSubmit} onReset={onReset}>
+        <Button type={type}>Action</Button>
+      </form>
     );
+    const { rerender } = render(form());
     const button = screen.getByRole("button", { name: "Action" });
     expect(button.getAttribute("type")).toBe("button");
     await userEvent.click(button);
     expect(onSubmit).not.toHaveBeenCalled();
-  });
+    expect(onReset).not.toHaveBeenCalled();
 
-  it.each(["submit", "reset"] as const)("preserves explicit native form behavior for type %s", async (type) => {
-    const onSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
-    const onReset = vi.fn();
-    render(
-      <form onSubmit={onSubmit} onReset={onReset}>
-        <Button type={type}>Action</Button>
-      </form>,
-    );
-    const button = screen.getByRole("button", { name: "Action" });
-    expect(button.getAttribute("type")).toBe(type);
-    await userEvent.click(button);
-    expect(onSubmit).toHaveBeenCalledTimes(type === "submit" ? 1 : 0);
-    expect(onReset).toHaveBeenCalledTimes(type === "reset" ? 1 : 0);
+    for (const type of ["submit", "reset"] as const) {
+      rerender(form(type));
+      await userEvent.click(button);
+    }
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(onReset).toHaveBeenCalledOnce();
   });
 });

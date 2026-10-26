@@ -78,7 +78,7 @@ test.describe("Wildwood Draft", () => {
   });
 
   test(
-    "victory keeps Health and reward choices through resume; Skip enters the next boss once",
+    "victory keeps Health and reward choices through resume and enters the next boss once",
     critical,
     async ({ page, fastBattle }) => {
       void fastBattle;
@@ -125,7 +125,11 @@ test.describe("Wildwood Draft", () => {
       await withSavedGame(page, async (resumed) => {
         await expect(resumed.getByRole("heading", { name: "Victory", exact: true })).toBeVisible();
         expect(savedActivityData((await readSavedGame(resumed)).activeRun, "rewards")).toEqual(rewards);
-        await resumed.getByRole("button", { name: "Skip", exact: true }).click({ clickCount: 2, delay: 20 });
+        const choice =
+          rewards.rewardType === "card"
+            ? resumed.getByRole("button", { name: "Skip", exact: true })
+            : resumed.locator('[aria-label^="Select "]').first();
+        await choice.click({ clickCount: 2, delay: 20 });
         await new BattlePage(resumed).waitForOpeningHand();
         await expect
           .poll(async () => (await readSavedGame(resumed)).activeRun?.wildwoodDraft?.currentBossId)

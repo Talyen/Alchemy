@@ -19,6 +19,36 @@ export interface PlayTurnFramesOptions {
   isCardPlayInProgress?: () => boolean;
 }
 
+function presentTurnResolution(frame: BattleTurnFrame, presentation: BattlePresentationPort) {
+  const { before, turn } = frame;
+  const texts = turn.kind === "haste" ? turn.combatTexts : turn.enemyResolutionCombatTexts;
+  const sound = playResolvedCardSound(
+    turn.kind === "haste"
+      ? "haste"
+      : turn.enemyPerformedAbility
+        ? (turn.state.lastEnemyAbilityId ?? undefined)
+        : undefined,
+    texts,
+    !before.deathsDoorActive && turn.state.deathsDoorActive,
+  );
+  presentCombatTexts(presentation, texts, sound);
+}
+
+function presentCompanionResolution(frame: BattleTurnFrame, presentation: BattlePresentationPort, animate = false) {
+  const { turn, companion } = frame;
+  if (!companion) return;
+  const sound = playCompanionSound(
+    companion.id,
+    companion.texts,
+    !turn.state.deathsDoorActive && companion.state.deathsDoorActive,
+  );
+  if (animate) {
+    presentation.shakeCompanion();
+    presentation.telegraphAttack("companion");
+  }
+  presentCombatTexts(presentation, companion.texts, sound);
+}
+
 /** Playback consumes resolved frames and has no gameplay write capability. */
 export async function playTurnFrames(
   frames: BattleTurnFrame[],
@@ -27,7 +57,8 @@ export async function playTurnFrames(
   presentation: BattlePresentationPort,
   options?: PlayTurnFramesOptions,
 ): Promise<void> {
-  for (const { before, turn, companion } of frames) {
+  for (const frame of frames) {
+    const { before, turn, companion } = frame;
     if (!deps.isSessionActive(sessionNum)) return;
     if (turn.kind !== "haste") {
       markBattleStage("enemy-start");
@@ -47,22 +78,12 @@ export async function playTurnFrames(
         else presentation.telegraphCast("enemy");
       }
       presentation.setDisplayedBattle({ ...(turn.afterAbilityState ?? turn.state), hand: [], turnPhase: "enemy" });
-      const focalSound = playResolvedCardSound(
-        turn.enemyPerformedAbility ? (turn.state.lastEnemyAbilityId ?? undefined) : undefined,
-        turn.enemyResolutionCombatTexts,
-        !before.deathsDoorActive && turn.state.deathsDoorActive,
-      );
-      presentCombatTexts(presentation, turn.enemyResolutionCombatTexts, focalSound);
+      presentTurnResolution(frame, presentation);
       if (!(await deps.playback.waitForDelay(sessionNum, ENEMY_ATTACK_RECOVERY_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
       markBattleStage("enemy-end");
     } else {
-      const focalSound = playResolvedCardSound(
-        "haste",
-        turn.combatTexts,
-        !before.deathsDoorActive && turn.state.deathsDoorActive,
-      );
-      presentCombatTexts(presentation, turn.combatTexts, focalSound);
+      presentTurnResolution(frame, presentation);
     }
     await runHandDrawSequence(
       before.hand,
@@ -79,14 +100,7 @@ export async function playTurnFrames(
       if (!options?.isCardPlayInProgress?.()) {
         presentation.setDisplayedBattle(companion.state);
       }
-      const focalSound = playCompanionSound(
-        companion.id,
-        companion.texts,
-        !turn.state.deathsDoorActive && companion.state.deathsDoorActive,
-      );
-      presentation.shakeCompanion();
-      presentation.telegraphAttack("companion");
-      presentCombatTexts(presentation, companion.texts, focalSound);
+      presentCompanionResolution(frame, presentation, true);
     }
   }
 }
@@ -123,31 +137,12 @@ export function createBattleEndTurnUi(
     if (!ctx.playback.beginAction(sessionNum)) return;
     ctx.playback.clearTimers(sessionNum);
     if (getBattleOutcome(result.state) !== null) {
-      for (const { before, turn, companion } of result.frames) {
-        if (turn.kind === "haste") {
-          const focalSound = playResolvedCardSound(
-            "haste",
-            turn.combatTexts,
-            !before.deathsDoorActive && turn.state.deathsDoorActive,
-          );
-          presentCombatTexts(presentation, turn.combatTexts, focalSound);
-        } else {
-          presentCombatTexts(presentation, turn.enemyTurnStartCombatTexts);
-          const focalSound = playResolvedCardSound(
-            turn.enemyPerformedAbility ? (turn.state.lastEnemyAbilityId ?? undefined) : undefined,
-            turn.enemyResolutionCombatTexts,
-            !before.deathsDoorActive && turn.state.deathsDoorActive,
-          );
-          presentCombatTexts(presentation, turn.enemyResolutionCombatTexts, focalSound);
+      for (const frame of result.frames) {
+        if (frame.turn.kind !== "haste") {
+          presentCombatTexts(presentation, frame.turn.enemyTurnStartCombatTexts);
         }
-        if (companion) {
-          const focalSound = playCompanionSound(
-            companion.id,
-            companion.texts,
-            !turn.state.deathsDoorActive && companion.state.deathsDoorActive,
-          );
-          presentCombatTexts(presentation, companion.texts, focalSound);
-        }
+        presentTurnResolution(frame, presentation);
+        presentCompanionResolution(frame, presentation);
       }
       presentation.setDisplayedBattle(null);
       presentation.resetHandTransferUi();

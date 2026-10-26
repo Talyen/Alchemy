@@ -19,21 +19,28 @@ test("buying a card charges its quote once and survives resume", critical, async
   const shop = new ShopPage(page);
   const buy = shop.buyBtn.first();
   const title = (await buy.getByRole("img").first().getAttribute("alt"))!;
-  const price = Number((await buy.locator("span.tabular-nums").last().innerText()).replaceAll(",", ""));
+  const price = Number((await buy.getAttribute("aria-label"))?.match(/ for ([\d,]+) Gold$/)?.[1]?.replaceAll(",", ""));
   expect(price).toBeGreaterThan(0);
   const gold = await shop.gold();
-  const deckSize = (await readSavedGame(page)).activeRun!.runDeck.length;
+  await expect.poll(async () => (await readSavedGame(page)).activeRun?.activity.kind).toBe("shop");
+  const before = (await readSavedGame(page)).activeRun!;
+  if (before.activity.kind !== "shop") throw new Error("Expected a saved Card Shop visit");
+  const offeredId = before.activity.data.cards[0]!.id;
+  const expectedIds = [...before.runDeck.map((card) => card.id), offeredId].sort();
+  const deckSize = before.runDeck.length;
   await buy.click({ clickCount: 2, delay: 20 });
   await shop.waitForPurchase();
   await expect.poll(() => shop.gold()).toBe(gold - price);
-  await expect.poll(async () => (await readSavedGame(page)).activeRun?.runDeck.length).toBe(deckSize + 1);
+  await expect
+    .poll(async () => (await readSavedGame(page)).activeRun?.runDeck.map((card) => card.id).sort())
+    .toEqual(expectedIds);
   await withSavedGame(page, async (resumed) => {
     await expect(resumed.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
     await expect(resumed.getByRole("button", { name: `${title}. Purchased`, exact: true })).toBeDisabled();
     expect(await new ShopPage(resumed).gold()).toBe(gold - price);
     await resumed.getByRole("button", { name: `View Deck · ${deckSize + 1} cards` }).click();
     await expect(resumed.getByRole("dialog").getByRole("img", { name: title, exact: true }).first()).toBeVisible();
-    expect((await readSavedGame(resumed)).activeRun?.runDeck).toHaveLength(deckSize + 1);
+    expect((await readSavedGame(resumed)).activeRun?.runDeck.map((card) => card.id).sort()).toEqual(expectedIds);
   });
 });
 

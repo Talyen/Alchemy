@@ -229,14 +229,14 @@ export function advanceCombatFeedback(bursts: CombatTextBurst[], reactions: Reac
       const entries = burst.entries.flatMap((entry) => {
         if (entry.presentation && endsAt(entry.presentation) <= now) return [];
         const presentation = advance(entry.presentation);
-        return [presentation === entry.presentation ? entry : { ...entry, presentation }];
+        return [!presentation || presentation === entry.presentation ? entry : { ...entry, presentation }];
       });
       return entries.length ? [{ ...burst, entries }] : [];
     }),
     reactionAnnouncements: reactions.flatMap((reaction) => {
       if (reaction.presentation && endsAt(reaction.presentation) <= now) return [];
       const presentation = advance(reaction.presentation);
-      return [presentation === reaction.presentation ? reaction : { ...reaction, presentation }];
+      return [!presentation || presentation === reaction.presentation ? reaction : { ...reaction, presentation }];
     }),
   };
 }

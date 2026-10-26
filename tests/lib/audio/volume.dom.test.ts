@@ -58,7 +58,10 @@ describe("setMuted", () => {
     Object.defineProperty(window, "outerWidth", outerWidth);
     setMuted(false);
     expect(audioState.muted).toBe(false);
+    // The app resumes its current track after a visible-host event.
+    playMusic(MUSIC_KEYS.MENU);
     expect(music.muted).toBe(false);
+    expect(music.paused).toBe(false);
     playBattleEvent("playerHeal");
     expect(lastFakeAudio()!.play).toHaveBeenCalledOnce();
   });

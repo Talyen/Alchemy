@@ -131,13 +131,15 @@ and follow actual incoming events, never accumulated display totals.
 
 Primary intent resolves before display deduplication, so a card's main Block or
 other authored result remains central even when its status is also below Health.
-Positive secondary status gains and armed preparations omit their redundant corner
-flight only while the same recipient's semantic status chip is actually rendered
-and fully visible within the viewport and overflow clips. Missing, hidden or clipped
+Positive secondary status gains, armed preparations and applied Stunned/Frozen
+notices omit their redundant corner flight only while the same recipient's semantic
+status chip is actually rendered and fully visible within the viewport and overflow
+clips. Missing, hidden or clipped
 chips keep the ordinary corner feedback. Damage, healing, reaction payoffs, zero or
-failed outcomes, removals, consumption, expiry, Cleanse, Purge and actual Stunned/Frozen
-application notices retain their feedback. Receipts and expiry remain unchanged;
-the renderer checks live row visibility without changing combat math or status values.
+failed outcomes, removals, consumption, expiry, Cleanse, Purge and primary control
+outcomes retain their feedback. Applied control matches its active chip, not damage
+buildup. Receipts and expiry remain unchanged; the renderer checks live row visibility
+without changing combat math or status values.
 Status chips stay opaque through their existing entrance pop, so an entering or
 updated chip never briefly reintroduces its redundant corner feedback.
 
@@ -314,7 +316,12 @@ Do not mirror engine field dependencies in a separate UI cache.
 ## Damage values in battle inspection
 
 Card hover and keyboard inspection in the battle hand, Wish, and the pile viewers
-show current offensive damage before defenses and critical strikes. Inspection
+show current offensive damage before defenses and critical strikes. Fixed player
+Block, Armor, Forge, Thorns, healing, Mana and Gold numerals also use known direct
+execution results inside their original sentences. They exclude existing totals,
+separate procs and overheal conversions; healing reports adjusted power before its
+Health cap. Authored resource formulas, random choices, durations and conditions
+remain intact, and uncertain or unobserved results retain their authored values. Inspection
 runs production card resolution against detached battle alternatives, including
 payment, pre-triggers, ordered effects, and reactions that affect later packets.
 Forge, prepared conversions, resource changes, conditions, and fight pacing

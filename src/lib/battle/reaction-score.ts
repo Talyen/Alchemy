@@ -166,7 +166,7 @@ const utilityHandlers = createCardUtilityHandlers({
     return playerResources.checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, []);
   },
   crystalLoss: (state) => state,
-  status: playerResources.applyPlayerStatusEffect,
+  status: (state, effect, texts) => playerResources.applyPlayerStatusEffect(state, effect, texts),
   chooseStatus: () => {
     throw new Error("Scoring must branch before utility resolution");
   },

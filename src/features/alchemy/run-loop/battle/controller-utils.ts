@@ -35,8 +35,7 @@ const OUTCOME_CARDS = new Set([
 
 export function playResolvedCardSound(cardId: string | undefined, events: CombatTextEvent[], deathsDoor = false) {
   if (deathsDoor) return playBattleEvent("deathsDoor");
-  let sound = selectCombatSound(events, true);
-  if (!sound && (!cardId || OUTCOME_CARDS.has(cardId))) sound = selectCombatSound(events, false);
+  let sound = selectCombatSound(events, !!cardId && !OUTCOME_CARDS.has(cardId));
   if (sound === "hitCritical" && cardId === "slash") sound = "slashCritical";
   if (sound === "hitCritical" && cardId === "stab") sound = "stabCritical";
   if (cardId === "astral-arrow") {

@@ -56,8 +56,8 @@ describe("Trinket affix additions", () => {
       expect(detonateEnemyStatuses(state, [damageType], []).enemyHealth).toBe(93);
     }
     const ticked = tickEnemyStatuses(state, []);
-    // The two 7-damage ticks also earn the ordinary 4-damage Bloodboil reaction.
-    expect(ticked.enemyHealth).toBe(77);
+    // The two 7-damage ticks also earn the ordinary 7-damage Bloodboil reaction.
+    expect(ticked.enemyHealth).toBe(74);
     expect(ticked.enemyStatuses).toMatchObject({ burn: 2, poison: 4, bleed: 0 });
     expect(projectEnemyDotDamage(battle({ gearEffects: state.gearEffects }), "bleed")).toBe(0);
     expect(

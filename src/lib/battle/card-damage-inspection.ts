@@ -16,7 +16,7 @@ import { battleSnapshot } from "./battle-snapshot";
 import { applyEnemyAbility } from "./enemy-turn-attack";
 import { getEncounterEnemyAbility } from "./enemy-description";
 import { inspectResolutionOutcomes, type InspectedPackets } from "./inspection-outcomes";
-import type { ObservedAttack } from "./resolution-observer";
+import type { ObservedAttack, ObservedDirectAmount } from "./resolution-observer";
 import type { BattleSnapshot } from "./types";
 
 type DamageEffect = ObservedAttack;
@@ -197,7 +197,41 @@ export function getBattleDamageInspectionCard(
   return inspectBattleCardDamage(card, snapshot, side).card;
 }
 
-/** Adjust fixed attack literals in-place without replacing scaling or conditional rules. */
+function withKnownUtilityAmount(
+  effect: BattleCardEffect,
+  outcome: InspectedPackets | undefined,
+): BattleCardEffect | undefined {
+  const direct = outcome?.directAmounts;
+  if (direct?.kind !== "exact") return;
+  let stat: ObservedDirectAmount["stat"];
+  let kind: ObservedDirectAmount["kind"] = "status";
+  if (effect.kind === "player-status") {
+    // These numbers describe a formula, random choice, duration or charge,
+    // rather than the fixed point grant that the observer reports.
+    if (
+      effect.perManaCrystal !== undefined ||
+      effect.convertCurrentMana !== undefined ||
+      effect.statusPool?.length ||
+      effect.status === "haste" ||
+      effect.status === "phoenixFeather"
+    )
+      return;
+    stat = effect.status;
+  } else if (effect.kind === "heal") {
+    stat = "health";
+    kind = "heal";
+  } else if (effect.kind === "restore-mana" || effect.kind === "gain-max-mana") stat = "mana";
+  else if (effect.kind === "gain-gold") stat = "gold";
+  else return;
+  // Match this authored effect's own result, never a total of other resources,
+  // overheal conversions, existing stacks or separately triggered rewards.
+  const matching = direct.amounts.filter(
+    (entry) => entry.target === "player" && entry.kind === kind && entry.stat === stat,
+  );
+  return matching.length === 1 ? { ...effect, amount: matching[0]!.amount } : undefined;
+}
+
+/** Adjust known fixed literals inline without replacing scaling or conditional rules. */
 export function getBattleCardDescriptionInspection(
   card: BattleCard,
   snapshot: BattleSnapshot,
@@ -212,8 +246,11 @@ export function getBattleCardDescriptionInspection(
   ): BattleCardEffect {
     const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index], skipPaths));
     const key = path.join(".");
+    if (skipPaths?.has(key)) return view;
+    const outcome = inspected.outcomes.get(key);
+    const utility = withKnownUtilityAmount(effect, outcome);
+    if (utility) return utility;
     if (
-      skipPaths?.has(key) ||
       effect.kind !== "damage" ||
       effect.equalToBlock ||
       effect.equalToArmor ||
@@ -224,7 +261,6 @@ export function getBattleCardDescriptionInspection(
       effect.damageTypePool
     )
       return view;
-    const outcome = inspected.outcomes.get(key);
     // The first packet is the intended attack. Follow-ups stay owned by their
     // existing status/tooltips, and unknown alternatives retain the authored rule.
     const attack = outcome?.kind === "exact" ? outcome.packets[0] : undefined;
