@@ -12,6 +12,7 @@ const out = (t: number) => 1 - (1 - clamp(t)) ** 3;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function combatTextLane(event: CombatTextEvent): Exclude<CombatTextLane, "announcement"> {
+  if (event.kind === "damage" && event.reactionId) return "impact";
   if (event.feedback === "primary") return "impact";
   if (event.feedback !== "secondary" && (event.kind === "heal" || (event.kind === "notice" && event.stat === "dodge")))
     return "impact";
@@ -53,7 +54,10 @@ export function combatTextFrame(lane: CombatTextLane, elapsed: number, lifetimeM
   else if (elapsed < M.popMs + M.settleMs)
     scale = lerp(M.peakScale, M.holdScale, smooth((elapsed - M.popMs) / M.settleMs));
   else scale = lerp(M.holdScale, M.finalScale, smooth((elapsed - M.riseStartMs) / M.shrinkMs));
-  const rise = lane === "impact" || lane === "announcement" ? M.risePx * out((elapsed - M.riseStartMs) / M.riseMs) : 0;
+  const rise =
+    lane === "impact" || lane === "announcement"
+      ? (lane === "announcement" ? M.reactionRisePx : M.risePx) * out((elapsed - M.riseStartMs) / M.riseMs)
+      : 0;
   const fadeMs = lane === "announcement" ? 350 : M.fadeMs;
   const fan = lane === "impact" ? M.fanStartPx + M.fanDriftPx * out(elapsed / M.fanMs) : 0;
   return { scale, y: -rise, fan, opacity: 1 - smooth((elapsed - (lifetimeMs - fadeMs)) / fadeMs) };

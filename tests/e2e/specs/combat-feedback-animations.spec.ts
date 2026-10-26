@@ -359,6 +359,7 @@ for (const reducedMotion of [false, true]) {
           let overflow = false;
           let overflowDetails = "";
           let numericSizingChanged = false;
+          let detachedPayoff = false;
           let smallestGlyphHeight = Infinity;
           let smallestGlyphDetails = "";
           while (!cancelled && performance.now() - started < 2500) {
@@ -375,8 +376,26 @@ for (const reducedMotion of [false, true]) {
               frames++;
               for (const number of document.querySelectorAll<HTMLElement>('[data-testid="combat-text"]')) {
                 const lane = number.closest<HTMLElement>("[data-feedback-lane]")?.dataset.feedbackLane;
+                if (lane === "announcement") {
+                  const group = number.closest('[data-testid="reaction-announcement"]');
+                  const reactionId = number.dataset.reactionId;
+                  const name = reactionId ? group?.querySelector(`[data-reaction="${reactionId}"]`) : null;
+                  if (reactionId) {
+                    detachedPayoff ||=
+                      !name ||
+                      name.closest('[data-testid="combat-feedback-action"]') !==
+                        number.closest('[data-testid="combat-feedback-action"]');
+                    detachedPayoff ||=
+                      number.querySelector<HTMLElement>(".reaction-text-shine")?.style.backgroundImage !==
+                      (name?.firstElementChild as HTMLElement | null)?.style.backgroundImage;
+                  }
+                  const bounds = number.getBoundingClientRect();
+                  detachedPayoff ||=
+                    bounds.left < 0 || bounds.right > innerWidth || bounds.top < 0 || bounds.bottom > innerHeight;
+                  continue;
+                }
                 const base =
-                  32 *
+                  38.4 *
                   Number(getComputedStyle(number).getPropertyValue("--content-scale") || 1) *
                   (lane === "benefit" || lane === "setback" ? 0.8 : 1);
                 numericSizingChanged ||= Math.abs(Number.parseFloat(getComputedStyle(number).fontSize) - base) > 0.1;
@@ -425,6 +444,7 @@ for (const reducedMotion of [false, true]) {
             overflow,
             overflowDetails,
             numericSizingChanged,
+            detachedPayoff,
             smallestGlyphHeight,
             smallestGlyphDetails,
             remaining: document.querySelectorAll('[data-testid="reaction-text"]').length,
@@ -444,7 +464,11 @@ for (const reducedMotion of [false, true]) {
       expect(review.lastSeen).toBeGreaterThan(1300);
       expect(review.lastSeen).toBeLessThan(2000);
       expect(review.overflow, review.overflowDetails).toBe(false);
-      expect(review.numericSizingChanged, "dense feedback must retain its original numeric size").toBe(false);
+      expect(review.numericSizingChanged, "ordinary feedback retains its base size").toBe(false);
+      expect(
+        review.detachedPayoff,
+        "typed reaction bonuses share their name's central flight, palette and viewport bounds",
+      ).toBe(false);
       expect(review.smallestGlyphHeight, review.smallestGlyphDetails).toBeGreaterThan(12);
       expect(review.remaining).toBe(0);
     },

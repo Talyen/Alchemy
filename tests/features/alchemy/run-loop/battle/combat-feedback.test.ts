@@ -134,7 +134,7 @@ describe("combat feedback lifetime", () => {
     expect(feedback.store.getState()).toEqual(createCombatFeedbackState());
     expect(vi.getTimerCount()).toBe(0);
   });
-  it("keeps reaction names independent of merged numbers and cancels queued names", () => {
+  it("keeps an attributed group intact when a later ordinary action arrives and cancels queued groups", () => {
     const feedback = makeFeedback();
     const notice = {
       target: "enemy",
@@ -150,9 +150,12 @@ describe("combat feedback lifetime", () => {
     feedback.showCombatTexts([...hit]);
     expect(feedback.store.getState().reactionAnnouncements[0]).toBe(first);
     vi.advanceTimersByTime(COMBAT_TEXT_LIFETIME_MS - 100);
-    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
+    expect(feedback.store.getState().floatingCombatBursts).toHaveLength(1);
+    expect(first.entries).toMatchObject([{ amount: 5 }]);
     expect(feedback.store.getState().reactionAnnouncements).toEqual([first]);
-    vi.advanceTimersByTime(REACTION_TEXT_LIFETIME_MS - COMBAT_TEXT_LIFETIME_MS);
+    vi.advanceTimersByTime(100);
+    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
+    vi.advanceTimersByTime(REACTION_TEXT_LIFETIME_MS - COMBAT_TEXT_LIFETIME_MS - 100);
     expect(feedback.store.getState().reactionAnnouncements).toEqual([]);
     for (let i = 0; i < 5; i++) feedback.showCombatTexts([notice]);
     expect(feedback.store.getState().reactionAnnouncements).toHaveLength(5);
@@ -248,17 +251,32 @@ describe("independent combat feedback launches", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("gives simultaneous reaction damage types separate paths around the names", () => {
+  it("keeps direct and reaction results in one stable central flight within the launch budget", () => {
     const feedback = makeFeedback();
-    feedback.showCombatTexts([
+    const events = [
       { target: "enemy", kind: "notice", stat: "burn", text: "", signal: "reaction", reactionId: "frostfire" },
-      { target: "enemy", kind: "damage", stat: "burn", amount: 12, additive: false },
-      { target: "enemy", kind: "damage", stat: "freeze", amount: 8, additive: false },
-    ]);
-    const entries = feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries);
-    expect(entries).toHaveLength(2);
-    expect(new Set(entries.map((entry) => entry.presentation!.spread)).size).toBe(2);
-    expect(entries.every((entry) => entry.presentation!.launchAt - Date.now() <= 180)).toBe(true);
+      {
+        target: "enemy",
+        kind: "damage",
+        stat: "burn",
+        amount: 12,
+        additive: false,
+        reactionId: "frostfire",
+        feedback: "secondary",
+      },
+      { target: "enemy", kind: "damage", stat: "freeze", amount: 8, feedback: "primary" },
+    ] as const;
+    feedback.showCombatTexts([...events]);
+    const group = feedback.store.getState().reactionAnnouncements[0]!;
+    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
+    expect(group.entries).toHaveLength(2);
+    expect(group.presentation).toMatchObject({ lane: "announcement", phase: "visible", lifetimeMs: 1600 });
+    const firstPath = group.presentation;
+    feedback.showCombatTexts([...events]);
+    const groups = feedback.store.getState().reactionAnnouncements;
+    expect(groups[0]!.presentation).toBe(firstPath);
+    expect(groups[1]!.presentation!.launchAt - Date.now()).toBeLessThanOrEqual(180);
+    expect(groups[1]!.presentation!.spread).not.toBe(firstPath!.spread);
     feedback.reset();
   });
 

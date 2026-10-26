@@ -6,6 +6,7 @@ import { resolveSecondaryAction } from "@/lib/battle/action-context";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { setEnemyStatus } from "@/lib/battle/status-state";
 import { getReactionBonus } from "@/lib/battle/elemental-reaction-state";
+import { applyElementalReactionDamage } from "@/lib/battle/elemental-reactions";
 import { getEffectiveDamageScore } from "@/lib/battle/autoplay-policy";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
@@ -43,10 +44,10 @@ describe("Consecration", () => {
     expect(marked.reactions.consecrated).toBe(true);
     const texts: CombatTextEvent[] = [];
     const result = tickEnemyStatuses(marked, texts);
-    expect(result.enemyHealth).toBe(82); // two Holy hits, Bleed 8, Holy bonus 2
+    expect(result.enemyHealth).toBe(80); // two Holy hits, Bleed 8, Holy bonus 4
     expect(result.reactions.consecrated).toBe(false);
     expect(reactions(texts)).toMatchObject(["consecration"]);
-    expect(tickEnemyStatuses(result, []).enemyHealth).toBe(82);
+    expect(tickEnemyStatuses(result, []).enemyHealth).toBe(80);
     expect(start.reactions.consecrated).toBe(false);
   });
 
@@ -120,19 +121,19 @@ describe("Bloodboil", () => {
       texts,
     );
     expect(reactions(texts)).toMatchObject(["consecration", "bloodboil"]);
-    expect(result.enemyHealth).toBe(93); // Burn 1, Bleed 4, Consecration 1, Bloodboil 1
+    expect(result.enemyHealth).toBe(90); // Burn 1, Bleed 4, Consecration 2, Bloodboil 3
     expect(result.enemyStatuses).toMatchObject({ burn: 0, bleed: 0 });
     expect(result.reactions.wildfirePendingTickDamage).toBe(1); // bonus does not fund Wildfire
   });
 
-  it("pays the combined quarter once without adding Burn or disturbing Wildfire preparation", () => {
+  it("pays the combined half once without adding Burn or disturbing Wildfire preparation", () => {
     const texts: CombatTextEvent[] = [];
     const result = tickEnemyStatuses(base({ enemyStatuses: { burn: 8, bleed: 4 } }), texts);
-    expect(result.enemyHealth).toBe(85);
+    expect(result.enemyHealth).toBe(82);
     expect(result.enemyStatuses.burn).toBe(4);
     expect(result.reactions.wildfirePendingTickDamage).toBe(8);
     expect(texts).toContainEqual(
-      expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 3, additive: false }),
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 6, additive: false }),
     );
   });
 
@@ -148,7 +149,7 @@ describe("Bloodboil", () => {
   it("counts a CC-skipped natural enemy phase", () => {
     const result = endPlayerTurn(base({ enemyStatuses: { burn: 8, bleed: 4 }, enemyCC: { stunSkipTurns: 1 } }));
     expect(result.kind).toBe("skipped");
-    expect(result.state.enemyHealth).toBe(85);
+    expect(result.state.enemyHealth).toBe(82);
   });
 
   it("stops after lethal ticks or a lethal Consecration instead of announcing unapplied bonuses", () => {
@@ -170,14 +171,14 @@ describe("Venomflash", () => {
     const combustion = cardById.combustion!;
     const texts: CombatTextEvent[] = [];
     const first = applyCardEffects(state, combustion, texts);
-    expect(first.enemyHealth).toBe(95); // Burn hit 1, detonation 1, Venomflash 3.
+    expect(first.enemyHealth).toBe(92); // Burn hit 1, detonation 1, Venomflash 6.
     expect(first.enemyStatuses).toMatchObject({ poison: 12, burn: 0 });
     expect(reactions(texts)).toMatchObject(["venomflash"]);
     const secondTexts: CombatTextEvent[] = [];
-    expect(applyCardEffects(first, combustion, secondTexts).enemyHealth).toBe(90);
+    expect(applyCardEffects(first, combustion, secondTexts).enemyHealth).toBe(84);
     expect(reactions(secondTexts)).toEqual(["venomflash"]);
     const twice = makeTestCard({ effects: [...combustion.effects, ...combustion.effects] });
-    expect(getEffectiveDamageScore(twice, state)).toBe(8); // Authored hits 2, two ignition bonuses 6.
+    expect(getEffectiveDamageScore(twice, state)).toBe(14); // Authored hits 2, two ignition bonuses 12.
     expect(state.enemyStatuses).toMatchObject({ poison: 12, burn: 0 });
   });
 
@@ -185,11 +186,11 @@ describe("Venomflash", () => {
     const state = base({ enemyStatuses: { poison: 12 } });
     const texts: CombatTextEvent[] = [];
     const first = hit(state, "burn", texts);
-    expect(first.enemyHealth).toBe(93);
+    expect(first.enemyHealth).toBe(90);
     expect(first.enemyStatuses).toMatchObject({ poison: 12, burn: 4 });
     expect(reactions(texts)).toMatchObject(["venomflash"]);
     const repeated: CombatTextEvent[] = [];
-    expect(hit(first, "burn", repeated).enemyHealth).toBe(89);
+    expect(hit(first, "burn", repeated).enemyHealth).toBe(86);
     expect(reactions(repeated)).toEqual([]);
     expect(reactionsAfterIgnition(setEnemyStatus(first, "burn", 0))).toEqual(["venomflash"]);
   });
@@ -222,7 +223,7 @@ describe("Venomflash", () => {
     });
     const state = base();
     const texts: CombatTextEvent[] = [];
-    expect(applyCardEffects(state, card, texts).enemyHealth).toBe(77);
+    expect(applyCardEffects(state, card, texts).enemyHealth).toBe(74);
     expect(reactions(texts)).toMatchObject(["venomflash"]);
     const snapshot = structuredClone({ ...state, rng: undefined });
     const scoredState = {
@@ -231,7 +232,7 @@ describe("Venomflash", () => {
         throw new Error("scoring RNG");
       },
     };
-    expect(getEffectiveDamageScore(card, scoredState)).toBe(23);
+    expect(getEffectiveDamageScore(card, scoredState)).toBe(26);
     expect({ ...state, rng: undefined }).toEqual(snapshot);
     const reversed = makeTestCard({ effects: [...card.effects].reverse() });
     expect(getEffectiveDamageScore(reversed, state)).toBe(20);
@@ -284,8 +285,57 @@ function reactionsAfterIgnition(state: BattleState) {
 
 it("rounds combined reaction damage exactly at safe-integer boundaries", () => {
   const max = Number.MAX_SAFE_INTEGER;
-  expect(getReactionBonus(max, max)).toBe(4503599627370496);
-  expect(getReactionBonus(4, 2)).toBe(2);
+  expect(getReactionBonus(max, max)).toBe(Number.MAX_SAFE_INTEGER);
+  expect(getReactionBonus(4, 2)).toBe(3);
   expect(getReactionBonus(0)).toBe(0);
-  expect(getReactionBonus(1)).toBe(1);
+  expect(getReactionBonus(1)).toBe(2);
 });
+
+it.each([
+  [0, 0],
+  [1, 2],
+  [2, 2],
+  [3, 2],
+  [4, 2],
+  [5, 3],
+  [8, 4],
+  [12, 6],
+  [32, 16],
+])("rewards %i earned preparation with %i damage", (preparation, expected) =>
+  expect(getReactionBonus(preparation)).toBe(expected),
+);
+
+it.each([
+  ["shatter", "physical"],
+  ["frostfire", "burn"],
+  ["thunderclap", "nature"],
+  ["wildfire", "burn"],
+  ["consecration", "holy"],
+  ["bloodboil", "burn"],
+  ["venomflash", "burn"],
+] as const)(
+  "attributes %s to its single %s output without scaling, buildup, Criticals or recursive procs",
+  (id, stat) => {
+    const state = base({
+      enemyStatuses: { burn: 12, poison: 32, bleed: 20 },
+      enemyMitigation: { block: 100, armor: 100 },
+      enemyCC: { cooldown: 3, freezeSkipTurns: 1, stunSkipTurns: 1 },
+      flags: { nextHitCrit: true },
+      gearEffects: { flatBurnDamage: 100, flatHolyDamage: 100 },
+      talentEffects: { burnStunChance: 100, holyBurnDamageChance: 100 },
+      rng: () => {
+        throw new Error("Reaction bonuses cannot draw RNG");
+      },
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyElementalReactionDamage(state, { id, damage: 16 }, texts);
+    expect(result.enemyHealth).toBe(84);
+    expect(result.enemyMitigation.block).toBe(100);
+    expect(result.enemyStatuses).toEqual(state.enemyStatuses);
+    expect(result.enemyCC).toEqual(state.enemyCC);
+    expect(result.flags.nextHitCrit).toBe(true);
+    expect(texts.filter((event) => event.kind === "damage" && event.stat !== "armor")).toEqual([
+      { target: "enemy", kind: "damage", stat, amount: 16, additive: false, reactionId: id },
+    ]);
+  },
+);

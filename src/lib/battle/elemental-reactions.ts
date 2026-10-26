@@ -103,6 +103,7 @@ export function applyElementalReactionDamage(
     stat: feedback.stat,
     amount: payoff.damage,
     additive: false,
+    reactionId: payoff.id,
     ...(hit.healthDamage !== payoff.damage ? { healthLost: hit.healthDamage } : {}),
   });
   return applyHitEpilogue(

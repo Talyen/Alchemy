@@ -1,8 +1,6 @@
-import { useGameTranslation } from "@/components/use-game-translation";
-import { createElement, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
-import { cn } from "@/lib/utils";
 import {
   COMBAT_TEXT_BASE_SIZE_PX,
   COMBAT_TEXT_LIFETIME_MS,
@@ -12,17 +10,11 @@ import {
 import { ReactionTextRail } from "./reaction-text";
 import type {
   CombatTextBurst,
-  FloatingCombatText,
   ReactionAnnouncement,
   CombatTextLane,
   CombatTextPresentation,
 } from "../../../../shared/types";
-import {
-  getCombatTextColorClass,
-  getCombatTextIcon,
-  getCombatTextLeadingIcon,
-  getCombatTextAccessibleLabel,
-} from "../../../../shared/utils/index";
+import { CombatTextEntry } from "./combat-text-entry";
 import { combatTextFrame, combatTextLane, combatTextRoute } from "../../combat-feedback-motion";
 
 function animationFor(lane: CombatTextLane, lifetimeMs: number) {
@@ -71,9 +63,9 @@ export function CombatTextRail({
 }) {
   const staticMotion = useReducedMotionPreference();
   const staticRows = new Map<CombatTextLane, number>();
-  const nextStaticRow = (lane: CombatTextLane) => {
+  const nextStaticRow = (lane: CombatTextLane, rows = 1) => {
     const row = staticRows.get(lane) ?? 0;
-    staticRows.set(lane, row + 1);
+    staticRows.set(lane, row + rows);
     return staticMotion ? row : 0;
   };
   return (
@@ -121,7 +113,7 @@ export function CombatTextRail({
             lane="announcement"
             spread={reaction.presentation?.spread ?? 0}
             staticMotion={staticMotion}
-            staticRow={nextStaticRow("announcement")}
+            staticRow={nextStaticRow("announcement", reaction.reactionIds.length + 2)}
           >
             <ReactionTextRail announcements={[reaction]} />
           </FeedbackFlight>
@@ -195,63 +187,6 @@ function FeedbackFlight({
       >
         {children}
       </motion.div>
-    </div>
-  );
-}
-
-function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; staticMotion: boolean }) {
-  const i18n = useGameTranslation();
-  const icon = getCombatTextIcon(entry);
-  const leading = getCombatTextLeadingIcon(entry);
-  return (
-    <div
-      data-testid="combat-text"
-      aria-label={i18n.read(() => getCombatTextAccessibleLabel(entry))}
-      data-kind={entry.kind}
-      data-stat={entry.stat}
-      className={cn(
-        "inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
-        getCombatTextColorClass(entry),
-        entry.kind === "damage" &&
-          entry.critical &&
-          (staticMotion ? "combat-text-critical-static" : "combat-text-critical"),
-      )}
-    >
-      {i18n.displayText(
-        leading
-          ? createElement(leading, {
-              "aria-hidden": true,
-              style: { width: "0.94em", height: "0.94em", strokeWidth: 3 },
-            })
-          : null,
-      )}
-      {i18n.displayText(
-        icon
-          ? createElement(icon, {
-              style: {
-                width: "0.94em",
-                height: "0.94em",
-                strokeWidth: 3,
-              },
-            })
-          : null,
-      )}
-      {entry.displayText ? (
-        <span
-          style={{
-            WebkitTextStroke: "1.5px rgba(0, 0, 0, 0.95)",
-            paintOrder: "stroke fill",
-            fontVariantNumeric: "tabular-nums",
-            textAlign: "center",
-            width:
-              entry.reservedDigits === undefined
-                ? undefined
-                : `${entry.reservedDigits + (/^[+-]/.test(entry.displayText) ? 1 : 0)}ch`,
-          }}
-        >
-          {i18n.displayText(entry.displayText)}
-        </span>
-      ) : null}
     </div>
   );
 }

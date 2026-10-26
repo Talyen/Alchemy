@@ -9,6 +9,7 @@ interface QueueItem {
   presentation: CombatTextPresentation;
   family: "damage" | "heal" | "other";
   width: number;
+  height?: number;
   scheduled: boolean;
 }
 const endsAt = (item: CombatTextPresentation) => item.launchAt + item.lifetimeMs;
@@ -39,7 +40,7 @@ function footprint(item: QueueItem, launchAt: number, spread: Spread, at: number
     x,
     y: frame.y + row + (plan.lane === "benefit" || plan.lane === "setback" ? 96.6 : 0),
     width: item.width * frame.scale + M.clearancePx,
-    height: frame.height + M.clearancePx,
+    height: (item.height === undefined ? frame.height : item.height * frame.scale) + M.clearancePx,
     opacity: frame.opacity,
   };
 }
@@ -52,7 +53,13 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
   );
   const routes: Spread[] =
     item.presentation.lane === "announcement"
-      ? [0, -1, 1, -2, 2]
+      ? [
+          0,
+          ...Array.from(
+            { length: Math.ceil((item.height ?? 64) / M.reactionRowPx) * (ahead.length + 1) },
+            (_, index) => [-(index + 1), index + 1],
+          ).flat(),
+        ]
       : item.presentation.lane !== "impact"
         ? [0, -1, 1, -2, 2, -3, 3]
         : item.family === "heal" && recent.some((other) => other.family === "damage")
@@ -148,6 +155,10 @@ export function scheduleCombatFeedback(
       scheduled: reaction.presentation !== undefined,
       family: "other" as const,
       width: 280,
+      height:
+        COMBAT_TEXT_BASE_SIZE_PX *
+        (reaction.reactionIds.length * 1.5 +
+          Math.ceil(reaction.entries.filter((entry) => entry.kind !== "notice" && !entry.reactionId).length / 2) * 1.9),
       presentation: reaction.presentation ?? {
         lane: "announcement" as const,
         launchAt: now,

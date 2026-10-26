@@ -151,6 +151,8 @@ export interface NumericCombatTextEvent extends CombatTextIntent {
   absorbedDamage?: number;
   critical?: boolean;
   periodic?: boolean;
+  /** Exact earned payoff origin; distinct from its single output damage type and card intent. */
+  reactionId?: ReactionId;
 }
 
 interface NoticeCombatTextEvent extends CombatTextIntent {

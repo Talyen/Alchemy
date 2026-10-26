@@ -182,16 +182,9 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         update((state) => {
           const current = advanceCombatFeedback(state.floatingCombatBursts, state.reactionAnnouncements, timestamp);
           const result = consolidateCombatBursts(current.floatingCombatBursts, prepared.bursts, timestamp);
-          const reactions = prepared.reactions.flatMap((reaction) =>
-            reaction.reactionIds.map((reactionId) => ({
-              ...reaction,
-              id: `${reaction.id}-${reactionId}`,
-              reactionIds: [reactionId],
-            })),
-          );
           const scheduled = scheduleCombatFeedback(
             result.bursts,
-            [...current.reactionAnnouncements, ...reactions],
+            [...current.reactionAnnouncements, ...prepared.reactions],
             timestamp,
             lifetimeMs,
             shouldReduceMotion(),
