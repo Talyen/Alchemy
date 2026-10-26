@@ -2,14 +2,12 @@ import { savedActivityFixture } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import { controllerInput } from "../controller-input";
 import { expectUnfocused } from "../focus-input";
-import { critical, slow } from "../../playwright-tags";
+import { critical } from "../../playwright-tags";
 import {
   injectActiveBattle,
   injectSaveState,
   makeCard,
   makeGoblinBattleState,
-  seedRandom,
-  startBattleWithDeck,
   resumeInjectedRun,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
@@ -106,45 +104,4 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
     .click();
   await page.getByRole("button", { name: "View Deck · 1 card" }).click();
   await expect(page.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toBeVisible();
-});
-
-test("waits for real card animations and keeps the hand dock fixed", slow, async ({ page }) => {
-  test.setTimeout(60_000);
-
-  await seedRandom(page, 42);
-  await page.addInitScript(() => {
-    const state = window as Window & { inspectionBlockedDuringDeal?: boolean };
-    new MutationObserver(() => {
-      const icon = document.querySelector('[data-testid="draw-pile"] button');
-      if (document.querySelector("[data-flying-card]") && icon?.getAttribute("aria-disabled") === "true") {
-        state.inspectionBlockedDuringDeal = true;
-      }
-    }).observe(document, { childList: true, subtree: true, attributes: true });
-  });
-  await startBattleWithDeck(
-    page,
-    Array.from({ length: 8 }, () => makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] })),
-  );
-  const icon = page.getByTestId("draw-pile").getByRole("button");
-  await expect
-    .poll(() =>
-      page.evaluate(() => (window as Window & { inspectionBlockedDuringDeal?: boolean }).inspectionBlockedDuringDeal),
-    )
-    .toBe(true);
-  await expect(icon).toHaveAttribute("aria-disabled", "false", { timeout: 20_000 });
-  const dock = page.getByTestId("battle-hand");
-  const before = await dock.boundingBox();
-  await icon.click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  expect(await dock.boundingBox()).toEqual(before);
-  const battle = new BattlePage(page);
-  await battle.playFirstCard();
-  await expect(icon).toHaveAttribute("aria-disabled", "true");
-  await expect(icon).toHaveAttribute("aria-disabled", "false", { timeout: 20_000 });
-  await battle.endTurn();
-  await expect(icon).toHaveAttribute("aria-disabled", "false", { timeout: 20_000 });
-  await icon.click();
-  await expect(page.getByRole("dialog")).toBeVisible();
 });

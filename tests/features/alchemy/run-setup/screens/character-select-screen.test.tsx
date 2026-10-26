@@ -12,7 +12,8 @@ describe("CharacterSelectScreen", () => {
     useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   });
 
-  it("renders heroes and respects finishedRunCharacters unlock state", () => {
+  it("blocks a locked hero, then selects that same hero after progression unlocks it", async () => {
+    const user = userEvent.setup();
     const onSelect = vi.fn();
 
     const { rerender } = render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
@@ -23,27 +24,16 @@ describe("CharacterSelectScreen", () => {
     expect(knight.getAttribute("aria-disabled")).toBe("false");
     expect(rogue.getAttribute("aria-disabled")).toBe("true");
 
-    rerender(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={["knight"]} />);
-
-    expect(screen.getByRole("button", { name: /Rogue/i }).getAttribute("aria-disabled")).toBe("false");
-  });
-
-  it("triggers onSelect when clicking an unlocked hero", async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-
-    render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
-
-    await user.click(screen.getByRole("button", { name: /Knight/i }));
-    expect(onSelect).toHaveBeenCalledWith("knight");
-  });
-
-  it("rejects selection of a locked hero", async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-    render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
-
-    await user.click(screen.getByRole("button", { name: "Rogue (Locked)" }));
+    await user.click(rogue);
     expect(onSelect).not.toHaveBeenCalled();
+    await user.click(knight);
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith("knight");
+    onSelect.mockClear();
+
+    rerender(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={["knight"]} />);
+    const unlocked = screen.getByRole("button", { name: "Select Rogue" });
+    expect(unlocked.getAttribute("aria-disabled")).toBe("false");
+    await user.click(unlocked);
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith("rogue");
   });
 });

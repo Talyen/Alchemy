@@ -12,7 +12,6 @@ import {
 } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
-import { getVirtualResolutionLayout } from "../../../src/features/alchemy/shared/ui/use-virtual-resolution";
 import { CONTENT_REFERENCE_VIEWPORT } from "../../../src/lib/game-constants/ui-layout";
 
 // Representative CSS viewports cover narrow, standard, ultrawide, and 4K layouts.
@@ -257,36 +256,6 @@ test.describe("Responsive display sizes", slow, () => {
       )
       .toBe("1");
   });
-});
-
-test("keyboard Options and confirmation fit at 1280×720", async ({ page }) => {
-  const height = 720;
-  await page.setViewportSize({ width: 1280, height });
-  await page.goto("/");
-  const input = controllerInput(page);
-  await input.activate(page.getByRole("button", { name: "Options", exact: true }));
-  await input.activate(page.getByRole("button", { name: "Sound", exact: true }));
-  const volume = page.getByRole("slider", { name: "Music Volume", exact: true });
-  await input.reach(volume);
-  await expect(volume).toBeInViewport();
-  await expectTooltipFitsViewport(volume, { width: 1280, height });
-  const renderedText = await page.getByText("Music Volume", { exact: true }).evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const scale = rect.height / (element as HTMLElement).offsetHeight;
-    return parseFloat(getComputedStyle(element).fontSize) * scale;
-  });
-  const expectedScale = getVirtualResolutionLayout(1280, height).contentScale;
-  expect(renderedText).toBeCloseTo(20 * expectedScale, 1);
-  await input.activate(page.getByRole("button", { name: "Other", exact: true }));
-  await input.activate(page.getByRole("button", { name: "Clear Save Data", exact: true }));
-  const dialog = page.getByRole("dialog");
-  await expectTooltipFitsViewport(dialog, { width: 1280, height });
-  const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
-  await expect(cancel).toBeFocused();
-  await expect(cancel).toBeInViewport();
-  await expect(cancel).toBeVisible();
-  await input.press("back");
-  await expect(dialog).toHaveCount(0);
 });
 
 test("compact Options controls remain reachable at large size in a narrow window", async ({ page }) => {

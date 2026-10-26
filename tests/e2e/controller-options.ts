@@ -18,6 +18,7 @@ export async function exerciseControllerOptions(page: Page) {
   await input.activate(page.getByRole("button", { name: "Sound", exact: true }));
   const volume = page.getByRole("slider", { name: "Music Volume", exact: true });
   await input.reach(volume);
+  await expect(volume).toBeInViewport({ ratio: 0.99 });
   const before = Number(await volume.inputValue());
   await input.press("left");
   await expect(volume).toHaveValue(String(before - 1));
@@ -27,6 +28,9 @@ export async function exerciseControllerOptions(page: Page) {
   const dialog = page.getByRole("dialog");
   const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
   await expect(cancel).toBeFocused();
+  await expect(dialog).toBeInViewport({ ratio: 0.99 });
+  await expect(cancel).toBeInViewport({ ratio: 0.99 });
+  await expect(dialog.getByRole("button", { name: "Clear Save Data" })).toBeInViewport({ ratio: 0.99 });
   await input.press("right");
   await expect(dialog.getByRole("button", { name: "Clear Save Data" })).toBeFocused();
   await input.press("left");

@@ -1,6 +1,5 @@
 import "../../../../helpers/mock-audio";
-import { act, cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DraftDeckScreen } from "@/features/alchemy/run-setup/screens/draft-deck-screen";
 import { DRAFT_ROUNDS, MOTION_FADE_MS } from "@/lib/game-constants";
@@ -15,26 +14,10 @@ describe("DraftDeckScreen", () => {
     useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   });
 
-  it("renders completed draft state with continue action", async () => {
-    const user = userEvent.setup();
+  it("finishes the final pick before enabling Continue and dispatches completion", async () => {
+    vi.useFakeTimers();
     const onComplete = vi.fn();
     const onPick = vi.fn();
-    const drafted = Array.from({ length: DRAFT_ROUNDS }, (_, index) =>
-      makeTestCard({ id: `card-${index}`, title: `Card ${index}` }),
-    );
-
-    render(<DraftDeckScreen onComplete={onComplete} draftedCards={drafted} draftChoices={[]} onPick={onPick} />);
-
-    expect(screen.getByText("Draft Complete")).toBeDefined();
-    expect(screen.getByText(`You drafted ${String(DRAFT_ROUNDS)} cards. Ready to begin your run.`)).toBeDefined();
-
-    const continueBtn = screen.getByRole("button", { name: /Continue/i });
-    await user.click(continueBtn);
-    expect(onComplete).toHaveBeenCalledWith();
-  });
-
-  it("holds the Continue action until the Draft Complete art grid swaps in", async () => {
-    vi.useFakeTimers();
     const drafting = Array.from({ length: DRAFT_ROUNDS - 1 }, (_, index) =>
       makeTestCard({ id: `drafted-${index}`, title: `Drafted ${index}` }),
     );
@@ -46,13 +29,17 @@ describe("DraftDeckScreen", () => {
     const completed = [...drafting, makeTestCard({ id: "final-a", title: "Final A" })];
 
     const { rerender } = render(
-      <DraftDeckScreen onComplete={vi.fn()} draftedCards={drafting} draftChoices={choices} onPick={vi.fn()} />,
+      <DraftDeckScreen onComplete={onComplete} draftedCards={drafting} draftChoices={choices} onPick={onPick} />,
     );
     expect(screen.getByText("Draft a Deck")).toBeDefined();
     expect(screen.queryByText("Draft Complete")).toBeNull();
     expect(screen.queryByRole("button", { name: /Continue/i })).toBeNull();
 
-    rerender(<DraftDeckScreen onComplete={vi.fn()} draftedCards={completed} draftChoices={[]} onPick={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Select Final A" }));
+    expect(onPick).toHaveBeenCalledExactlyOnceWith("final-a");
+    expect(onComplete).not.toHaveBeenCalled();
+
+    rerender(<DraftDeckScreen onComplete={onComplete} draftedCards={completed} draftChoices={[]} onPick={onPick} />);
 
     expect(screen.getByText("Draft a Deck")).toBeDefined();
     expect(screen.queryByText("Draft Complete")).toBeNull();
@@ -68,6 +55,7 @@ describe("DraftDeckScreen", () => {
 
     expect(screen.getByText("Draft Complete")).toBeDefined();
     expect(screen.queryByText("Draft a Deck")).toBeNull();
-    expect(screen.getByRole("button", { name: /Continue/i })).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Continue", exact: true }));
+    expect(onComplete).toHaveBeenCalledExactlyOnceWith();
   });
 });
