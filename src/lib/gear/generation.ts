@@ -19,9 +19,8 @@ export { getGearLootAvailability, getOwnedUniqueDefinitionIds, getRewardLootAvai
 interface GenerateGearOfferingsOptions {
   count: number;
   rng: () => number;
-  rollTier: (available: LootAvailability, index: number) => GearRarity;
+  rollTier: (available: LootAvailability) => GearRarity;
   ownedUniqueIds?: ReadonlySet<string>;
-  fallbackUniqueToAstral?: boolean;
   fillCount?: boolean;
   baseItemIds?: readonly string[] | undefined;
   createId?: () => string;
@@ -32,7 +31,6 @@ function generateGearOfferings({
   rng,
   rollTier,
   ownedUniqueIds = new Set(),
-  fallbackUniqueToAstral = true,
   fillCount = false,
   baseItemIds,
   createId = createInstanceId,
@@ -63,7 +61,7 @@ function generateGearOfferings({
       // Leave an ordinary base available to fill later slots on a narrow shelf.
       unique: availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBases.length > 1),
     };
-    let rarity = rollTier(availability, index);
+    const rarity = rollTier(availability);
 
     if (rarity === "unique") {
       const unique = pickRandom(availableUniques, rng);
@@ -72,8 +70,9 @@ function generateGearOfferings({
         choices.push(generateUniqueGearInstance(unique, createId));
         continue;
       }
-      if (!fallbackUniqueToAstral) break;
-      rarity = "astral";
+      // Weighted rolls exclude unavailable Uniques; only a forced Unique can
+      // reach an empty pool, and that reward ends rather than changing rarity.
+      break;
     }
 
     const base = sampledBases.find((item) => !reservedBases.has(item.id)) ?? pickRandom(eligibleBases, rng);
@@ -121,25 +120,8 @@ export function generateGearRewardChoicesForRarity(
     rng,
     rollTier: () => rarity,
     ownedUniqueIds,
-    fallbackUniqueToAstral: false,
     baseItemIds,
     fillCount,
-    createId,
-  });
-}
-
-export function generateGearRewardChoicesForRarities(
-  rarities: readonly GearRarity[],
-  rng: () => number,
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
-  createId: () => string = createInstanceId,
-): GearInstance[] {
-  return generateGearOfferings({
-    count: rarities.length,
-    rng,
-    // count derives from rarities, so every index resolves a requested rarity.
-    rollTier: (_available, index) => rarities[index]!,
-    ownedUniqueIds,
     createId,
   });
 }
