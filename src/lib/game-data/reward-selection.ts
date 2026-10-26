@@ -4,10 +4,6 @@ import { getCardKeywords } from "./keywords";
 import { isCompanionSummonCard } from "./cards/card-pools";
 import type { BattleCard, KeywordId } from "./types";
 
-function deckHasCompanionCard(deck: ReadonlyArray<Pick<BattleCard, "effects">>): boolean {
-  return deck.some(isCompanionSummonCard);
-}
-
 function buildKeywordFrequency(deck: BattleCard[], seedKeywords: KeywordId[]): Record<string, number> {
   const freq: Record<string, number> = {};
   for (const keyword of seedKeywords) freq[keyword] = (freq[keyword] ?? 0) + 1;
@@ -45,30 +41,15 @@ function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number):
   );
 }
 
-function pruneSelectedCards(pool: BattleCard[], selectedIds: ReadonlySet<string>): void {
-  if (selectedIds.size === 0) return;
+function removeChosenCard(pool: BattleCard[], id: string): void {
   // Both pools are owned by this reward selection. Compact in order so
   // weighted duplicates and seeded picks match filtering, without new arrays.
   let kept = 0;
   for (const card of pool) {
-    if (selectedIds.has(card.id)) continue;
+    if (card.id === id) continue;
     pool[kept++] = card;
   }
   pool.length = kept;
-}
-
-function pickOneCard(
-  affinityPool: BattleCard[],
-  randomPool: BattleCard[],
-  selectedIds: ReadonlySet<string>,
-  rng: () => number,
-): BattleCard | undefined {
-  if (rng() >= REWARD_RANDOM_CHANCE_FRACTION) {
-    pruneSelectedCards(affinityPool, selectedIds);
-    if (affinityPool.length > 0) return pickRandom(affinityPool, rng);
-  }
-  pruneSelectedCards(randomPool, selectedIds);
-  return pickRandom(randomPool, rng);
 }
 
 export function selectRewardCards(
@@ -83,7 +64,7 @@ export function selectRewardCards(
   const excludedIds = new Set(exclude.map((card) => card.id));
   const pool = allCards.filter((card) => !excludedIds.has(card.id));
   if (pool.length === 0) return [];
-  const hasCompanion = deckHasCompanionCard(deck);
+  const hasCompanion = deck.some(isCompanionSummonCard);
   // A Companion-only Wish still offers all its choices when the deck already
   // contains summons; dampening belongs to mixed reward pools.
   const candidates = hasCompanion && !pool.every(isCompanionSummonCard) ? dampenCompanionCandidates(pool, rng) : pool;
@@ -109,10 +90,13 @@ export function selectRewardCards(
   );
 
   for (let i = 0; i < count; i++) {
-    const chosenCard = pickOneCard(affinityPool, randomPool, selectedIds, rng);
+    const preferredPool = rng() >= REWARD_RANDOM_CHANCE_FRACTION ? affinityPool : randomPool;
+    const chosenCard = pickRandom(preferredPool.length > 0 ? preferredPool : randomPool, rng);
     if (!chosenCard) break;
     selected.push(chosenCard);
     selectedIds.add(chosenCard.id);
+    removeChosenCard(affinityPool, chosenCard.id);
+    removeChosenCard(randomPool, chosenCard.id);
   }
 
   // Ownership changes preference, not the number of promised choices.
