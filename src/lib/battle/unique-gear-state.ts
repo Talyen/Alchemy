@@ -36,9 +36,9 @@ type PerTurnUniqueGearReset = Pick<
 // The only unique-gear fields that reset each player turn. Everything else
 // persists for the combat or is consumed explicitly where it is used,
 // so add new per-turn fields here — not at the reset site.
-export const PER_TURN_UNIQUE_GEAR_RESET: PerTurnUniqueGearReset = {
+export const PER_TURN_UNIQUE_GEAR_RESET: Readonly<PerTurnUniqueGearReset> = Object.freeze({
   wrenflightActive: false,
   wardbreakerPurgeUsed: false,
   finalSparkUsed: false,
   lastArcheryUid: null,
-};
+});

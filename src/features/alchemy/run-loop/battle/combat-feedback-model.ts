@@ -16,6 +16,9 @@ export function prepareCombatFeedback(
   const reactions: ReactionAnnouncement[] = [];
   // Resolved frames can be saved and replayed; presentation must never mutate their events.
   for (const event of events) {
+    // Immunity is already represented by the persistent control-immunity chip.
+    // Keep its engine receipt for mechanics/audio, without allocating a floating flight.
+    if (event.kind === "notice" && event.signal === "immune") continue;
     if (event.kind === "notice" && event.signal === "reaction") {
       let announcement = reactions.find(
         (entry) => entry.target === event.target && entry.reactionIds.includes(event.reactionId),

@@ -51,9 +51,20 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   let playAttempt: object | null = null;
 
   function cancelTransition(): void {
-    if ("timer" in playback && playback.timer !== null) deps.cancel(playback.timer);
-    // Replacing the state also invalidates already queued timer callbacks.
+    const timer = "timer" in playback ? playback.timer : null;
+    // Revoke callbacks before cancellation, which can fail at the scheduler seam.
     playback = playback.phase === "idle" ? { phase: "idle" } : { phase: "playing", track: playback.track };
+    if (timer !== null) {
+      try {
+        deps.cancel(timer);
+      } catch {
+        try {
+          deps.reportFailure("Music fade could not be cancelled");
+        } catch {
+          // Diagnostics cannot interrupt source release or the next transition.
+        }
+      }
+    }
   }
 
   function applyTrackVolume(track: MusicTrackRecord, fadeGain = track.fadeGain): void {

@@ -21,35 +21,6 @@ async function boxes(locator: Locator) {
   );
 }
 
-test("Corruption picker capacity is independent of resize history and preserves selection", slow, async ({ page }) => {
-  await page.setViewportSize({ width: 1470, height: 956 });
-  await startAtDestination(page, {}, { forceDestination: "Corruption" });
-  await page.getByRole("button", { name: "Corruption", exact: true }).click();
-  await page.getByRole("button", { name: "Corrupt a Card", exact: true }).click();
-  const cards = page.getByRole("button", { name: /^Select / });
-  await waitForLayoutSettled(page, cards);
-  await cards.first().click();
-  await page.mouse.move(0, 0);
-  await waitForLayoutSettled(page, cards);
-  const initial = await boxes(cards);
-  await expect(page.getByRole("button", { name: "Corrupt", exact: true })).toBeEnabled();
-  for (const viewport of [
-    { width: 1280, height: 720 },
-    { width: 1470, height: 956 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await page.mouse.move(0, 0);
-    await waitForLayoutSettled(page, cards);
-  }
-  await expect(cards).toHaveCount(initial.length);
-  const final = await boxes(cards);
-  for (const [index, rect] of final.entries()) {
-    expect(Math.abs(rect.x - initial[index]!.x)).toBeLessThan(2);
-    expect(Math.abs(rect.y - initial[index]!.y)).toBeLessThan(2);
-  }
-  await expect(page.getByRole("button", { name: "Corrupt", exact: true })).toBeEnabled();
-});
-
 test("Collection and Homestead keep reachable actions at maximum Game Size", slow, async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(

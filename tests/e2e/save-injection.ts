@@ -22,16 +22,19 @@ export function readSavedGame(page: Page): Promise<ParsedSaveData> {
   }, SAVE_KEY);
 }
 
-/** Page-level seed scripts rerun on reload; this page reads only the acknowledged save. */
+/** Exit the old renderer so only an unseeded resume can write subsequent progress. */
 export async function withSavedGame(
   page: Page,
   verify: (resumed: Page) => Promise<void>,
   continueLabel = "Continue",
+  { keepSource = false }: { keepSource?: boolean } = {},
 ): Promise<void> {
+  const url = new URL("/", page.url()).href;
+  if (!keepSource && !page.isClosed()) await page.close();
   const resumed = await page.context().newPage();
   const errors = failOnRuntimeErrors(resumed);
   try {
-    await resumed.goto(new URL("/", page.url()).href, { waitUntil: "domcontentloaded" });
+    await resumed.goto(url, { waitUntil: "domcontentloaded" });
     if ((await readSavedGame(resumed)).activeRun) await resumeInjectedRun(resumed, continueLabel);
     await verify(resumed);
     expect(errors).toEqual([]);
