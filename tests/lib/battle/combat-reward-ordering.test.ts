@@ -9,6 +9,72 @@ import { applyArmorReward } from "@/lib/battle/status-player";
 import { makeCombatTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat reward ordering", () => {
+  it("settles fatal Resonant Chime retaliation before Runic Quill can grant an Emergency Wish", () => {
+    const card = makeTestCard({ id: "chimed-consume", consume: true, cost: 0, effects: [] });
+    const state = patchBattleState({
+      hand: [card],
+      mana: 0,
+      playerHealth: 1,
+      playerMaxHealth: 30,
+      deathsDoorUsed: true,
+      enemyHealth: 2,
+      enemyMaxHealth: 2,
+      roomScalingMultiplier: 4,
+      currentEnemy: {
+        traits: [
+          { id: "blood-countess", title: "Profane Blood", description: "" },
+          { id: "cinder-skin", title: "Cinder Skin", description: "" },
+        ],
+      },
+      talentEffects: { healthPerMana: 1, burnOnWish: 1, healOnConsume: 5, goldOnConsume: 4, goldOnConsumeChance: 100 },
+      trinketEffects: { resonantChimeCardsRequired: 1, resonantChimeMana: 1, runicQuillDrawOnConsume: 1 },
+      rng: () => 0.99,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.playerHealth).toBe(0);
+    expect(result.enemyHealth).toBe(1);
+    expect(result.gold).toBe(state.gold);
+    expect(result.wishOptions).toBeNull();
+    expect(result.exhausted).toEqual([card]);
+
+    const safe = playBattleCardResolved(
+      { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } },
+      card.id,
+      0,
+    ).state;
+    expect(safe.playerHealth).toBe(7);
+    expect(safe.enemyHealth).toBe(1);
+    expect(safe.gold).toBe(state.gold + 4);
+    expect(safe.wishOptions?.length).toBeGreaterThan(0);
+  });
+
+  it("cancels a queued Disrupting Purge after fatal Cinder Skin retaliation", () => {
+    const card = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "stun", amount: 5 }] });
+    const state = patchBattleState({
+      hand: [card],
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { stun: 45 },
+      enemyMitigation: { forge: 2 },
+      gearEffects: { purgeOnStunChance: 100, blockOnPurge: 3, holyOnPurge: 2 },
+      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
+      rng: () => 0.99,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.playerHealth).toBe(0);
+    expect(result.enemyHealth).toBe(95);
+    expect(result.enemyMitigation.forge).toBe(2);
+    expect(result.playerStatuses.block).toBe(0);
+    expect(result.flags.pendingDisruptingPurge).toBe(false);
+
+    const survived = playBattleCardResolved({ ...state, playerHealth: 10 }, card.id, 0).state;
+    expect(survived.enemyMitigation.forge).toBe(0);
+    expect(survived.playerStatuses.block).toBe(3);
+    expect(survived.enemyHealth).toBe(93);
+  });
+
   it("Resonant Chime restores Mana before a Consumed card checks Lastlight", () => {
     const card = makeTestCard({ id: "chimed-consume", consume: true, cost: 0, effects: [] });
     const state = patchBattleState({

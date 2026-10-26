@@ -203,8 +203,10 @@ export function resolvePendingBattleReactions(state: BattleState, combatTexts: C
         ...nextState,
         flags: { ...nextState.flags, pendingDisruptingPurge: false },
       };
-      const purged = purgeEnemyBenefits(nextState, 1, combatTexts);
-      nextState = applyPurgeGearRewards(purged.state, purged.removed, combatTexts);
+      if (!isPlayerDefeated(nextState)) {
+        const purged = purgeEnemyBenefits(nextState, 1, combatTexts);
+        nextState = applyPurgeGearRewards(purged.state, purged.removed, combatTexts);
+      }
     }
   }
   return nextState;

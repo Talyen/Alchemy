@@ -216,12 +216,17 @@ function resolveCardPlay(
     );
 
   if (!isPlayerDefeated(nextState) && state.talentEffects.wishCardRefundsMana && cardHasKeyword(card, "wish")) {
-    nextState = gainManaWithCombatText(nextState, manaSpent, combatTexts, { skipFightPacing: true });
+    nextState = resolvePendingBattleReactions(
+      gainManaWithCombatText(nextState, manaSpent, combatTexts, { skipFightPacing: true }),
+      combatTexts,
+    );
   }
+  if (!isPlayerDefeated(nextState) && enemyWasAlive) {
+    nextState = resolvePendingBattleReactions(applyResonantChimeTrinket(nextState, combatTexts), combatTexts);
+  }
+  // Mana restoration can retaliate through healing; settle it before Consume
+  // draws can grant an Emergency Wish that defeats the enemy and cancels that hit.
   const playerAlive = !isPlayerDefeated(nextState);
-  if (playerAlive && enemyWasAlive) {
-    nextState = applyResonantChimeTrinket(nextState, combatTexts);
-  }
   nextState = handlePostPlayCardDestination(nextState, card, {
     triggerConsumeRiders: playerAlive,
     combatTexts,
