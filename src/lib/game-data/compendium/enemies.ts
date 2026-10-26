@@ -1,5 +1,5 @@
 import * as assetRefs from "../assets";
-import { defineEnemy, poisonResistance, regeneration, trait } from "../compendium-builders";
+import { defineEnemy, trait } from "../compendium-builders";
 
 export const enemyBestiary = [
   defineEnemy({
@@ -8,8 +8,8 @@ export const enemyBestiary = [
     art: assetRefs.theForgeGolem,
     enemyType: "boss",
     traits: [
-      trait("rusting-carapace", "Stoke the Forge", "Gains 1 Forge every other turn"),
-      trait("starting-block", "Sturdy Plating", "Starts with 4 Block"),
+      trait("rusting-carapace", "Stoke the Forge", "Gains 1 Forge every other turn."),
+      trait("minor-freeze-vulnerability", "Cold-Shocked", "Receives 30% more Freeze damage.", "negative"),
     ],
     abilityIds: ["sunder", "bash", "molten-bulwark"],
   }),
@@ -19,8 +19,8 @@ export const enemyBestiary = [
     art: assetRefs.theFrostwarden,
     enemyType: "boss",
     traits: [
-      trait("glacial-shell", "Glacial Surge", "Increases Freeze damage by 1"),
-      trait("glacial-body", "Glacial Body", "Receives half Freeze damage\nReceives 30% more Burn damage"),
+      trait("glacial-shell", "Glacial Surge", "Deals 1 additional Freeze damage."),
+      trait("burn-vulnerability", "Thawing", "Receives 30% more Burn damage.", "negative"),
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
   }),
@@ -30,8 +30,8 @@ export const enemyBestiary = [
     art: assetRefs.theBlightTreant,
     enemyType: "boss",
     traits: [
-      regeneration("Rotting Regrowth"),
-      trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage"),
+      trait("regeneration", "Rotting Regrowth", "Restores 1 Health each turn."),
+      trait("burn-vulnerability", "Kindling", "Receives 30% more Burn damage.", "negative"),
     ],
     abilityIds: ["grasping-vines", "bloodthorn", "thorn-whip"],
   }),
@@ -40,8 +40,8 @@ export const enemyBestiary = [
     title: "Skeleton",
     enemyType: "normal",
     traits: [
-      trait("hollow-frame", "Hollow Frame", "Cannot be Leeched"),
-      trait("holy-vulnerability", "Unholy Bones", "Receives double Holy damage"),
+      trait("hollow-frame", "Hollow Frame", "Cannot be Leeched."),
+      trait("holy-vulnerability", "Profane", "Receives 30% more Holy damage.", "negative"),
     ],
     abilityIds: ["slash", "bash", "block"],
   }),
@@ -49,7 +49,10 @@ export const enemyBestiary = [
     id: "goblin",
     title: "Goblin",
     enemyType: "normal",
-    traits: [trait("pilfer", "Pilfer", "Steals 1 Block before attacking")],
+    traits: [
+      trait("pilfer", "Pilfer", "Steals 1 Block before each attack hit."),
+      trait("cowardly", "Cowardly", "Deals 1 less damage below half Health.", "negative"),
+    ],
     abilityIds: ["stab", "slash", "block"],
   }),
   defineEnemy({
@@ -57,8 +60,8 @@ export const enemyBestiary = [
     title: "Mimic",
     enemyType: "elite",
     traits: [
-      trait("snap-shut", "Snap Shut", "Gains 1 Block after attacking"),
-      trait("gold-trove", "Gold Trove", "Drops Double Gold on Defeat"),
+      trait("snap-shut", "Snap Shut", "Gains 1 Block after each attack hit."),
+      trait("burn-vulnerability", "Kindling", "Receives 30% more Burn damage.", "negative"),
     ],
     abilityIds: ["fangs", "bash", "block"],
   }),
@@ -66,7 +69,10 @@ export const enemyBestiary = [
     id: "mud-elemental",
     title: "Mud Elemental",
     enemyType: "elite",
-    traits: [regeneration("Regeneration")],
+    traits: [
+      trait("regeneration", "Reform", "Restores 1 Health each turn."),
+      trait("minor-freeze-vulnerability", "Cold-Shocked", "Receives 30% more Freeze damage.", "negative"),
+    ],
     abilityIds: ["caustic-jab", "grasping-vines", "block"],
   }),
   defineEnemy({
@@ -74,8 +80,8 @@ export const enemyBestiary = [
     title: "Necromancer",
     enemyType: "elite",
     traits: [
-      trait("soul-harvest", "Soul Harvest", "Attacks Purge or Leech while below half Health"),
-      trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage"),
+      trait("soul-harvest", "Soul Harvest", "Below half Health, attack hits randomly Purge or Leech."),
+      trait("holy-vulnerability", "Profane", "Receives 30% more Holy damage.", "negative"),
     ],
     abilityIds: ["fangs", "bloodthorn", "rend"],
   }),
@@ -84,8 +90,8 @@ export const enemyBestiary = [
     title: "Plague Doctor",
     enemyType: "elite",
     traits: [
-      trait("contagion", "Contagion", "Restores 1 Health whenever an opponent takes Poison damage"),
-      poisonResistance,
+      trait("contagion", "Contagion", "Restores 1 Health whenever an opponent takes Poison damage."),
+      trait("frail", "Frail", "Receives 30% more Physical damage.", "negative"),
     ],
     abilityIds: ["caustic-jab", "venom-fangs", "rend"],
   }),
@@ -93,14 +99,20 @@ export const enemyBestiary = [
     id: "living-armor",
     title: "Living Armor",
     enemyType: "elite",
-    traits: [trait("living-armor", "Animated Plate", "Starts combat with Armor\nReceives 25% less Bleed damage")],
+    traits: [
+      trait("living-armor", "Animated Plate", "Starts combat with 4 Armor."),
+      trait("corrodible", "Corrodible", "Receives 30% more Poison damage.", "negative"),
+    ],
     abilityIds: ["slash", "shield-bash", "plate-mail"],
   }),
   defineEnemy({
     id: "iron-bear",
     title: "The Iron Bear",
     enemyType: "boss",
-    traits: [trait("iron-hide", "Iron Hide", "Gains 1 Armor every other turn")],
+    traits: [
+      trait("iron-hide", "Iron Hide", "Gains 1 Armor every other turn."),
+      trait("lumbering", "Lumbering", "Receives 30% more Stun damage.", "negative"),
+    ],
     abilityIds: ["maul", "burning-blade", "pounce"],
   }),
   defineEnemy({
@@ -108,12 +120,8 @@ export const enemyBestiary = [
     title: "Fire Elemental",
     enemyType: "elite",
     traits: [
-      trait(
-        "cinder-skin",
-        "Cinder Skin",
-        "Every other turn, deal 1 Burn damage when Health is damaged, once that turn, while alive",
-      ),
-      trait("freeze-vulnerability", "Freeze Vulnerability", "Receives double Freeze damage"),
+      trait("cinder-skin", "Cinder Skin", "Retaliates with 1 Burn damage every other turn."),
+      trait("minor-freeze-vulnerability", "Cold-Shocked", "Receives 30% more Freeze damage.", "negative"),
     ],
     abilityIds: ["fireball", "cinderbloom", "molten-bulwark"],
   }),
@@ -122,8 +130,8 @@ export const enemyBestiary = [
     title: "Frost Elemental",
     enemyType: "elite",
     traits: [
-      trait("frost-elemental", "Deep Cold", "Deals 1 additional Freeze damage"),
-      trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage"),
+      trait("frost-elemental", "Deep Cold", "Deals 1 additional Freeze damage."),
+      trait("burn-vulnerability", "Thawing", "Receives 30% more Burn damage.", "negative"),
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
   }),
@@ -132,7 +140,8 @@ export const enemyBestiary = [
     title: "Slime",
     enemyType: "normal",
     traits: [
-      trait("amorphous", "Gelatinous Body", "Receives 10% less Physical damage\nReceives 10% less Poison damage"),
+      trait("amorphous", "Gelatinous Body", "Receives 20% less Physical damage."),
+      trait("minor-freeze-vulnerability", "Cold-Shocked", "Receives 30% more Freeze damage.", "negative"),
     ],
     abilityIds: ["venom-fangs", "caustic-jab", "block"],
   }),
@@ -141,7 +150,8 @@ export const enemyBestiary = [
     title: "Will-o-Wisp",
     enemyType: "elite",
     traits: [
-      trait("will-o-wisp", "Ethereal Form", "Receives 30% less Physical damage\nReceives 30% less Freeze damage"),
+      trait("will-o-wisp", "Incorporeal", "Receives 30% less Physical damage."),
+      trait("flickering", "Flickering", "Losing Health reduces its next attack’s damage by 1.", "negative"),
     ],
     abilityIds: ["frostbolt", "lightning-bolt", "glacial-ward"],
   }),
@@ -149,14 +159,20 @@ export const enemyBestiary = [
     id: "bandit",
     title: "Bandit",
     enemyType: "normal",
-    traits: [trait("bandit", "Ambush", "Deals double damage on its first landed hit")],
+    traits: [
+      trait("bandit", "Ambush", "Its first landed hit deals double damage."),
+      trait("cowardly", "Cowardly", "Deals 1 less damage below half Health.", "negative"),
+    ],
     abilityIds: ["slash", "serrated-edge", "block"],
   }),
   defineEnemy({
     id: "ogre",
     title: "Ogre",
     enemyType: "elite",
-    traits: [trait("ogre", "Brute Force", "Physical attacks deal double damage to Block")],
+    traits: [
+      trait("ogre", "Brute Force", "Physical attacks deal double damage to Block."),
+      trait("lumbering", "Lumbering", "Receives 30% more Stun damage.", "negative"),
+    ],
     abilityIds: ["bash", "sunder", "maul"],
   }),
   defineEnemy({
@@ -164,8 +180,8 @@ export const enemyBestiary = [
     title: "Fire Imp",
     enemyType: "normal",
     traits: [
-      trait("fire-imp", "Cinder Touch", "Attacks inflict 1 additional Burn"),
-      trait("minor-freeze-vulnerability", "Freeze Vulnerability", "Receives 30% more Freeze damage"),
+      trait("fire-imp", "Cinder Touch", "Attack hits inflict 1 Burn."),
+      trait("minor-freeze-vulnerability", "Cold-Shocked", "Receives 30% more Freeze damage.", "negative"),
     ],
     abilityIds: ["fireball", "bellows-blast", "molten-bulwark"],
   }),
@@ -174,8 +190,8 @@ export const enemyBestiary = [
     title: "Hellhound",
     enemyType: "elite",
     traits: [
-      trait("hellhound", "Feed the Flames", "Deals 25% more damage against Burning heroes"),
-      trait("minor-freeze-vulnerability", "Freeze Vulnerability", "Receives 30% more Freeze damage"),
+      trait("hellhound", "Feed the Flames", "Deals 25% more damage against Burning heroes."),
+      trait("minor-freeze-vulnerability", "Cold-Shocked", "Receives 30% more Freeze damage.", "negative"),
     ],
     abilityIds: ["fangs", "burning-blade", "pounce"],
   }),
@@ -183,14 +199,20 @@ export const enemyBestiary = [
     id: "pyromancer",
     title: "Pyromancer",
     enemyType: "elite",
-    traits: [trait("pyromancer", "Pyromancy", "Deals 1 additional Burn damage against heroes who are not Burning")],
+    traits: [
+      trait("pyromancer", "Pyromancy", "Deals 1 additional Burn damage against heroes who are not Burning."),
+      trait("frail", "Frail", "Receives 30% more Physical damage.", "negative"),
+    ],
     abilityIds: ["fireball", "cinderbloom", "sunburst"],
   }),
   defineEnemy({
     id: "giant-spider",
     title: "Giant Spider",
     enemyType: "normal",
-    traits: [trait("giant-spider", "Venomous Bite", "Attacks inflict 1 additional Poison")],
+    traits: [
+      trait("giant-spider", "Venomous Bite", "Attack hits inflict 1 Poison."),
+      trait("burn-vulnerability", "Kindling", "Receives 30% more Burn damage.", "negative"),
+    ],
     abilityIds: ["venom-fangs", "pounce", "caustic-jab"],
   }),
   defineEnemy({
@@ -198,8 +220,8 @@ export const enemyBestiary = [
     title: "Giant Snake",
     enemyType: "elite",
     traits: [
-      trait("giant-snake", "Corrosive Venom", "Poison removes 1 additional Block before Health"),
-      trait("cold-blooded", "Cold-Blooded", "Receives 30% more Freeze damage"),
+      trait("giant-snake", "Corrosive Venom", "Poison removes 1 additional Block before damaging Health."),
+      trait("cold-blooded", "Cold-Blooded", "Receives 30% more Freeze damage.", "negative"),
     ],
     abilityIds: ["venom-fangs", "caustic-jab", "rend"],
   }),
@@ -208,8 +230,8 @@ export const enemyBestiary = [
     title: "Blood Cultist",
     enemyType: "elite",
     traits: [
-      trait("blood-cultist", "Blood Frenzy", "Deals 1 additional Bleed damage against Bleeding heroes"),
-      trait("minor-holy-vulnerability", "Holy Vulnerability", "Receives 30% more Holy damage"),
+      trait("blood-cultist", "Blood Frenzy", "Deals 1 additional Bleed damage against Bleeding heroes."),
+      trait("self-sacrifice", "Self-Sacrifice", "Loses 1 Health after each attack hit.", "negative"),
     ],
     abilityIds: ["rend", "serrated-edge", "bloodthorn"],
   }),
@@ -218,8 +240,8 @@ export const enemyBestiary = [
     title: "Dire Wolf",
     enemyType: "normal",
     traits: [
-      trait("dire-wolf", "Scent of Blood", "Deals 1 additional damage against Bleeding heroes"),
-      trait("tough-hide", "Tough Hide", "Receives 10% less Physical damage"),
+      trait("dire-wolf", "Scent of Blood", "Deals 1 additional damage against Bleeding heroes."),
+      trait("reckless", "Reckless", "Receives 30% more Physical damage.", "negative"),
     ],
     abilityIds: ["fangs", "rend", "pounce"],
   }),
@@ -228,8 +250,8 @@ export const enemyBestiary = [
     title: "Vampire",
     enemyType: "elite",
     traits: [
-      trait("vampire", "Blood Scent", "Deals 1 additional Bleed damage to heroes below half Health"),
-      trait("vampiric-curse", "Vampiric Curse", "Receives 30% more Holy and Burn damage"),
+      trait("vampire", "Blood Scent", "Attack hits deal 1 additional Bleed damage against heroes below half Health."),
+      trait("holy-vulnerability", "Profane", "Receives 30% more Holy damage.", "negative"),
     ],
     abilityIds: ["fangs", "rend", "bloodthorn"],
   }),
@@ -239,11 +261,8 @@ export const enemyBestiary = [
     art: assetRefs.theBloodCountess,
     enemyType: "boss",
     traits: [
-      trait(
-        "blood-countess",
-        "Profane Blood",
-        "Receives 30% more Holy damage\nTakes 1 Holy damage whenever the hero restores Health",
-      ),
+      trait("crimson-pulse", "Crimson Pulse", "Deals 1 Bleed damage every other turn."),
+      trait("blood-countess", "Profane Blood", "Takes 1 Holy damage whenever the hero restores Health.", "negative"),
     ],
     abilityIds: ["fangs", "rend", "bloodthorn"],
   }),
@@ -251,21 +270,30 @@ export const enemyBestiary = [
     id: "zealot",
     title: "Zealot",
     enemyType: "normal",
-    traits: [trait("zealot-enemy", "Fervor", "Gains 1 Forge after dealing Holy damage")],
+    traits: [
+      trait("zealot-enemy", "Fervor", "Holy hits grant 1 Forge."),
+      trait("self-sacrifice", "Self-Sacrifice", "Loses 1 Health after each attack hit.", "negative"),
+    ],
     abilityIds: ["slash", "smite", "judgment"],
   }),
   defineEnemy({
     id: "cleric",
     title: "Cleric",
     enemyType: "elite",
-    traits: [trait("cleric", "Divine Favor", "Gains 1 Block each turn\nHoly damage restores 1 Health")],
+    traits: [
+      trait("cleric", "Restoring Light", "Holy hits restore 1 Health."),
+      trait("frail", "Frail", "Receives 30% more Physical damage.", "negative"),
+    ],
     abilityIds: ["judgment", "holy-radiance", "smite"],
   }),
   defineEnemy({
     id: "inquisitor",
     title: "Inquisitor",
     enemyType: "normal",
-    traits: [trait("inquisitor", "Trial by Fire", "Deals double Holy damage against Burning heroes")],
+    traits: [
+      trait("inquisitor", "Condemn", "Attack hits deal 1 additional Holy damage against heroes below half Health."),
+      trait("reckless", "Reckless", "Receives 30% more Physical damage.", "negative"),
+    ],
     abilityIds: ["sunder", "judgment", "smite"],
   }),
   defineEnemy({
@@ -273,11 +301,8 @@ export const enemyBestiary = [
     title: "Paladin",
     enemyType: "elite",
     traits: [
-      trait(
-        "paladin",
-        "Sacred Bulwark",
-        "Gains 1 Block after dealing Stun or Holy damage\nReceives 30% less Holy damage",
-      ),
+      trait("paladin", "Sacred Bulwark", "Holy and Stun hits grant 1 Block."),
+      trait("corrodible", "Corrodible", "Receives 30% more Poison damage.", "negative"),
     ],
     abilityIds: ["judgment", "shield-bash", "holy-radiance"],
   }),
@@ -286,7 +311,10 @@ export const enemyBestiary = [
     title: "The Seraph",
     art: assetRefs.theSeraph,
     enemyType: "boss",
-    traits: [trait("seraph", "Renewing Light", "Holy attacks restore 1 Health")],
+    traits: [
+      trait("radiant-judgment", "Radiant Judgment", "Deals 1 Holy damage every other turn."),
+      trait("flickering", "Flickering", "Losing Health reduces its next attack’s damage by 1.", "negative"),
+    ],
     abilityIds: ["smite", "judgment", "holy-radiance"],
   }),
   defineEnemy({
@@ -294,8 +322,8 @@ export const enemyBestiary = [
     title: "Winter Wolf",
     enemyType: "normal",
     traits: [
-      trait("winter-wolf", "Winter’s Bite", "Attacks deal 1 additional Freeze damage"),
-      trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage"),
+      trait("winter-wolf", "Winter’s Bite", "Attack hits deal 1 additional Freeze damage."),
+      trait("burn-vulnerability", "Thawing", "Receives 30% more Burn damage.", "negative"),
     ],
     abilityIds: ["fangs", "pounce", "frostbolt"],
   }),
@@ -304,12 +332,8 @@ export const enemyBestiary = [
     title: "Ice Wraith",
     enemyType: "elite",
     traits: [
-      trait("ice-wraith", "Cold Embrace", "Restores 3 Health whenever an opponent becomes Frozen"),
-      trait(
-        "frozen-apparition",
-        "Frozen Apparition",
-        "Receives 30% less Physical damage\nReceives 30% more Burn and Holy damage",
-      ),
+      trait("ice-wraith", "Cold Embrace", "Restores 3 Health whenever the hero becomes Frozen."),
+      trait("holy-vulnerability", "Profane", "Receives 30% more Holy damage.", "negative"),
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
   }),
@@ -318,8 +342,8 @@ export const enemyBestiary = [
     title: "Yeti",
     enemyType: "elite",
     traits: [
-      trait("yeti", "Rimeguard", "Gains 1 Block when the hero becomes Frozen"),
-      trait("winter-hide", "Winter Hide", "Receives 30% less Freeze damage\nReceives 30% more Burn damage"),
+      trait("yeti", "Rimeguard", "Gains 1 Block whenever the hero becomes Frozen."),
+      trait("burn-vulnerability", "Thawing", "Receives 30% more Burn damage.", "negative"),
     ],
     abilityIds: ["maul", "frostbolt", "glacial-ward"],
   }),
@@ -328,8 +352,8 @@ export const enemyBestiary = [
     title: "Banshee",
     enemyType: "normal",
     traits: [
-      trait("banshee", "Dread Wail", "Attacks Purge a random beneficial effect"),
-      trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage"),
+      trait("banshee", "Dread Wail", "Attack hits Purge a random beneficial effect."),
+      trait("holy-vulnerability", "Profane", "Receives 30% more Holy damage.", "negative"),
     ],
     abilityIds: ["bash", "frostbolt", "cold-snap"],
   }),
@@ -337,7 +361,10 @@ export const enemyBestiary = [
     id: "brawler",
     title: "Brawler",
     enemyType: "elite",
-    traits: [trait("brawler", "Seeing Stars", "Deals half damage on its first attack after recovering from Stun")],
+    traits: [
+      trait("concussion", "Concussion", "Stun weakens the hero’s next attack by 25%."),
+      trait("brawler", "Seeing Stars", "Its next attack deals half damage after recovering from Stun.", "negative"),
+    ],
     abilityIds: ["bash", "pounce", "block"],
   }),
   defineEnemy({
@@ -345,7 +372,8 @@ export const enemyBestiary = [
     title: "Stone Golem",
     enemyType: "elite",
     traits: [
-      trait("stone-golem", "Stoneguard", "Gains 1 Block each turn\nDeals 1 additional damage while it has Block"),
+      trait("stone-golem", "Bulwark Force", "Deals 1 additional damage while it has Block."),
+      trait("fault-lines", "Fault Lines", "Receives 30% more Stun damage.", "negative"),
     ],
     abilityIds: ["bash", "shield-bash", "plate-mail"],
   }),
@@ -354,8 +382,8 @@ export const enemyBestiary = [
     title: "Earth Elemental",
     enemyType: "normal",
     traits: [
-      trait("earth-elemental", "Crushing Force", "Breaking hero Block deals 1 Physical damage"),
-      trait("earthen-body", "Earthen Body", "Receives 20% less Freeze and Burn damage"),
+      trait("earth-elemental", "Crushing Force", "Breaking hero Block deals 1 Physical damage."),
+      trait("fault-lines", "Fault Lines", "Receives 30% more Stun damage.", "negative"),
     ],
     abilityIds: ["bash", "grasping-vines", "block"],
   }),
@@ -364,7 +392,10 @@ export const enemyBestiary = [
     title: "The Stone Titan",
     art: assetRefs.theStoneTitan,
     enemyType: "boss",
-    traits: [trait("stone-titan", "Hardening Blows", "Stun attacks grant 1 Armor")],
+    traits: [
+      trait("stone-titan", "Hardening Blows", "Stun hits grant 1 Armor."),
+      trait("loose-rubble", "Loose Rubble", "Losing Health reduces its next attack’s damage by 1.", "negative"),
+    ],
     abilityIds: ["bash", "sunder", "shield-bash"],
   }),
 ];

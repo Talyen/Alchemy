@@ -17,7 +17,7 @@ describe("queued rewards and hit ordering", () => {
     const state = regressionBattle({
       currentEnemy: {
         traits: [
-          { id: "glacial-body", title: "Glacial Body", description: "" },
+          { id: "burn-vulnerability", title: "Thawing", description: "" },
           ENCOUNTER_TRAITS["burn-resistance"].enemyTrait,
         ],
       },

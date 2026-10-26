@@ -1,7 +1,7 @@
 import { resolveSecondaryAction } from "./action-context";
 import { BRAWLER_PENALTY_MULTIPLIER, ENEMY_ABILITY_TRAIT_REWARD, VAMPIRE_BLOOD_SCENT_DAMAGE } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-damage";
+import { type EnemyAbilityContext } from "./enemy-ability-damage";
 import { applyArmorReward, applyHealingWithCombatText } from "./player-rewards";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
@@ -15,12 +15,14 @@ import { setEnemyStatus, setPlayerStatus } from "./status-state";
 import { mergeCombatText } from "./combat-text-events";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
 
-export function applyAbilityFollowups(
+export function applyNativeHitFollowups(
   state: BattleState,
   context: EnemyAbilityContext,
+  landed: boolean,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = state;
+  if (!landed) return nextState;
   if (context.vampireBonus) {
     nextState = recordEnemyAbilityActivation(nextState, "vampire");
     const result = resolveEnemyAttackHit(
@@ -28,20 +30,19 @@ export function applyAbilityFollowups(
       { kind: "damage", damageType: "bleed", amount: VAMPIRE_BLOOD_SCENT_DAMAGE },
       combatTexts,
       {
-        canDodge: true,
+        canDodge: false,
         skipTraitReactions: true,
         amountMultiplier: context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1,
       },
     );
     nextState = result.state;
-    recordEnemyAbilityHit(context, result);
   }
   for (const [traitId, status] of [
     ["fire-imp", "burn"],
     ["giant-spider", "poison"],
   ] as const) {
     if (getBattleOutcome(nextState) !== null) return nextState;
-    if (context.healthDamage > 0 && hasEnemyTrait(nextState, traitId)) {
+    if (hasEnemyTrait(nextState, traitId)) {
       nextState = applyPlayerStatusFromAttack(
         recordEnemyAbilityActivation(nextState, traitId),
         {
@@ -54,7 +55,7 @@ export function applyAbilityFollowups(
     }
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
-  if (context.healthDamage > 0 && hasEnemyTrait(nextState, "winter-wolf")) {
+  if (hasEnemyTrait(nextState, "winter-wolf")) {
     nextState = resolveEnemyAttackHit(
       recordEnemyAbilityActivation(nextState, "winter-wolf"),
       {
@@ -67,13 +68,13 @@ export function applyAbilityFollowups(
     ).state;
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
-  if (context.landed && hasEnemyTrait(nextState, "banshee")) {
+  if (hasEnemyTrait(nextState, "banshee")) {
     const purged = purgeOnePlayerBenefit(nextState, combatTexts);
     if (purged.purged)
       nextState = resolvePendingBattleReactions(recordEnemyAbilityActivation(purged.state, "banshee"), combatTexts);
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
-  if (context.landed && context.soulHarvest === "purge") {
+  if (context.soulHarvest === "purge") {
     const purged = purgeOnePlayerBenefit(nextState, combatTexts);
     if (purged.purged)
       nextState = resolvePendingBattleReactions(
@@ -88,6 +89,15 @@ export function applyAbilityFollowups(
     nextState = addEnemyMitigation(nextState, "block", 1);
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
+  return nextState;
+}
+
+export function applyAbilityFollowups(
+  state: BattleState,
+  context: EnemyAbilityContext,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  let nextState = state;
   if (nextState.enemyStatuses.onAttackBleed > 0) {
     const amount = nextState.enemyStatuses.onAttackBleed;
     nextState = resolvePendingBattleReactions(

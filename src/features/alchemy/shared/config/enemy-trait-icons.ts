@@ -31,6 +31,18 @@ import { extractKeywordIds } from "@/lib/keyword-text";
 import { keywordIcons } from "./metadata";
 
 const traitIcons: Record<string, LucideIcon> = {
+  "radiant-judgment": Sun,
+  "crimson-pulse": Droplet,
+  concussion: Stars,
+  cowardly: HeartCrack,
+  reckless: Swords,
+  frail: Bone,
+  corrodible: Droplets,
+  lumbering: Mountain,
+  "fault-lines": Mountain,
+  "self-sacrifice": HeartCrack,
+  flickering: Stars,
+  "loose-rubble": Mountain,
   "hollow-frame": Bone,
   pilfer: Hand,
   "snap-shut": Shield,

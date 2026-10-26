@@ -12,7 +12,6 @@ import {
 import {
   ENEMY_BOSS_REGENERATION,
   ENEMY_BASE_REGENERATION,
-  ENEMY_STARTING_BLOCK,
   LIVING_ARMOR_STARTING_ARMOR,
   ROOM_SCALING_INCREMENT,
   ENEMY_PRESSURE_OVERRIDES,
@@ -114,10 +113,9 @@ describe("initializeEnemyState", () => {
     expect(result.startingArmor).toBe(Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul));
   });
 
-  it.each(["forge-golem"])("includes %s starting Block scaled by room", (id) => {
-    const roomMul = 1 + 2 * ROOM_SCALING_INCREMENT;
+  it.each(["forge-golem"])("does not retain %s retired starting Block", (id) => {
     const result = initializeEnemyState(getEnemy(id), 3, []);
-    expect(result.startingEnemyBlock).toBe(Math.round(ENEMY_STARTING_BLOCK * roomMul));
+    expect(result.startingEnemyBlock).toBe(0);
   });
 
   it("returns start-block, start-max-mana, and start-companion from modifiers", () => {

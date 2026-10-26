@@ -126,13 +126,13 @@ describe("damage status riders", () => {
     );
   });
 
-  it("still Freezes a Glacial Body enemy when its threshold is met", () => {
+  it("still Freezes a Frostbound Ward enemy when its threshold is met", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyStatuses: { freeze: 15 },
       currentEnemy: {
-        traits: [{ id: "glacial-body", title: "Glacial Body", description: "Receives half Freeze damage" }],
+        traits: [{ id: "frostbound-ward", title: "Frostbound Ward", description: "Receives half Freeze damage" }],
       },
     });
     const result = applyDamageStatuses(state, { kind: "damage", damageType: "freeze", amount: 10 }, 10, []);

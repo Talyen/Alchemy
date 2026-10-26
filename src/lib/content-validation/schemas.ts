@@ -30,13 +30,21 @@ export const EnemyContentSchema = z.object({
   descriptionLines: z.array(NonEmptyStringSchema),
   art: NonEmptyStringSchema,
   enemyType: z.enum(ENEMY_TYPE_VALUES),
-  traits: z.array(
-    z.object({
-      id: NonEmptyStringSchema,
-      title: NonEmptyStringSchema,
-      description: NonEmptyStringSchema,
-    }),
-  ),
+  traits: z
+    .array(
+      z.object({
+        id: NonEmptyStringSchema,
+        title: NonEmptyStringSchema,
+        description: NonEmptyStringSchema,
+        polarity: z.enum(["positive", "negative"]),
+      }),
+    )
+    .length(2)
+    .refine(
+      (traits) =>
+        traits[0]?.polarity === "positive" && traits[1]?.polarity === "negative" && traits[0].id !== traits[1].id,
+      "Enemies require one distinct positive and negative native Trait, in that order",
+    ),
   abilityIds: z
     .array(NonEmptyStringSchema)
     .length(3)

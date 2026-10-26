@@ -117,7 +117,7 @@ function resolveEnemyDamageEffectCore(
     combatTexts,
     resolvePendingBattleReactions,
   );
-  nextState = processContagion(nextState, effect.damageType, outcome.healthDamage, combatTexts);
+  nextState = processContagion(nextState, effect.damageType, outcome.attemptedDamage, combatTexts);
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);

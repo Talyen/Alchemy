@@ -129,7 +129,7 @@ Collection render the deck titles and badges live from this record.
 
 ## Enemy repertoire requirements
 
-Each enemy has three distinct canonical card IDs in `abilityIds` and 1–3 unique native Traits. Ability cards must satisfy `isEnemyAbilityCard`: no Consume or hero-only resource effects; every branch must be supported. Content validation checks these requirements. For selection, scaling, targeting and reactions, read [enemy combat rules](./GAME_RULES.md#enemy-abilities-and-traits) when changing their behavior.
+Each enemy has three distinct canonical card IDs in `abilityIds` and exactly two distinct native Traits, one positive followed by one negative. Ability cards must satisfy `isEnemyAbilityCard`: no Consume or hero-only resource effects; every branch must be supported. Content validation checks these requirements. For selection, scaling, targeting and reactions, read [enemy combat rules](./GAME_RULES.md#enemy-abilities-and-traits) when changing their behavior.
 
 ## Add a new enemy
 

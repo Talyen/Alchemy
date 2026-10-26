@@ -169,7 +169,7 @@ function dealPlayerDotTick(
   );
   if (applyRiders) nextState = applyRiders(nextState);
   const healthLost = playerHealthLostToDamage(state, nextState);
-  nextState = processContagion(nextState, status, healthLost, combatTexts);
+  nextState = processContagion(nextState, status, state.playerStatuses[status], combatTexts);
   if (healthLost > 0) {
     emitDotCombatText(combatTexts, "player", status, healthLost);
   }

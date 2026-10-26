@@ -72,6 +72,10 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     nextState = applyArmorReward(nextState, armorAmount, combatTexts);
   }
 
+  if (stat === "stun" && hasEnemyTrait(state, "concussion")) {
+    nextState = { ...nextState, flags: { ...nextState.flags, concussionReady: true } };
+    nextState = recordEnemyAbilityActivation(nextState, "concussion");
+  }
   if (stat === "freeze" && hasEnemyTrait(state, "yeti")) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
     nextState = addEnemyMitigation(recordEnemyAbilityActivation(nextState, "yeti"), "block", 1);

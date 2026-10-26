@@ -27,10 +27,10 @@ export function applyEnemyHealingWithCombatText(
 export function processContagion(
   state: BattleState,
   damageType: string,
-  healthDamage: number,
+  damageAmount: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (damageType !== "poison" || healthDamage <= 0 || !hasEnemyTrait(state, "contagion")) return state;
+  if (damageType !== "poison" || damageAmount <= 0 || !hasEnemyTrait(state, "contagion")) return state;
   if (getBattleOutcome(state) !== null) return state;
   const healed = applyEnemyHealingWithCombatText(state, 1, combatTexts, { skipFightPacing: true });
   return healed.enemyHealth > state.enemyHealth ? recordEnemyAbilityActivation(healed, "contagion") : healed;

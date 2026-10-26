@@ -50,6 +50,8 @@ export const FLAG_DEFINITIONS = {
   nextNatureCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   dodgeNextAttack: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
 
+  enemyAttackDamageReduction: { default: 0 as const, secondaryValue: null, lifetime: "combat" },
+  concussionReady: { default: false as const, secondaryValue: null, lifetime: "combat" },
   enemyFirstHitDoubleUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },
   legacyEnemyThornsReady: { default: false as const, secondaryValue: null, lifetime: "combat" },
   enemyBrawlerDamagePenalty: { default: false as const, secondaryValue: null, lifetime: "combat" },

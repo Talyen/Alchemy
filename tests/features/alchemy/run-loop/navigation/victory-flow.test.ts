@@ -304,7 +304,7 @@ describe("computeVictoryRewards", () => {
     expect(result.goldEarned).toBe(20);
   });
 
-  it("doubles gold reward when enemy has gold-trove trait", () => {
+  it("Mimic doubles victory Gold without occupying a native trait slot", () => {
     const normal = computeVictoryRewards(
       baseInput({
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
@@ -321,7 +321,7 @@ describe("computeVictoryRewards", () => {
             descriptionLines: [],
             art: "",
             enemyType: "elite",
-            traits: [{ id: "gold-trove", title: "Gold Trove", description: "Drops Double Gold on Defeat" }],
+            traits: [],
             abilityIds: ["slash", "bash", "block"],
           },
         }),

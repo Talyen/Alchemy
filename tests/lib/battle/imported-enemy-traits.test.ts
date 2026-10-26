@@ -6,8 +6,7 @@ import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
 import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
-import { processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
-import { endPlayerTurn } from "@/lib/battle/enemy-turn";
+import { processEnemyTraits, processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
@@ -77,30 +76,30 @@ describe("imported enemy trait damage rules", () => {
     ["inquisitor", "bleed", 1],
     ["seraph", "bleed", 1],
     ["brawler", "bleed", 1],
-    ["skeleton", "holy", 2],
+    ["skeleton", "holy", 1.3],
     ["skeleton", "stun", 1],
-    ["frostwarden", "freeze", 0.5],
+    ["frostwarden", "freeze", 1],
     ["frostwarden", "burn", 1.3],
     ["fire-imp", "freeze", 1.3],
     ["hellhound", "freeze", 1.3],
     ["giant-snake", "freeze", 1.3],
-    ["blood-cultist", "holy", 1.3],
+    ["blood-cultist", "holy", 1],
     ["vampire", "holy", 1.3],
-    ["vampire", "burn", 1.3],
+    ["vampire", "burn", 1],
     ["winter-wolf", "burn", 1.3],
     ["ice-wraith", "holy", 1.3],
-    ["ice-wraith", "burn", 1.3],
+    ["ice-wraith", "burn", 1],
     ["yeti", "burn", 1.3],
-    ["banshee", "holy", 2],
-    ["earth-elemental", "freeze", 0.8],
+    ["banshee", "holy", 1.3],
+    ["earth-elemental", "freeze", 1],
     ["will-o-wisp", "physical", 0.7],
     ["ogre", "holy", 1],
-    ["giant-spider", "burn", 1],
-    ["dire-wolf", "physical", 0.9],
-    ["paladin", "holy", 0.7],
-    ["ice-wraith", "physical", 0.7],
-    ["yeti", "freeze", 0.7],
-    ["earth-elemental", "burn", 0.8],
+    ["giant-spider", "burn", 1.3],
+    ["dire-wolf", "physical", 1.3],
+    ["paladin", "holy", 1],
+    ["ice-wraith", "physical", 1],
+    ["yeti", "freeze", 1],
+    ["earth-elemental", "burn", 1],
   ] as const)("applies %s %s multiplier", (id, damageType, expected) => {
     const state = stateForEnemy(id);
     expect(getEnemyDamageMultiplier(state, damageType)).toBe(expected);
@@ -138,7 +137,7 @@ describe("imported enemy attack reactions", () => {
   it.each(["physical", "bleed"] as const)("Ambush describes and doubles only the first landed %s hit", (damageType) => {
     const state = stateForEnemy("bandit", {});
     expect(state.currentEnemy.traits.find((trait) => trait.id === "bandit")?.description).toBe(
-      "Deals double damage on its first landed hit",
+      "Its first landed hit deals double damage.",
     );
     const first = applyEnemyAbility(
       state,
@@ -337,12 +336,12 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerHealth).toBe(95);
   });
 
-  it("does not retain Blood Countess's retired Bleed aura", () => {
-    const result = endPlayerTurn(
-      stateForEnemy("blood-countess", { enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 } }),
-    );
-    expect(result.state.playerStatuses.bleed).toBe(0);
-    expect(result.enemyResolutionCombatTexts).toEqual([]);
+  it("Crimson Pulse follows alternating turns without selecting an ability", () => {
+    const state = stateForEnemy("blood-countess", { turn: 2 });
+    const result = processEnemyTraits(state, []);
+    expect(result.playerStatuses.bleed).toBe(1);
+    expect(result.lastEnemyAbilityId).toBe(state.lastEnemyAbilityId);
+    expect(processEnemyTraits({ ...state, turn: 1 }, []).playerStatuses.bleed).toBe(0);
   });
 });
 
@@ -405,20 +404,20 @@ describe("native enemy identities", () => {
     expect(defensive.enemyMitigation.block).toBe(withoutTrait.enemyMitigation.block);
   });
 
-  it("Pilfer steals once for a multi-hit attack, even if the attack is Dodged", () => {
+  it("Pilfer steals before every hit, including Dodged hits", () => {
     const state = stateForEnemy("goblin", { playerStatuses: defaultPlayerStatusValues({ block: 20 }) });
     const result = applyEnemyAbility(state, { ...attack, effects: [...attack.effects, ...attack.effects] }, []);
-    expect(result.enemyMitigation.block).toBe(1);
-    expect(result.playerStatuses.block).toBe(3);
+    expect(result.enemyMitigation.block).toBe(2);
+    expect(result.playerStatuses.block).toBe(2);
     const dodged = applyEnemyAbility({ ...state, rng: () => 0 }, attack, []);
     expect(dodged.playerStatuses.block).toBe(19);
     expect(dodged.enemyMitigation.block).toBe(1);
   });
 
-  it("Snap Shut grants one Block after an attack, including a miss, and never after a defensive ability", () => {
+  it("Snap Shut grants Block on landed hits and never after misses or utility", () => {
     const state = stateForEnemy("mimic");
     expect(applyEnemyAbility(state, attack, []).enemyMitigation.block).toBe(1);
-    expect(applyEnemyAbility({ ...state, rng: () => 0 }, attack, []).enemyMitigation.block).toBe(1);
+    expect(applyEnemyAbility({ ...state, rng: () => 0 }, attack, []).enemyMitigation.block).toBe(0);
     const defensive = applyEnemyAbility(state, cardById.block, []);
     const baseline = applyEnemyAbility(
       { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } },
@@ -437,7 +436,7 @@ describe("native enemy identities", () => {
     expect(dealSelfDamage(state, 3, "poison", []).state.enemyHealth).toBe(51);
   });
 
-  it("Contagion does not heal for fully blocked or resisted Poison, other damage, or a finished battle", () => {
+  it("Contagion rewards blocked Poison hits but not other damage or a finished battle", () => {
     const state = stateForEnemy("plague-doctor", { enemyHealth: 50 });
     const poison = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 4 }] });
     const blocked = applyEnemyAbility(
@@ -445,7 +444,7 @@ describe("native enemy identities", () => {
       poison,
       [],
     );
-    expect(blocked.enemyHealth).toBe(50);
+    expect(blocked.enemyHealth).toBe(51);
     const resisted = tickPlayerStatuses(
       {
         ...state,
@@ -454,7 +453,7 @@ describe("native enemy identities", () => {
       },
       [],
     );
-    expect(resisted.enemyHealth).toBe(50);
+    expect(resisted.enemyHealth).toBe(51);
     expect(applyEnemyAbility(state, attack, []).enemyHealth).toBe(50);
     const lethal = applyEnemyAbility({ ...state, playerHealth: 1, deathsDoorUsed: true }, poison, []);
     expect(lethal.playerHealth).toBe(0);
@@ -510,18 +509,18 @@ describe("native enemy identities", () => {
     expect(result.playerStatuses.forge).toBe(2);
   });
 
-  it("Soul Harvest chooses Purge once per attack without also Leeching, including naturally Leeched abilities", () => {
+  it("Soul Harvest chooses and resolves Purge for each landed hit without Leech", () => {
     let draws = 0;
     const state = stateForEnemy("necromancer", {
       enemyHealth: 49,
       playerStatuses: defaultPlayerStatusValues({ forge: 2, haste: 2 }),
-      rng: () => (draws++ === 0 ? 0.1 : 0.99),
+      rng: () => [0.1, 0.99, 0.99][draws++ % 3],
     });
     const fangs = { ...cardById.fangs, effects: [...cardById.fangs.effects, ...cardById.fangs.effects] };
     const texts: Parameters<typeof applyEnemyAbility>[2] = [];
     const result = applyEnemyAbility(state, fangs, texts);
     expect(result.enemyHealth).toBe(49);
-    expect(texts.filter((text) => "signal" in text && text.signal === "purge")).toHaveLength(1);
+    expect(texts.filter((text) => "signal" in text && text.signal === "purge")).toHaveLength(2);
     expect(result.pendingEnemyBleedLeechHealing).toBe(0);
   });
 

@@ -9,7 +9,7 @@ import {
 } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
-import { recordEnemyAbilityActivation, recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
+import { recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { createEnemyAbilityContext, type EnemyAbilityContext } from "./enemy-ability-damage";
@@ -26,8 +26,6 @@ import { addEnemyStatus, setPlayerStatus } from "./status-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { writeCombatFlag as setFlag } from "./action-context";
 import { hasEnemyTrait } from "./encounter-trait-state";
-import { addEnemyMitigation } from "./enemy-mitigation-state";
-import { applyBlockDepletionRewards } from "./player-rewards";
 
 function applyEnemyEffect(
   state: BattleState,
@@ -115,14 +113,7 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
-  if (damaging && hasEnemyTrait(nextState, "pilfer") && nextState.playerStatuses.block > 0) {
-    const before = nextState;
-    nextState = setPlayerStatus(nextState, "block", nextState.playerStatuses.block - 1);
-    nextState = recordEnemyAbilityActivation(addEnemyMitigation(nextState, "block", 1), "pilfer");
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: 1, impact: false });
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
-    nextState = resolvePendingBattleReactions(applyBlockDepletionRewards(before, nextState, combatTexts), combatTexts);
-  }
+  if (damaging) nextState = setFlag(nextState, "enemyAttackDamageReduction", 0);
   nextState = resolveBattleSequence(
     nextState,
     card.effects,
@@ -132,6 +123,12 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
     "either-defeated",
   );
   if (!damaging || getBattleOutcome(nextState) !== null) return nextState;
+  if (context.attackReduction > 0 && !hasEnemyTrait(nextState, "cowardly"))
+    nextState = setFlag(
+      nextState,
+      "enemyAttackDamageReduction",
+      Math.max(nextState.flags.enemyAttackDamageReduction, context.attackReduction),
+    );
   return resolvePendingBattleReactions(applyAbilityFollowups(nextState, context, combatTexts), combatTexts);
 }
 

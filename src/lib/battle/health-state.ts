@@ -34,13 +34,23 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
     hasEnemyTrait(state, "cinder-skin") &&
     state.turn % 2 === 1 &&
     !state.flags.cinderSkinUsedThisTurn;
+  const weakensAttack =
+    enemyHealth > 0 &&
+    enemyHealth < previousHealth &&
+    (hasEnemyTrait(state, "flickering") || hasEnemyTrait(state, "loose-rubble"));
   return {
     state: {
       ...state,
       enemyHealth,
+      ...(weakensAttack ? { flags: { ...state.flags, enemyAttackDamageReduction: 1 } } : {}),
       ...(triggersCinderSkin
         ? {
-            flags: { ...state.flags, cinderSkinUsedThisTurn: true, pendingCinderSkinReaction: true },
+            flags: {
+              ...state.flags,
+              ...(weakensAttack ? { enemyAttackDamageReduction: 1 } : {}),
+              cinderSkinUsedThisTurn: true,
+              pendingCinderSkinReaction: true,
+            },
           }
         : {}),
     },

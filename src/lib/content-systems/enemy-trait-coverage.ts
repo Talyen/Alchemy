@@ -14,11 +14,23 @@ export interface EnemyTurnStartGain {
 export const ENEMY_TURN_START_GAINS: ReadonlyMap<string, EnemyTurnStartGain> = new Map([
   ["rusting-carapace", { stat: "forge", amount: TRAIT_FORGE_PER_TURN, everyOtherTurn: true }],
   ["iron-hide", { stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN, everyOtherTurn: true }],
-  ["cleric", { stat: "block", amount: 1, everyOtherTurn: false }],
-  ["stone-golem", { stat: "block", amount: 1, everyOtherTurn: false }],
 ]);
 
 const PASSIVE_ONLY_TRAITS = new Set<string>([
+  "cleric",
+  "stone-golem",
+  "cowardly",
+  "reckless",
+  "frail",
+  "corrodible",
+  "lumbering",
+  "fault-lines",
+  "self-sacrifice",
+  "flickering",
+  "loose-rubble",
+  "concussion",
+  "crimson-pulse",
+  "radiant-judgment",
   "glacial-shell",
   "brittle-bones",
   "glacial-body",
