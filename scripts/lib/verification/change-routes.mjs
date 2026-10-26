@@ -158,7 +158,7 @@ const ROUTES = Object.freeze([
     "balance",
     ["src/lib/balance/**", "tests/balance/**", "tests/lib/balance/**", "vitest.balance.config.ts"],
     ["related", "report-balance"],
-    [doc("Docs/REFERENCE.md", "Balance simulation", "balance verification")],
+    [doc("Docs/SIMULATION.md", "Balance simulation", "balance verification")],
     "src/lib/balance/report-run.ts",
   ),
   route(

@@ -402,6 +402,11 @@ the supported baseline just like a full release; never retire promised progress.
 
 ## Alchemy visits and modified cards
 
+Missing Mystery visits recover within their mode: Campaign restores its destination
+offer; Labyrinth releases the pending room and returns to the map without clearing
+that room. Empty Wildcard starter offers use the normal guaranteed repeatable
+damage/defense recipe and rewards RNG, then persist the repaired choices.
+
 Campfire and Transmutation are branches of `activeRun.activity`, each carrying
 its `AlchemyVisit` data. They are not separate optional top-level visit records.
 Save fixed offers, original/result cards, and completion together. Uninitialized
@@ -458,5 +463,6 @@ payloads or save version.
 Alchemist visits retain `brewOffers` plus independent `brewUsed`, `mixUsed`, and
 `distillUsed` flags. New visits roll three fixed Brew offers from the shops RNG;
 refreshes preserve them and all spent flags. Hydration preserves current saved
-offers and flags; missing additive fields default to an empty recipe list and
-unused services without replaying randomness. No schema bump is required.
+offers and flags. An unused Brew service with no surviving offers regenerates
+its shelf once from the saved shops RNG, including Strong Spirits in Labyrinth.
+Spent Brew services remain spent and do not draw RNG. No schema bump is required.

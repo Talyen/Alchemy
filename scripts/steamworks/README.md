@@ -22,8 +22,16 @@ Build output lives in a checkout-specific OS temporary directory; a binary-hash 
 allows unchanged installations to reuse their compiled binding. Shared worktree
 dependency links are never patched: install task-local dependencies first.
 
+[The pause listener](../../desktop/steam-overlay.cjs) pauses on native activation
+and leaves the menu open on deactivation under the
+[demo input contract](../../Docs/STEAM_DEMO.md#input-and-release-evidence).
+`steamworks.js.init()` owns callback pumping; no second timer or callback pump
+is added. Electron overlay GPU setup runs before app readiness. Proton uses the
+packaged Windows x64 binding.
+
 Export qualification needs no Steam login. It proves the native capabilities are
-present, not that Steam's overlay works. Physical Steam/controller/Deck acceptance
+present, not that Steam's overlay works.
+[Physical Steam/controller/Deck acceptance](../../Docs/STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
 remains required before public promotion. Review/remove these patches when an
 upstream release implements both capabilities; never substitute only declarations
 or JavaScript for native support.

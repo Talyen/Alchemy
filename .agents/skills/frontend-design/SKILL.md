@@ -14,7 +14,7 @@ manually against this pinned revision and Alchemy's current conventions.
 
 ## Review the affected screen
 
-Avoid taglines, avoid helper text, avoid secondary labels - if a screen needs them to make sense, fix the layout instead.
+Follow [UI copy conventions](../../../Docs/UI.md#show-dont-tell).
 
 [Visual review](../../../Docs/UI_VISUAL_REVIEW.md) owns design quality and rendered comparison requirements. Read the relevant [UI owner](../../../Docs/UI.md) sections, then inspect the current screen before choosing a change.
 

@@ -107,7 +107,7 @@ and co-edit trends through the [Simplification audit](../Docs/Audits/Simplificat
 ## Test / E2E
 
 Invocation, fixtures and routes belong to the [E2E guide](../tests/e2e/README.md).
-[Performance](../Docs/PERFORMANCE.md) and [playthroughs](../Docs/PLAYTHROUGH_SIMULATION.md)
+[Performance](../Docs/PERFORMANCE.md) and [headless careers](../Docs/SIMULATION.md#headless-careers)
 own their respective workflows.
 
 | Concern                                    | Implementation owner                                                                                                                                |
@@ -135,10 +135,9 @@ journal prefix and starting-state evidence. Performance models/scenarios stay in
 
 ## Development
 
-`npm run dev` runs committed-output validation and port cleanup through `predev`.
-`npm run dev:checked` starts Vite with the live TypeScript 7 checker directly;
-run `npm run predev` first when using that command. Desktop development runs
-the same preparation and adds Steam App ID synchronization.
+[Local development](../Docs/COMMANDS.md#local-development) owns invocation,
+checkout selection, preparation and port settings. `dev.mjs` resolves the source
+checkout for browser development; desktop startup adds Steam App ID synchronization.
 Vite and Electron share a lifetime: exiting either process stops the other,
 and the first exit determines the command's status.
 Desktop startup waits for a successful HTTP response and releases the readiness

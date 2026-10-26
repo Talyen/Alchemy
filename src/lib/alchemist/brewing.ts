@@ -15,7 +15,8 @@ import {
 } from "@/lib/game-data";
 import { POTION_DISTILL_BONUS, CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
-import { appendPotionTrailer } from "./potion-mixer";
+import { appendPotionTrailer, doublePotionPotency } from "./potion-mixer";
+import type { EncounterRewardTraitId } from "../content-systems/encounter-traits";
 import { distillPotionEffect } from "./potion-scaling";
 
 export type BrewOperation =
@@ -95,4 +96,19 @@ export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
       ? pool
       : [pool[defensiveIndex]!, ...pool.slice(0, defensiveIndex), ...pool.slice(defensiveIndex + 1)];
   return ordered.slice(0, CAMPFIRE_POTION_OFFERS).map(cloneBattleCard);
+}
+
+export function applyStrongSpiritsToPotions(
+  potions: BattleCard[],
+  modifiers: readonly EncounterRewardTraitId[] = [],
+): BattleCard[] {
+  return modifiers.includes("strong-spirits") ? potions.map(doublePotionPotency) : potions;
+}
+
+/** Initial visits and save repair use the same shelf recipe and modifier order. */
+export function createAlchemistBrewOffers(
+  rng: () => number,
+  modifiers: readonly EncounterRewardTraitId[] = [],
+): BattleCard[] {
+  return applyStrongSpiritsToPotions(createCampfirePotionOffers(rng), modifiers);
 }

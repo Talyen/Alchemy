@@ -1,5 +1,9 @@
 # Content authoring
 
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns verification
+requirements and execution permissions. Coverage references below identify the
+contracts to preserve.
+
 ## Shared tuning
 
 Shared knobs live in topical files under `src/lib/game-constants/`, exported
@@ -117,7 +121,7 @@ effect ordering, and the focused schema/handler/description tests.
 - **7. Add the difficulty header title** — `src/lib/game-data/difficulties.ts` (`CHARACTER_HEADER_TITLES`); extract localization with `npm run i18n:extract`
 - **8. Add Armory tab metadata** — `src/features/alchemy/meta/screens/armory/armory-character-tabs.tsx` (`CHARACTER_ICONS` and `CHARACTER_KEYWORDS`)
 - **9. Register the portrait** — `characterArt` in `src/lib/game-data/assets.ts`, source art in `scripts/assets/core-assets.mjs`, then regenerate barrels and optimized outputs with the [asset workflow](./WORKFLOWS-ASSETS.md)
-- **10. Cover the hero** — update character unlock, Armory tab, and asset-manifest tests; run `npm run typecheck` so every `Record<CharacterId, …>` owner fails loudly
+- **10. Cover the hero** — update character unlock, Armory tab, and asset-manifest tests. CI typechecking checks completeness of `Record<CharacterId, …>` owners.
 
 `resolveDeck` throws on unknown card IDs so a typo fails loudly instead of
 shortening the deck. Every badge must appear in at least one starting-deck
@@ -221,7 +225,10 @@ from the authored effects, using short clauses, capitalized keywords, and no
 terminal periods. Companion descriptions remain card-owned; the summon card must
 be discovered before bonding is permitted.
 
-Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:unit -- tests/lib/homestead` for the lib contract. Browser verification uses `npm run test:e2e:route -- homestead` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
+Homestead coverage lives in `tests/lib/homestead/`, the screen unit suites, and
+`tests/e2e/specs/homestead-flow.spec.ts`. Screen directories are excluded from
+Vitest coverage thresholds in `vitest.config.ts`; behavioral coverage remains
+subject to the shared test value policy.
 
 ## Add a new keyword
 

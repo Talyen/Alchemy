@@ -16,6 +16,7 @@ import {
   rebindLiveRunMeta,
   setActiveLabyrinthModifiers,
   setActiveLabyrinthPendingNode,
+  setSelectedLabyrinthNodeId,
   setActiveLabyrinthRewardModifiers,
   setLabyrinthMap,
   setRunProgressActivity,
@@ -89,10 +90,19 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
   if (resumeScreen) setScreen(draft, resumeScreen);
   const mysteryEvent = readActivityData(draft.session.activity, "mystery").mysteryEvent;
   if (resumeScreen === "mystery" && !mysteryEvent) {
-    abandonMysteryDestinationVisit(draft);
-    clearMysteryVisitState(draft);
-    setRunProgressActivity(draft, "destination");
-    setScreen(draft, ROUTE_SCREENS.DESTINATION);
+    if (activeRun.contentSystemType === "labyrinth") {
+      // Leave the unresolved room available for re-entry, as for an abandoned Corruption visit.
+      clearMysteryVisitState(draft);
+      setActiveLabyrinthPendingNode(draft, null);
+      setSelectedLabyrinthNodeId(draft, null);
+      setRunProgressActivity(draft, "labyrinth-map");
+      setScreen(draft, ROUTE_SCREENS.LABYRINTH_MAP);
+    } else {
+      abandonMysteryDestinationVisit(draft);
+      clearMysteryVisitState(draft);
+      setRunProgressActivity(draft, "destination");
+      setScreen(draft, ROUTE_SCREENS.DESTINATION);
+    }
   }
   rebindLiveRunMeta(draft);
 }

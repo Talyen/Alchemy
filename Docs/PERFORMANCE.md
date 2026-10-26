@@ -2,7 +2,7 @@
 
 FPS / hitch profiling for Alchemy. Seeded reachable battles provide discovery by default; fixed realistic journeys remain for same-machine comparisons. Nightly discovery spans all three modes. Performance targets are advisory and are not push gates.
 
-For harness failures, the [failure-first triage guide](./REFERENCE.md#failure-first-triage) helps locate evidence; open a known relevant trace or per-run artifact directly when useful.
+For harness failures, the [failure-first triage guide](../scripts/VERIFICATION.md#failure-first-triage) helps locate evidence; open a known relevant trace or per-run artifact directly when useful.
 
 Use this when you are actively optimizing frame pacing and need repeatable numbers plus optional deep Chrome traces.
 
@@ -365,8 +365,9 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 | `scripts/run-performance.mjs`                           | CLI entry (`npm run perf`, `npm run perf:compare`) |
 | `tests/performance/`                                    | Metrics, compare, and report unit tests (Node)     |
 
-Run metric and comparison unit tests with `npm run test:unit -- tests/performance`.
-They also run in the full unit suite; `npm test` contains only fixed local smoke suites.
+Metric and comparison coverage lives in `tests/performance/` and runs in the
+full unit suite. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
+owns check selection and local execution permissions.
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).
 

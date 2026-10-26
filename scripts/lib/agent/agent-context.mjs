@@ -88,7 +88,7 @@ export const CONTEXT_TASKS = {
   playthrough: {
     matches:
       /^(?:src\/app\/playthrough\/|tests\/playthrough\/|scripts\/(?:run-playthrough(?:-worker)?\.mjs$|lib\/playthrough\/)|vitest\.playthrough\.config\.ts$)/,
-    docs: [owner("Docs/PLAYTHROUGH_SIMULATION.md")],
+    docs: [owner("Docs/SIMULATION.md", "Headless careers")],
     entrypoints: ["src/app/playthrough/career.ts", "scripts/run-playthrough.mjs"],
   },
   release: {

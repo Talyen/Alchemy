@@ -35,22 +35,17 @@ Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run 
 ## Player notices and asset provenance
 
 Before a public build can be promoted, review [PRIVACY.md](../PRIVACY.md) and
-[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) (canonical provenance register). The owner has confirmed AI-created original
-assets, commercial-use entitlement at creation, and no third-party samples/source
-material; the former audio-rights uncertainty is resolved. Retain dependency/font
-notices and review any newly introduced third-party sources.
-
-Keep the project's [license](../LICENSE.md) and third-party font/software notices
-intact. The owner confirmation above resolves the earlier asset-rights questions;
-it does not remove notices supplied with dependencies.
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), the canonical provenance
+register and owner confirmation. Follow its [release review](../THIRD_PARTY_NOTICES.md#release-review)
+for changed sources, and retain the project's [license](../LICENSE.md) and
+third-party font/software notices.
 
 ## Steam AI disclosure
 
 When Steam ID verification permits page setup, complete the Content Survey with
-**pre-generated AI content** and no live-generated AI. The owner confirmed on
-October 23, 2026 that all original game content/artwork/assets were created using
-AI tools under commercial-use terms, with no third-party samples/source material.
-Use concise, accurate wording, for example:
+**pre-generated AI content** and no live-generated AI, following the
+[confirmed provenance](../THIRD_PARTY_NOTICES.md). Use concise, accurate wording,
+for example:
 
 > AI tools were used during development to create the game's artwork, music,
 > sound effects, writing and localization. All AI content is pre-generated;

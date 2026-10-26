@@ -1,7 +1,8 @@
 # Commands
 
 Choose an operation here. [Contributing](../CONTRIBUTING.md) owns task checks;
-[Developer reference](./REFERENCE.md) covers failure diagnosis and simulations.
+[Verification diagnostics](../scripts/VERIFICATION.md#failure-first-triage) covers failures;
+[simulation](./SIMULATION.md) covers battle and career investigations.
 
 ## Script Command Reference
 
@@ -20,9 +21,9 @@ ordinary verification workflow and permissions. This reference lists other opera
 | Check prepared outputs      | `npm run assets:check:outputs`     | Read-only; validates prepared files without reading source masters                                |
 | Inspect test reservations   | `npm run test:status`              | Shows managed active and waiting commands; add `--json`                                           |
 | Run a browser journey       | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
-| Simulate isolated battles   | `npm run balance:sim`              | [Battle simulation](./REFERENCE.md#balance-simulation)                                            |
-| Simulate careers            | `npm run balance:playthrough`      | [Headless playthroughs](./PLAYTHROUGH_SIMULATION.md)                                              |
-| Compare loot offers         | `npm run balance:loot`             | [Loot tuning](./ARMORY.md#loot-tuning)                                                            |
+| Simulate isolated battles   | `npm run balance:sim`              | [Battle simulation](./SIMULATION.md#balance-simulation)                                           |
+| Simulate careers            | `npm run balance:playthrough`      | [Headless careers](./SIMULATION.md#headless-careers)                                              |
+| Compare loot offers         | `npm run balance:loot`             | [Loot report](./ARMORY.md#loot-progression-report)                                                |
 | Profile frames and hitches  | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
 | Produce gameplay trailers   | `npm run trailer -- help`          | [Automated capture, cinematic edits and Steam exports](./TRAILERS.md)                             |
 | Find recent check evidence  | `npm run runs:show -- --last 10`   | Run IDs, outcomes and artifact locations                                                          |

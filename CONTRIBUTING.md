@@ -174,7 +174,7 @@ owns tool configuration, dependency security, platform targets and CI mechanics.
 
 ## Failure-first triage
 
-Follow [REFERENCE.md](./Docs/REFERENCE.md#failure-first-triage): start with the compact
+Follow [failure-first triage](./scripts/VERIFICATION.md#failure-first-triage): start with the compact
 failure digest, form a hypothesis, and inspect only the relevant logs or traces.
 
 ## Changelog and patch notes

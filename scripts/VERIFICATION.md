@@ -135,6 +135,29 @@ checks before packaging or signing.
 Preview smoke checks start and close their own server through Vite’s preview API;
 an occupied port fails before any HTTP validation. They require an application script and nonempty JavaScript/CSS responses with matching content types, plus a served MP3 matching authored bytes. HTML fallbacks cannot stand in for missing resources. CI browser artifacts include music and run this smoke check after download.
 
+## Failure-first triage
+
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and local execution permissions. Use CI reports for complete validation.
+
+Verification and audit commands keep full artifacts on disk but print a bounded digest. Start with the digest when the cause is unclear; open the most relevant artifact directly when you have a specific hypothesis. Battle warnings use the `[Enemy Turn]` prefix.
+
+Unit diagnosis already uses compact output through `npm run test:unit -- <test-path>`. For another investigation authorized under Contributing, `npm run compact -- <command and arguments>` preserves command arguments and exit status while printing available test totals and bounded failures. Full stdout/stderr stays under `reports/compact/<run-id>/output.log`; unrecognized totals are not guessed. This command does not replace verification or update its receipts. Keep normal streaming commands for watch, headed debugging, and interactive sessions.
+
+Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI derives the same identity from its run, attempt, job, and optional matrix variant. Do not change it within one invocation.
+
+- Unit failures: an assertion and its nearest fixture are useful starting points; rerun the exact failing path after a fix or when a fresh observation is needed. `reports/vitest-timings.json` is timing data, not default context.
+- Hosted CI: when following a requested push, use `gh run list --workflow ci.yml --commit <pushed-sha> --json databaseId,headSha,status,conclusion,url` to locate its run, then `gh run watch <run-id> --exit-status` to wait for the final result. A missing run or unavailable API leaves verification incomplete. For a failed static job whose log excerpt omits source locations, inspect its check-run annotations before expanding the full log; the [GitHub annotations API](https://docs.github.com/en/rest/checks/runs#list-check-run-annotations) returns paths, lines, and messages. Use the check run linked to that failed job and attempt, rather than another run for the same commit.
+- Playwright failures: the compact failure summary and `test-results/failures/<run-id>/<name>.md` are useful starting points. Its bounded accessibility snapshot shows the roles, names, and hierarchy present at failure; use the snapshot, console evidence, or trace ZIP according to the failure being investigated. CI summaries add the changed-path route and any path-filtered focused E2E gate for the failing file.
+- Changed-path failures: open the run-specific Markdown digest named by `reports/current-run.md`; the sibling `.log` is secondary evidence when the diagnostic excerpt is insufficient. Check output extracts test names, assertions, compiler locations and lint diagnostics from throughout the stream, with `L` references into the full log. Identical selected lines appear once with occurrence counts and first/last locations, leaving space for distinct causes; unfamiliar output retains bounded excerpts with links to the full log.
+- E2E audit: `npm run test:e2e:audit` writes `reports/e2e-audit-report.md` and keeps the full JSON report. Report-processing and runner errors fail the audit even without failed assertions. `--reuse-timings` analyzes a report less than one hour old without claiming fresh verification; missing, expired or future-dated reports fail without launching tests. It preserves recorded failures and cannot be combined with Playwright selection arguments. Use `--verbose` for expanded child output; the full command log remains on disk.
+- Balance: `reports/balance-findings.html` and its JSON summary locate findings; open relevant matrix data under `reports/balance-full/` directly when needed.
+- Report pointer: `reports/current-run.md` and `.json` point to the latest run-specific record under `reports/runs/<run-id>/`. Use that pointer or `npm run runs:show -- --last 10` to locate an unknown run. Recent-run summaries include primary evidence paths and indicate when those files have been pruned; open available digests directly.
+- Do not paste complete logs, traces, snapshots, generated bundles, or report directories into agent context when the digest identifies a narrower file or test.
+- Only reproducible diff inventories expire automatically after 24 hours of inactivity. Verification, failure, visual, performance and integration evidence stays retained. Keep rebuildable environments in `.cache/`, separate from evidence. Use `npm run prune:transient -- --dry-run` to inspect candidates and explicit `npm run clean -- --reports --dry-run` to review evidence deletion. [Cleanup](./README.md#cleanup-clean--explicit-reset-prunetransient--expiry) owns selectors and process guards.
+- Browser CI retains JSON results on every run and detailed diagnostics for failures or retries. Retention and other artifact policies are owned by the workflows; see the [E2E diagnostic contract](../tests/e2e/README.md#tags).
+
+GitHub CLI is optional for requested PR/CI work; do not run `gh auth login`.
+
 ## Compatibility commands and test runners
 
 Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) for ordinary work.

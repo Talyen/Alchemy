@@ -199,7 +199,7 @@ healing calculation. Full-Health healing never fabricates actual restoration.
 
 ### Engine invariants
 
-Simulation-only instrumentation and measurement semantics live in [Balance simulation](./REFERENCE.md#balance-simulation).
+Simulation-only instrumentation and measurement semantics live in [Balance simulation](./SIMULATION.md#balance-simulation).
 
 #### State, turns, and randomness
 
@@ -459,8 +459,10 @@ hit-stage ordering above and must not reorder RNG or feedback.
 
 ## Brewing, Transmutation, and elemental reactions
 
-Campfires show current/max Health and Rest’s actual recovery before choosing.
-They offer Rest or Brew, including at full Health (where recovery is zero). When the deck contains
+[Visit interaction](./UI_BROWSING.md#campfire-and-transmutation) owns layout,
+selection, feedback and completion presentation.
+
+Campfires offer Rest or Brew, including at full Health (where recovery is zero). When the deck contains
 at least two eligible Potions, Brew combines two chosen instances; otherwise, it
 grants one of three fixed standard Potion offers (at least one recovery/defense
 option). The deck determines which brewing action is available. Rest and Brew
@@ -472,8 +474,7 @@ Brew, Mix, and Distill each have one independent use per visit, each costing 40 
 before mixing discounts. Brew grants one of three fixed standard Potion offers
 (including a recovery/defense option); Mix combines two chosen deck instances;
 Distill strengthens one chosen instance. Only final confirmation charges Gold and
-uses that service. Back deselects a Potion before returning to the menu. Mix accepts
-click selection and dragging into either of two distinct ingredient slots.
+uses that service.
 All seven standard Potions can be distilled. Mixed and previously strengthened
 Potions remain eligible for brewing at later visits; refreshing or reloading does
 not restore any of the current visit's spent services or reroll Brew offers.
@@ -482,8 +483,7 @@ Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
 cost, Consume, probabilities, draw counts, durations, and percentage effects stay
 unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation
 adds 1 Health. A full-cleanse Potion without healing gains Restore 1 Health when
-distilled. Increased values are green in card hover tooltips, including after
-reload. The Distillation talent's combat potency bonus is separate from the
+distilled. The Distillation talent's combat potency bonus is separate from the
 Distill service.
 
 Transmutation offers one free alteration to an eligible card. Each visit rolls up to three class-independent keywords for each eligible card: one Damage, one Buffs/Restoration, and one Resources/Additions when that card supports all three groups. Health and Leech belong to Buffs/Restoration. An unavailable group is filled from the remaining useful keywords without duplicates; a card with fewer than three compatible keywords shows fewer choices. Other cards cannot crowd out its useful choices, so the saved visit can contain more than three distinct keywords across the deck. Offers and randomly selected source keywords are fixed for each card throughout the visit, including Back and reload.
@@ -492,7 +492,7 @@ Each new Labyrinth Transmutation node has one room modifier. Prismatic Crucible 
 
 Damage converts to another damage type; Block, Armor, Forge, and Thorns convert among themselves; positive Health restoration, Mana restoration, and Gold gains convert among themselves. Every occurrence of the randomly chosen compatible source keyword changes, including nested branches and repeats. Existing magnitudes, costs, probabilities, durations, and targeting remain unchanged. Conversions with unsupported conditions or scaling are excluded. Other keywords add their native mechanic: Wish 1, Leech on damage, Archery on attacks, Consume, Dodge the next attack, or one Companion action when the deck contains a summon. Added effect lines respect Corruption's four-effect-line limit. Existing destination keywords are excluded.
 
-The keyword buttons sit above the original card and its preview, joined by a right arrow. Transmute commits the exact preview, reveals the result after saving, and waits for Continue. Resuming a completed visit shows that saved result without altering the card again or replaying completion feedback. Cards keep their identity and artwork, gain the keyword's title prefix and shine, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
+Transmute commits the exact saved preview once. Cards keep their identity and artwork, gain the keyword's title prefix, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
 
 ### Universal reactions
 

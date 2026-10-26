@@ -17,9 +17,10 @@ for every action or change the intentional silent-content registrations below.
 1. Register new card or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
 2. Add or replace source audio through [the asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-sound) and regenerate committed outputs.
 3. Keep host visibility, volume, cache, and failure behavior in the [runtime audio owners](#runtime-contract).
-4. Run focused unit suites with `npm run test:unit -- tests/lib/audio` and any affected lifecycle tests, then the task-scoped local gate. Browser playback verification uses `npm run test:e2e:route -- audio` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
-
-Changed-path and CI tier policy: [CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change).
+4. Relevant coverage lives in `tests/lib/audio/` and affected lifecycle tests;
+   the browser audio route protects playback integration. Use
+   [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) to select checks
+   and determine execution permissions.
 
 ## Ownership
 
