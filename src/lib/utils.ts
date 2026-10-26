@@ -7,7 +7,9 @@ export function capitalizeWord(value: string) {
 
 /** True only for plain object records; arrays, null and primitives are rejected. */
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value) as object | null;
+  return prototype === Object.prototype || prototype === null;
 }
 
 const amountFormatters = new Map<string, Intl.NumberFormat>();
@@ -38,7 +40,7 @@ export function formatLargeAmount(amount: number, locale = "en"): string {
 /** Deterministic JSON for digests and snapshot keys; object keys sort recursively. */
 export function stableJson(value: unknown): string {
   return JSON.stringify(value, (_key, entry: unknown) =>
-    isRecord(entry)
+    typeof entry === "object" && entry !== null && !Array.isArray(entry)
       ? Object.fromEntries(Object.entries(entry).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)))
       : entry,
   );

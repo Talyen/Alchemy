@@ -115,7 +115,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   }
 
   function activateTrack(track: MusicTrackRecord, gain: number): void {
-    if (playback.phase !== "idle" && playback.track !== track) playback.track.element.pause();
+    if (playback.phase !== "idle" && playback.track !== track) pauseTrack(playback.track.element);
     playback = { phase: "playing", track };
     applyTrackVolume(track, gain);
     track.element.muted = deps.readSettings().muted;
@@ -221,24 +221,28 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     );
   }
 
+  function pauseTrack(element: MusicElement): void {
+    // Muting and pausing are independent attempts. An outgoing source must
+    // stay silent even when pause fails, without blocking its replacement.
+    try {
+      element.muted = true;
+    } catch {
+      deps.reportFailure("Music track could not be muted");
+    }
+    try {
+      element.pause();
+    } catch {
+      deps.reportFailure("Music track could not be paused");
+    }
+  }
+
   function pauseAllMusic(): void {
     playAttempt = null;
     cancelTransition();
     bossPreviewKey = null;
     if (playback.phase !== "idle") playback = { phase: "paused", track: playback.track };
     for (const { element } of musicTracks.values()) {
-      // Muting and pausing are independent attempts; one failed cached element
-      // must not leave another track audible in the background.
-      try {
-        element.muted = true;
-      } catch {
-        deps.reportFailure("Music track could not be muted");
-      }
-      try {
-        element.pause();
-      } catch {
-        deps.reportFailure("Music track could not be paused");
-      }
+      pauseTrack(element);
     }
   }
 

@@ -16,6 +16,16 @@ function toLoggableStorageDetail(error: object): string {
 }
 
 export function logStorageFailure(message: string, error?: unknown) {
+  try {
+    reportStorageFailure(message, error);
+  } catch {
+    // Unknown throws can have inaccessible properties, serializers, or object tags.
+    // Diagnostic inspection must not interrupt save recovery or queue completion.
+    logError(message, "storage", { error: "Uninspectable storage error" });
+  }
+}
+
+function reportStorageFailure(message: string, error?: unknown) {
   // Call without `error` only for observed failures that carry no exception
   // (e.g. a backend returning { ok: false } or a non-object save root).
   // Routine skips — missing, empty, or below-baseline candidates on fresh

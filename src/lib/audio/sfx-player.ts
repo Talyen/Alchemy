@@ -56,7 +56,14 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
     if (state.phase === "finished") return false;
     cue.state = { phase: "finished" };
     cues.delete(cue);
-    if (state.phase === "pending") deps.cancel(state.timer);
+    if (state.phase === "pending") {
+      try {
+        deps.cancel(state.timer);
+      } catch {
+        // Ownership is already revoked; a late callback cannot restart this cue.
+        // Continue releasing the other cues even if the scheduler failed.
+      }
+    }
     if (state.phase === "playing") {
       state.element.onended = null;
       state.element.onerror = null;

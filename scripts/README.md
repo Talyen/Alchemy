@@ -110,6 +110,11 @@ Invocation, fixtures and routes belong to the [E2E guide](../tests/e2e/README.md
 [Performance](../Docs/PERFORMANCE.md) and [headless careers](../Docs/SIMULATION.md#headless-careers)
 own their respective workflows.
 
+CI, nightly, and release callers own job prerequisites, path filters, and shard matrices.
+`web-build.yml`, `web-e2e.yml`, and `electron-e2e.yml` under `.github/workflows/`
+own shared execution and artifact retention. `release-package.yml` builds both editions
+and returns each producer's artifact ID; the release caller owns serialized delivery.
+
 | Concern                                    | Implementation owner                                                                                                                                |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Named browser routes and aliases           | `run-e2e-route.mjs`; all `E2E_ROUTES` use `test:e2e:route -- <name>`, including `shop-screen` → `shop` and `homestead-screen` → `homestead` aliases |
