@@ -1,6 +1,3 @@
-import { resolveSecondaryAction } from "./action-context";
-import { rollBattleChance } from "./chance-roll";
-import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
 import {
   BATTLE_CONFIG,
   MIN_CC_THRESHOLD_FRACTION,
@@ -8,10 +5,13 @@ import {
   UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
 import { isPlayerDefeated } from "./battle-outcome";
-import { writeCombatFlag } from "./action-context";
+import { writeCombatFlag, resolveSecondaryAction } from "./action-context";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { tryTriggerEnemyCc } from "./status-cc";
+import { setEnemyStatus, addEnemyStatus } from "./status-state";
+import { rollBattleChance } from "./chance-roll";
+import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyHitHealth } from "./player-hit-core";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -24,7 +24,6 @@ import {
 } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./scaled-damage";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
-import { addEnemyStatus, setEnemyStatus } from "./status-state";
 
 export type ThunderstoneLeech = (state: BattleState, damage: number, texts: CombatTextEvent[]) => BattleState;
 
@@ -77,7 +76,7 @@ export function resolveStunTriggerCore(
   fromHolyDamage: boolean,
   leech: ThunderstoneLeech,
   setupHealthDamage = 0,
-) {
+): BattleState {
   const texts = combatTexts ?? [];
   const triggered = tryTriggerEnemyCc({
     preHitHealth,

@@ -154,6 +154,10 @@ function resolveCardHit(
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
 
   nextState = applyCardHitReactions(nextState, request, facts, combatTexts);
+  if (isPlayerDefeated(nextState)) {
+    reportEnemyHitDamage(facts, effect.damageType, combatTexts, request.feedback);
+    return nextState;
+  }
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
   if (
     facts.critical &&

@@ -1,14 +1,14 @@
+import { BATTLE_CONFIG, MIN_CC_THRESHOLD_FRACTION, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
+import { writeCombatFlag } from "./action-context";
+import { tryTriggerEnemyCc } from "./status-cc";
 import { halveRounded } from "./amount-helpers";
 import { rollBattleChance } from "./chance-roll";
+import { resolveBleedGoldReward, applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyStatus } from "./status-state";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./player-rewards";
-import { applyCrowdControlTriggerBonuses, resolveBleedGoldReward } from "./bonus-effects";
-import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, MIN_CC_THRESHOLD_FRACTION } from "../game-constants";
-import { writeCombatFlag } from "./action-context";
-import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { applyPoisonDamageArmorRider } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -44,7 +44,9 @@ function applyGearBurnBleedMirrorLeech(
     }
   }
   const healAmount =
-    actualDamage > 0 && alreadyBurningAndBleeding ? Math.max(1, Math.round(actualDamage / HALF_DIVISOR)) : 0;
+    state.gearEffects.burnBleedMirrorAndLeech > 0 && actualDamage > 0 && alreadyBurningAndBleeding
+      ? Math.max(1, Math.round(actualDamage / HALF_DIVISOR))
+      : 0;
   return healAmount > 0 ? applyScaledLeechHealing(nextState, healAmount, combatTexts) : nextState;
 }
 
@@ -94,8 +96,8 @@ export function applyPoisonTalentRiders(
 
   if (damage > 0) {
     for (const chance of [
-      state.trinketEffects.parasiticBloomLeechChance,
-      state.talentEffects.poisonLeechChance + state.gearEffects.poisonLeechChance,
+      nextState.trinketEffects.parasiticBloomLeechChance,
+      nextState.talentEffects.poisonLeechChance + nextState.gearEffects.poisonLeechChance,
     ]) {
       if (rollBattleChance(chance, nextState))
         nextState = applyScaledLeechHealing(nextState, computeLeechHeal(damage), combatTexts, { afflicted: true });
@@ -166,10 +168,10 @@ function applyStunStatusRider(
 }
 
 export function tryTriggerEnemyFreeze(
-  preHitState: BattleState,
+  eligibility: BattleState,
   state: BattleState,
-  combatTexts: CombatTextEvent[],
-  preHitHealth = preHitState.enemyHealth,
+  texts: CombatTextEvent[],
+  preHitHealth = eligibility.enemyHealth,
   setupHealthDamage = 0,
 ): BattleState {
   const triggered = tryTriggerEnemyCc({
@@ -180,19 +182,19 @@ export function tryTriggerEnemyFreeze(
     stackValue: state.enemyStatuses.freeze,
     thresholdFraction: Math.max(
       MIN_CC_THRESHOLD_FRACTION,
-      FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction,
+      FREEZE_THRESHOLD_FRACTION - eligibility.talentEffects.freezeThresholdReduction,
     ),
     ccCooldown: state.enemyCC.cooldown,
     skipDuration: BATTLE_CONFIG.BASE_CC_DURATION + state.trinketEffects.freezeDurationExtension,
-    combatTexts: combatTexts,
+    combatTexts: texts,
   });
   if (!triggered) return state;
   if (triggered.kind === "immune") return triggered.state;
-  let next = preHitState.talentEffects.archeryCritOnCrowdControl
+  let next = eligibility.talentEffects.archeryCritOnCrowdControl
     ? writeCombatFlag(triggered.state, "hawkEyeReady", true)
     : triggered.state;
-  next = applyGearCcPhysicalDamage(next, next.trinketEffects.frozenHeartDamage, combatTexts);
-  next = applyGearCcPhysicalDamage(next, preHitState.gearEffects.damageOnFreezePhysical, combatTexts);
+  next = applyGearCcPhysicalDamage(next, next.trinketEffects.frozenHeartDamage, texts);
+  next = applyGearCcPhysicalDamage(next, eligibility.gearEffects.damageOnFreezePhysical, texts);
   next = applyCrowdControlTriggerBonuses(
     next,
     {
@@ -200,10 +202,10 @@ export function tryTriggerEnemyFreeze(
       stripArmor: next.talentEffects.freezeStripArmor,
       stripBlock: next.talentEffects.freezeStripBlock,
     },
-    combatTexts,
+    texts,
   );
-  return next.gearEffects.freezeGrantsBlockAndMana > 0 && preHitState.mana === 0
-    ? gainManaWithCombatText(next, halveRounded(next.playerStatuses.block), combatTexts, { skipFightPacing: true })
+  return next.gearEffects.freezeGrantsBlockAndMana > 0 && eligibility.mana === 0
+    ? gainManaWithCombatText(next, halveRounded(next.playerStatuses.block), texts, { skipFightPacing: true })
     : next;
 }
 

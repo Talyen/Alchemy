@@ -247,12 +247,18 @@ export function resolveEnemyAttackHit(
     ...damageOptions,
     preparedDamage,
     triggerBlockRetaliation: canDodge,
-    preDamageBlockStrip: hasEnemyTrait(state, "sundered-guard") ? LABYRINTH_MODIFIER_CONFIG.attackBlockRemoval : 0,
+    // Only ability attack packets enter the Dodge window. Bonus hits and
+    // periodic pulses must not originate these attack-only room modifiers.
+    preDamageBlockStrip:
+      canDodge && hasEnemyTrait(state, "sundered-guard") ? LABYRINTH_MODIFIER_CONFIG.attackBlockRemoval : 0,
   });
   const result = {
     ...resolved,
     state:
-      resolved.landed && getBattleOutcome(resolved.state) === null && hasEnemyTrait(resolved.state, "unbinding-strike")
+      canDodge &&
+      resolved.landed &&
+      getBattleOutcome(resolved.state) === null &&
+      hasEnemyTrait(resolved.state, "unbinding-strike")
         ? resolvePendingBattleReactions(purgeOnePlayerBenefit(resolved.state, combatTexts).state, combatTexts)
         : resolved.state,
   };

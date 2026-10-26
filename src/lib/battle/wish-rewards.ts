@@ -1,22 +1,20 @@
-import type { BattleState, CombatTextEvent } from "./types";
 import { rollBattleChance } from "./chance-roll";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { applyDrawResult, drawFromState } from "./draw";
 import {
   addGoldWithCombatText,
   applyHealingWithCombatText,
   applyHitEpilogue,
   gainManaWithCombatText,
-} from "./player-rewards";
-import {
   removeHarmfulPlayerStatuses,
-  applyPlayerStatusEffect,
-  applyArmorReward,
   applyBlockReward,
-} from "./status-player";
+  applyArmorReward,
+  addForgeToPlayer,
+} from "./player-rewards";
+import { applyDrawResult, drawFromState } from "./draw";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-damage";
+import type { BattleState, CombatTextEvent } from "./types";
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
 import { getBattleOutcome } from "./battle-outcome";
 import { hasEnemyTrait } from "./encounter-trait-state";
@@ -94,7 +92,7 @@ export function resolveWishRewards(
         texts,
       );
       if (current.gearEffects.burnOnWish > 0 && current.enemyHealth > 0 && eligibility.enemyStatuses.burn > 0)
-        current = applyWishBurnAgainstBurningEnemy(current, current.gearEffects.burnOnWish, texts);
+        current = applyWishBurningEnemyHit(current, current.gearEffects.burnOnWish, texts);
       current = settle(current);
       if (getBattleOutcome(current) === "defeat") return current;
       if (current.gearEffects.freezeOnWish > 0)
@@ -109,7 +107,7 @@ export function resolveWishRewards(
         current = gainManaWithCombatText(current, current.gearEffects.manaOnWish, texts, { skipFightPacing: true });
       if (current.talentEffects.wishTrinketChoice && rollBattleChance(REACTIVE_REWARD_CHANCES.wishfulTrinket, current))
         current = rollBattleChance(WISH_TRINKET_FORK_PERCENT, current)
-          ? applyPlayerStatusEffect(current, { kind: "player-status", status: "forge", amount: 1 }, texts)
+          ? addForgeToPlayer(current, 1, texts)
           : applyArmorReward(current, 1, texts);
       const threshold = current.talentEffects.wishBlockBelowHealthPct;
       if (
@@ -124,7 +122,7 @@ export function resolveWishRewards(
   );
 }
 
-function applyWishBurnAgainstBurningEnemy(state: BattleState, amount: number, texts: CombatTextEvent[]): BattleState {
+function applyWishBurningEnemyHit(state: BattleState, amount: number, texts: CombatTextEvent[]): BattleState {
   return dealEnemyScaledDamage(state, amount, "burn", texts, {
     multiplier: getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state),
     riders: (damagedState, damage, events) =>

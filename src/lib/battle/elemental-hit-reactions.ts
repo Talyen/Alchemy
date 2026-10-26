@@ -24,19 +24,7 @@ export function applyNatureDamageRiders(
   let nextState = applyLuckyCloverGold(state, facts.healthDamage, combatTexts);
   nextState = applyNatureGoldReward(nextState, facts.healthDamage, combatTexts);
   nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
-  const rewardState = nextState;
-  const { healthDamage, eligibility } = facts;
-  if (rollBattleChance(rewardState.talentEffects.armorOnNatureDamageChance, rewardState))
-    nextState = applyArmorReward(nextState, modifiedDamage, combatTexts);
-  if (rollBattleChance(rewardState.talentEffects.thornsOnNatureDamageChance, rewardState))
-    nextState = addPlayerStatusWithCombatText(nextState, "thorns", modifiedDamage, combatTexts);
-  if (rollBattleChance(rewardState.talentEffects.healOnNatureDamageChance, rewardState))
-    nextState = applyHealingWithCombatText(nextState, modifiedDamage, combatTexts);
-  const guaranteed =
-    !alreadyLeeches && rewardState.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0;
-  const chance = rewardState.talentEffects.natureLeechChance + rewardState.gearEffects.natureLeechChance;
-  if (guaranteed || (chance > 0 && rollBattleChance(chance, nextState)))
-    nextState = applyLeechHitHealing(nextState, guaranteed ? healthDamage : modifiedDamage, combatTexts);
+  nextState = resolveNatureRestorationRewards(nextState, facts, combatTexts, alreadyLeeches);
   nextState = applyTalentHitConversions(nextState, "nature", modifiedDamage, combatTexts);
   if (nextState.enemyHealth > 0 && rollBattleChance(state.talentEffects.natureStunChance, nextState)) {
     nextState = resolveFollowUpHit(
@@ -83,4 +71,27 @@ export function applyHolyDamageRiders(
   }
 
   return applyBrassCenser(nextState, damage, combatTexts);
+}
+
+function resolveNatureRestorationRewards(
+  state: BattleState,
+  facts: Pick<HitFacts, "resolvedDamage" | "healthDamage" | "eligibility">,
+  texts: CombatTextEvent[],
+  alreadyLeeches = false,
+): BattleState {
+  const { resolvedDamage: damage, healthDamage, eligibility } = facts;
+  if (damage <= 0) return state;
+  let next = state;
+  if (rollBattleChance(state.talentEffects.armorOnNatureDamageChance, state))
+    next = applyArmorReward(next, damage, texts);
+  if (rollBattleChance(state.talentEffects.thornsOnNatureDamageChance, state))
+    next = addPlayerStatusWithCombatText(next, "thorns", damage, texts);
+  if (rollBattleChance(state.talentEffects.healOnNatureDamageChance, state))
+    next = applyHealingWithCombatText(next, damage, texts);
+  const guaranteed =
+    !alreadyLeeches && state.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0;
+  const chance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
+  if (guaranteed || (chance > 0 && rollBattleChance(chance, next)))
+    next = applyLeechHitHealing(next, guaranteed ? healthDamage : damage, texts);
+  return next;
 }

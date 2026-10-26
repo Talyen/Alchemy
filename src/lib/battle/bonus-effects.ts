@@ -1,3 +1,8 @@
+import { FREE_CARD_SENTINEL } from "../game-constants";
+import { writeCombatFlag } from "./action-context";
+import { isPlayerDefeated } from "./battle-outcome";
+import { stripEnemyArmor, stripEnemyBlock } from "./enemy-mitigation-state";
+import { mergeCombatText } from "./combat-text-events";
 import { rollBattleChance } from "./chance-roll";
 import { drawFromState, applyDrawResult } from "./draw";
 import {
@@ -8,11 +13,6 @@ import {
   applyBlockReward,
 } from "./player-rewards";
 import type { BattleState, CombatTextEvent } from "./types";
-import { FREE_CARD_SENTINEL } from "../game-constants";
-import { isPlayerDefeated } from "./battle-outcome";
-import { writeCombatFlag } from "./action-context";
-import { stripEnemyArmor, stripEnemyBlock } from "./enemy-mitigation-state";
-import { mergeCombatText } from "./combat-text-events";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -27,14 +27,13 @@ export interface CrowdControlTriggerBonuses {
 export function applyCrowdControlTriggerBonuses(
   state: BattleState,
   bonuses: CrowdControlTriggerBonuses,
-  combatTexts?: CombatTextEvent[],
+  combatTexts: CombatTextEvent[] = [],
 ): BattleState {
-  const texts = combatTexts ?? [];
   let nextState = state;
   const draw = bonuses.draw ?? 0;
   if (draw > 0) {
-    const drawn = applyDrawResult(nextState, drawFromState(nextState, draw), texts);
-    nextState = drawn.onEmptyDraw?.(drawn, draw, texts) ?? drawn;
+    const drawn = applyDrawResult(nextState, drawFromState(nextState, draw), combatTexts);
+    nextState = drawn.onEmptyDraw?.(drawn, draw, combatTexts) ?? drawn;
     if (isPlayerDefeated(nextState)) return nextState;
   }
   if (bonuses.nextCardFree) {
@@ -42,11 +41,11 @@ export function applyCrowdControlTriggerBonuses(
   }
   const block = bonuses.block ?? 0;
   if (block > 0) {
-    nextState = applyBlockReward(nextState, block, texts);
+    nextState = applyBlockReward(nextState, block, combatTexts);
   }
   const forge = bonuses.forge ?? 0;
   if (forge > 0) {
-    nextState = addForgeToPlayer(nextState, forge, texts);
+    nextState = addForgeToPlayer(nextState, forge, combatTexts);
   }
   for (const [stat, enabled, strip] of [
     ["armor", bonuses.stripArmor, stripEnemyArmor],
@@ -54,7 +53,7 @@ export function applyCrowdControlTriggerBonuses(
   ] as const) {
     if (!enabled) continue;
     if (nextState.enemyMitigation[stat] > 0) {
-      mergeCombatText(texts, {
+      mergeCombatText(combatTexts, {
         target: "enemy",
         kind: "damage",
         stat,
@@ -66,7 +65,7 @@ export function applyCrowdControlTriggerBonuses(
   }
   const mana = bonuses.mana ?? 0;
   if (mana > 0) {
-    nextState = gainManaWithCombatText(nextState, mana, texts);
+    nextState = gainManaWithCombatText(nextState, mana, combatTexts);
   }
   return nextState;
 }
@@ -104,9 +103,9 @@ export function applyEmberforgedPayout(
 export function resolveBleedGoldReward(
   state: BattleState,
   healthDamage: number,
-  texts: CombatTextEvent[],
+  combatTexts: CombatTextEvent[],
 ): BattleState {
   return healthDamage > 0 && rollBattleChance(state.trinketEffects.cutpurseGoldChance, state)
-    ? addGoldWithCombatText(state, healthDamage, texts)
+    ? addGoldWithCombatText(state, healthDamage, combatTexts)
     : state;
 }

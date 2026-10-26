@@ -317,9 +317,9 @@ of its prior and granted values. Nested scopes inherit repeat suppression and re
 `battleSnapshot` strips that metadata alongside RNG; saved flag names, including
 the legacy `uniqueRepeatActive` field, remain readable.
 
-`damage-rider-leech.ts` owns Leech restoration and its rewards. Poison, Nature,
-and Holy hit owners apply their resource reactions directly; `bonus-effects.ts`
-shares the Gold and Mana payouts used by hits and status ticks. `battle-sequence.ts` owns ordered step
+`damage-rider-leech.ts` owns Leech rewards; `damage-status-riders.ts` and
+`elemental-hit-reactions.ts` own Poison, Nature, and Holy hit riders. Shared
+Gold/Mana and crowd-control grants live in `bonus-effects.ts`. `battle-sequence.ts` owns ordered step
 execution and defeat cutoffs for card sequences, enemy abilities, status ticks,
 and Wish rewards. An explicit reaction boundary selects settlement after each
 step or in the enclosing hit. Card Wishes settle between Wishes; triggered Holy
@@ -492,8 +492,11 @@ modifiers are restricted to Elites/Bosses. Campaign and Wildwood ignore these
 room rules. Combat-specific effects follow [Labyrinth exceptions](#labyrinth-exceptions).
 
 Shielded Arrival gives the enemy 6 starting Block. Sundered Guard removes 2
-additional Block before each landed attack resolves damage. Unbinding Strike
-Purges one random beneficial player status after each landed attack. Ravenous
+additional Block before each landed ability attack resolves damage. Unbinding Strike
+Purges one random beneficial player status after each landed ability attack.
+Bonus hits and periodic pulses trigger neither modifier. Self-Sacrifice also
+requires a landed hit, including fully Blocked hits; Dodged hits cost no Health.
+Soul Harvest's Purge outcome preserves any Leech authored on the ability. Ravenous
 already grants attack Leech, and Thick Hide already halves Physical damage;
 they remain the Labyrinth entries for those effects. Cinder Ward reuses the
 native half-Burn rule. The other wards halve Poison, Bleed, Holy, Freeze,

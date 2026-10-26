@@ -52,40 +52,7 @@ export function applyLeechHealing(
 ): BattleState {
   if (hasEnemyTrait(state, "hollow-frame")) return state;
   const healing = leechHealingAmount(state, amount, options.afflicted);
-  const restoredHealth = resolvePlayerHealing(state, healing).restored;
-  const belowHalf = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
-  const restoredToFull = restoredHealth > 0 && state.playerHealth + restoredHealth >= state.playerMaxHealth;
-  let restored =
-    options.cardHealing === true
-      ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
-      : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
-  if (restoredHealth > 0) {
-    if (state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0)
-      restored = addPlayerStatusWithCombatText(
-        restored,
-        "thorns",
-        state.gearEffects.thornsOnLeechWithoutThorns,
-        combatTexts,
-      );
-    if (belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0)
-      restored = resolveStunFollowUpHit(
-        restored,
-        state.gearEffects.stunOnLeechBelowHalfHealth,
-        combatTexts,
-        applyThunderstoneLeech,
-      );
-    if (isPlayerDefeated(restored)) return restored;
-    if (rollBattleChance(state.gearEffects.leechBlockChance, state))
-      restored = addPlayerStatusWithCombatText(restored, "block", restoredHealth, combatTexts, {
-        skipFightPacing: true,
-      });
-    if (restoredToFull && state.talentEffects.manaOnLeechToFull > 0)
-      restored = gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, combatTexts);
-    if (rollBattleChance(state.talentEffects.leechGoldChance, state))
-      restored = addGoldWithCombatText(restored, restoredHealth, combatTexts);
-  }
-  if (healing <= 0 || isPlayerDefeated(restored)) return restored;
-  return applyLeechGainRewards(restored, combatTexts);
+  return resolveLeechResourceRewards(state, healing, combatTexts, options);
 }
 
 /** Shared base scaler: desperate → gear → Deep Siphon → blood-feast. */
@@ -109,7 +76,43 @@ export function applyThunderstoneLeech(state: BattleState, damage: number, texts
   return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
 }
 
-function applyLeechGainRewards(state: BattleState, texts: CombatTextEvent[]): BattleState {
+/** Amount already includes Leech scaling; all riders use this restoration's own facts. */
+function resolveLeechResourceRewards(
+  state: BattleState,
+  amount: number,
+  texts: CombatTextEvent[],
+  options: { cardHealing?: boolean } = {},
+): BattleState {
+  const restoredHealth = resolvePlayerHealing(state, amount).restored;
+  const belowHalf = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
+  const restoredToFull = restoredHealth > 0 && state.playerHealth + restoredHealth >= state.playerMaxHealth;
+  let restored =
+    options.cardHealing === true
+      ? applyCardHealing(state, amount, texts, { skipFightPacing: true, allowOverhealBlock: false })
+      : applyHealingWithCombatText(state, amount, texts, { skipFightPacing: true });
+  if (restoredHealth > 0) {
+    if (state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0)
+      restored = addPlayerStatusWithCombatText(restored, "thorns", state.gearEffects.thornsOnLeechWithoutThorns, texts);
+    if (belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0)
+      restored = resolveStunFollowUpHit(
+        restored,
+        state.gearEffects.stunOnLeechBelowHalfHealth,
+        texts,
+        applyThunderstoneLeech,
+      );
+    if (isPlayerDefeated(restored)) return restored;
+    if (rollBattleChance(state.gearEffects.leechBlockChance, state))
+      restored = addPlayerStatusWithCombatText(restored, "block", restoredHealth, texts, { skipFightPacing: true });
+    if (restoredToFull && state.talentEffects.manaOnLeechToFull > 0)
+      restored = gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, texts);
+    if (rollBattleChance(state.talentEffects.leechGoldChance, state))
+      restored = addGoldWithCombatText(restored, restoredHealth, texts);
+  }
+  if (amount <= 0 || isPlayerDefeated(restored)) return restored;
+  return resolveLeechGainRewards(restored, texts);
+}
+
+function resolveLeechGainRewards(state: BattleState, texts: CombatTextEvent[]): BattleState {
   let next = state;
   if (
     state.talentEffects.leechCleanseChance > 0 &&

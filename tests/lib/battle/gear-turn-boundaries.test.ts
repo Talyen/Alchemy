@@ -8,6 +8,25 @@ import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("Gear rewards across turn boundaries", () => {
+  it("Returning Flight arrives after older queued cards and before ordinary turn draws", () => {
+    const arrow = { ...cardById["fire-arrow"]!, uid: 42 };
+    const older = makeTestCard({ id: "older-queued", uid: 43 });
+    const state = regressionBattle({
+      hand: Array.from({ length: MAX_HAND_SIZE - 2 }, (_, uid) => makeTestCard({ uid })),
+      pendingHandCards: [older],
+      deck: Array.from({ length: 4 }, (_, index) => makeTestCard({ id: `ordinary-${index}`, uid: 50 + index })),
+      discard: [arrow],
+      nextCardUid: 100,
+      uniqueGear: { lastArcheryUid: 42 },
+      gearEffects: { recoverLastArcheryCard: 1 },
+    });
+    const next = advanceToPlayerTurn(state);
+    expect(next.hand.slice(-2).map((card) => card.id)).toEqual([older.id, arrow.id]);
+    expect(next.pendingHandCards).toHaveLength(4);
+    expect(computeEffectiveCost(next, next.hand.at(-1)!).effectiveCost).toBe(0);
+    expect(state.discard).toEqual([arrow]);
+  });
+
   it("Returning Flight queues the recovered arrow with its discount when the hand is full", () => {
     const arrow = { ...cardById["fire-arrow"]!, uid: 42, cost: 2 };
     const state = regressionBattle({

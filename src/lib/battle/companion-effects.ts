@@ -1,20 +1,20 @@
 import { rollBattleChance } from "./chance-roll";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
+import type { BattleState, CombatTextEvent } from "./types";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { addForgeToPlayer } from "./status-player";
-
+import { addForgeToPlayer } from "./player-rewards";
 import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR } from "../game-constants";
-import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { damageOnlyEffects } from "./card-classification";
 import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
-import type { BattleState, CombatTextEvent } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
+// The effect interpreter stays injected to avoid importing the registry that calls this owner.
 export function resolveCompanionTurnStart(
   state: BattleState,
   combatTexts: CombatTextEvent[],
