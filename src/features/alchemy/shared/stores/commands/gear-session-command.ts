@@ -2,6 +2,7 @@ import { type GameSession } from "@/features/alchemy/shared/stores/session/game-
 import { assertSynchronousResult } from "./command-outcome";
 import {
   findEmptyGearSlot,
+  CRAFTING_CURRENCY_IDS,
   findGearEquippedCharacter,
   findGearInventoryOwner,
   flattenGearInventories,
@@ -241,12 +242,15 @@ export function mutateGearWithRunHealthSync<T>(
 export function salvageGearInTransaction(transaction: RunTransaction, instanceId: string) {
   const draft = transactionDraft(transaction);
   if (isInstanceLocked(draft, instanceId)) return null;
+  const previousCurrencies = { ...draft.gear.craftingCurrencies };
   const result = salvageGearInstance(draft.gear, instanceId);
   if (!result) return null;
   if (draft.session.activity.kind !== "inactive") {
     rebindLiveRunMeta(transaction);
     awardMaterialsDuringRun(transaction, result.yieldedMaterials);
-    addRunCurrenciesEarned(transaction, result.yieldedCurrencies);
+    const credited = { ...result.yieldedCurrencies };
+    for (const id of CRAFTING_CURRENCY_IDS) credited[id] = draft.gear.craftingCurrencies[id] - previousCurrencies[id];
+    addRunCurrenciesEarned(transaction, credited);
   } else {
     addMaterialsToStockpile(transaction, result.yieldedMaterials);
   }

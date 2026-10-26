@@ -1,5 +1,6 @@
 import { type CompanionId } from "@/lib/game-data";
 import { companionSummonCardId } from "@/lib/homestead/companions";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 import type {
   BuildingId,
   FarmId,
@@ -22,8 +23,13 @@ function grantMaterials(
   materials: ProfileMaterialInventory,
   options: { trackRunEarned?: boolean } = {},
 ): void {
+  const before = { ...draft.runProfile.materialInventory };
   homestead.addMaterials(draft.runProfile, materials);
-  if (options.trackRunEarned) addRunMaterialsEarned(draft, materials);
+  if (options.trackRunEarned) {
+    const credited = { ...materials };
+    for (const id of MATERIAL_IDS) credited[id] = draft.runProfile.materialInventory[id] - before[id];
+    addRunMaterialsEarned(draft, credited);
+  }
 }
 
 export function awardMaterialsDuringRun(draft: GameplayDraft, materials: ProfileMaterialInventory): void {

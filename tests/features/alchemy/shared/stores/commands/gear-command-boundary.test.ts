@@ -34,6 +34,24 @@ function recordingBackend() {
 }
 
 describe("Gear command boundary", () => {
+  it("records only salvage currency actually added to a nearly full stockpile", async () => {
+    await using session = createGameSession();
+    const armor: GearInstance = { instanceId: "capped-salvage", definitionId: "leather-armor-basic", affixes: [] };
+    dispatchGameplayCommand(
+      (draft) => {
+        mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(armor, "knight") });
+        setRunProgressActivity(draft, "destination");
+        draft.gear.craftingCurrencies["discordant-dice"] = Number.MAX_SAFE_INTEGER;
+        return acceptCommand();
+      },
+      undefined,
+      session,
+    );
+    expect(salvageGear(armor.instanceId, session)).toBe(true);
+    const after = readGameplayState(session);
+    expect(after.gear.craftingCurrencies["discordant-dice"]).toBe(Number.MAX_SAFE_INTEGER);
+    expect(after.run.activeRun.runCurrenciesEarned["discordant-dice"]).toBe(0);
+  });
   it.each([false, true])("settles salvage and checkpoints the complete result with active run = %s", async (active) => {
     const { backend, writes } = recordingBackend();
     await using session = createGameSession({ saveBackend: backend });

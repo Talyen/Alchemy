@@ -121,8 +121,12 @@ function gainMysteryMaterial(material: MaterialId, amount: number, context: Myst
     amount,
     effects: context.draft.runProfile.effects,
   });
+  const before = context.draft.runProfile.materialInventory[material];
   awardMaterialsDuringRun(context.draft, awarded);
-  return { followUp: null, materialAward: { material, amount: awarded[material] } };
+  return {
+    followUp: null,
+    materialAward: { material, amount: context.draft.runProfile.materialInventory[material] - before },
+  };
 }
 
 function assertNever(value: never): never {
