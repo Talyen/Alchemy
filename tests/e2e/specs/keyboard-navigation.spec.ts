@@ -1,6 +1,6 @@
 import { exerciseFocusInputOptions, exerciseFocusInputBattle } from "../focus-input";
 import { expect, test } from "../../fixtures/e2e";
-import { makeCard, startBattleWithDeck, injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers";
+import { makeCard, injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { critical } from "../../playwright-tags";
@@ -23,55 +23,40 @@ test.describe("Controller-equivalent keyboard navigation", () => {
     await input.press("confirm");
     await expect(battle.hand).toHaveCount(count - 1);
   });
-
-  test("playing consecutive cards recovers focus, then reaches End Turn", critical, async ({ page, fastBattle }) => {
-    void fastBattle;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard({ effects: [{ kind: "player-status", status: "block", amount: 1 }] })),
-      { autoEndTurn: false },
-    );
-    const input = controllerInput(page);
-    const battle = new BattlePage(page);
-    await battle.waitForOpeningHand();
-    await expect(battle.endTurnBtn).toBeEnabled();
-    await expect(battle.hand.first()).toBeEnabled();
-    await input.press("back");
-    await expect(page.getByRole("button", { name: "Main Menu", exact: true })).toBeVisible();
-    await input.press("back");
-    await expect(page.getByTestId("game-menu")).toHaveCount(0);
-    await input.reach(battle.hand.first());
-    for (let played = 0; played < 4; played++) {
-      const count = await battle.hand.count();
-      await input.press("confirm");
-      await expect(battle.hand).toHaveCount(count - 1);
-      if (played < 3) await expect(battle.hand.first()).toBeFocused();
-    }
-    await expect(battle.endTurnBtn).toBeFocused();
-    await input.press("confirm");
-    await expect(battle.hand).toHaveCount(4);
-    await expect(battle.endTurnBtn).toBeEnabled();
-  });
 });
 
-test("held confirm cannot play the next card after a real transfer", critical, async ({ page }) => {
-  const cards = Array.from({ length: 3 }, () =>
+test("held confirm spends one card, fresh presses recover focus through End Turn", critical, async ({ page }) => {
+  const cards = Array.from({ length: 6 }, () =>
     makeCard({ cost: 0, effects: [{ kind: "player-status", status: "block", amount: 1 }] }),
   );
-  await injectActiveBattle(page, makeGoblinBattleState({ hand: cards }), { autoEndTurn: false, runDeck: cards });
+  await injectActiveBattle(page, makeGoblinBattleState({ hand: cards.slice(0, 4), deck: cards.slice(4) }), {
+    autoEndTurn: false,
+    runDeck: cards,
+  });
   const input = controllerInput(page);
   const battle = new BattlePage(page);
+  await expect(battle.endTurnBtn).toBeEnabled();
+  await input.press("back");
+  await expect(page.getByTestId("game-menu")).toBeVisible();
+  await input.press("back");
+  await expect(page.getByTestId("game-menu")).toHaveCount(0);
   await input.reach(battle.hand.nth(1));
   await page.keyboard.down("Enter");
   await page.keyboard.down("Enter");
-  await expect(battle.hand).toHaveCount(2);
+  await expect(battle.hand).toHaveCount(3);
   await expect(battle.hand.nth(1)).toBeFocused();
   await page.keyboard.down("Enter");
   await page.keyboard.up("Enter");
-  await expect(battle.hand).toHaveCount(2);
+  await expect(battle.hand).toHaveCount(3);
+  for (let remaining = 2; remaining >= 0; remaining -= 1) {
+    await input.press("confirm");
+    await expect(battle.hand).toHaveCount(remaining);
+    if (remaining > 0) await expect(battle.hand.nth(Math.min(1, remaining - 1))).toBeFocused();
+  }
+  await expect(battle.endTurnBtn).toBeFocused();
   await input.press("confirm");
-  await expect(battle.hand).toHaveCount(1);
-  await expect(battle.hand.first()).toBeFocused();
+  await expect(battle.hand).toHaveCount(4);
+  await expect(battle.endTurnBtn).toBeEnabled();
 });
 
 test("keyboard combat victory continues through rewards to a destination", critical, async ({ page, fastBattle }) => {

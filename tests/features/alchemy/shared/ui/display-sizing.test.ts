@@ -4,19 +4,6 @@ import { getVirtualResolutionLayout } from "@/features/alchemy/shared/ui/use-vir
 import { getGridCapacity } from "@/features/alchemy/shared/ui/adaptive-grid";
 
 describe("display sizing", () => {
-  it("preserves the established 720p density", () => {
-    const layout = getVirtualResolutionLayout(1280, 720);
-    expect(layout.contentScale).toBeCloseTo(0.5950113378684807, 12);
-    expect(layout.stageContentScale).toBeCloseTo(0.892517006802721, 12);
-    expect(layout.tooltipScale).toBeCloseTo(0.8707482993197279, 12);
-  });
-  it.each([
-    [1920, 1080, 0.8092154195011337],
-    [2560, 1440, 1.0234195011337868],
-    [3840, 2160, 1.4518276643990928],
-  ])("uses balanced density at %i x %i", (width, height, expected) => {
-    expect(getVirtualResolutionLayout(width, height).contentScale).toBeCloseTo(expected, 12);
-  });
   it("keeps content equally sized at the same height across standard and wide aspects", () => {
     for (const height of [720, 1080, 1440, 2160]) {
       const standard = getVirtualResolutionLayout((height * 16) / 9, height);

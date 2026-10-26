@@ -21,35 +21,6 @@ async function boxes(locator: Locator) {
   );
 }
 
-test("Corruption picker capacity is independent of resize history and preserves selection", slow, async ({ page }) => {
-  await page.setViewportSize({ width: 1470, height: 956 });
-  await startAtDestination(page, {}, { forceDestination: "Corruption" });
-  await page.getByRole("button", { name: "Corruption", exact: true }).click();
-  await page.getByRole("button", { name: "Corrupt a Card", exact: true }).click();
-  const cards = page.getByRole("button", { name: /^Select / });
-  await waitForLayoutSettled(page, cards);
-  await cards.first().click();
-  await page.mouse.move(0, 0);
-  await waitForLayoutSettled(page, cards);
-  const initial = await boxes(cards);
-  await expect(page.getByRole("button", { name: "Corrupt", exact: true })).toBeEnabled();
-  for (const viewport of [
-    { width: 1280, height: 720 },
-    { width: 1470, height: 956 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await page.mouse.move(0, 0);
-    await waitForLayoutSettled(page, cards);
-  }
-  await expect(cards).toHaveCount(initial.length);
-  const final = await boxes(cards);
-  for (const [index, rect] of final.entries()) {
-    expect(Math.abs(rect.x - initial[index]!.x)).toBeLessThan(2);
-    expect(Math.abs(rect.y - initial[index]!.y)).toBeLessThan(2);
-  }
-  await expect(page.getByRole("button", { name: "Corrupt", exact: true })).toBeEnabled();
-});
-
 test("Collection and Homestead keep reachable actions at maximum Game Size", slow, async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -78,14 +49,20 @@ test(
   critical,
   async ({ page, fastBattle }) => {
     void fastBattle;
-    await page.setViewportSize({ width: 1470, height: 956 });
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "alchemy-device-display-v1",
+        JSON.stringify({ version: 1, gameSizePercent: 120, tooltipSizePercent: 125 }),
+      );
+    });
+    await page.setViewportSize({ width: 1366, height: 768 });
     await startAtDestination(
       page,
       {
         runGold: 9999,
         runDeck: [
-          makeCard({ id: "bash", uid: 201 }),
-          ...Array.from({ length: 5 }, (_, index) => makeCard({ uid: 202 + index })),
+          ...Array.from({ length: 6 }, (_, index) => makeCard({ uid: 201 + index })),
+          makeCard({ id: "bash", uid: 207 }),
         ],
       },
       { forceDestination: "Card Shop" },
@@ -95,7 +72,8 @@ test(
     const cards = page.getByRole("button", { name: /^Select / });
     await waitForLayoutSettled(page, cards);
     const cancel = page.getByRole("button", { name: "Cancel", exact: true });
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(3);
+    for (const card of await cards.all()) await expect(card).toBeInViewport({ ratio: 0.99 });
     const heading = page.getByRole("heading", { name: "Remove Card", exact: true });
     await expect(heading).toBeInViewport();
     await expect(cancel).toBeInViewport();
@@ -103,16 +81,46 @@ test(
     const saved = await readSavedGame(page);
     const before = saved.activeRun!;
     const goldBefore = saved.gold;
-    const selected = page.getByRole("button", { name: "Select Bash", exact: true });
-    await selected.click();
+    await cards.first().click();
     // Cancelling must leave the same deck and Gold available for a later removal.
     await cancel.click();
     await expect(shop.heading).toBeVisible();
     expect(await shop.gold()).toBe(goldBefore);
     expect((await readSavedGame(page)).activeRun?.runDeck).toEqual(before.runDeck);
     await shop.startCardRemoval();
-    await selected.click();
     const remove = page.getByRole("button", { name: /^Remove Gold/ });
+    const grid = page.getByTestId("card-selection-grid");
+    const next = page.getByRole("button", { name: "Next page" });
+    await waitForLayoutSettled(page, cards);
+    const controls = () => boxes(heading.or(remove).or(cancel));
+    const initialControls = await controls();
+    const expectFixedControls = async () => {
+      const current = await controls();
+      expect(current).toHaveLength(initialControls.length);
+      for (const [index, rect] of current.entries()) {
+        for (const dimension of ["x", "y", "width", "height"] as const) {
+          expect(Math.abs(rect[dimension] - initialControls[index]![dimension])).toBeLessThan(1);
+        }
+      }
+    };
+    for (let pageIndex = 0; pageIndex < 2; pageIndex += 1) await next.click();
+    await expect(next).toBeDisabled();
+    await expect(cards).toHaveCount(1);
+    const selected = page.getByRole("button", { name: "Select Bash", exact: true });
+    await expect(selected).toBeInViewport({ ratio: 0.99 });
+    await selected.click();
+    // The short final page must keep its actions reachable, and pagination must
+    // preserve the selected identity before a resize changes the page capacity.
+    await expect(remove).toBeInViewport({ ratio: 0.99 });
+    await expect(cancel).toBeInViewport({ ratio: 0.99 });
+    await page.getByRole("button", { name: "Previous page" }).click();
+    await expect(cards).toHaveCount(3);
+    await waitForLayoutSettled(page, grid);
+    await expectFixedControls();
+    await next.click();
+    await expect(selected).toBeVisible();
+    await waitForLayoutSettled(page, grid);
+    await expectFixedControls();
     await expect(remove).toBeEnabled();
     await page.setViewportSize({ width: 1280, height: 720 });
     await waitForLayoutSettled(page, cards);
@@ -125,16 +133,16 @@ test(
     await expect(shop.heading).toBeVisible();
     await expect.poll(() => shop.gold()).toBe(goldBefore - price);
     const expectedDeck = before.runDeck.filter((card) => card.id !== "bash");
-    expect(expectedDeck).toHaveLength(5);
+    expect(expectedDeck).toHaveLength(6);
     await expect.poll(async () => (await readSavedGame(page)).activeRun?.runDeck).toEqual(expectedDeck);
     await withSavedGame(page, async (resumed) => {
       await expect(new ShopPage(resumed).heading).toBeVisible();
       expect(await new ShopPage(resumed).gold()).toBe(goldBefore - price);
       expect((await readSavedGame(resumed)).activeRun?.runDeck).toEqual(expectedDeck);
       await expect(resumed.getByRole("button", { name: "Remove Card - Sold Out", exact: true })).toBeDisabled();
-      await resumed.getByRole("button", { name: "View Deck · 5 cards" }).click();
+      await resumed.getByRole("button", { name: "View Deck · 6 cards" }).click();
       await expect(resumed.getByRole("dialog").getByRole("img", { name: "Bash", exact: true })).toHaveCount(0);
-      await expect(resumed.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toHaveCount(5);
+      await expect(resumed.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toHaveCount(6);
     });
   },
 );

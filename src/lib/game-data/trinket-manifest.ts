@@ -1,4 +1,4 @@
-export const defaultTrinketEffects = {
+const neutralTrinketEffects = {
   extraDrawPerBattle: 0,
   brassCenserProcChance: 0,
   firstBurnDoubled: false,
@@ -27,4 +27,6 @@ export const defaultTrinketEffects = {
   luckyCloverGoldChance: 0,
 };
 
-export type TrinketManifest = typeof defaultTrinketEffects;
+export type TrinketManifest = typeof neutralTrinketEffects;
+
+export const defaultTrinketEffects: Readonly<TrinketManifest> = Object.freeze(neutralTrinketEffects);

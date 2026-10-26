@@ -21,6 +21,12 @@ jobs:
   localization-qa:
     uses: ./.github/workflows/localization-qa.yml
 
+  demo-e2e:
+    uses: ./.github/workflows/demo-e2e.yml
+    with:
+      artifact: demo-e2e-nightly-diagnostics
+      full: true
+
   prepare:
     name: Prepare build
     uses: ./.github/workflows/web-build.yml
@@ -85,11 +91,6 @@ jobs:
 
       - name: Install Electron system dependencies
         run: npx playwright install-deps chromium
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
 
       - name: Select rotating seed
         id: seed

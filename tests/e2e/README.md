@@ -42,8 +42,31 @@ review gallery owns the wider visual matrix.
 Collection discovery and authored card tooltip wiring live in the Collection DOM
 suite; Bestiary retains the real pointer/keyboard inspection journey. Card Shop
 removal combines resize continuity with cancellation, exact deck/Gold settlement,
-repeat-input protection and fresh-page resume. Its DOM counterpart uses the real
+repeat-input protection and fresh-page resume. It also crosses full and short
+picker pages at maximum sizing, checks stable action geometry, and removes a
+distinct card from the final page. Its DOM counterpart uses the real
 picker for rejected-command recovery and pending-save admission.
+
+Corruption combines resize-history capacity and selection with the actual
+mutation/resume journey: the chosen card identity must survive both boundaries.
+Keyboard consecutive plays and held-confirm rejection share one real-timing
+battle through focus recovery to End Turn. Talent announcements are checked
+through the real screen's last-point purchase; reward DOM fixtures need no live
+run store. Decorative shadow/icon classes and twelve-decimal density constants
+are not functional acceptance contracts; containment, readable descriptions,
+accessible states and the reviewed visual baselines remain protected.
+
+Responsive checks resize each mounted screen across the viewport boundaries
+before navigating onward; Options checks keep the full tab/viewport matrix without
+repeating menu navigation. The shop shelf DOM suite owns Gear/Trinket inspection
+without Gold, exact offered identities and repeat-purchase blocking through their
+real screens; the card tile keeps its distinct focus-preserving purchase journey.
+Keep short discard/badge observations in the renderer before input, including the
+stunned-enemy hand-flash canary, rather than polling after those phases can finish.
+Route completeness is enforced by the typed registry; real journeys protect
+navigation. Route DOM tests focus on preserving committed offers through remounts
+and passing the correct command authority, rather than mounting named stubs for
+every screen.
 
 Battle resume shares the real End Turn/SFX canary in
 `specs/battle-end-turn-canary.spec.ts`: spend a card, accept one turn despite
@@ -70,6 +93,16 @@ the discard journey checks flipping, landing and affordable-card coloring throug
 the next draw. Observe transient admission before input and disconnect observers
 when their evidence is collected. Options keyboard navigation, minimum-height
 confirmation reachability and saved volume share the menu journey.
+
+Armory combat locking, editing another hero, reservation persistence and release
+share one journey seeded with one complete checkpoint; it checks exact saved
+loadout identities as well as rejection feedback. Talent allocation spends the
+last point through the keyboard, checks stable tree geometry, then verifies both
+purchases on a fresh page. Separate
+boots for those same states add no distinct protection. Tooltip movement, content
+resize, coalescing and disposal share one DOM lifecycle; asynchronous placement
+races retain their own focused cases. The startup skip-flag unit uses Node because
+it needs a storage seam, not rendered DOM.
 
 Hand inspection combines edge targeting, raised-card hit testing, draw/reflow,
 and pointer-to-keyboard switching in one live journey. Size-boundary journeys
@@ -199,6 +232,12 @@ and `injectExactSave` only seed storage; callers must navigate if needed and use
 `resumeInjectedRun` when they need to enter the run. `enterPrimaryRewardScreen`
 loads and enters the seeded reward.
 
+`withSavedGame` closes the source renderer before opening the unseeded page,
+preventing stale autosaves and overlapping render loops during resume. The
+Homestead read-only detour explicitly passes `{ keepSource: true }` as its fourth
+argument because it continues the original gallery afterward. Resume callbacks
+must otherwise use their supplied page, including nested resumes.
+
 Save assertions wait for the persisted value with `expect.poll`; visible
 navigation does not imply that a debounced write has completed. After injection,
 verify persistence on a fresh page in the same browser context, without page-level
@@ -270,6 +309,12 @@ from production. These jobs cover 30 production cases and 12 QA cases.
 geometry and reachability checks. Passing screenshots additionally require
 `ALCHEMY_LOCALIZATION_SCREENSHOTS=1` for an explicit visual review; functional CI
 keeps assertions and browser failure screenshots without encoding passing PNGs.
+
+The production demo push job runs all five core demo journeys and one German
+localized ending via `@critical|@localization-smoke`. Native Chinese/Russian and
+Japanese/French quit/relaunch journeys remain on pushes. Nightly/release keep
+all seven browser demo locales, including each localized marketing image; six
+languages' full demo journeys no longer repeat on every push.
 
 CI traces the first retry rather than every passing browser journey. CI retains critical and localization JSON results for seven days on every run and failure diagnostics on failed or flaky
 runs, including tests that pass on retry. A retry remains permitted; flakes do

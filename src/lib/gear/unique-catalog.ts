@@ -50,7 +50,7 @@ export const uniqueItemList: UniqueItemDefinition[] = [
     displayName: "Rimeheart Locket",
   }),
   uniqueItem("blackfletch", "crossbow", ["archery-damage", "flat-bleed", "flat-poison"]),
-  uniqueItem("twin-casting", "staff", ["flat-burn", "flat-freeze", "burn-per-mana"], { displayName: "Twin Casting" }),
+  uniqueItem("twin-casting", "staff", ["flat-burn", "flat-freeze", "burn-per-mana"], { displayName: "Solstice" }),
   uniqueItem("saintfall", "plate-armor", ["stun-on-block-hit", "heal-on-block-depleted", "max-health"], {
     id: "saintfall-plate",
     displayName: "Saintfall Plate",
