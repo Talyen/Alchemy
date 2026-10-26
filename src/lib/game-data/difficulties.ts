@@ -92,7 +92,8 @@ export function isDifficultyUnlocked(difficultyId: DifficultyId, completedDiffic
 export function getDifficultyModifiers(characterId: CharacterId, difficultyId: DifficultyId): DifficultyModifier[] {
   const config = difficultyConfigs[characterId];
   const diff = config.difficulties.find((d) => d.id === difficultyId);
-  return diff?.modifiers ?? [];
+  // Battle-local modifiers must not mutate the shared definitions for other heroes.
+  return diff?.modifiers.map((modifier) => ({ ...modifier })) ?? [];
 }
 
 export function getGoldMultiplier(characterId: CharacterId, difficultyId: DifficultyId | null): number {

@@ -81,11 +81,13 @@ export const uniqueItemList: UniqueItemDefinition[] = [
   uniqueItem("the-golden-crucible", "topaz-amulet", ["start-forge", "flat-holy", "gold-gain"]),
 ];
 
-const uniqueItemDefinitions = new Map(uniqueItemList.map((item) => [item.id, item]));
+// Combat caches own their catalog snapshot independently of exported authoring reads.
+const uniqueItemDefinitions = new Map(uniqueItemList.map((item) => [item.id, structuredClone(item)]));
 const uniqueAffixViews = new Map<string, ReadonlyArray<Readonly<GearAffixRoll>>>();
 
 export function getUniqueItemDefinition(id: string): UniqueItemDefinition | undefined {
-  return uniqueItemDefinitions.get(id);
+  const definition = uniqueItemDefinitions.get(id);
+  return definition ? structuredClone(definition) : undefined;
 }
 
 /** Shared immutable reads for combat, keyword colors and inspection. */

@@ -4,15 +4,16 @@ import { createCleanup } from "@/lib/cleanup";
 /** Resource ownership is independent of the consumers that schedule work. */
 export function createSessionLifetime() {
   let disposed = false;
-  const cleanups = new Set<() => void>();
+  const cleanups = new Set<{ cleanup: () => void }>();
   const assertActive = () => {
     if (disposed) throw new Error("Game session is disposed or invalid");
   };
   const track = (cleanup: () => void) => {
     assertActive();
-    cleanups.add(cleanup);
+    const registration = { cleanup };
+    cleanups.add(registration);
     return createCleanup(() => {
-      if (cleanups.delete(cleanup)) cleanup();
+      if (cleanups.delete(registration)) cleanup();
     });
   };
   return {
@@ -70,11 +71,11 @@ export function createSessionLifetime() {
       if (disposed) return [];
       disposed = true;
       const failures: unknown[] = [];
-      for (const cleanup of [...cleanups]) {
+      for (const registration of [...cleanups]) {
         // A previous cleanup may already have released this peer.
-        if (!cleanups.delete(cleanup)) continue;
+        if (!cleanups.delete(registration)) continue;
         try {
-          cleanup();
+          registration.cleanup();
         } catch (error) {
           failures.push(error);
         }
