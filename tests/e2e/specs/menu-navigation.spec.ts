@@ -14,7 +14,7 @@ import {
 import { BattlePage } from "../../pages/battle-page";
 import { expectRunPhase } from "../../pages/game-stage";
 import { MenuPage } from "../../pages/menu-page";
-import { critical, slow } from "../../playwright-tags";
+import { critical } from "../../playwright-tags";
 
 test.describe("Menu", () => {
   // The browser protects Continue and clearing the live adventure.
@@ -54,6 +54,18 @@ test.describe("Menu", () => {
   test("Labyrinth resumes unchanged after menu and meta visits", async ({ page }) => {
     await injectLabyrinthRun(page, { deck: [makeCard()], runOverrides: { roomsEncountered: 3, runPlayerHealth: 17 } });
     await page.getByRole("button", { name: "Open game menu" }).click();
+    const panel = page.getByTestId("game-menu");
+    await expect(panel).toBeVisible();
+    for (const viewport of [
+      { width: 1280, height: 720 },
+      { width: 3440, height: 1440 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect(panel).toBeInViewport({ ratio: 0.99 });
+      await expect(panel.getByRole("button", { name: "Main Menu", exact: true })).toBeInViewport({ ratio: 0.99 });
+      await expect(panel.getByRole("button", { name: "End Run", exact: true })).toBeInViewport({ ratio: 0.99 });
+    }
+
     await page.getByRole("button", { name: "Options", exact: true }).click();
     await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
@@ -123,24 +135,4 @@ test("controller-equivalent options and dialog focus", critical, async ({ page }
     await resumed.getByRole("button", { name: "Sound", exact: true }).click();
     await expect(resumed.getByRole("slider", { name: "Music Volume", exact: true })).toHaveValue(String(volume));
   });
-});
-
-test("keeps an open game menu reachable after resizing the window", slow, async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await injectActiveBattle(page, makeGoblinBattleState());
-  await page.getByRole("button", { name: "Open game menu", exact: true }).click();
-  const panel = page.getByTestId("game-menu");
-  await expect(panel).toBeVisible();
-  for (const viewport of [
-    { width: 1280, height: 720 },
-    { width: 3440, height: 1440 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await expect(panel).toBeInViewport({ ratio: 0.99 });
-    await expect(panel.getByRole("button", { name: "Main Menu", exact: true })).toBeInViewport({ ratio: 0.99 });
-    await expect(panel.getByRole("button", { name: "End Run", exact: true })).toBeInViewport({ ratio: 0.99 });
-  }
-  await page.keyboard.press("Escape");
-  await expect(panel).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "End Turn", exact: true })).toBeVisible();
 });

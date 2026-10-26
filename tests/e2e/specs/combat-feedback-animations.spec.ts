@@ -3,20 +3,7 @@ import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../brows
 import { BattlePage } from "../../pages/battle-page";
 import { translatedLabel } from "../localization";
 import { slow } from "../../playwright-tags";
-import type { JSHandle } from "@playwright/test";
-
-async function observeDuringAction<T>(
-  observation: JSHandle<{ result: Promise<T>; cancel: () => void }>,
-  action: () => Promise<void>,
-) {
-  try {
-    await action();
-    return await observation.evaluate(async ({ result }) => result);
-  } finally {
-    await observation.evaluate(({ cancel }) => cancel());
-    await observation.dispose();
-  }
-}
+import { observeDuringAction } from "../observe-during-action";
 
 test.describe("Combat feedback animations", slow, () => {
   test.setTimeout(60_000);
