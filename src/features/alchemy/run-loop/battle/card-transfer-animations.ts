@@ -8,7 +8,6 @@ import {
   GHOST_TRAVEL_SCALE,
   HAND_FAN_ROTATION_DEGREES,
 } from "@/lib/game-constants";
-import { getBattleCardPlayTarget } from "@/lib/battle";
 import type { CardGhost, CardRect } from "../../shared/types";
 import { isAnimationDisabled, shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { getCardRect } from "../../shared/utils";
@@ -188,11 +187,12 @@ export function animateCardActivation(
   enemyPanelRef: React.RefObject<HTMLDivElement | null>,
   battleSceneRef: React.RefObject<HTMLDivElement | null>,
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void,
+  target: "player" | "enemy",
 ) {
   if (isAnimationDisabled()) return;
   const sceneRect = getBattleSceneLocalRect(battleSceneRef.current);
   const localSourceRect = sceneRect ? viewportRectToBattleSceneRect(rect, sceneRect) : rect;
-  const targetRect = getCardPlayGhostTargetRect(card, playerPanelRef, enemyPanelRef, battleSceneRef, sceneRect);
+  const targetRect = getCardPlayGhostTargetRect(target, playerPanelRef, enemyPanelRef, battleSceneRef, sceneRect);
   if (targetRect) {
     spawnCardGhost({
       art: card.art,
@@ -212,13 +212,12 @@ export function animateCardActivation(
 }
 
 function getCardPlayGhostTargetRect(
-  card: BattleCard,
+  target: "player" | "enemy",
   playerPanelRef: React.RefObject<HTMLDivElement | null>,
   enemyPanelRef: React.RefObject<HTMLDivElement | null>,
   battleSceneRef: React.RefObject<HTMLDivElement | null>,
   sceneRect: BattleSceneLocalRect | null,
 ) {
-  const target = getBattleCardPlayTarget(card);
   const panelRect =
     target === "player"
       ? playerPanelRef.current?.getBoundingClientRect()

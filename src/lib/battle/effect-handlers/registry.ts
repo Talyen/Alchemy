@@ -90,9 +90,21 @@ function applySingleEffect(
   context: CardEffectResolutionContext,
 ): BattleState {
   if (state.observer)
-    return state.observer.effect(card, effect, () =>
-      resolveSingleEffect(state, card, effect, potionMult, combatTexts, context),
-    );
+    return state.observer.effect(card, effect, () => {
+      // Inspection needs each authored result before the display rail merges
+      // it with another effect. Live resolution keeps its existing output path.
+      const texts: CombatTextEvent[] = [];
+      const result = resolveSingleEffect(state, card, effect, potionMult, texts, context);
+      state.observer?.directFeedback?.(
+        texts.flatMap((event) =>
+          event.feedback === "primary" && event.kind !== "notice"
+            ? [{ target: event.target, kind: event.kind, stat: event.stat, amount: event.amount }]
+            : [],
+        ),
+      );
+      for (const event of texts) mergeCombatText(combatTexts, event);
+      return result;
+    });
   return resolveSingleEffect(state, card, effect, potionMult, combatTexts, context);
 }
 

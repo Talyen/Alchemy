@@ -5,7 +5,7 @@ import {
   type BattleCardEffectKind,
 } from "@/lib/game-data";
 import type { RandomDecision, Rng } from "@/lib/rng";
-import type { BattleResolutionObserver, ObservedAttack } from "./resolution-observer";
+import type { BattleResolutionObserver, ObservedAttack, ObservedDirectAmount } from "./resolution-observer";
 
 /** Classification is exhaustive; execution, including draws and scheduling, stays with the registry. */
 const INSPECTION_EFFECT_POLICY = {
@@ -40,10 +40,17 @@ const INSPECTION_EFFECT_POLICY = {
   "repeat-over-turns": "deferred",
 } as const satisfies Record<BattleCardEffectKind, "resolve" | "branch" | "deferred">;
 
-export type InspectedPackets =
+type InspectedAttacks =
   | { kind: "exact"; packets: readonly ObservedAttack[] }
   | { kind: "alternatives"; outcomes: ReadonlyArray<readonly ObservedAttack[]> }
   | { kind: "unknown" };
+
+export type InspectedPackets = InspectedAttacks & {
+  directAmounts:
+    | { kind: "exact"; amounts: readonly ObservedDirectAmount[] }
+    | { kind: "alternatives"; outcomes: ReadonlyArray<readonly ObservedDirectAmount[]> }
+    | { kind: "unknown" };
+};
 
 const MAX_REPLAYS = 128;
 const MAX_DECISIONS = 64;
@@ -68,6 +75,7 @@ function walk(effects: readonly BattleCardEffect[], visit: (effect: BattleCardEf
 
 interface Outcome {
   packets: Map<BattleCardEffect, ObservedAttack[]>;
+  directAmounts: Map<BattleCardEffect, readonly ObservedDirectAmount[]>;
   eligible: Set<BattleCardEffect>;
   complete: boolean;
 }
@@ -85,7 +93,12 @@ export function inspectResolutionOutcomes(
   let steps = 0;
   while (pending.length > 0) {
     const choices = pending.pop()!;
-    const outcome: Outcome = { packets: new Map(), eligible: new Set(sources), complete: false };
+    const outcome: Outcome = {
+      packets: new Map(),
+      directAmounts: new Map(),
+      eligible: new Set(sources),
+      complete: false,
+    };
     let decisionIndex = 0;
     let current: BattleCardEffect | undefined;
     const entered = new Set<BattleCardEffect>();
@@ -117,6 +130,9 @@ export function inspectResolutionOutcomes(
         const packets = outcome.packets.get(current) ?? [];
         packets.push(packet);
         outcome.packets.set(current, packets);
+      },
+      directFeedback: (amounts) => {
+        if (current) outcome.directAmounts.set(current, amounts);
       },
     };
     const decide = (decision: RandomDecision): number => {
@@ -152,6 +168,30 @@ export function inspectResolutionOutcomes(
 
   const inspected = new Map<BattleCardEffect, InspectedPackets>();
   for (const effect of sources) {
+    const feedback = outcomes.filter((outcome) => outcome.eligible.has(effect));
+    const amounts = feedback[0]?.directAmounts.get(effect) ?? [];
+    const feedbackKnown =
+      feedback.length > 0 && feedback.every((outcome) => outcome.complete || outcome.directAmounts.has(effect));
+    const feedbackExact = feedback.every((outcome) => {
+      const candidate = outcome.directAmounts.get(effect) ?? [];
+      return (
+        candidate.length === amounts.length &&
+        candidate.every((entry, index) => {
+          const first = amounts[index]!;
+          return (
+            entry.target === first.target &&
+            entry.kind === first.kind &&
+            entry.stat === first.stat &&
+            entry.amount === first.amount
+          );
+        })
+      );
+    });
+    const directAmounts: InspectedPackets["directAmounts"] = !feedbackKnown
+      ? { kind: "unknown" }
+      : feedbackExact
+        ? { kind: "exact", amounts }
+        : { kind: "alternatives", outcomes: feedback.map((outcome) => outcome.directAmounts.get(effect) ?? []) };
     const packets: Array<readonly ObservedAttack[]> = [];
     let unknown = INSPECTION_EFFECT_POLICY[effect.kind] === "deferred";
     if (!unknown) {
@@ -165,7 +205,7 @@ export function inspectResolutionOutcomes(
       }
     }
     if (unknown || packets.length === 0) {
-      inspected.set(effect, { kind: "unknown" });
+      inspected.set(effect, { kind: "unknown", directAmounts });
       continue;
     }
     const first = packets[0] ?? [];
@@ -175,7 +215,12 @@ export function inspectResolutionOutcomes(
         (candidate.length === first.length &&
           candidate.every((packet, index) => areBattleCardEffectsEqual(packet, first[index]!))),
     );
-    inspected.set(effect, exact ? { kind: "exact", packets: first } : { kind: "alternatives", outcomes: packets });
+    inspected.set(
+      effect,
+      exact
+        ? { kind: "exact", packets: first, directAmounts }
+        : { kind: "alternatives", outcomes: packets, directAmounts },
+    );
   }
   return inspected;
 }
