@@ -35,40 +35,34 @@ export function isNonFoldingEffect(effect: BattleCardEffect): boolean {
  * Frozen outcome shares the displayed base magnitude, so a bonus applies
  * twice there to keep both lines consistent.
  */
-function scalePotionEffect(effect: BattleCardEffect, scale: number | "double" = "double"): BattleCardEffect {
+function scalePotionEffect(effect: BattleCardEffect, scale: number | "double"): BattleCardEffect {
   if (isUnscalableEffect(effect)) return effect;
+  const scaleValue = (value: number, bonusMultiplier = 1) =>
+    scale === "double" ? value * 2 : value + scale * bonusMultiplier;
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {
-    const scaleValue = (value: number) => (scale === "double" ? value * 2 : value + scale);
     return { ...effect, minAmount: scaleValue(effect.minAmount), maxAmount: scaleValue(effect.maxAmount) };
   }
   if (effect.kind === "damage") {
-    if (scale === "double")
-      return {
-        ...effect,
-        amount: effect.amount * 2,
-        ...(effect.amountIfTargetFrozen !== undefined ? { amountIfTargetFrozen: effect.amountIfTargetFrozen * 2 } : {}),
-      };
-    const frozenIncrease =
+    const frozenBonusMultiplier =
       effect.damageTypeIfTargetFrozen === effect.damageType && effect.amountIfTargetFrozen === effect.amount * 2
-        ? POTION_DISTILL_BONUS * 2
-        : scale;
+        ? 2
+        : 1;
     return {
       ...effect,
-      amount: effect.amount + scale,
+      amount: scaleValue(effect.amount),
       ...(effect.amountIfTargetFrozen !== undefined
-        ? { amountIfTargetFrozen: effect.amountIfTargetFrozen + frozenIncrease }
+        ? { amountIfTargetFrozen: scaleValue(effect.amountIfTargetFrozen, frozenBonusMultiplier) }
         : {}),
     };
   }
   if ("amount" in effect && typeof effect.amount === "number") {
-    const amount = scale === "double" ? effect.amount * 2 : effect.amount + scale;
-    if (effect.kind === "player-status" && effect.forgeAmount !== undefined)
-      return {
-        ...effect,
-        amount,
-        forgeAmount: scale === "double" ? effect.forgeAmount * 2 : effect.forgeAmount + scale,
-      };
-    return { ...effect, amount };
+    return {
+      ...effect,
+      amount: scaleValue(effect.amount),
+      ...(effect.kind === "player-status" && effect.forgeAmount !== undefined
+        ? { forgeAmount: scaleValue(effect.forgeAmount) }
+        : {}),
+    };
   }
   return mapEffectChildren(effect, (child) => scalePotionEffect(child, scale));
 }
