@@ -47,6 +47,7 @@ const additionalDefaults = {
   flatNatureDamage: 0,
   bleedDesperateMultiplier: 1,
 };
+Object.freeze(additionalDefaults.companionBondLevels);
 
 export type TalentEffectManifest = {
   [K in TalentBonusKey]: ManifestValue<BonusAt<AuthoredBonuses, K>>;
@@ -56,18 +57,18 @@ function neutralBonus(value: TalentBonus): unknown {
   if (value === null) return null;
   if (typeof value === "number" || isAdditiveBonus(value)) return 0;
   if (typeof value === "boolean") return false;
-  if (Array.isArray(value)) return [];
-  return "threshold" in value && "amount" in value ? null : {};
+  if (Array.isArray(value)) return Object.freeze([]);
+  return "threshold" in value && "amount" in value ? null : Object.freeze({});
 }
 
-export const DEFAULT_TALENT_EFFECTS = {
+export const DEFAULT_TALENT_EFFECTS: Readonly<TalentEffectManifest> = Object.freeze({
   ...Object.fromEntries(
     talentRows.flatMap((talent) =>
       Object.entries<TalentBonus>(talent.effects).map(([field, value]) => [field, neutralBonus(value)]),
     ),
   ),
   ...additionalDefaults,
-} as TalentEffectManifest;
+} as TalentEffectManifest);
 
 export function createEmptyTalentEffectManifest(): TalentEffectManifest {
   return structuredClone(DEFAULT_TALENT_EFFECTS);

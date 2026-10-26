@@ -4,14 +4,20 @@ import { canAfford } from "./inventory";
 import type { MaterialInventory } from "./types";
 import type { TieredItem } from "./tiers";
 
-export const COMPANION_BOND_TIERS = scaledMaterialCosts({ food: 10 }, 3);
+export const COMPANION_BOND_TIERS = Object.freeze(
+  scaledMaterialCosts({ food: 10 }, 3).map((cost) => Object.freeze(cost)),
+);
 
 export const COMPANION_MAX_TIER = COMPANION_BOND_TIERS.length;
 
-export const companionTierItems: ReadonlyArray<TieredItem<CompanionId>> = Object.keys(companionLibrary).map((id) => ({
-  id: id as CompanionId,
-  tiers: COMPANION_BOND_TIERS.map((cost) => ({ cost })),
-}));
+export const companionTierItems: ReadonlyArray<TieredItem<CompanionId>> = Object.freeze(
+  Object.keys(companionLibrary).map((id) =>
+    Object.freeze({
+      id: id as CompanionId,
+      tiers: Object.freeze(COMPANION_BOND_TIERS.map((cost) => Object.freeze({ cost }))),
+    }),
+  ),
+);
 
 const companionSummonCardIdByCompanion = new Map<CompanionId, string>();
 for (const card of cardLibrary) {
