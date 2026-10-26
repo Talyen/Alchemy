@@ -417,7 +417,9 @@ owns write outcomes, fallback and automatic retry timing;
 Explicit Retry resets its submission latch without changing exit deduplication.
 Explicit checkpoints, including settings-only changes, require a new acknowledgement
 even at the same gameplay revision. Snapshot tokens carry both versions; an older
-successful write cannot release a newer gate or its feedback.
+successful write cannot release a newer gate or its feedback. Pending revision
+marks are monotonic within the current career: an older caller cannot lower the
+revision that must be saved.
 
 ### Completion lifecycle
 

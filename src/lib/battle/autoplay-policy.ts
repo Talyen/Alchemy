@@ -89,6 +89,16 @@ function playerStatusDefense(
   return (amount * defensive) / effect.statusPool.length;
 }
 
+function activeCompanionEffects(state: BattleSnapshot): BattleCardEffect[] {
+  return state.activeCompanion
+    ? getModifiedCompanionEffects(
+        state.activeCompanion,
+        state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
+        getBattleCompanionDamageModifiers(state),
+      )
+    : [];
+}
+
 function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: number): number {
   switch (effect.kind) {
     case "damage":
@@ -128,18 +138,7 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
     case "summon-companion":
       return AUTOPLAY_EFFECT_SCORE.summon;
     case "companion-action":
-      return state.activeCompanion
-        ? effect.amount *
-            scoreEffects(
-              getModifiedCompanionEffects(
-                state.activeCompanion,
-                state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
-                getBattleCompanionDamageModifiers(state),
-              ),
-              state,
-              manaRoom,
-            )
-        : 0;
+      return effect.amount * scoreEffects(activeCompanionEffects(state), state, manaRoom);
     case "multiply-enemy-status": {
       const current = state.enemyStatuses[effect.status] ?? 0;
       // Mirror the live pipeline's nearest-integer rounding so close picks agree.
@@ -198,9 +197,8 @@ function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state:
         (1 - effect.probability) * immediateDamageFromEffects(effect.failureEffects, state)
       );
     }
-    if (effect.kind === "repeat-over-turns") {
-      return total + effect.remainingTurns * immediateDamageFromEffects(effect.effects, state);
-    }
+    if (effect.kind === "companion-action")
+      return total + effect.amount * immediateDamageFromEffects(activeCompanionEffects(state), state);
     return total;
   }, 0);
 }
@@ -218,9 +216,8 @@ function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state
         (1 - effect.probability) * immediateDefenseFromEffects(effect.failureEffects, state)
       );
     }
-    if (effect.kind === "repeat-over-turns") {
-      return total + effect.remainingTurns * immediateDefenseFromEffects(effect.effects, state);
-    }
+    if (effect.kind === "companion-action")
+      return total + effect.amount * immediateDefenseFromEffects(activeCompanionEffects(state), state);
     if (effect.kind === "heal")
       return total + Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth));
     if (effect.kind === "player-status") return total + playerStatusDefense(effect, state);

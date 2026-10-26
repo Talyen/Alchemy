@@ -38,6 +38,14 @@ export function createSessionLifetime() {
             release();
             callback();
           }, delay);
+          // An injected clock can finish (and even close this owner) before
+          // returning its ID. Completed work needs no cleanup registration.
+          if (!active) return timer;
+          if (disposed) {
+            active = false;
+            source.clearTimeout(timer);
+            return timer;
+          }
           release = track(() => {
             timers.delete(timer);
             if (active) {

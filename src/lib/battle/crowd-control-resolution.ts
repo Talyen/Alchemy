@@ -6,6 +6,7 @@ import {
   STUN_THRESHOLD_FRACTION,
   UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
+import { isPlayerDefeated } from "./battle-outcome";
 import { halveRounded } from "./amount-helpers";
 import { writeCombatFlag } from "./action-context";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
@@ -45,6 +46,7 @@ export function resolveCrowdControlBonuses(
   const draw = bonuses.draw ?? 0;
   if (draw > 0) {
     nextState = port.draw(nextState, draw, combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (bonuses.nextCardFree) {
     nextState = writeCombatFlag(nextState, "nextCardCostReduction", FREE_CARD_SENTINEL);
@@ -142,6 +144,7 @@ export function resolveEnemyStun(
     },
     texts,
   );
+  if (isPlayerDefeated(next)) return next;
   next = port.physical(next, next.gearEffects.damageOnStunPhysical, texts);
   next = port.thunderstone(next, texts);
   if (fromHolyDamage && next.gearEffects.holyStunBuildupGold > 0)

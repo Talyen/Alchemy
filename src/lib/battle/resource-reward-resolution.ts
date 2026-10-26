@@ -43,6 +43,7 @@ export function resolveLeechResourceRewards(
       restored = port.status(restored, "thorns", state.gearEffects.thornsOnLeechWithoutThorns, texts);
     if (belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0)
       restored = port.stun(restored, state.gearEffects.stunOnLeechBelowHalfHealth, texts);
+    if (isPlayerDefeated(restored)) return restored;
     if (port.chance(state.gearEffects.leechBlockChance, state))
       restored = port.status(restored, "block", restoredHealth, texts, true);
     if (restoredToFull && state.talentEffects.manaOnLeechToFull > 0)

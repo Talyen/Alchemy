@@ -90,10 +90,11 @@ function validateCardPlay(
   if (state.turnPhase !== "player") return null;
   if (isCcControlled(state.playerCC)) return null;
   const handCard = getHandCard(state, card.id, index, card.uid);
-  if (!handCard) return null;
+  if (!handCard || !Number.isInteger(handCard.cost) || handCard.cost < 0) return null;
   const payment = computeCardPayment(state, handCard);
   if (!payment.affordable) return null;
-  if (cleanseOnlyCardHasNoTargets(card, state)) return null;
+  if (cleanseOnlyCardHasNoTargets(card, state) || (card !== handCard && cleanseOnlyCardHasNoTargets(handCard, state)))
+    return null;
   return payment;
 }
 
@@ -109,7 +110,7 @@ export function canPlayCard(
   options?: CardPlayOptions,
 ): boolean {
   // A caller-supplied wrapper may have different costs or effects from the hand.
-  // Preserve its validation behavior without putting it in the snapshot cache.
+  // Validate both it and the current hand without caching a stale wrapper.
   if (!Number.isInteger(index) || index < 0 || state.hand[index] !== card) {
     return validateCardPlay(state, card, index, options) !== null;
   }

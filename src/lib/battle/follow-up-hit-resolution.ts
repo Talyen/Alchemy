@@ -1,3 +1,4 @@
+import { isPlayerDefeated } from "./battle-outcome";
 import { applyBlockReward } from "./player-rewards";
 import { rollBattleChance } from "./chance-roll";
 import { resolveSecondaryAction } from "./action-context";
@@ -35,6 +36,7 @@ export function resolveFollowUpHit(
   request: FollowUpHitRequest,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  if (isPlayerDefeated(state)) return state;
   switch (request.source) {
     case "player-follow-up":
       if (request.damageType === "stun")
