@@ -8,6 +8,10 @@ import { pseudolocalize } from "../../src/lib/localization/pseudolocalize";
 import { assertNoOverflow, assertReachableControlsInViewport, waitForLayoutSettled } from "./layout-assertions";
 
 const catalogs = unpackCatalogs(packed);
+const messageIds = new Map<string, string>();
+for (const [id, english] of Object.entries(catalogs.en!)) {
+  if (!messageIds.has(english)) messageIds.set(english, id);
+}
 
 export const acceptanceLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "ja", "fr", "en-XA"] as const;
 export type AcceptanceLocale = (typeof acceptanceLocales)[number];
@@ -28,7 +32,7 @@ export const layoutReview = process.env.ALCHEMY_LOCALIZATION_LAYOUT_REVIEW === "
 
 export function translatedLabel(locale: AcceptanceLocale, english: string): string {
   if (locale === "en-XA") return pseudolocalize(english);
-  const id = Object.entries(catalogs.en!).find(([, value]) => value === english)?.[0];
+  const id = messageIds.get(english);
   if (!id) throw new Error(`Unregistered acceptance label: ${english}`);
   return (catalogs[locale] as Record<string, string>)[id]!;
 }
@@ -62,8 +66,6 @@ export async function localizedCheckpoint(
 ) {
   await expect(page.getByTestId("vr-stage")).toHaveAttribute("data-run-phase", /.+/);
   await page.evaluate((value) => localStorage.setItem("alchemy-language-v1", value), locale);
-  // Simulate exit before resume. The fixture page must not later autosave its seed over live progress.
-  await page.close();
   await withSavedGame(
     page,
     async (fresh) => {

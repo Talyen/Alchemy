@@ -21,6 +21,12 @@ jobs:
   localization-qa:
     uses: ./.github/workflows/localization-qa.yml
 
+  demo-e2e:
+    uses: ./.github/workflows/demo-e2e.yml
+    with:
+      artifact: demo-e2e-nightly-diagnostics
+      full: true
+
   prepare:
     name: Prepare build
     uses: ./.github/workflows/web-build.yml
