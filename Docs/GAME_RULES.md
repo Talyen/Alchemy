@@ -491,8 +491,11 @@ modifiers are restricted to Elites/Bosses. Campaign and Wildwood ignore these
 room rules. Combat-specific effects follow [Labyrinth exceptions](#labyrinth-exceptions).
 
 Shielded Arrival gives the enemy 6 starting Block. Sundered Guard removes 2
-additional Block before each landed attack resolves damage. Unbinding Strike
-Purges one random beneficial player status after each landed attack. Ravenous
+additional Block before each landed ability attack resolves damage. Unbinding Strike
+Purges one random beneficial player status after each landed ability attack.
+Bonus hits and periodic pulses trigger neither modifier. Self-Sacrifice also
+requires a landed hit, including fully Blocked hits; Dodged hits cost no Health.
+Soul Harvest's Purge outcome preserves any Leech authored on the ability. Ravenous
 already grants attack Leech, and Thick Hide already halves Physical damage;
 they remain the Labyrinth entries for those effects. Cinder Ward reuses the
 native half-Burn rule. The other wards halve Poison, Bleed, Holy, Freeze,

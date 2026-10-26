@@ -162,7 +162,8 @@ export function applyAbilityDamage(
     state = setFlag(state, "enemyBrawlerDamagePenalty", false);
   }
   const condemn = hasEnemyTrait(state, "inquisitor") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
-  if (context.soulHarvest) effect = { ...effect, lifesteal: context.soulHarvest === "leech" };
+  // Purge is an additional trait reward; it cannot revoke the ability's own Leech.
+  if (context.soulHarvest === "leech") effect = { ...effect, lifesteal: true };
   effect = resolveConditionalCardDamage(effect, state.playerCC.freezeSkipTurns > 0);
   if (effect.damageTypePool) {
     effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
@@ -223,7 +224,7 @@ export function applyAbilityDamage(
     }
     nextState = applyNativeHitFollowups(nextState, context, true, combatTexts);
   }
-  if (getBattleOutcome(nextState) === null && hasEnemyTrait(nextState, "self-sacrifice")) {
+  if (result.landed && getBattleOutcome(nextState) === null && hasEnemyTrait(nextState, "self-sacrifice")) {
     const before = nextState.enemyHealth;
     nextState = damageEnemyHealth(recordEnemyAbilityActivation(nextState, "self-sacrifice"), 1).state;
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "health", amount: 1 });

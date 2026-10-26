@@ -7,7 +7,7 @@ import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { processArcheryEchoes } from "./unique-card-effects";
-import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
+import { CARDS_PER_TURN } from "../game-constants";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { halveRounded } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -167,26 +167,24 @@ function performDrawAndResetPhase(
     returningUid !== null && returningIndex < 0 ? state.deck.findIndex((card) => card.uid === returningUid) : -1;
   const recovered = returningIndex >= 0 ? state.discard[returningIndex] : state.deck[deckIndex];
   const discard = returningIndex >= 0 ? state.discard.filter((_, i) => i !== returningIndex) : state.discard;
+  // Receive the recovered card behind older reservations, before new draws.
+  const returningFlightUid = recovered ? state.nextCardUid : null;
+  const pendingHandCards = recovered
+    ? [...state.pendingHandCards, { ...recovered, uid: state.nextCardUid }]
+    : state.pendingHandCards;
   const nextDraw = drawCards(
     deckIndex >= 0 ? state.deck.filter((_, i) => i !== deckIndex) : state.deck,
     discard,
     state.hand,
     CARDS_PER_TURN,
-    state.nextCardUid,
+    state.nextCardUid + Number(!!recovered),
     getBattleRng(state),
-    state.pendingHandCards,
+    pendingHandCards,
   );
   // Enemy-phase deliveries and overflow queues have not had a playable turn yet.
   const eligibleUids = new Set([...state.hand, ...state.pendingHandCards].map((card) => card.uid));
   const returningFlightUids = state.uniqueGear.returningFlightUids.filter((uid) => eligibleUids.has(uid));
-  if (recovered) {
-    const returningFlightUid = nextDraw.nextCardUid;
-    returningFlightUids.push(returningFlightUid);
-    const card = { ...recovered, uid: returningFlightUid };
-    if (nextDraw.hand.length < MAX_HAND_SIZE) nextDraw.hand.push(card);
-    else nextDraw.pendingHandCards.push(card);
-    nextDraw.nextCardUid += 1;
-  }
+  if (returningFlightUid !== null) returningFlightUids.push(returningFlightUid);
   const nextState = resetPlayerTurnState(state, options);
   const hadUnspentMana = (options?.manaAtTurnEnd ?? state.mana) > 0;
   const wellspringBonus =
