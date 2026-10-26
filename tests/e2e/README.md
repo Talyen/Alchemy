@@ -42,8 +42,22 @@ review gallery owns the wider visual matrix.
 Collection discovery and authored card tooltip wiring live in the Collection DOM
 suite; Bestiary retains the real pointer/keyboard inspection journey. Card Shop
 removal combines resize continuity with cancellation, exact deck/Gold settlement,
-repeat-input protection and fresh-page resume. Its DOM counterpart uses the real
+repeat-input protection and fresh-page resume. It also crosses full and short
+picker pages at maximum sizing, checks stable action geometry, and removes a
+distinct card from the final page. Its DOM counterpart uses the real
 picker for rejected-command recovery and pending-save admission.
+
+Responsive checks resize each mounted screen across the viewport boundaries
+before navigating onward; Options checks keep the full tab/viewport matrix without
+repeating menu navigation. The shop shelf DOM suite owns Gear/Trinket inspection
+without Gold, exact offered identities and repeat-purchase blocking through their
+real screens; the card tile keeps its distinct focus-preserving purchase journey.
+Keep short discard/badge observations in the renderer before input, including the
+stunned-enemy hand-flash canary, rather than polling after those phases can finish.
+Route completeness is enforced by the typed registry; real journeys protect
+navigation. Route DOM tests focus on preserving committed offers through remounts
+and passing the correct command authority, rather than mounting named stubs for
+every screen.
 
 Battle resume shares the real End Turn/SFX canary in
 `specs/battle-end-turn-canary.spec.ts`: spend a card, accept one turn despite

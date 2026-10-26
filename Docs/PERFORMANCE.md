@@ -337,6 +337,10 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 
 ## Limitations
 
+- Electron profiling requests only its Electron page; the browser fixture is used
+  only for browser profiles. The nightly Electron discovery job installs native
+  dependencies without downloading Playwright Chromium. Older profiles also ran
+  an unused Chromium process, so compare measurements within the same fixture version.
 - rAF sampling detects **main-thread cadence gaps**, not hardware GPU present timing.
 - Smooth rAF sampling can hide uneven updates inside a capped effect loop. Inspect actual draw cadence when an effect visibly jitters despite stable frame metrics.
 - Trace mode adds overhead — do not treat its FPS numbers as authoritative.

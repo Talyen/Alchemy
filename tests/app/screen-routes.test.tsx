@@ -3,7 +3,7 @@ import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session
 import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
-import { ROUTE_SCREEN_VALUES, type Screen } from "@/lib/routing";
+import type { Screen } from "@/lib/routing";
 import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import type { RenderAlchemyScreenProps } from "@/app/screen-routes/route-ctx";
 import { createMockRouteCommands } from "../helpers/run-controller";
@@ -93,26 +93,6 @@ function createMockProps(screen: Screen): RenderAlchemyScreenProps {
 
 describe("SCREEN_ROUTES registry", () => {
   afterEach(cleanup);
-
-  it("mounts the correct component while navigating across every registered Screen", () => {
-    const view = render(renderAlchemyScreenRoute(createMockProps("menu")));
-    const screenTestIds: Partial<Record<Screen, string>> = {
-      shop: "card-shop-screen",
-      alchemist: "alchemist-shop-screen",
-      mystery: "mystery-screen-shell",
-      "game-over": "run-end-screen",
-      "run-victory": "run-end-screen",
-    };
-    for (const screen of ROUTE_SCREEN_VALUES) {
-      view.rerender(renderAlchemyScreenRoute(createMockProps(screen)));
-      expect(view.getByTestId(screenTestIds[screen] ?? `${screen}-screen`)).toBeDefined();
-      if (screen === "game-over" || screen === "run-victory") {
-        expect(view.getByTestId("run-end-screen").textContent).toBe(
-          screen === "game-over" ? "Journey’s End" : "Victory",
-        );
-      }
-    }
-  });
 
   it("mounts and remounts committed Transmutation offers while saving without changing gameplay", () => {
     resetAllTestStores();
