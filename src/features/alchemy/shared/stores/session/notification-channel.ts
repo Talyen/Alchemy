@@ -11,9 +11,11 @@ export function createNotificationChannel<Args extends unknown[]>(
   let publishing = false;
   return {
     subscribe(this: void, listener: Listener) {
-      listeners.add(listener);
+      // Each registration owns its cleanup, even when callers share a callback.
+      const subscription: Listener = (...args) => listener(...args);
+      listeners.add(subscription);
       return createCleanup(() => {
-        listeners.delete(listener);
+        listeners.delete(subscription);
       });
     },
     publish(this: void, ...args: Args) {

@@ -26,15 +26,28 @@ export class TimerGroup {
   ) {}
 
   setTimeout(fn: () => void, ms: number): () => void {
-    const id = this.clock.setTimeout(() => {
-      if (!this.pending.delete(cancel)) return;
-      fn();
-    }, ms);
-    // Timer IDs may be reused; an old cancellation must not remove new work.
+    let timer: { id: ReturnType<TimerClock["setTimeout"]> } | undefined;
+    let cancelled = false;
+    // Register ownership before invoking the clock, which may fire or cancel
+    // synchronously. Timer IDs may also be reused by later registrations.
     const cancel = () => {
-      if (this.pending.delete(cancel)) this.clock.clearTimeout(id);
+      if (!this.pending.delete(cancel)) return;
+      cancelled = true;
+      if (timer) this.clock.clearTimeout(timer.id);
     };
     this.pending.add(cancel);
+    try {
+      timer = {
+        id: this.clock.setTimeout(() => {
+          if (!this.pending.delete(cancel)) return;
+          fn();
+        }, ms),
+      };
+      if (cancelled) this.clock.clearTimeout(timer.id);
+    } catch (error) {
+      this.pending.delete(cancel);
+      throw error;
+    }
     return cancel;
   }
 
@@ -47,6 +60,14 @@ export class TimerGroup {
   }
 
   clearAll() {
-    for (const cancel of this.pending) cancel();
+    const errors: unknown[] = [];
+    for (const cancel of this.pending) {
+      try {
+        cancel();
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    if (errors.length > 0) throw new AggregateError(errors, "Game timer cancellation failed");
   }
 }

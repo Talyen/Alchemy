@@ -25,10 +25,19 @@ export class CloudSaveMirror {
 
   private start() {
     if (this.running || this.clears || !this.pending.size) return;
-    this.running = this.drain().finally(() => {
+    // Publish the actual completion before invoking a write: adapters may
+    // synchronously enqueue another slot or request a clear from that callback.
+    let begin!: () => void;
+    const draining = new Promise<void>((resolve, reject) => {
+      begin = () => {
+        void this.drain().then(resolve, reject);
+      };
+    });
+    this.running = draining.finally(() => {
       this.running = null;
       this.start();
     });
+    begin();
   }
 
   private async drain() {

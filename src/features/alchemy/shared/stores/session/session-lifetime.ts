@@ -59,7 +59,8 @@ export function createSessionLifetime() {
       disposed = true;
       const failures: unknown[] = [];
       for (const cleanup of [...cleanups]) {
-        cleanups.delete(cleanup);
+        // A previous cleanup may already have released this peer.
+        if (!cleanups.delete(cleanup)) continue;
         try {
           cleanup();
         } catch (error) {

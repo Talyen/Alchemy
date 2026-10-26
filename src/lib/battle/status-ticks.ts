@@ -208,6 +208,7 @@ function resolvePlayerEndOfTickReactions(state: BattleState, combatTexts: Combat
 }
 
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (getBattleOutcome(state) !== null) return state;
   if (state.playerStatuses.burn <= 0 && state.playerStatuses.poison <= 0 && state.playerStatuses.bleed <= 0) {
     let nextState = state;
     if (nextState.pendingEnemyBleedLeechHealing !== 0) {
