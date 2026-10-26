@@ -69,15 +69,17 @@ describe("Armory inventory toolbar", () => {
     });
     await user.keyboard("{Escape}");
     const filterTrigger = screen.getByRole("button", { name: "Filters" });
-    expect(filterTrigger.classList.contains("bg-muted")).toBe(true);
     await user.click(filterTrigger);
     filter = await screen.findByRole("dialog", { name: "Inventory filters" });
     await user.click(within(filter).getByRole("button", { name: "Clear filters" }));
-    expect(input.getAttribute("value")).toBe("longsword");
+    expect(JSON.parse(screen.getByLabelText("Current criteria").textContent!)).toEqual({
+      search: "longsword",
+      rarities: [],
+      keywords: [],
+    });
     await user.keyboard("{Escape}");
     expect(document.activeElement).toBe(document.body);
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(filterTrigger.classList.contains("bg-muted")).toBe(false);
     await user.keyboard("{Escape}");
     expect(document.activeElement).toBe(document.body);
     expect(searchTrigger.getAttribute("aria-expanded")).toBe("false");

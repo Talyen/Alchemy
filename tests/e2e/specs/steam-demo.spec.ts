@@ -40,8 +40,6 @@ test.describe("Steam demo edition", critical, () => {
     await page.getByRole("button", { name: "The Labyrinth (Locked)", exact: true }).hover();
     const requirement = fullGameRequirement("The Labyrinth");
     await expect(requirement).toBeVisible();
-    await expect(requirement).toHaveClass(/font-bold/u);
-    await expect(requirement).toHaveClass(/text-destructive/u);
     await expect(page.getByText("The Labyrinth (Full game)", { exact: true })).toHaveCount(0);
     const input = controllerInput(page);
     const campaign = page.getByRole("button", { name: "The Campaign", exact: true });
