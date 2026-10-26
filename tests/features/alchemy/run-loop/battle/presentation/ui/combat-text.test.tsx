@@ -3,6 +3,10 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CombatTextRail } from "@/features/alchemy/run-loop/battle/presentation/ui/combat-text";
 import type { CombatTextBurst } from "@/features/alchemy/shared/types";
+import {
+  advanceCombatFeedback,
+  scheduleCombatFeedback,
+} from "@/features/alchemy/run-loop/battle/combat-feedback-queue";
 
 const protectedHit: CombatTextBurst = {
   id: "protected-hit",
@@ -89,7 +93,7 @@ describe("CombatTextRail", () => {
   });
 });
 
-it("shares one flight for direct damage and the named typed reaction with matching shine", () => {
+it("keeps the direct flight independent while pairing the reaction name and bonus with matching shine", () => {
   const prepared = prepareCombatFeedback(
     [
       { target: "enemy", kind: "notice", stat: "physical", text: "Shatter", signal: "reaction", reactionId: "shatter" },
@@ -117,8 +121,11 @@ it("shares one flight for direct damage and the named typed reaction with matchi
   expect(bonus?.getAttribute("aria-label")).toBe("Physical: -8");
   const name = container.querySelector('[data-reaction="shatter"]');
   expect(name?.textContent).toBe("Shatter");
-  expect(name?.closest('[data-testid="combat-feedback-action"]')).toBe(
+  expect(name?.closest('[data-testid="combat-feedback-action"]')).not.toBe(
     container.querySelector('[data-testid="combat-text"]')?.closest('[data-testid="combat-feedback-action"]'),
+  );
+  expect(name?.closest('[data-testid="combat-feedback-action"]')).toBe(
+    bonus?.closest('[data-testid="combat-feedback-action"]'),
   );
   expect((name!.firstElementChild as HTMLElement).style.webkitTextStroke).toBe("0px");
   expect(name?.querySelector("svg")).toBeNull();
@@ -127,6 +134,41 @@ it("shares one flight for direct damage and the named typed reaction with matchi
   expect(bonus?.querySelector(".reaction-text-shine")?.getAttribute("style")).toBe(
     name?.firstElementChild?.getAttribute("style"),
   );
+});
+
+it("fans direct hits independently and gives simultaneous reactions separate stable routes", () => {
+  const prepared = prepareCombatFeedback(
+    [
+      { target: "enemy", kind: "damage", stat: "burn", amount: 8, feedback: "primary" },
+      { target: "enemy", kind: "damage", stat: "nature", amount: 7 },
+      { target: "enemy", kind: "notice", stat: "burn", text: "", signal: "reaction", reactionId: "frostfire" },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 6, reactionId: "frostfire" },
+      { target: "enemy", kind: "notice", stat: "burn", text: "", signal: "reaction", reactionId: "venomflash" },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 2, reactionId: "venomflash" },
+    ],
+    4,
+    0,
+    1050,
+  );
+  const scheduled = scheduleCombatFeedback(prepared.bursts, prepared.reactions, 0, 1050, false);
+  const hits = scheduled.floatingCombatBursts[0]!.entries;
+  expect(hits[0]!.presentation!.spread).not.toBe(hits[1]!.presentation!.spread);
+  expect(scheduled.reactionAnnouncements[0]!.presentation!.spread).not.toBe(
+    scheduled.reactionAnnouncements[1]!.presentation!.spread,
+  );
+  expect([...hits, ...scheduled.reactionAnnouncements].every((entry) => entry.presentation!.launchAt <= 180)).toBe(
+    true,
+  );
+  const shown = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 180);
+  const { container } = render(
+    <CombatTextRail bursts={shown.floatingCombatBursts} reactions={shown.reactionAnnouncements} />,
+  );
+  expect(container.querySelectorAll('[data-testid="combat-feedback-action"]')).toHaveLength(4);
+  for (const id of ["frostfire", "venomflash"]) {
+    const pair = container.querySelector(`[data-reaction="${id}"]`)!.closest('[data-testid="combat-feedback-action"]');
+    expect(pair?.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
+    expect(pair?.querySelector(`[data-reaction-id="${id}"]`)).not.toBeNull();
+  }
 });
 
 it("does not mount queued text early and preserves the active flight when another entry arrives", () => {

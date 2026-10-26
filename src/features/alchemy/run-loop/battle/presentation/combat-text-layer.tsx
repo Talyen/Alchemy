@@ -100,7 +100,7 @@ function CombatTextTarget({
   reactions: ReactionAnnouncement[];
 }) {
   if (bursts.length === 0 && reactions.length === 0) return null;
-  // Portraits establish their own transform stacking contexts. Text must sit above card flights in the scene.
+  // Portrait transforms must not trap feedback; card flights remain above this scene layer.
   return (
     <div
       ref={layerRef}

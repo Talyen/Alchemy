@@ -17,10 +17,12 @@ export function prepareCombatFeedback(
   // Resolved frames can be saved and replayed; presentation must never mutate their events.
   for (const event of events) {
     if (event.kind === "notice" && event.signal === "reaction") {
-      let announcement = reactions.find((entry) => entry.target === event.target);
+      let announcement = reactions.find(
+        (entry) => entry.target === event.target && entry.reactionIds.includes(event.reactionId),
+      );
       if (!announcement) {
         announcement = {
-          id: `reaction-${actionId}-${event.target}`,
+          id: `reaction-${actionId}-${event.target}-${event.reactionId}`,
           burstId: `combat-burst-${actionId}-${event.target}`,
           target: event.target,
           reactionIds: [],
@@ -97,14 +99,14 @@ export function prepareCombatFeedback(
         ...(event.kind !== "notice" ? { reservedDigits: String(Math.abs(event.amount)).length + 1 } : {}),
       })),
     };
-    const reaction = reactions.find((entry) => entry.target === target);
-    if (reaction) {
+    for (const reaction of reactions.filter((entry) => entry.target === target)) {
       reaction.entries = burst.entries.filter(
         (entry) =>
           entry.kind === "damage" &&
           entry.impact !== false &&
           DAMAGE_TYPES.includes(entry.stat as DamageType) &&
-          (entry.feedback !== "secondary" || entry.reactionId !== undefined),
+          entry.reactionId !== undefined &&
+          reaction.reactionIds.includes(entry.reactionId),
       );
       burst.entries = burst.entries.filter((entry) => !reaction.entries.includes(entry));
     }
