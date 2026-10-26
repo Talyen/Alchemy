@@ -1,5 +1,6 @@
 import {
   carryCardDescriptionMarks,
+  CARD_MAGNITUDE_FIELDS,
   cardMagnitude,
   createEffectDescription,
   getCardDescription,
@@ -12,6 +13,60 @@ import {
   type CardMagnitude,
 } from "@/lib/game-data";
 import { capitalizeWord } from "@/lib/utils";
+
+const magnitudeFields = new Set<string>(CARD_MAGNITUDE_FIELDS);
+function ruleShape(effect: BattleCardEffect | undefined): string {
+  return JSON.stringify(
+    Object.entries(effect ?? {})
+      .filter(([field, value]) => value !== undefined && !magnitudeFields.has(field))
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+  );
+}
+
+function rangeRuleClauses(
+  card: BattleCard,
+  effects: BattleCardEffect[],
+  description: CardDescription,
+): CardDescription {
+  const visit = (source: readonly BattleCardEffect[], prefix: number[] = []) => {
+    source.forEach((effect, index) => {
+      const path = [...prefix, index];
+      const address = { effectIndex: path[0]!, effectPath: path.slice(1) };
+      if (effect.kind === "damage" && getCardEffect(effects, address)?.kind === "random-damage") {
+        const clauses = createEffectDescription([effect]).filter(
+          (line) => line.role === "effect" && line.parts.every((part) => typeof part === "string"),
+        );
+        if (clauses.length)
+          description = description.flatMap((line) => {
+            const positions = line.parts.flatMap((part, at) =>
+              typeof part !== "string" &&
+              part.references.some(
+                (reference) => [reference.effectIndex, ...(reference.effectPath ?? [])].join(".") === path.join("."),
+              )
+                ? [at]
+                : [],
+            );
+            if (!positions.length) return [line];
+            if (path.length === 1) return [line, ...clauses];
+            const end = positions.at(-1)! + 2;
+            return [
+              {
+                ...line,
+                parts: [
+                  ...line.parts.slice(0, end),
+                  ...clauses.flatMap((clause) => ["; ", ...clause.parts]),
+                  ...line.parts.slice(end),
+                ],
+              },
+            ];
+          });
+      }
+      if (effect.kind === "chance") visit([...effect.successEffects, ...effect.failureEffects], path);
+    });
+  };
+  visit(card.effects);
+  return description;
+}
 
 function signature(line: CardDescription[number]): string {
   return line.parts
@@ -41,13 +96,25 @@ export function descriptionFitsEffects(description: CardDescription, effects: re
 /** Split compressed clauses only when their live values no longer share one literal. */
 export function projectCardDescription(card: BattleCard, effects: BattleCardEffect[], rebuild: boolean): BattleCard {
   const previous = getCardDescription(card);
-  if (!rebuild && descriptionFitsEffects(previous, effects)) return withCardDescription({ ...card, effects }, previous);
-  const canonical = createEffectDescription(effects).filter((line) => line.role === "effect");
+  const sameRules = (line: CardDescription[number]) =>
+    line.parts
+      .flatMap((part) => (typeof part === "string" ? [] : part.references))
+      .every(
+        (reference) =>
+          ruleShape(getCardEffect(card.effects, reference)) === ruleShape(getCardEffect(effects, reference)),
+      );
+  if (!rebuild && descriptionFitsEffects(previous, effects) && previous.every(sameRules))
+    return withCardDescription({ ...card, effects }, previous);
+  const canonical = rangeRuleClauses(
+    card,
+    effects,
+    createEffectDescription(effects).filter((line) => line.role === "effect"),
+  );
   const originals = new Map(previous.filter((line) => signature(line)).map((line) => [signature(line), line]));
   const originalCanonical = new Set(createEffectDescription(card.effects).map((line) => JSON.stringify(line.parts)));
   const description = canonical.map((line) => {
     const original = originals.get(signature(line));
-    return original && descriptionFitsEffects([original], effects) ? original : line;
+    return original && sameRules(original) && descriptionFitsEffects([original], effects) ? original : line;
   });
   // Saved custom prose and ingredient trailers are not replaced by the generic formatter.
   description.push(

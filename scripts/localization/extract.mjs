@@ -254,6 +254,13 @@ export async function extractMessages() {
     }
 
     const model = await server.ssrLoadModule("/src/lib/game-data/card-description-model.ts");
+    // Finite state alternatives can yield a single-type range even when the
+    // authored effect was fixed damage. These are native presentation forms.
+    for (const damageType of data.DAMAGE_TYPES) {
+      const effects = [{ kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: [damageType] }];
+      for (const line of model.renderCardDescription(effects, data.createEffectDescription(effects)).localizedLines)
+        addDescription(line, "Battle card known-modifier preview");
+    }
     for (const card of data.cardLibrary) {
       if (!card.description) continue;
       for (const line of model.renderCardDescription(card.effects, card.description).localizedLines) {

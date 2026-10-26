@@ -23,8 +23,6 @@ import {
   describeKnownStatusOptions,
   projectCardDescription,
 } from "./card-description-projection";
-import { applyPotionMultiplier, cardPotionMultiplier } from "./amount-helpers";
-import { scaleGoldReward } from "./resource-state";
 
 type DamageEffect = ObservedAttack;
 
@@ -308,18 +306,6 @@ export function getBattleCardDescriptionInspection(
       )
         rebuild = true;
       return { ...view, ...amounts };
-    }
-    // Draw identities can stop the replay, but cannot change these nominal
-    // capacities or the Potion multiplier frozen for this authored execution.
-    if (outcome?.kind === "unknown") {
-      const potionMult = cardPotionMultiplier(snapshot, card);
-      if (effect.kind === "wish" || effect.kind === "draw-cards" || effect.kind === "companion-action")
-        return { ...effect, amount: applyPotionMultiplier(effect.amount, potionMult) };
-      if (effect.kind === "gain-gold")
-        return {
-          ...effect,
-          amount: scaleGoldReward(applyPotionMultiplier(effect.amount, potionMult), snapshot.gearEffects),
-        };
     }
     const utility = withKnownUtilityAmount(effect, outcome);
     if (utility) return utility;

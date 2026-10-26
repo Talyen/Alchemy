@@ -340,4 +340,15 @@ describe("complete catalog deterministic preview coverage", () => {
       "Archery",
     ]);
   });
+
+  it("retains Armor and Block exceptions when an earlier random Forge grant creates a damage range", () => {
+    const card = createMixedPotion(cardById.anvil!, cardById.stab!);
+    const state = stateFor(card, { talentEffects: { forgeBonusChance: 25 } });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
+      "Gain 2 Forge",
+      "Deal 5–6 Physical damage",
+      "Ignores Armor and Block",
+      "Consume",
+    ]);
+  });
 });

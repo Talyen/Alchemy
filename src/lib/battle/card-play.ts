@@ -2,7 +2,7 @@ import { applyEmergencyWishForEmptyDraw } from "./wish";
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { mergeCombatText } from "./combat-text-events";
-import { harmfulPlayerStatusIds, type BattleCard } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, CombatTextEvent } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { processEncounterTraitsForCardCopies } from "./encounter-trait-events";
@@ -16,6 +16,8 @@ import { applyResonantChimeTrinket, resolveCardEffectChain, shouldElementalTalen
 import { cardHasKeyword } from "./card-classification";
 import { applyBlockReward, gainManaWithCombatText } from "./player-rewards";
 import { handlePostPlayCardDestination } from "./card-consume";
+import { applyPotionMultiplier, cardPotionMultiplier } from "./amount-helpers";
+import { scaleGoldReward } from "./resource-state";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
   const { consumedFlags, disarmedFlags, spentArmedDiscount, uniqueDiscounts } = payment;
@@ -145,6 +147,28 @@ export function resolveInspectedCardPlay(
   card: BattleCard,
   handIndex: number,
 ): BattleResolution {
+  // These nominal capacities cannot depend on unknown drawn identities. Record
+  // their shared production scaling before a draw stops the inspected action.
+  const potionMultiplier = cardPotionMultiplier(state, card);
+  const observeIndependent = (effects: readonly BattleCardEffect[]) => {
+    for (const effect of effects) {
+      if (effect.kind === "chance") observeIndependent([...effect.successEffects, ...effect.failureEffects]);
+      else if (effect.kind === "wish" || effect.kind === "draw-cards" || effect.kind === "companion-action")
+        state.observer.descriptionMagnitude?.("amount", applyPotionMultiplier(effect.amount, potionMultiplier), effect);
+      else if (
+        (effect.kind === "remove-harmful-status" && !effect.removeAll && effect.amount !== undefined) ||
+        (effect.kind === "remove-enemy-armor" && !effect.removeAll && !effect.halve && effect.amount !== undefined)
+      )
+        state.observer.descriptionMagnitude?.("amount", applyPotionMultiplier(effect.amount, potionMultiplier), effect);
+      else if (effect.kind === "gain-gold")
+        state.observer.descriptionMagnitude?.(
+          "amount",
+          scaleGoldReward(applyPotionMultiplier(effect.amount, potionMultiplier), state.gearEffects),
+          effect,
+        );
+    }
+  };
+  observeIndependent(card.effects);
   return resolveCardPlay(state, card, handIndex, computeCardPayment(state, card));
 }
 

@@ -354,6 +354,19 @@ describe("battle damage inspection", () => {
       getBattleDamageInspectionCard(makeTestCard({ effects: [hit()] }), battleSnapshot(state)).descriptionLines,
     ).toEqual(["Deal 8 Poison damage"]);
     expect(state.flags.nextHitPoison).toBe(true);
+    expect(getBattleCardDescriptionInspection(makeTestCard({ effects: [hit()] }), state).descriptionLines).toEqual([
+      "Deal 8 Poison damage",
+    ]);
+    expect(
+      getBattleCardDescriptionInspection(
+        makeTestCard({
+          effects: [
+            { kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["stun", "physical", "bleed"] },
+          ],
+        }),
+        state,
+      ).descriptionLines,
+    ).toEqual(["Deal 3–6 Poison damage"]);
   });
 
   it.each([

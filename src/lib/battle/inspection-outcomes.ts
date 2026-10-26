@@ -104,11 +104,11 @@ export function inspectResolutionOutcomes(
       directFeedback: (amounts) => {
         if (current) outcome.directAmounts.set(current, amounts);
       },
-      descriptionMagnitude: (field, amount) => {
-        if (!current) return;
-        const magnitudes = outcome.magnitudes.get(current) ?? new Map<ObservedMagnitudeField, number>();
+      descriptionMagnitude: (field, amount, source = current) => {
+        if (!source || !sources.has(source)) return;
+        const magnitudes = outcome.magnitudes.get(source) ?? new Map<ObservedMagnitudeField, number>();
         magnitudes.set(field, amount);
-        outcome.magnitudes.set(current, magnitudes);
+        outcome.magnitudes.set(source, magnitudes);
       },
     };
     const decide = (decision: RandomDecision): number => {

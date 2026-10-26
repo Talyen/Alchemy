@@ -14,7 +14,7 @@ export interface BattleResolutionObserver {
   attack: (packet: ObservedAttack) => void;
   directFeedback?: (amounts: readonly ObservedDirectAmount[]) => void;
   /** Nominal authored counts before caps, draws or other unknown dependent work. */
-  descriptionMagnitude?: (field: ObservedMagnitudeField, amount: number) => void;
+  descriptionMagnitude?: (field: ObservedMagnitudeField, amount: number, source?: BattleCardEffect) => void;
   unknownDraw: () => never;
 }
 

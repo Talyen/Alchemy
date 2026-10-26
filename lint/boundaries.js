@@ -185,10 +185,24 @@ export const BOUNDARY_CONFIGS = [
             "!./enemy-description",
             "!./inspection-outcomes",
             "!./resolution-observer",
+            "!./card-description-projection",
             "!./types",
           ],
           message:
             "Inspection observes production card and enemy actions; combat rules belong to their execution owners.",
+        },
+      ],
+    ],
+    BATTLE_NO_FRAMEWORK_PATHS,
+  ),
+  scope(
+    ["src/lib/battle/card-description-projection.ts"],
+    [
+      ...battlePatterns,
+      [
+        {
+          group: ["./*"],
+          message: "Description projection formats observed values; it does not calculate combat rules.",
         },
       ],
     ],
