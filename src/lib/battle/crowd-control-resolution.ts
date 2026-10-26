@@ -15,9 +15,7 @@ import { mergeCombatText } from "./combat-text-events";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { setEnemyStatus } from "./status-state";
-import type { BattleState, CombatTextEvent } from "./types";
-
-type Reward = (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
+import type { BattleState, CombatTextEvent, BattleResourceReward } from "./types";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -30,10 +28,10 @@ export interface CrowdControlTriggerBonuses {
 }
 
 interface CrowdControlBonusPort {
-  draw: Reward;
-  block: Reward;
-  forge: Reward;
-  mana: Reward;
+  draw: BattleResourceReward;
+  block: BattleResourceReward;
+  forge: BattleResourceReward;
+  mana: BattleResourceReward;
 }
 
 export function resolveCrowdControlBonuses(
@@ -85,10 +83,10 @@ export function resolveCrowdControlBonuses(
 export interface CrowdControlResolutionPort {
   chance: (chance: number, state: BattleState) => boolean;
   bonuses: (state: BattleState, bonuses: CrowdControlTriggerBonuses, texts: CombatTextEvent[]) => BattleState;
-  physical: Reward;
+  physical: BattleResourceReward;
   thunderstone: (state: BattleState, texts: CombatTextEvent[]) => BattleState;
-  gold: Reward;
-  mana: Reward;
+  gold: BattleResourceReward;
+  mana: BattleResourceReward;
 }
 
 /** Both hosts share eligibility and reward order; inspection supplies only known outcomes. */

@@ -1,4 +1,4 @@
-import type { BattleState, CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent, BattleResourceReward } from "./types";
 import type { FollowUpHitRequest } from "./player-hit-core";
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
 import { getBattleOutcome } from "./battle-outcome";
@@ -12,21 +12,19 @@ import {
   WISH_TRINKET_FORK_PERCENT,
 } from "../game-constants";
 
-type Reward = (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
-
 /** Hosts supply uncertainty and execution; this owner retains Wish eligibility and stage ordering. */
 export interface WishRewardPort {
   chance: (chance: number, state: BattleState) => boolean;
-  gold: Reward;
-  heal: Reward;
-  cleanse: Reward;
-  block: Reward;
-  mana: Reward;
-  draw: Reward;
-  forge: Reward;
-  armor: Reward;
+  gold: BattleResourceReward;
+  heal: BattleResourceReward;
+  cleanse: BattleResourceReward;
+  block: BattleResourceReward;
+  mana: BattleResourceReward;
+  draw: BattleResourceReward;
+  forge: BattleResourceReward;
+  armor: BattleResourceReward;
   hit: (state: BattleState, request: FollowUpHitRequest, texts: CombatTextEvent[]) => BattleState;
-  burningEnemyHit: Reward;
+  burningEnemyHit: BattleResourceReward;
 }
 
 export function resolveWishRewards(

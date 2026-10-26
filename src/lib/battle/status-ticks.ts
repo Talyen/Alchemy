@@ -30,8 +30,16 @@ function emitDotCombatText(
   target: "enemy" | "player",
   stat: "burn" | "poison" | "bleed",
   amount: number,
+  healthLost = amount,
 ) {
-  mergeCombatText(combatTexts, { target, kind: "damage", stat, amount, periodic: true });
+  mergeCombatText(combatTexts, {
+    target,
+    kind: "damage",
+    stat,
+    amount,
+    periodic: true,
+    ...(healthLost !== amount ? { healthLost } : {}),
+  });
 }
 
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[], recordDamage: (amount: number) => void) {
@@ -39,7 +47,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[], recordDama
   if (damage <= 0) return state;
 
   const finalDamage = projectEnemyDotDamage(state, "burn");
-  emitDotCombatText(combatTexts, "enemy", "burn", finalDamage);
+  emitDotCombatText(combatTexts, "enemy", "burn", finalDamage, Math.min(finalDamage, state.enemyHealth));
   let nextBurn = state.enemyStatuses.burn;
   const preventsDecay =
     state.talentEffects.burnPreventDecayChance > 0 &&
@@ -57,7 +65,7 @@ export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
   const finalDamage = projectEnemyDotDamage(state, "poison");
-  emitDotCombatText(combatTexts, "enemy", "poison", finalDamage);
+  emitDotCombatText(combatTexts, "enemy", "poison", finalDamage, Math.min(finalDamage, state.enemyHealth));
   const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
   if (rollBattleChance(state.talentEffects.poisonGainChance, state)) {
@@ -90,7 +98,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[], recordDam
 
   const finalDamage = projectEnemyDotDamage(state, "bleed");
 
-  emitDotCombatText(combatTexts, "enemy", "bleed", finalDamage);
+  emitDotCombatText(combatTexts, "enemy", "bleed", finalDamage, Math.min(finalDamage, state.enemyHealth));
   const healthBeforeBleed = state.enemyHealth;
   const nextBleed = state.gearEffects.bleedDecaysByHalf > 0 ? decayHalvedStatus(damage) : 0;
   return dealEnemyDotTick(state, "bleed", finalDamage, nextBleed, combatTexts, (nextState, hit) => {

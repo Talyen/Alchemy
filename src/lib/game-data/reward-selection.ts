@@ -1,15 +1,11 @@
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE_FRACTION } from "../game-constants";
 import { pickRandom, shuffle } from "@/lib/rng";
 import { getCardKeywords } from "./keywords";
-import { visitBattleCardEffects } from "./effect-tree";
+import { isCompanionSummonCard } from "./cards/card-pools";
 import type { BattleCard, KeywordId } from "./types";
 
-function isCompanionCard(card: Pick<BattleCard, "effects">): boolean {
-  return visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
-}
-
 function deckHasCompanionCard(deck: ReadonlyArray<Pick<BattleCard, "effects">>): boolean {
-  return deck.some(isCompanionCard);
+  return deck.some(isCompanionSummonCard);
 }
 
 function buildKeywordFrequency(deck: BattleCard[], seedKeywords: KeywordId[]): Record<string, number> {
@@ -33,7 +29,7 @@ function buildAffinityPool(
     let score = 0;
     for (const kw of getCardKeywords(card)) score += freq[kw] ?? 0;
     if (!deckIds.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
-    if (companionScoreBonus > 0 && isCompanionCard(card)) score += companionScoreBonus;
+    if (companionScoreBonus > 0 && isCompanionSummonCard(card)) score += companionScoreBonus;
     return score;
   };
   const poolSize = Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, candidates.length);
@@ -45,7 +41,7 @@ function buildAffinityPool(
 
 function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number): BattleCard[] {
   return candidates.filter(
-    (card) => !isCompanionCard(card) || rng() < REWARD_SELECTION_CONFIG.companionOwnedKeepFraction,
+    (card) => !isCompanionSummonCard(card) || rng() < REWARD_SELECTION_CONFIG.companionOwnedKeepFraction,
   );
 }
 
@@ -90,13 +86,13 @@ export function selectRewardCards(
   const hasCompanion = deckHasCompanionCard(deck);
   // A Companion-only Wish still offers all its choices when the deck already
   // contains summons; dampening belongs to mixed reward pools.
-  const candidates = hasCompanion && !pool.every(isCompanionCard) ? dampenCompanionCandidates(pool, rng) : pool;
+  const candidates = hasCompanion && !pool.every(isCompanionSummonCard) ? dampenCompanionCandidates(pool, rng) : pool;
   const effectiveCandidates = candidates.length > 0 ? candidates : pool;
   const boostCompanions = !hasCompanion;
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;
   const randomPool = shuffle(
     companionCopies > 1
-      ? [...effectiveCandidates, ...effectiveCandidates.filter(isCompanionCard)]
+      ? [...effectiveCandidates, ...effectiveCandidates.filter(isCompanionSummonCard)]
       : effectiveCandidates,
     rng,
   );
