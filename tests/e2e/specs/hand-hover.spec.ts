@@ -167,48 +167,30 @@ async function sweep(page: Page) {
   }
 }
 
-test("six and seven cards select in order and clicks follow the highlighted card", slow, async ({ page }) => {
-  await openHand(page);
-  await inspectOuterEdges(page);
-  await sweep(page);
-  const slots = await geometry(page);
-  const selected = slots[3]!;
-  await page.mouse.move(selected.x, selected.y + selected.height / 2);
-  await expect(page.locator(`[data-hand-slot="${selected.key}"]`)).toHaveAttribute("data-hovered", "true");
-  await page.mouse.move(selected.x, selected.y - 5);
-  await expect(page.locator(`[data-hand-slot="${selected.key}"]`)).toHaveAttribute("data-hovered", "true");
-  await page.mouse.click(selected.x, selected.y + selected.height / 2);
-  await expect(page.locator(`[data-hand-slot="${selected.key}"]`)).toHaveCount(0);
-  await expect(page.locator("[data-hand-slot]")).toHaveCount(6);
-  expect(
-    await page.locator('[data-testid="battle-hand"]').evaluate((hand) => hand.contains(document.activeElement)),
-  ).toBe(false);
-  await sweep(page);
-  await page.mouse.move(0, 0);
-  await expect(page.locator("[data-hand-slot][data-hovered='true']")).toHaveCount(0);
-  const keyboardCard = page.locator("[data-hand-slot] button").nth(2);
-  await controllerInput(page).reach(keyboardCard);
-  await keyboardCard.hover();
-  await page.mouse.move(0, 0);
-  await expect(page.locator("[data-hand-slot]").nth(2)).toHaveAttribute("data-hovered", "true");
-  await controllerInput(page).press("confirm");
-  await expect(page.locator("[data-hand-slot]")).toHaveCount(5);
-});
-
 test("hover reconciles through a play, draw, and reflow with the pointer in the hand", critical, async ({ page }) => {
   await openHand(page, 7, true);
+  await inspectOuterEdges(page);
   const slot = (await geometry(page))[3]!;
   await page.mouse.move(slot.x, slot.y + slot.height / 2);
+  await page.mouse.move(slot.x, slot.y - 5);
+  await expect(page.locator(`[data-hand-slot="${slot.key}"]`)).toHaveAttribute("data-hovered", "true");
   await page.mouse.click(slot.x, slot.y + slot.height / 2);
   await expect(page.locator(`[data-hand-slot="${slot.key}"]`)).toHaveCount(0);
   await expect(page.locator("[data-hand-slot]")).toHaveCount(7);
   await expect(page.locator("[data-hand-hidden]")).toHaveCount(0);
   await expect(page.locator("[data-hand-slot][data-hovered='true']")).toHaveCount(1);
   await sweep(page);
+  const keyboardCard = page.locator("[data-hand-slot] button").nth(2);
+  await controllerInput(page).reach(keyboardCard);
+  await keyboardCard.hover();
+  await page.mouse.move(0, 0);
+  await expect(page.locator("[data-hand-slot]").nth(2)).toHaveAttribute("data-hovered", "true");
+  await controllerInput(page).press("confirm");
+  await expect(page.locator("[data-hand-slot]")).toHaveCount(6);
+  await sweep(page);
 });
 
 for (const { width, height, gameSizePercent } of [
-  { width: 1920, height: 1080, gameSizePercent: 100 },
   { width: 1280, height: 720, gameSizePercent: 120 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {

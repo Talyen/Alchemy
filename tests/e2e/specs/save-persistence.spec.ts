@@ -1,17 +1,7 @@
 import { resumeInjectedRun } from "../navigation";
-import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
+import { savedActivityFixture } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
-import {
-  injectExactSave,
-  injectActiveBattle,
-  makeCard,
-  makeGoblinBattleState,
-  readSavedGame,
-  seedRandom,
-  enterPrimaryRewardScreen,
-  withSavedGame,
-} from "../../browser-helpers";
-import { BattlePage } from "../../pages/battle-page";
+import { injectExactSave, readSavedGame, enterPrimaryRewardScreen, withSavedGame } from "../../browser-helpers";
 import { DestinationPage } from "../../pages/destination-page";
 import { RewardPage } from "../../pages/reward-page";
 import { critical } from "../../playwright-tags";
@@ -45,34 +35,6 @@ test("current-format resume retains Health, Gold, and offered destinations", cri
     expect(restored.gold).toBe(42);
     expect(restored.activeRun?.runPlayerHealth).toBe(18);
     expect(restored.activeRun?.destinationIndexInAct).toBe(2);
-  });
-});
-
-test("played cards and the next enemy turn survive a fresh-page resume", critical, async ({ page, fastBattle }) => {
-  void fastBattle;
-  await seedRandom(page, 42);
-  const deck = Array.from({ length: 6 }, () => makeCard({ cost: 0 }));
-  const state = makeGoblinBattleState({ hand: deck.slice(0, 4), deck: deck.slice(4) });
-  state.currentEnemy = { ...state.currentEnemy, abilityIds: ["slash", "sunder", "burning-blade"] };
-  await injectActiveBattle(page, state, { runDeck: deck, runPlayerHealth: 18 });
-  const battle = new BattlePage(page);
-  await battle.playFirstCard();
-  await expect.poll(() => battle.enemyHealth()).toBeLessThan(40);
-  await battle.endTurn();
-  await expect.poll(() => battle.playerHealth()).toBeLessThan(18);
-  await expect
-    .poll(async () => savedActivityData((await readSavedGame(page)).activeRun, "battle")?.battleState.turn)
-    .toBe(3);
-  const acknowledged = savedActivityData((await readSavedGame(page)).activeRun!, "battle")!.battleState;
-  await withSavedGame(page, async (resumed) => {
-    const restored = new BattlePage(resumed);
-    await expect(restored.endTurnBtn).toBeEnabled();
-    await expect.poll(() => restored.playerHealth()).toBe(acknowledged.playerHealth);
-    await expect.poll(() => restored.enemyHealth()).toBe(acknowledged.enemyHealth);
-    await expect(restored.hand).toHaveCount(acknowledged.hand.length);
-    expect(savedActivityData((await readSavedGame(resumed)).activeRun, "battle")?.battleState.turn).toBe(3);
-    await restored.playFirstCard();
-    await expect.poll(() => restored.handCount()).toBe(acknowledged.hand.length - 1);
   });
 });
 

@@ -1,11 +1,18 @@
 import { savedActivityData } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
-import { injectActiveBattle, makeCard, makeGoblinBattleState, readSavedGame, seedRandom } from "../../browser-helpers";
+import {
+  injectActiveBattle,
+  makeCard,
+  makeGoblinBattleState,
+  readSavedGame,
+  seedRandom,
+  withSavedGame,
+} from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { readSfxPlays, resetSfxPlays, trackSfxPlays } from "../../pages/audio-harness";
 import { critical } from "../../playwright-tags";
 
-test("Slash starts its SFX and rapid End Turn advances once and restores the hand", critical, async ({ page }) => {
+test("rapid End Turn advances once, plays SFX, and survives resume", critical, async ({ page }) => {
   test.setTimeout(45_000);
   await seedRandom(page, 42);
   await trackSfxPlays(page, "sword-attack-1.");
@@ -20,6 +27,7 @@ test("Slash starts its SFX and rapid End Turn advances once and restores the han
   await resetSfxPlays(page);
   await battle.playFirstCard();
   await expect(battle.hand).toHaveCount(3);
+  await expect.poll(() => battle.enemyHealth()).toBeLessThan(40);
   await expect.poll(() => readSfxPlays(page)).toBeGreaterThan(0);
   const health = await battle.playerHealth();
   await battle.endTurnBtn.click({ clickCount: 3, delay: 20 });
@@ -34,4 +42,17 @@ test("Slash starts its SFX and rapid End Turn advances once and restores the han
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(await battle.playerHealth()).toBe(after);
   expect(savedActivityData((await readSavedGame(page)).activeRun, "battle")?.battleState.turn).toBe(3);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const acknowledged = savedActivityData((await readSavedGame(page)).activeRun!, "battle")!.battleState;
+  await withSavedGame(page, async (resumed) => {
+    const restored = new BattlePage(resumed);
+    await expect(restored.endTurnBtn).toBeEnabled();
+    await expect.poll(() => restored.playerHealth()).toBe(acknowledged.playerHealth);
+    await expect.poll(() => restored.enemyHealth()).toBe(acknowledged.enemyHealth);
+    await expect(restored.hand).toHaveCount(acknowledged.hand.length);
+    expect(savedActivityData((await readSavedGame(resumed)).activeRun, "battle")?.battleState.turn).toBe(3);
+    await restored.playFirstCard();
+    await expect(restored.hand).toHaveCount(acknowledged.hand.length - 1);
+  });
 });

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { startAtDestination } from "../e2e/battle-setup";
 
 export class CorruptionPage {
@@ -23,14 +23,5 @@ export class CorruptionPage {
   async open() {
     await startAtDestination(this.page, {}, { forceDestination: "Corruption" });
     await this.page.getByRole("button", { name: "Corruption" }).click();
-  }
-
-  async selectAndCorrupt(index = 0) {
-    await this.corruptBtn.click();
-    await expect(this.cardGrid).toBeVisible({ timeout: 3000 });
-    const card = this.cardGrid.locator('[aria-label^="Select "]').nth(index);
-    await card.click({ force: true });
-    await this.confirmCorruptBtn.click();
-    await expect(this.continueBtn).toBeVisible({ timeout: 3000 });
   }
 }

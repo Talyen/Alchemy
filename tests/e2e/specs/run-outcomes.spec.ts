@@ -6,7 +6,6 @@ import {
   winBattleAndClaimReward,
   makeGoblinBattleState,
   makeHighDamageCard,
-  SAVE_KEY,
   readSavedGame,
   resumeInjectedRun,
 } from "../../browser-helpers";
@@ -151,11 +150,7 @@ test.describe("Run Outcomes", () => {
         await page.getByRole("button", { name: "Main Menu" }).click();
         await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 15000 });
 
-        const activeRun = await page.evaluate((saveKey) => {
-          const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-          return save.activeRun ?? null;
-        }, SAVE_KEY);
-        expect(activeRun).toBeNull();
+        await expect.poll(async () => (await readSavedGame(page)).activeRun).toBeNull();
       },
     );
   });

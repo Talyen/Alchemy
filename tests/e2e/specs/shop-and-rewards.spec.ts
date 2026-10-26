@@ -3,13 +3,7 @@ import { test } from "../../fixtures/e2e";
 import { ShopPage } from "../../pages/shop-page";
 import { RewardPage } from "../../pages/reward-page";
 import { DestinationPage } from "../../pages/destination-page";
-import {
-  enterPrimaryRewardScreen,
-  readSavedGame,
-  withSavedGame,
-  SAVE_KEY,
-  startAtDestination,
-} from "../../browser-helpers";
+import { enterPrimaryRewardScreen, readSavedGame, withSavedGame, startAtDestination } from "../../browser-helpers";
 import type { ParsedSaveData } from "@/lib/validation";
 import { critical } from "../../playwright-tags";
 
@@ -49,12 +43,13 @@ test.describe("Reward Flow", () => {
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"], selectedId: "bash" });
     await page.getByRole("button", { name: "Skip", exact: true }).click();
     await new DestinationPage(page).expectVisible();
-    const deck = await page.evaluate(
-      (saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.runDeck as Array<{ id: string }>,
-      SAVE_KEY,
-    );
-    expect(deck).toHaveLength(6);
-    expect(deck.some((card) => card.id === "bash")).toBe(false);
+    await expect.poll(async () => (await readSavedGame(page)).activeRun?.activity.kind).toBe("destination");
+    await withSavedGame(page, async (resumed) => {
+      await new DestinationPage(resumed).expectVisible();
+      const deck = (await readSavedGame(resumed)).activeRun!.runDeck;
+      expect(deck).toHaveLength(6);
+      expect(deck.some((card) => card.id === "bash")).toBe(false);
+    });
   });
 
   for (const rewardType of ["boon", "trinket", "gear"] as const) {

@@ -72,7 +72,7 @@
     "sync:generated": "node scripts/sync-generated.mjs",
     "check:generated": "node scripts/sync-generated.mjs --check",
     "test:ship:unit": "node scripts/run-ship-unit.mjs",
-    "test:ship:e2e": "node scripts/run-compact.mjs playwright test tests/e2e/specs/save-persistence.spec.ts tests/e2e/specs/save-error-paths.spec.ts --project=chromium",
+    "test:ship:e2e": "node scripts/run-e2e-route.mjs save",
     "test:ship:desktop": "node scripts/run-compact.mjs playwright test --config playwright.electron.config.ts",
     "check:ship": "npm run lint:ci && npm run test:ship:unit && npm run assets:check:outputs && npm run build:desktop && npm run check:bundle",
     "check:ship:full": "npm run check:ship && npm run test:ship:e2e",

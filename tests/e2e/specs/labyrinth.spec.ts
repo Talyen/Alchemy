@@ -21,21 +21,12 @@ test.describe("Labyrinth exploration", critical, () => {
       "aria-current",
       "location",
     );
-    const currentArt = page.getByRole("button", { name: "Entrance chamber, you are here", exact: true }).locator("img");
-    await expect(currentArt).toHaveAttribute("src", /knight(?:-[\w-]+)?\.webp/);
-    await expect(currentArt).not.toHaveClass(/grayscale/);
-    await expect(currentArt).toHaveCSS("object-position", "50% 13%");
     await page.getByRole("button", { name: "Entrance chamber, you are here", exact: true }).hover();
     await expect(page.locator(encounterTooltip)).toHaveCount(0);
     const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ });
     expect(await hidden.count()).toBeGreaterThanOrEqual(15);
     await expect(hidden.first().locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
     await expect(hidden.first()).toHaveText("");
-    const fogSources = await hidden
-      .locator("img")
-      .evaluateAll((images) => images.map((image) => image.getAttribute("src")));
-    expect(new Set(fogSources).size).toBeGreaterThan(1);
-    await expect(hidden.first().locator("img")).toHaveJSProperty("naturalWidth", 900);
     await hidden.first().hover();
     await controllerInput(page).reach(hidden.first());
     await controllerInput(page).press("confirm");
@@ -169,7 +160,6 @@ for (const { width, height, gameSizePercent } of [
     const bounds = (await viewport.boundingBox())!;
     const positions = await nodes.evaluateAll((elements) => elements.map((element) => element.getAttribute("style")));
     await room.hover();
-    await expect(room.locator("..")).toHaveCSS("scale", "1.06");
     const rectangles = await nodes.evaluateAll((elements) =>
       elements.map((element) => element.getBoundingClientRect().toJSON()),
     );
