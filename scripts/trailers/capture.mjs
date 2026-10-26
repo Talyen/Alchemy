@@ -514,7 +514,7 @@ async function captureClip({
       frameCount,
       elapsedPhaseMs: costs,
       method: "offline-js-css-video-sampling",
-      ...(foregroundLyrics ? { presentationOverride: "Same-clock native lyric DOM composited above card ghosts" } : {}),
+      nativeSceneLayering: true,
       ...(pinVideoStart ? { mediaPhase: "active native video buffers pinned to frame zero before sampling" } : {}),
       startState,
       endState,
@@ -615,6 +615,8 @@ export async function captureRecipe({
   pinVideoStart = false,
   foregroundLyrics = false,
 }) {
+  if (foregroundLyrics)
+    throw new Error("Foreground lyric compositing is retired; capture native in-scene layering instead");
   if (!recover)
     writeJson(path.join(out, "capture-start.json"), {
       recipe,
