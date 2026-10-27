@@ -117,7 +117,9 @@ export async function preloadImagesInBatches(
   try {
     if (signal?.aborted || stop.signal.aborted) return;
     const batch = Number.isFinite(batchSize) && batchSize > 0 ? Math.max(1, Math.floor(batchSize)) : 4;
-    const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
+    const unique = new Set<string>();
+    for (const src of srcs) if (src) unique.add(src);
+    const uniqueSrcs = Array.from(unique);
     const total = uniqueSrcs.length;
     let loaded = 0;
     onProgress?.(loaded, total);

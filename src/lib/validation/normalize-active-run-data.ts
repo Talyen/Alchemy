@@ -119,7 +119,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
       },
     };
   if (activity.kind === "alchemist") {
-    const brewOffers = filterLiveCards(activity.data.brewOffers).filter(isStandardPotionCard);
+    const brewOffers = activity.data.brewOffers.filter((card) => isRecoverableCard(card) && isStandardPotionCard(card));
     activity = {
       ...activity,
       data: {
@@ -136,7 +136,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
   }
   if (activity.kind === "mystery" && mysteryVisit) activity = { ...activity, data: mysteryVisit };
   if (activity.kind === "campfire" && !activity.data.completed) {
-    const offers = filterLiveCards(activity.data.offers).filter(isStandardPotionCard);
+    const offers = activity.data.offers.filter((card) => isRecoverableCard(card) && isStandardPotionCard(card));
     activity = {
       ...activity,
       data: {

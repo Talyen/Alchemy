@@ -80,13 +80,18 @@ function buildCohortSummary(cohort: string, cohortResults: CareerResult[]): Agen
   const outcomeCounts = new Map<string, number>();
   for (const run of runs) outcomeCounts.set(run.outcome, (outcomeCounts.get(run.outcome) ?? 0) + 1);
   const outcomes = Object.fromEntries(outcomeCounts);
+  const sampleSeeds = new Set<number>();
+  for (const result of cohortResults) {
+    sampleSeeds.add(result.config.seed);
+    if (sampleSeeds.size === 12) break;
+  }
   return {
     cohort,
     planned: cohortResults.length,
     completed: careers.length,
     incomplete: cohortResults.length - careers.length,
     runs: runs.length,
-    sampleSeeds: [...new Set(cohortResults.map((result) => result.config.seed))].slice(0, 12),
+    sampleSeeds: [...sampleSeeds],
     outcomes,
     terminalRooms,
     terminalGold,

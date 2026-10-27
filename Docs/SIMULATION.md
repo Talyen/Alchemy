@@ -74,6 +74,43 @@ Only one process may use a checkpoint at a time. A process killed without cleanu
 can leave `.lock`; inspect the recorded PID and remove it only after confirming its
 owner is no longer active. Never remove a live or ambiguous lock.
 
+For an explicitly authorized local full sweep, a single supervisor can acquire
+successive fair host-lane leases until the report is complete:
+
+```sh
+ALCHEMY_ALLOW_HEAVY_LOCAL=1 ALCHEMY_BALANCE_MODE=full \
+  ALCHEMY_BALANCE_FINDINGS_CAP=500 npm run balance:sim:supervise
+```
+
+The supervisor holds a checkpoint-specific lock, waits up to 15 minutes for each
+lane admission, and retries an admission timeout after five minutes. Each lease is
+limited to five minutes, with a four-minute soft batch deadline. It stops after
+three timeouts with no checkpoint progress so the cause can be investigated; an individual
+fight or core matchup can still overrun that deadline. Paired groups checkpoint
+completed variants, so an interrupted group resumes without rerunning those
+variants; its shared reference is recomputed on resume. Completed groups and
+partial variants are bound to the same source and options. The batch prints setup,
+source-hashing, simulation, checkpoint and report timing totals in milliseconds;
+queue time is printed by the supervisor and is not included in batch timings. A killed
+supervisor can leave `.supervisor.lock`; verify the recorded PID before recovery,
+just as for `.lock`. An existing batch or supervisor must finish before another
+process uses the same checkpoint.
+
+The manually dispatched **Full balance sweep** workflow runs eight independent
+shards on the selected commit. It validates all shard identities and group coverage
+before composing the standard report, then retains the report, source commit and
+manifest for 30 days. Shard checkpoints are retained for 14 days, including on
+ordinary step failures. A job-level timeout or cancellation can prevent artifact
+upload. To resume an uploaded run, dispatch the workflow on the same commit and
+supply its run ID; all eight shard artifacts must still be available. Source,
+options and shard identity are checked before reuse. The merge rejects missing,
+extra and duplicate groups, and incompatible sources or options. The optional
+`verify_unsharded` dispatch input independently runs the full sweep without
+shards and compares both JSON reports byte for byte; it adds substantial runtime.
+A CI workflow
+can only run commits available to the host; dispatch and publication follow the
+repository's separate authorization rules.
+
 Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `findings-collector.ts` attaches report identity separately from metric rules and shares one sampled-median evaluator between enemy-type and class equity; candidate order remains explicit in `collectBalanceFindings`. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.

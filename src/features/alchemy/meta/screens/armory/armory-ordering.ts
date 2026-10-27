@@ -60,10 +60,10 @@ export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: Arm
 export function reconcileOrder(currentIds: readonly string[], rows: readonly ArmoryOrderRow[]): string[] {
   const available = new Set(rows.map((row) => row.id));
   const surviving = currentIds.filter((id) => available.delete(id));
-  const newlyAvailable = rows
-    .filter((row) => available.has(row.id))
-    .sort((a, b) => compareOrderRows(a, b, "rarity"))
-    .flatMap((row) => (available.delete(row.id) ? [row.id] : []));
+  if (available.size === 0) return surviving;
+  const sortedAvailable = rows.filter((row) => available.has(row.id)).sort((a, b) => compareOrderRows(a, b, "rarity"));
+  const newlyAvailable: string[] = [];
+  for (const row of sortedAvailable) if (available.delete(row.id)) newlyAvailable.push(row.id);
   return [...surviving, ...newlyAvailable];
 }
 
@@ -85,12 +85,11 @@ export function placeTransfer(
   currentSlot: ArmorySlot,
 ): string[] {
   const compatibleAdditional = additionalDisplaced
-    .slice()
-    .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot))
     .filter((d) => {
       const def = gearDefinitions[d.instance.definitionId];
       return currentSlot !== "trinket" && (def?.compatibleSlots.includes(currentSlot) ?? false);
-    });
+    })
+    .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot));
 
   const additionalIds = compatibleAdditional.map((d) => d.instance.instanceId);
   // Displaced hand items may already be visible in this category. Remove them
@@ -117,5 +116,6 @@ export function placeUnequip(
   const visible = visibleIds === currentIds ? filtered : visibleIds.filter((id) => id !== unequippedId);
   const anchor = visible[Math.max(0, page) * pageSize];
   const insertIndex = anchor === undefined ? 0 : Math.max(0, filtered.indexOf(anchor));
-  return [...filtered.slice(0, insertIndex), unequippedId, ...filtered.slice(insertIndex)];
+  filtered.splice(insertIndex, 0, unequippedId);
+  return filtered;
 }

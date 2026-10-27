@@ -77,7 +77,7 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
         transmuted: savedCard.transmuted,
         title: `${TRANSMUTATION_PREFIXES[savedCard.transmuted]} ${savedCard.baseTitle ?? libraryCard.title}`,
       }),
-    ...(keepSavedContent && savedCard.tags && { tags: [...savedCard.tags] }),
+    ...(keepSavedContent && savedCard.tags && { tags: savedCard.tags }),
     ...(keepSavedContent && savedCard.baseTitle !== undefined && { baseTitle: savedCard.baseTitle }),
   });
 }

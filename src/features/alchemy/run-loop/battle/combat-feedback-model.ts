@@ -28,14 +28,13 @@ export function prepareCombatFeedback(
           id: `reaction-${actionId}-${event.target}-${event.reactionId}`,
           burstId: `combat-burst-${actionId}-${event.target}`,
           target: event.target,
-          reactionIds: [],
+          reactionIds: [event.reactionId],
           entries: [],
           firstShownAt: now,
           lifetimeMs: REACTION_TEXT_LIFETIME_MS,
         };
         reactions.push(announcement);
       }
-      if (!announcement.reactionIds.includes(event.reactionId)) announcement.reactionIds.push(event.reactionId);
       continue;
     }
     if (event.kind === "damage" && event.impact !== false && DAMAGE_TYPES.includes(event.stat as DamageType)) {
@@ -102,16 +101,22 @@ export function prepareCombatFeedback(
         ...(event.kind !== "notice" ? { reservedDigits: String(Math.abs(event.amount)).length + 1 } : {}),
       })),
     };
-    for (const reaction of reactions.filter((entry) => entry.target === target)) {
-      reaction.entries = burst.entries.filter(
-        (entry) =>
+    for (const reaction of reactions) {
+      if (reaction.target !== target) continue;
+      const remaining: typeof burst.entries = [];
+      reaction.entries = [];
+      for (const entry of burst.entries) {
+        if (
           entry.kind === "damage" &&
           entry.impact !== false &&
           DAMAGE_TYPES.includes(entry.stat as DamageType) &&
           entry.reactionId !== undefined &&
-          reaction.reactionIds.includes(entry.reactionId),
-      );
-      burst.entries = burst.entries.filter((entry) => !reaction.entries.includes(entry));
+          reaction.reactionIds.includes(entry.reactionId)
+        )
+          reaction.entries.push(entry);
+        else remaining.push(entry);
+      }
+      burst.entries = remaining;
     }
     if (burst.entries.length) bursts.push(burst);
     let strongest: { amount: number; visual: NonNullable<ReturnType<typeof getCombatImpactVisual>> } | undefined;

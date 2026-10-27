@@ -51,19 +51,23 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
   }
 
   let effectOffset = 0;
-  const description = parts.flatMap((part) => {
+  const description: ReturnType<typeof getCardDescription> = [];
+  const effects: BattleCard["effects"] = [];
+  for (const part of parts) {
     const offset = effectOffset;
     effectOffset += part.effects.length;
-    return mapCardDescriptionReferences(
-      part.description,
-      (reference) => ({
-        ...reference,
-        effectIndex: reference.effectIndex + offset,
-      }),
-      `ingredient/${offset}`,
+    description.push(
+      ...mapCardDescriptionReferences(
+        part.description,
+        (reference) => ({
+          ...reference,
+          effectIndex: reference.effectIndex + offset,
+        }),
+        `ingredient/${offset}`,
+      ),
     );
-  });
-  const effects = parts.flatMap((part) => part.effects);
+    effects.push(...part.effects);
+  }
   appendCardDescriptionTrailer(description, tags, true);
   return cloneBattleCard(
     withCardDescription(

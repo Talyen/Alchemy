@@ -89,12 +89,18 @@ function resolveStartingEnemyMitigation(
   startingArmor: number,
   startingBlock: number,
 ): EnemyMitigation {
-  const hasFortress = traits.some((trait) => trait.id === "iron-fortress");
+  let hasFortress = false;
+  let hasWhitehot = false;
+  traits.some((trait) => {
+    if (trait.id === "iron-fortress") hasFortress = true;
+    else if (trait.id === "whitehot") hasWhitehot = true;
+    return hasFortress && hasWhitehot;
+  });
   return {
     ...EMPTY_ENEMY_MITIGATION,
     armor: startingArmor + (hasFortress ? LABYRINTH_MODIFIER_CONFIG.fortressArmor : 0),
     block: startingBlock,
-    forge: traits.some((trait) => trait.id === "whitehot") ? LABYRINTH_MODIFIER_CONFIG.whitehotForge : 0,
+    forge: hasWhitehot ? LABYRINTH_MODIFIER_CONFIG.whitehotForge : 0,
   };
 }
 
@@ -122,10 +128,13 @@ function resolveStartingPlayerStatuses(
 }
 
 function resolveStartingEnemyThorns(traits: BestiaryEntry["traits"]): number {
-  if (traits.some((trait) => trait.id === "briar-crown")) return LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum;
-  if (traits.some((trait) => trait.id === "thornhide")) return LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum;
-  if (traits.some((trait) => trait.id === "thorns")) return 1;
-  return 0;
+  let thorns = 0;
+  for (const trait of traits) {
+    if (trait.id === "briar-crown") return LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum;
+    if (trait.id === "thornhide") thorns = LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum;
+    else if (trait.id === "thorns" && thorns === 0) thorns = 1;
+  }
+  return thorns;
 }
 
 export function createBattleStartState(

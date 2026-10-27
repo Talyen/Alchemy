@@ -58,7 +58,8 @@ function rangeRuleClauses(
         const clauses = createEffectDescription([effect]).filter(
           (line) => line.role === "effect" && line.parts.every((part) => typeof part === "string"),
         );
-        if (clauses.length)
+        if (clauses.length) {
+          let inlineClauses: CardDescription[number]["parts"] | undefined;
           description = description.flatMap((line) => {
             const positions = magnitudePositions(line, path);
             if (!positions.length) return [line];
@@ -69,12 +70,13 @@ function rangeRuleClauses(
                 ...line,
                 parts: [
                   ...line.parts.slice(0, end),
-                  ...clauses.flatMap((clause) => ["; ", ...clause.parts]),
+                  ...(inlineClauses ??= clauses.flatMap((clause) => ["; ", ...clause.parts])),
                   ...line.parts.slice(end),
                 ],
               },
             ];
           });
+        }
       }
       if (effect.kind === "chance") visit([...effect.successEffects, ...effect.failureEffects], path);
     });
@@ -87,10 +89,11 @@ function signature(line: CardDescription[number]): string {
   const references: string[] = [];
   for (const part of line.parts) {
     if (typeof part === "string") continue;
-    for (const reference of part.references)
+    for (const reference of part.references) {
       references.push(
         `${reference.effectIndex}/${reference.effectPath?.join("/") ?? ""}/${reference.kind}/${reference.field}/${reference.multiplier ?? 1}`,
       );
+    }
   }
   return references.join("|");
 }
@@ -144,9 +147,11 @@ export function projectCardDescription(card: BattleCard, effects: BattleCardEffe
   // Saved custom prose and ingredient trailers are not replaced by the generic formatter.
   if (unboundEffects.length) {
     const originalCanonical = new Set(createEffectDescription(card.effects).map((line) => JSON.stringify(line.parts)));
-    description.push(...unboundEffects.filter((line) => !originalCanonical.has(JSON.stringify(line.parts))));
+    for (const line of unboundEffects) {
+      if (!originalCanonical.has(JSON.stringify(line.parts))) description.push(line);
+    }
   }
-  description.push(...previous.filter((line) => line.role !== "effect"));
+  for (const line of previous) if (line.role !== "effect") description.push(line);
   const marks = previous.map((line) => ({
     ...line,
     parts: line.parts.map((part) =>
@@ -189,9 +194,9 @@ export function describeKnownStatusOptions(
   path: number[],
   amounts: ReadonlyMap<string, number>,
 ): BattleCard {
-  const effects = [...card.effects];
-  const effect = getCardEffect(effects, { effectIndex: path[0]!, effectPath: path.slice(1) });
+  const effect = getCardEffect(card.effects, { effectIndex: path[0]!, effectPath: path.slice(1) });
   if (effect?.kind !== "player-status" || !effect.statusPool) return card;
+  const effects = [...card.effects];
   const parts: CardDescription[number]["parts"] = ["Gain "];
   const previous = getCardDescription(card);
   const statuses = effect.forgeAmount !== undefined ? (["block", "forge", "armor"] as const) : effect.statusPool;

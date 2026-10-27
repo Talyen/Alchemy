@@ -18,18 +18,22 @@ function requiredAspect(def: GearDefinition): GearAffixAspect | null {
     : "defensive";
 }
 
-function createEligibleAffixPool(definition: GearDefinition): GearAffixDefinition[] {
+function createEligibleAffixPool(definition: GearDefinition, excludedIds?: ReadonlySet<string>): GearAffixDefinition[] {
   const aspect = requiredAspect(definition);
   return gearAffixList.filter(
     (affix) =>
       !affix.uniqueOnly &&
+      !excludedIds?.has(affix.id) &&
       (aspect === null || affix.aspect === aspect) &&
       affixMatchesAffinity(affix, definition.affinityKeywords),
   );
 }
 
-export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {
-  return createEligibleAffixPool(definition);
+export function buildEligibleAffixPool(
+  definition: GearDefinition,
+  excludedIds?: ReadonlySet<string>,
+): readonly GearAffixDefinition[] {
+  return createEligibleAffixPool(definition, excludedIds);
 }
 
 export function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {

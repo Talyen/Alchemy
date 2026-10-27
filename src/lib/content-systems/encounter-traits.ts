@@ -139,14 +139,11 @@ export function sanitizeEncounterTraitIds(
   values: readonly string[],
   category: EncounterTraitCategory,
 ): EncounterTraitId[] {
-  const seen = new Set<string>();
-  const result: EncounterTraitId[] = [];
+  const ids = new Set<EncounterTraitId>();
   for (const value of values) {
-    if (seen.has(value)) continue;
-    seen.add(value);
-    if (isEncounterTraitId(value) && ENCOUNTER_TRAITS[value].category === category) result.push(value);
+    if (isEncounterTraitId(value) && ENCOUNTER_TRAITS[value].category === category) ids.add(value);
   }
-  return result;
+  return [...ids];
 }
 
 export function pickEncounterTrait<Category extends EncounterTraitCategory>(

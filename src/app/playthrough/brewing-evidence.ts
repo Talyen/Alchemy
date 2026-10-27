@@ -84,16 +84,19 @@ export function recordBrewingCommit(
 
 export function summarizeBrewing(careers: CareerResult[]) {
   const services = ["mix", "distill", "campfire-new", "campfire-mix", "purchase", "refresh"] as const;
-  const summaries = new Map<
+  const totals = new Map<
     string,
     {
       eligibleVisits: number;
       affordableVisits: number;
       beneficialVisits: number;
+      used: number;
       reasons: Map<string, number>;
     }
   >();
-  const decisions = new Map<string, number>();
+  for (const kind of services) {
+    totals.set(kind, { eligibleVisits: 0, affordableVisits: 0, beneficialVisits: 0, used: 0, reasons: new Map() });
+  }
   let recordedCareers = 0;
   let truncated = false;
   let shopVisits = 0;
@@ -107,20 +110,27 @@ export function summarizeBrewing(careers: CareerResult[]) {
       if (visit.activity === "alchemist") shopVisits++;
       if (visit.activity === "campfire") campfireVisits++;
       for (const opportunity of visit.opportunities) {
-        let summary = summaries.get(opportunity.kind);
-        if (!summary) {
-          summary = { eligibleVisits: 0, affordableVisits: 0, beneficialVisits: 0, reasons: new Map() };
-          summaries.set(opportunity.kind, summary);
+        const total = totals.get(opportunity.kind);
+        if (!total) continue;
+        if (opportunity.eligible > 0) total.eligibleVisits++;
+        if (opportunity.affordable > 0) total.affordableVisits++;
+        if (opportunity.beneficial > 0) total.beneficialVisits++;
+        for (const reason of new Set(opportunity.reasons)) {
+          total.reasons.set(reason, (total.reasons.get(reason) ?? 0) + 1);
         }
-        if (opportunity.eligible > 0) summary.eligibleVisits++;
-        if (opportunity.affordable > 0) summary.affordableVisits++;
-        if (opportunity.beneficial > 0) summary.beneficialVisits++;
-        for (const reason of new Set(opportunity.reasons))
-          summary.reasons.set(reason, (summary.reasons.get(reason) ?? 0) + 1);
       }
       for (const decision of visit.decisions) {
         goldSpent += decision.goldSpent;
-        decisions.set(decision.kind, (decisions.get(decision.kind) ?? 0) + 1);
+        const kind =
+          decision.kind === "buy-potion"
+            ? "purchase"
+            : decision.kind === "alchemist-refresh"
+              ? "refresh"
+              : decision.kind === "purchase" || decision.kind === "refresh"
+                ? ""
+                : decision.kind;
+        const total = totals.get(kind);
+        if (total) total.used++;
       }
     }
   }
@@ -132,15 +142,14 @@ export function summarizeBrewing(careers: CareerResult[]) {
     campfireVisits,
     goldSpent,
     services: services.map((kind) => {
-      const summary = summaries.get(kind);
-      const actionKind = kind === "purchase" ? "buy-potion" : kind === "refresh" ? "alchemist-refresh" : kind;
+      const total = totals.get(kind)!;
       return {
         kind,
-        eligibleVisits: summary?.eligibleVisits ?? 0,
-        affordableVisits: summary?.affordableVisits ?? 0,
-        beneficialVisits: summary?.beneficialVisits ?? 0,
-        used: decisions.get(actionKind) ?? 0,
-        reasons: Object.fromEntries(summary?.reasons ?? []),
+        eligibleVisits: total.eligibleVisits,
+        affordableVisits: total.affordableVisits,
+        beneficialVisits: total.beneficialVisits,
+        used: total.used,
+        reasons: Object.fromEntries(total.reasons),
       };
     }),
   };

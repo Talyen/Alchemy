@@ -109,6 +109,10 @@ const catalogs: Record<CollectionTab, { items: CatalogItem[]; pageSize: number; 
   },
 };
 
+// Catalog titles are captured at module initialization and never exposed for mutation.
+// Other locales remain live so catalog installation can change translations.
+const englishOrder = new Map<CollectionTab, CatalogItem[]>();
+
 export function getCollectionLibraryLength(tab: CollectionTab): number {
   return catalogs[tab].items.length;
 }
@@ -146,10 +150,16 @@ export function getCollectionPageItems({
     trinkets: discoveredTrinketIds,
     uniques: discoveredUniqueIds,
   };
-  const discoveredIds = new Set(discoveries[collectionTab]);
+  const discoveredIds = collectionTab === "heroes" ? undefined : new Set(discoveries[collectionTab]);
   const { page: safePage, pageSize: size } = getPagination(catalog.items.length, page, pageSize);
   const start = safePage * size;
-  const orderedItems = collectionTab === "heroes" ? catalog.items : sortByTitle(catalog.items);
+  let orderedItems = catalog.items;
+  if (collectionTab !== "heroes") {
+    if (localization.language === "en") {
+      orderedItems = englishOrder.get(collectionTab) ?? sortByTitle(catalog.items);
+      englishOrder.set(collectionTab, orderedItems);
+    } else orderedItems = sortByTitle(catalog.items);
+  }
   return orderedItems.slice(start, start + size).map((item) => {
     if (item.frameType === "hero") {
       const discovered = isCharacterUnlocked(item.character.id, finishedRunCharacters);
@@ -160,7 +170,7 @@ export function getCollectionPageItems({
         descriptionLines: discovered ? [] : [item.unlockRequirementText],
       };
     }
-    const discovered = discoveredIds.has(item.id);
+    const discovered = discoveredIds?.has(item.id) ?? false;
     const tile = {
       ...item,
       discovered,

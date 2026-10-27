@@ -11,10 +11,6 @@ import { TALENT_TREE_KEYWORD_IDS } from "./xp-keywords";
 
 export type TalentXP = Partial<Record<KeywordId, number>>;
 
-function xpForNextPoint(currentPoints: number): number {
-  return xpThresholdForPoints(currentPoints + 1) - xpThresholdForPoints(currentPoints);
-}
-
 export function xpThresholdForPoints(points: number): number {
   return points * (points + 1) * XP_TRIANGULAR_MULTIPLIER - Math.min(points, 2) * XP_EARLY_POINT_DISCOUNT;
 }
@@ -90,8 +86,9 @@ export function getTalentKeywordProgress(
   totalTalents?: number,
 ): TalentKeywordProgress {
   const points = computeTalentPoints(totalXP);
-  const xpForNext = xpForNextPoint(points);
-  const xpRemaining = Math.max(0, xpThresholdForPoints(points + 1) - totalXP);
+  const nextThreshold = xpThresholdForPoints(points + 1);
+  const xpForNext = nextThreshold - xpThresholdForPoints(points);
+  const xpRemaining = Math.max(0, nextThreshold - totalXP);
   const progressPercent = Math.min(100, Math.round(((xpForNext - xpRemaining) / xpForNext) * 100));
   const unspentPoints = Math.max(0, Math.min(points, totalTalents ?? points) - unlockedCount);
   return {

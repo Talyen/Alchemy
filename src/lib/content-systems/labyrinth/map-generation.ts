@@ -59,7 +59,8 @@ export function orderTypesForPositions(
   rng: () => number,
 ): LabyrinthNodeType[] {
   if (types.length !== positions.length) return [...types];
-  const indexByKey = new Map(positions.map((position, index) => [gridKey(position), index]));
+  const indexByKey = new Map<string, number>();
+  positions.forEach((position, index) => indexByKey.set(gridKey(position), index));
   const neighbors = positions.map((position) => {
     const list: number[] = [];
     for (const key of neighboringGridKeys(position)) {
@@ -69,7 +70,9 @@ export function orderTypesForPositions(
     return list;
   });
   const seated = [...types];
-  const slots = shuffle(types.map((_, index) => index).slice(1, -1), rng);
+  const interiorSlots: number[] = [];
+  for (let index = 1; index < types.length - 1; index++) interiorSlots.push(index);
+  const slots = shuffle(interiorSlots, rng);
   function conflictsAt(index: number): number {
     let count = 0;
     for (const other of neighbors[index] ?? []) {
@@ -160,17 +163,17 @@ function generateFloor(
   const origin = positions[0] ?? { row: 0, col: 0 };
   const lootDepthAt = (position: LabyrinthGridPosition) =>
     completedRooms + Math.abs(position.row - origin.row) + Math.abs(position.col - origin.col);
-  const roomPositions = positions.slice(1, -1);
-  const types = orderTypesForPositions(
-    plannedTypes(positions.length, rng, Math.max(...roomPositions.map(lootDepthAt))),
-    positions,
-    rng,
-  );
+  let maximumRoomDepth = -Infinity;
+  for (let index = 1; index < positions.length - 1; index++) {
+    maximumRoomDepth = Math.max(maximumRoomDepth, lootDepthAt(positions[index]!));
+  }
+  const types = orderTypesForPositions(plannedTypes(positions.length, rng, maximumRoomDepth), positions, rng);
   const trinketShopIndex = types.indexOf("trinket-shop");
   if (trinketShopIndex >= 0 && !isLootEligible("trinket", lootDepthAt(positions[trinketShopIndex]!))) {
-    const eligibleSlots = positions.flatMap((position, index) =>
-      index > 0 && index < positions.length - 1 && isLootEligible("trinket", lootDepthAt(position)) ? [index] : [],
-    );
+    const eligibleSlots: number[] = [];
+    for (let index = 1; index < positions.length - 1; index++) {
+      if (isLootEligible("trinket", lootDepthAt(positions[index]!))) eligibleSlots.push(index);
+    }
     const slot = pickRandom(eligibleSlots, rng);
     if (slot !== undefined) [types[trinketShopIndex], types[slot]] = [types[slot]!, types[trinketShopIndex]!];
     else types[trinketShopIndex] = "equipment-shop";

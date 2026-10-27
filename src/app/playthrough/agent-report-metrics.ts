@@ -67,13 +67,18 @@ export function selectorForDefeats(battles: Battle[], minRoom?: number): AgentEv
 
 export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetric[] {
   return MILESTONE_KINDS.map((kind) => {
-    const firstRuns = careers.flatMap((career) => {
-      let first: number | undefined;
+    const firstRuns: number[] = [];
+    const prefix = `${kind}:`;
+    for (const career of careers) {
+      let first = Infinity;
+      let reached = false;
       for (const [key, run] of Object.entries(career.telemetry.milestones)) {
-        if (key.startsWith(`${kind}:`)) first = first === undefined ? run + 1 : Math.min(first, run + 1);
+        if (!key.startsWith(prefix)) continue;
+        reached = true;
+        first = Math.min(first, run + 1);
       }
-      return first === undefined ? [] : [first];
-    });
+      if (reached) firstRuns.push(first);
+    }
     return {
       kind,
       reached: firstRuns.length,
@@ -147,27 +152,31 @@ export function buildBattles(careers: CompletedCareer[]): { battles: Battle[]; m
 }
 
 export function buildRunProgression(careers: CompletedCareer[]): AgentRunProgression {
-  const pairs = careers
-    .filter((career) => career.outcomes.length >= 2)
-    .map((career) => {
-      const first = career.outcomes[0]?.rooms ?? 0;
-      const final = career.outcomes.at(-1)?.rooms ?? first;
-      return { first, final };
-    });
-  const deltas = pairs.map(({ first, final }) => final - first);
+  let count = 0;
+  let firstTotal = 0;
+  let finalTotal = 0;
+  let deltaTotal = 0;
   let improved = 0;
   let worsened = 0;
   let tied = 0;
-  for (const delta of deltas) {
+  for (const career of careers) {
+    if (career.outcomes.length < 2) continue;
+    const first = career.outcomes[0]?.rooms ?? 0;
+    const final = career.outcomes.at(-1)?.rooms ?? first;
+    const delta = final - first;
+    count++;
+    firstTotal += first;
+    finalTotal += final;
+    deltaTotal += delta;
     if (delta > 0) improved++;
     else if (delta < 0) worsened++;
     else if (delta === 0) tied++;
   }
   return {
-    careers: pairs.length,
-    firstRunMeanRooms: mean(pairs.map(({ first }) => first)),
-    finalRunMeanRooms: mean(pairs.map(({ final }) => final)),
-    meanRoomDelta: mean(deltas),
+    careers: count,
+    firstRunMeanRooms: count ? round(firstTotal / count) : null,
+    finalRunMeanRooms: count ? round(finalTotal / count) : null,
+    meanRoomDelta: count ? round(deltaTotal / count) : null,
     improved,
     worsened,
     tied,
@@ -175,7 +184,8 @@ export function buildRunProgression(careers: CompletedCareer[]): AgentRunProgres
 }
 
 export function buildRunOutcomes(careers: CompletedCareer[]): AgentRunOutcomeMetric[] {
-  const runCount = Math.max(0, ...careers.map((career) => career.outcomes.length));
+  let runCount = 0;
+  for (const career of careers) runCount = Math.max(runCount, career.outcomes.length);
   return Array.from({ length: runCount }, (_, run) => {
     let count = 0;
     let victories = 0;

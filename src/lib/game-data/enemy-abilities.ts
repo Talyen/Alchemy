@@ -18,6 +18,11 @@ const ENEMY_DAMAGE_FIELDS = [
   "damageTypeIfTargetFrozen",
   "amountIfTargetFrozen",
 ] as const satisfies ReadonlyArray<keyof Extract<BattleCardEffect, { kind: "damage" }>>;
+const PLAYER_STATUS_FIELDS = ["kind", "status", "amount"];
+const AMOUNT_FIELDS = ["kind", "amount"];
+const REMOVE_ARMOR_FIELDS = ["kind", "amount", "removeAll", "halve"];
+const MULTIPLY_STATUS_FIELDS = ["kind", "status", "factor"];
+const ENEMY_PLAYER_STATUSES = ["block", "armor", "forge", "thorns"];
 
 export type EnemyAbilityDamageEffect = Pick<
   Extract<BattleCardEffect, { kind: "damage" }>,
@@ -45,14 +50,11 @@ function hasOnlyFields(effect: BattleCardEffect, fields: readonly string[]): boo
 function supportsEnemyLeaf(effect: BattleCardEffect): boolean {
   if (effect.kind === "damage") return hasOnlyFields(effect, ENEMY_DAMAGE_FIELDS);
   if (effect.kind === "player-status")
-    return (
-      ["block", "armor", "forge", "thorns"].includes(effect.status) &&
-      hasOnlyFields(effect, ["kind", "status", "amount"])
-    );
-  if (effect.kind === "heal") return hasOnlyFields(effect, ["kind", "amount"]);
-  if (effect.kind === "remove-enemy-armor") return hasOnlyFields(effect, ["kind", "amount", "removeAll", "halve"]);
+    return ENEMY_PLAYER_STATUSES.includes(effect.status) && hasOnlyFields(effect, PLAYER_STATUS_FIELDS);
+  if (effect.kind === "heal") return hasOnlyFields(effect, AMOUNT_FIELDS);
+  if (effect.kind === "remove-enemy-armor") return hasOnlyFields(effect, REMOVE_ARMOR_FIELDS);
   if (effect.kind === "multiply-enemy-status")
-    return effect.status === "freeze" && hasOnlyFields(effect, ["kind", "status", "factor"]);
+    return effect.status === "freeze" && hasOnlyFields(effect, MULTIPLY_STATUS_FIELDS);
   return false;
 }
 

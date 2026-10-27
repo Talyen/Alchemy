@@ -97,26 +97,23 @@ export function comparePlaythroughReports(
       Math.max(1, result.telemetry.battles.length),
     finalGold: (result: CareerResult) => result.finalSave.gold,
     netHealthLostPerBattle: (result: CareerResult) => {
-      const settles = new Map<number, Map<number, number>>();
+      const ends = new Map<number, Map<number, number>>();
       for (const snapshot of result.telemetry.battleSnapshots) {
         if (snapshot.stage !== "settle" || Number.isNaN(snapshot.run) || Number.isNaN(snapshot.room)) continue;
-        let rooms = settles.get(snapshot.run);
-        if (!rooms) {
-          rooms = new Map();
-          settles.set(snapshot.run, rooms);
-        }
+        let rooms = ends.get(snapshot.run);
+        if (!rooms) ends.set(snapshot.run, (rooms = new Map<number, number>()));
         if (!rooms.has(snapshot.room)) rooms.set(snapshot.room, snapshot.playerHealth);
       }
-      let total = 0;
       let count = 0;
+      let lost = 0;
       for (const start of result.telemetry.battleSnapshots) {
         if (start.stage !== "start" || Number.isNaN(start.run) || Number.isNaN(start.room)) continue;
-        const rooms = settles.get(start.run);
+        const rooms = ends.get(start.run);
         if (!rooms?.has(start.room)) continue;
-        total += start.playerHealth - rooms.get(start.room)!;
+        lost += start.playerHealth - rooms.get(start.room)!;
         count++;
       }
-      return total / Math.max(1, count);
+      return lost / Math.max(1, count);
     },
     firstVictoryRunCensored: (result: CareerResult) => {
       const first = result.outcomes.findIndex((outcome) => outcome.outcome === "victory");

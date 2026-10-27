@@ -17,14 +17,12 @@ export function layoutFloorNodes(nodes: LabyrinthNode[], availableWidth: number,
   const height = width * (3 / 4);
   const left = (availableWidth - columns * width - (columns - 1) * gap) / 2;
   const top = (availableHeight - rows * height - (rows - 1) * gap) / 2;
-  const positions = new Map(
-    nodes.map((node) => [
-      node.id,
-      {
-        x: left + (node.gridPosition.col + sideColumns) * (width + gap) + width / 2,
-        y: top + node.gridPosition.row * (height + gap) + height / 2,
-      },
-    ]),
-  );
+  const positions = new Map<string, { x: number; y: number }>();
+  for (const node of nodes) {
+    positions.set(node.id, {
+      x: left + (node.gridPosition.col + sideColumns) * (width + gap) + width / 2,
+      y: top + node.gridPosition.row * (height + gap) + height / 2,
+    });
+  }
   return { metrics: { width, height }, positions };
 }

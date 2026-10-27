@@ -64,7 +64,9 @@ export function createEmptyGearInventories(): GearInventories {
 }
 
 export function flattenGearInventories(inventories: GearInventories): GearInventory {
-  return GEAR_CHARACTER_IDS.flatMap((id) => inventories[id]);
+  const items: GearInventory = [];
+  for (const id of GEAR_CHARACTER_IDS) inventories[id].forEach((item) => items.push(item));
+  return items;
 }
 
 export function findGearEquippedCharacter(loadouts: GearLoadouts, instanceId: string): GearCharacterId | null {

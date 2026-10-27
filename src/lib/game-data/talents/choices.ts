@@ -1,6 +1,6 @@
 import { keywordDefinitions } from "../keywords";
 import type { KeywordId } from "../types";
-import { getTalentsForKeyword, talentPoolByKeyword } from "./talent-pool-definitions";
+import { talentPoolByKeyword } from "./talent-pool-definitions";
 import { TALENT_TREE_KEYWORD_IDS } from "./xp-keywords";
 import type { TalentDefinition } from "./types";
 
@@ -9,7 +9,8 @@ export { getTalentsForKeyword } from "./talent-pool-definitions";
 export const TALENT_ROW_SIZES = [1, 2, 3, 4] as const;
 
 export function chunkIntoRows<T>(items: T[], sizes: readonly number[] | number): T[][] {
-  if ((typeof sizes === "number" ? [sizes] : sizes).some((size) => !Number.isSafeInteger(size) || size <= 0)) {
+  const invalid = (size: number) => !Number.isSafeInteger(size) || size <= 0;
+  if (typeof sizes === "number" ? invalid(sizes) : sizes.some(invalid)) {
     throw new RangeError("Row sizes must be positive safe integers");
   }
   const rows: T[][] = [];
@@ -41,7 +42,7 @@ export function countImplementedTalents(keywordId: KeywordId): number {
 }
 
 export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
-  return chunkIntoRows(getTalentsForKeyword(keywordId), TALENT_ROW_SIZES);
+  return chunkIntoRows(talentPoolByKeyword.get(keywordId) ?? [], TALENT_ROW_SIZES);
 }
 
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
@@ -51,12 +52,12 @@ export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: s
   for (let row = 0; row <= TALENT_ROW_SIZES.length; row++) {
     const size = TALENT_ROW_SIZES[row] ?? talents.length;
     const end = Math.min(start + size, talents.length);
-    const missing: TalentDefinition[] = [];
+    let missing: TalentDefinition[] | undefined;
     for (let index = start; index < end; index++) {
       const talent = talents[index]!;
-      if (!unlocked.has(talent.id)) missing.push(talent);
+      if (!unlocked.has(talent.id)) (missing ??= []).push(talent);
     }
-    if (missing.length) return missing;
+    if (missing) return missing;
     start = end;
   }
   return [];

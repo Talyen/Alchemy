@@ -73,24 +73,23 @@ export function projectMana(
       effect: motion ? (effect ?? old?.effect ?? null) : null,
     };
   });
-  const exits: ManaGemExit[] = motion
-    ? [
-        ...previous.exits.filter((exit) => exit.index >= count),
-        ...previous.gems
-          .filter((gem) => gem.index >= count)
-          .map(
-            (gem): ManaGemExit => ({
-              id: `mana-exit-${revision}-${gem.index}`,
-              index: gem.index,
-              filled: gem.filled,
-              x: gem.x,
-              y: gem.y,
-              height: previous.height,
-              // Bonus mana fading away is not the destruction of permanent capacity.
-              kind: gem.index < previous.maxMana && gem.index >= maxMana ? "destroy" : "fade",
-            }),
-          ),
-      ].slice(-MANA_DOCK_VISIBLE_COUNT)
-    : [];
+  let exits: ManaGemExit[] = [];
+  if (motion) {
+    for (const exit of previous.exits) if (exit.index >= count) exits.push(exit);
+    for (const gem of previous.gems) {
+      if (!(gem.index >= count)) continue;
+      exits.push({
+        id: `mana-exit-${revision}-${gem.index}`,
+        index: gem.index,
+        filled: gem.filled,
+        x: gem.x,
+        y: gem.y,
+        height: previous.height,
+        // Bonus mana fading away is not the destruction of permanent capacity.
+        kind: gem.index < previous.maxMana && gem.index >= maxMana ? "destroy" : "fade",
+      });
+    }
+    if (exits.length > MANA_DOCK_VISIBLE_COUNT) exits = exits.slice(-MANA_DOCK_VISIBLE_COUNT);
+  }
   return { mana, maxMana, revision, height: manaGemHeight(total), gems, exits, hidden: Math.max(0, total - count) };
 }

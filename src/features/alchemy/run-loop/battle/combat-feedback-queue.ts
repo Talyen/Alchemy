@@ -61,13 +61,7 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
   }
   const routes: Spread[] =
     item.presentation.lane === "announcement"
-      ? [
-          0,
-          ...Array.from(
-            { length: Math.ceil((item.height ?? 64) / M.reactionRowPx) * (ahead.length + 1) },
-            (_, index) => [-(index + 1), index + 1],
-          ).flat(),
-        ]
+      ? [0]
       : item.presentation.lane !== "impact"
         ? [0, -1, 1, -2, 2, -3, 3]
         : item.family === "heal" && recentDamage
@@ -75,9 +69,13 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
           : item.family === "damage" && recentHeal
             ? [-1, -2, -3, -4, -5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5]
             : [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, 6, 7, 8, 9];
-  if (item.presentation.lane === "impact") {
+  if (item.presentation.lane === "announcement") {
+    const rows = Math.ceil((item.height ?? 64) / M.reactionRowPx) * (ahead.length + 1);
+    for (let index = 1; index <= rows; index++) routes.push(-index, index);
+  } else if (item.presentation.lane === "impact") {
     // Dense bursts can use extra fixed rows instead of reusing an occupied path.
-    routes.push(...Array.from({ length: (Math.ceil(ahead.length / 3) + 1) * 3 }, (_, index) => 10 + index));
+    const extraRows = (Math.ceil(ahead.length / 3) + 1) * 3;
+    for (let index = 0; index < extraRows; index++) routes.push(10 + index);
   }
   const oldRoutes = new Map<QueueItem, ReturnType<typeof combatTextRoute>>();
   const samples = [];
@@ -99,7 +97,14 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
         route = combatTextRoute(old.presentation.lane, old.presentation.spread ?? 0);
         oldRoutes.set(old, route);
       }
-      previous.push(footprint(old, oldFrame, route));
+      const bounds = footprint(old, oldFrame, route);
+      previous.push({
+        left: bounds.x - bounds.width / 2,
+        right: bounds.x + bounds.width / 2,
+        top: bounds.y - bounds.height / 2,
+        bottom: bounds.y + bounds.height / 2,
+        area: bounds.width * bounds.height,
+      });
     }
     samples.push({ frame, previous });
   }
@@ -115,24 +120,24 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
       if (score >= bestScore) break;
       if (sample.previous.length === 0) continue;
       const next = footprint(item, sample.frame, routeGeometry);
+      const left = next.x - next.width / 2;
+      const right = next.x + next.width / 2;
+      const top = next.y - next.height / 2;
+      const bottom = next.y + next.height / 2;
+      const area = next.width * next.height;
       for (const previous of sample.previous) {
-        const width = Math.max(
-          0,
-          Math.min(next.x + next.width / 2, previous.x + previous.width / 2) -
-            Math.max(next.x - next.width / 2, previous.x - previous.width / 2),
-        );
-        const height = Math.max(
-          0,
-          Math.min(next.y + next.height / 2, previous.y + previous.height / 2) -
-            Math.max(next.y - next.height / 2, previous.y - previous.height / 2),
-        );
-        const covered = (width * height) / Math.min(next.width * next.height, previous.width * previous.height);
+        const width = Math.max(0, Math.min(right, previous.right) - Math.max(left, previous.left));
+        const height = Math.max(0, Math.min(bottom, previous.bottom) - Math.max(top, previous.top));
+        const covered = (width * height) / Math.min(area, previous.area);
         score += covered + (covered > 0.8 ? 1000 : 0);
+        if (score >= bestScore) break;
       }
     }
     if (score < bestScore) {
       best = route;
       bestScore = score;
+      // Scores cannot be negative, and ties retain the first route.
+      if (score === 0) break;
     }
   }
   return best;
@@ -208,18 +213,21 @@ export function scheduleCombatFeedback(
   }
   const plans = new Map<string, CombatTextPresentation>();
   for (const lane of lanes.values()) {
-    const visible = lane.filter((item) => item.presentation.phase === "visible");
+    const visible: QueueItem[] = [];
+    const waiting: QueueItem[] = [];
+    for (const item of lane) {
+      if (item.presentation.phase === "visible") visible.push(item);
+      else if (item.presentation.phase === "waiting") waiting.push(item);
+    }
     for (const item of visible) plans.set(item.id, item.presentation);
     // Keep every admitted entry and every active path. Time, rather than eviction,
     // bounds the backlog; dense arrivals may overlap instead of falling behind combat.
-    const waiting = lane
-      .filter((item) => item.presentation.phase === "waiting")
-      .sort(
-        (a, b) =>
-          a.receivedAt - b.receivedAt ||
-          Number(b.presentation.lane === "announcement") - Number(a.presentation.lane === "announcement"),
-      );
-    const ahead = [...visible].sort((a, b) => a.presentation.launchAt - b.presentation.launchAt);
+    waiting.sort(
+      (a, b) =>
+        a.receivedAt - b.receivedAt ||
+        Number(b.presentation.lane === "announcement") - Number(a.presentation.lane === "announcement"),
+    );
+    const ahead = visible.sort((a, b) => a.presentation.launchAt - b.presentation.launchAt);
     for (const item of waiting) {
       const launchAt = item.scheduled ? item.presentation.launchAt : staggeredLaunch(item, ahead, now);
       const presentation: CombatTextPresentation = {
@@ -232,20 +240,24 @@ export function scheduleCombatFeedback(
       ahead.push({ ...item, presentation });
     }
   }
-  const nextBursts = bursts.flatMap((burst) => {
-    const entries = burst.entries.flatMap((entry) => {
+  const nextBursts: CombatTextBurst[] = [];
+  for (const burst of bursts) {
+    const entries: CombatTextBurst["entries"] = [];
+    for (const entry of burst.entries) {
       const presentation = plans.get(entry.id);
-      return presentation ? [presentation === entry.presentation ? entry : { ...entry, presentation }] : [];
-    });
-    if (!entries.length) return [];
+      if (presentation) entries.push(presentation === entry.presentation ? entry : { ...entry, presentation });
+    }
+    if (!entries.length) continue;
     let end = -Infinity;
     for (const entry of entries) end = Math.max(end, endsAt(entry.presentation!));
-    return [{ ...burst, entries, lifetimeMs: end - burst.firstShownAt }];
-  });
-  const nextReactions = reactions.flatMap((reaction) => {
+    nextBursts.push({ ...burst, entries, lifetimeMs: end - burst.firstShownAt });
+  }
+  const nextReactions: ReactionAnnouncement[] = [];
+  for (const reaction of reactions) {
     const presentation = plans.get(reaction.id);
-    return presentation ? [presentation === reaction.presentation ? reaction : { ...reaction, presentation }] : [];
-  });
+    if (presentation)
+      nextReactions.push(presentation === reaction.presentation ? reaction : { ...reaction, presentation });
+  }
   return { floatingCombatBursts: nextBursts, reactionAnnouncements: nextReactions };
 }
 
@@ -256,21 +268,25 @@ export function advanceCombatFeedback(bursts: CombatTextBurst[], reactions: Reac
       ? { ...presentation, phase: "visible" as const }
       : presentation;
   };
-  return {
-    floatingCombatBursts: bursts.flatMap((burst) => {
-      const entries = burst.entries.flatMap((entry) => {
-        if (entry.presentation && endsAt(entry.presentation) <= now) return [];
-        const presentation = advance(entry.presentation);
-        return [!presentation || presentation === entry.presentation ? entry : { ...entry, presentation }];
-      });
-      return entries.length ? [{ ...burst, entries }] : [];
-    }),
-    reactionAnnouncements: reactions.flatMap((reaction) => {
-      if (reaction.presentation && endsAt(reaction.presentation) <= now) return [];
-      const presentation = advance(reaction.presentation);
-      return [!presentation || presentation === reaction.presentation ? reaction : { ...reaction, presentation }];
-    }),
-  };
+  const floatingCombatBursts: CombatTextBurst[] = [];
+  for (const burst of bursts) {
+    const entries: CombatTextBurst["entries"] = [];
+    for (const entry of burst.entries) {
+      if (entry.presentation && endsAt(entry.presentation) <= now) continue;
+      const presentation = advance(entry.presentation);
+      entries.push(!presentation || presentation === entry.presentation ? entry : { ...entry, presentation });
+    }
+    if (entries.length) floatingCombatBursts.push({ ...burst, entries });
+  }
+  const reactionAnnouncements: ReactionAnnouncement[] = [];
+  for (const reaction of reactions) {
+    if (reaction.presentation && endsAt(reaction.presentation) <= now) continue;
+    const presentation = advance(reaction.presentation);
+    reactionAnnouncements.push(
+      !presentation || presentation === reaction.presentation ? reaction : { ...reaction, presentation },
+    );
+  }
+  return { floatingCombatBursts, reactionAnnouncements };
 }
 
 export function nextCombatFeedbackDeadline(bursts: CombatTextBurst[], reactions: ReactionAnnouncement[]) {

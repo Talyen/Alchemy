@@ -41,7 +41,23 @@ export function canEnterLabyrinthNode(map: LabyrinthMap, nodeId: string): boolea
 export function labyrinthNodeVisualState(map: LabyrinthMap, nodeId: string): LabyrinthNodeVisualState {
   const node = map.nodes[nodeId];
   if (!node || node.floor !== map.currentFloor) return "undiscovered";
-  return labyrinthFloorVisualStates(map).get(nodeId) ?? "undiscovered";
+  const floor = map.floors.find((entry) => entry.depth === map.currentFloor);
+  if (!floor) return "undiscovered";
+  // The batch projection keys by the node's own id; retain its last match
+  // even if a malformed map contains aliases in the floor's id list.
+  let projected: LabyrinthNode | undefined;
+  for (const id of floor.nodeIds) {
+    const candidate = map.nodes[id];
+    if (candidate?.id === nodeId) projected = candidate;
+  }
+  if (!projected) return "undiscovered";
+  if (projected.cleared) return "cleared";
+  const neighbors = neighboringGridKeys(projected.gridPosition);
+  for (const id of floor.nodeIds) {
+    const other = map.nodes[id];
+    if (other?.cleared && neighbors.includes(gridKey(other.gridPosition))) return "reachable";
+  }
+  return projected.type === "boss" ? "locked" : "undiscovered";
 }
 
 export function canInspectLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {

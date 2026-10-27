@@ -102,7 +102,7 @@ export function resampleEquipmentShopOfferings(
       : gearBaseItemList.map((item) => item.id);
   const currentBases = new Set<string | undefined>();
   for (const item of currentItems) currentBases.add(gearDefinitions[item.definitionId]?.baseItemId);
-  const novelBases = baseItems.filter((id) => !currentBases.has(id));
+  const novelBases = currentBases.size ? baseItems.filter((id) => !currentBases.has(id)) : baseItems;
   const sample = (count: number, baseItemIds: readonly string[]) => {
     if (modifiers.includes("masterwork")) {
       return generateGearRewardChoicesForRarity(count, "astral", rng, ownedUniqueIds, baseItemIds, true, createId);

@@ -19,21 +19,23 @@ function buildAffinityPool(
   activeRng: () => number,
   companionScoreBonus: number,
 ): BattleCard[] {
-  const deckIds = new Set<string>();
-  for (const card of deck) deckIds.add(card.id);
+  const deckIds = deck.length ? new Set<string>() : undefined;
+  if (deckIds) for (const card of deck) deckIds.add(card.id);
   const shuffledCandidates = shuffle(candidates, activeRng);
   const scoreCard = (card: BattleCard): number => {
     let score = 0;
     for (const kw of getCardKeywords(card)) score += freq[kw] ?? 0;
-    if (!deckIds.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
+    if (!deckIds?.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
     if (companionScoreBonus > 0 && isCompanionSummonCard(card)) score += companionScoreBonus;
     return score;
   };
-  const poolSize = Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, candidates.length);
+  const poolSize = Math.floor(Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, candidates.length));
   // Stable sorting preserves shuffled ties and the subsequent run RNG position.
   const scored = shuffledCandidates.map((card) => ({ card, score: scoreCard(card) }));
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, poolSize).map((s) => s.card);
+  const result: BattleCard[] = [];
+  for (let index = 0; index < poolSize; index++) result.push(scored[index]!.card);
+  return result;
 }
 
 function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number): BattleCard[] {
@@ -73,14 +75,12 @@ export function selectRewardCards(
   const effectiveCandidates = candidates.length > 0 ? candidates : pool;
   const boostCompanions = !hasCompanion;
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;
-  const randomPool = shuffle(
-    companionCopies > 1
-      ? [...effectiveCandidates, ...effectiveCandidates.filter(isCompanionSummonCard)]
-      : effectiveCandidates,
-    rng,
-  );
+  const weightedCandidates = companionCopies > 1 ? [...effectiveCandidates] : effectiveCandidates;
+  if (companionCopies > 1) {
+    for (const card of effectiveCandidates) if (isCompanionSummonCard(card)) weightedCandidates.push(card);
+  }
+  const randomPool = shuffle(weightedCandidates, rng);
   const selected: BattleCard[] = [];
-  const selectedIds = new Set<string>();
   const freq = buildKeywordFrequency(deck, seedKeywords);
   const affinityPool = buildAffinityPool(
     effectiveCandidates,
@@ -96,13 +96,13 @@ export function selectRewardCards(
     const chosenCard = pickRandom(preferredPool.length > 0 ? preferredPool : randomPool, rng);
     if (!chosenCard) break;
     selected.push(chosenCard);
-    selectedIds.add(chosenCard.id);
     removeChosenCard(affinityPool, chosenCard.id);
     removeChosenCard(randomPool, chosenCard.id);
   }
 
   // Ownership changes preference, not the number of promised choices.
   if (selected.length < count) {
+    const selectedIds = new Set(selected.map((card) => card.id));
     for (const card of shuffle(
       pool.filter((candidate) => !selectedIds.has(candidate.id)),
       rng,

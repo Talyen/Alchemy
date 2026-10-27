@@ -4,8 +4,9 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 // reuse the lookup, replacement lists invalidate it, and old battles can be collected.
 const enemyTraitSets = new WeakMap<BattleState["currentEnemy"]["traits"], ReadonlySet<string>>();
 
-function readonlyTraitSet(values: string[]): ReadonlySet<string> {
-  const source = new Set(values);
+function readonlyTraitSet(traits: BattleState["currentEnemy"]["traits"]): ReadonlySet<string> {
+  const source = new Set<string>();
+  for (const trait of traits) source.add(trait.id);
   // Freezing a Set does not protect its internal slots. Expose read operations
   // only, including a forEach callback that cannot borrow the backing Set.
   const view: ReadonlySet<string> = Object.freeze({
@@ -30,7 +31,7 @@ export function getEnemyTraitSet(state: Pick<BattleState, "currentEnemy">): Read
   const traits = state.currentEnemy.traits;
   let set = enemyTraitSets.get(traits);
   if (!set) {
-    set = readonlyTraitSet(traits.map((trait) => trait.id));
+    set = readonlyTraitSet(traits);
     enemyTraitSets.set(traits, set);
   }
   return set;

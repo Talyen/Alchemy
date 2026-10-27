@@ -121,10 +121,14 @@ function firstAttack(outcome: InspectedPackets | undefined): BattleCardEffect | 
   if (!outcome || outcome.kind === "unknown") return;
   if (outcome.kind === "exact") {
     const packet = outcome.packets[0];
-    return packet ? summarize([packet]) : undefined;
+    return packet && !Number.isNaN(packet.amount) ? { ...packet } : packet ? summarize([packet]) : undefined;
   }
-  if (!outcome.outcomes.length || outcome.outcomes.some((packets) => !packets[0])) return;
-  return summarize(outcome.outcomes.map((packets) => packets[0]!));
+  const firstPackets: DamageEffect[] = [];
+  for (const packets of outcome.outcomes) {
+    if (!packets[0]) return;
+    firstPackets.push(packets[0]);
+  }
+  return firstPackets.length ? summarize(firstPackets) : undefined;
 }
 
 /** Adjust known fixed literals inline without replacing scaling or conditional rules. */
@@ -148,9 +152,12 @@ export function getBattleCardDescriptionInspection(
     const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index]));
     const key = path.join(".");
     const outcome = outcomes.get(key);
+    let observedAttack: BattleCardEffect | undefined;
+    let attackRead = false;
     if (effect.kind === "damage" && outcome?.magnitudes.size) {
       const amount = outcome.magnitudes.get("amount");
-      const actual = firstAttack(outcome);
+      const actual = amount === undefined ? undefined : (observedAttack = firstAttack(outcome));
+      attackRead = amount !== undefined;
       if (amount !== undefined && actual?.kind === "damage") {
         const frozenAmount = outcome.magnitudes.get("amountIfTargetFrozen");
         if (effect.damageTypeIfTargetFrozen && frozenAmount !== undefined) {
@@ -219,7 +226,7 @@ export function getBattleCardDescriptionInspection(
       return view;
     // The first packet is the intended attack. Follow-ups stay owned by their
     // existing status/tooltips, and unknown alternatives retain the authored rule.
-    const attack = firstAttack(outcome);
+    const attack = attackRead ? observedAttack : firstAttack(outcome);
     if (!attack) return view;
     if (effect.kind === "random-damage") {
       if (attack.kind === "random-damage") {
@@ -238,7 +245,14 @@ export function getBattleCardDescriptionInspection(
     }
     if (attack.kind === "damage") {
       const types = attack.damageTypePool;
-      if (attack.damageType !== effect.damageType || JSON.stringify(types) !== JSON.stringify(effect.damageTypePool))
+      if (
+        attack.damageType !== effect.damageType ||
+        (types !== effect.damageTypePool &&
+          (types === undefined ||
+            effect.damageTypePool === undefined ||
+            types.length !== effect.damageTypePool.length ||
+            types.some((type, index) => type !== effect.damageTypePool![index])))
+      )
         rebuild = true;
       const projected = { ...effect, amount: attack.amount, damageType: attack.damageType };
       if (types === undefined) delete projected.damageTypePool;

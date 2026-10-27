@@ -14,8 +14,15 @@ export function measureArmoryItem(isTrinket: boolean, id?: string) {
   const attribute = isTrinket ? "data-trinket-id" : "data-instance-id";
   // Compare IDs as data, without interpolating save-owned values into CSS.
   const elements = document.querySelectorAll(`[data-testid="${testId}"]`);
-  const element =
-    id === undefined ? elements[0] : Array.from(elements).find((item) => item.getAttribute(attribute) === id);
+  let element = id === undefined ? elements[0] : undefined;
+  if (id !== undefined) {
+    for (const item of elements) {
+      if (item.getAttribute(attribute) === id) {
+        element = item;
+        break;
+      }
+    }
+  }
   return element?.getBoundingClientRect();
 }
 

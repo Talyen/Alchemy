@@ -11,6 +11,8 @@ export interface TokenizedTextOptions {
   renderPlain?: (text: string, key: number) => ReactNode;
 }
 
+const EMPTY_MARKS: ReadonlyMap<string, { corrupted?: boolean; distilled?: boolean }> = new Map();
+
 export function renderTokenizedDescription(text: string, options?: TokenizedTextOptions): ReactNode[] {
   return renderDescription(text, options);
 }
@@ -22,7 +24,7 @@ function renderDescription(text: string, options?: TokenizedTextOptions): ReactN
 export function renderMessage(
   message: DescriptionMessageValue,
   options?: TokenizedTextOptions,
-  marks: ReadonlyMap<string, { corrupted?: boolean; distilled?: boolean }> = new Map(),
+  marks: ReadonlyMap<string, { corrupted?: boolean; distilled?: boolean }> = EMPTY_MARKS,
 ): ReactNode[] {
   const translated = gameText(message.id, message.template, message.values);
   let nodes: RichTextNode[];
@@ -40,13 +42,13 @@ export function renderMessage(
       const slot = message.slots[node.name!];
       const children = render(node.children ?? []);
       if (slot && "resourceId" in slot) {
+        if (!options?.renderResource) return <Fragment key={index}>{children}</Fragment>;
         const word = (node.children ?? []).map((child) => child.text ?? "").join("");
-        return options?.renderResource?.(word, slot.resourceId, index) ?? <Fragment key={index}>{children}</Fragment>;
+        return options.renderResource(word, slot.resourceId, index) ?? <Fragment key={index}>{children}</Fragment>;
       }
       if (slot && "keywordId" in slot) {
-        const word = (node.children ?? []).map((child) => child.text ?? "").join("");
         return options?.renderKeyword ? (
-          options.renderKeyword(word, slot.keywordId, index)
+          options.renderKeyword((node.children ?? []).map((child) => child.text ?? "").join(""), slot.keywordId, index)
         ) : (
           <span key={index} className={cn(keywordDefinitions[slot.keywordId].colorClass, "font-semibold")}>
             {children}

@@ -91,21 +91,51 @@ export interface PairedGroupResult {
   entries: Array<{ id: string; stats: PairedWinStats }>;
 }
 
-export function runPairedGroup(options: ReportRunOptions, group: PairedSweepGroup): PairedGroupResult {
+export interface PairedGroupCheckpoint {
+  read(index: number, id: string): PairedGroupResult["entries"][number] | undefined;
+  write(index: number, entry: PairedGroupResult["entries"][number]): void;
+  shouldContinue(): boolean;
+}
+
+export function runPairedGroupResumable(
+  options: ReportRunOptions,
+  group: PairedSweepGroup,
+  checkpoint: PairedGroupCheckpoint,
+): PairedGroupResult | undefined {
   const entries: PairedGroupResult["entries"] = [];
   const referenceConfig = buildBalanceBatchConfig(options, group.reference);
   let reference: WinSeries | undefined;
+  let index = 0;
   for (const { id, scenario, referenceSide = "baseline" } of group.variants) {
     const variantConfig = buildBalanceBatchConfig(options, scenario);
     assertMatchedPair(referenceConfig, variantConfig, id);
+    const saved = checkpoint.read(index, id);
+    if (saved) {
+      entries.push(saved);
+      index++;
+      continue;
+    }
+    if (!checkpoint.shouldContinue()) return undefined;
     // Every variant in a group compares with this exact simulation result.
     reference ??= simulateWinSeries(referenceConfig);
     const variant = simulateWinSeries(variantConfig);
     const baseline = referenceSide === "baseline" ? reference : variant;
     const treatment = referenceSide === "treatment" ? reference : variant;
-    entries.push({ id, stats: pairedWinStats(baseline.outcomes, treatment.outcomes, baseline.turns, treatment.turns) });
+    const entry = { id, stats: pairedWinStats(baseline.outcomes, treatment.outcomes, baseline.turns, treatment.turns) };
+    checkpoint.write(index++, entry);
+    entries.push(entry);
   }
   return { tier: group.reference.preset, entries };
+}
+
+export function runPairedGroup(options: ReportRunOptions, group: PairedSweepGroup): PairedGroupResult {
+  const result = runPairedGroupResumable(options, group, {
+    read: () => undefined,
+    write: () => {},
+    shouldContinue: () => true,
+  });
+  if (!result) throw new Error("Uninterrupted balance group stopped unexpectedly");
+  return result;
 }
 
 export function summarizePairedGroups(groups: Iterable<PairedGroupResult>): PairedTierRow[] {

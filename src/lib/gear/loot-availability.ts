@@ -25,15 +25,18 @@ export function getGearLootAvailability(
   ownedUniqueIds: ReadonlySet<string> = NO_OWNED_UNIQUES,
   baseItemIds: readonly string[] = ALL_BASE_ITEM_IDS,
 ): LootAvailability {
-  const allowedBases = baseItemIds === ALL_BASE_ITEM_IDS ? ALL_BASE_ITEM_ID_SET : null;
+  const allowedBases = baseItemIds === ALL_BASE_ITEM_IDS ? ALL_BASE_ITEM_ID_SET : new Set(baseItemIds);
+  let basic = false;
+  let astral = false;
+  for (const id of baseItemIds) {
+    if (!basic) basic = Boolean(gearDefinitions[gearDefinitionId(id, "basic")]);
+    if (!astral) astral = Boolean(gearDefinitions[gearDefinitionId(id, "astral")]);
+    if (basic && astral) break;
+  }
   return {
-    basic: baseItemIds.some((id) => Boolean(gearDefinitions[gearDefinitionId(id, "basic")])),
-    astral: baseItemIds.some((id) => Boolean(gearDefinitions[gearDefinitionId(id, "astral")])),
-    unique: uniqueItemList.some(
-      (unique) =>
-        (allowedBases ? allowedBases.has(unique.baseItemId) : baseItemIds.includes(unique.baseItemId)) &&
-        !ownedUniqueIds.has(unique.id),
-    ),
+    basic,
+    astral,
+    unique: uniqueItemList.some((unique) => allowedBases.has(unique.baseItemId) && !ownedUniqueIds.has(unique.id)),
   };
 }
 

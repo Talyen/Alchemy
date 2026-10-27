@@ -45,24 +45,25 @@ export function applyAltarModifiers(
   const keywords = modifiers.includes("echoing-altar") ? new Set<KeywordId>(getCardKeywords(card)) : null;
   if (!steady && !blood && !keywords) return groups;
 
-  return groups
-    .filter((group) => !steady || group.kind !== "weaken")
-    .map((group) => {
-      const weight = group.weight * (blood && group.kind === "leech" ? 3 : blood && group.kind === "convert" ? 2 : 1);
-      const keywordForCard =
-        group.kind === "secondary" ? addedKeyword : group.kind === "convert" ? convertedKeyword : null;
-      const matchingMutations =
-        keywords && keywordForCard ? filterEchoMutations(group.mutations, keywords, keywordForCard) : group.mutations;
-      // Mutation entries are sampled uniformly. Extra Bleed tickets favor the
-      // promised damage type while retaining other conversions and Echo's restrictions.
-      const mutations =
-        blood && group.kind === "convert"
-          ? matchingMutations.flatMap((mutation) =>
-              convertedKeyword(mutation.card) === "bleed"
-                ? Array.from({ length: CORRUPTION_BLOOD_RITE_BLEED_WEIGHT }, () => mutation)
-                : [mutation],
-            )
-          : matchingMutations;
-      return weight === group.weight && mutations === group.mutations ? group : { ...group, weight, mutations };
-    });
+  const modified: CorruptionMutationGroup[] = [];
+  for (const group of groups) {
+    if (steady && group.kind === "weaken") continue;
+    const weight = group.weight * (blood && group.kind === "leech" ? 3 : blood && group.kind === "convert" ? 2 : 1);
+    const keywordForCard =
+      group.kind === "secondary" ? addedKeyword : group.kind === "convert" ? convertedKeyword : null;
+    const matchingMutations =
+      keywords && keywordForCard ? filterEchoMutations(group.mutations, keywords, keywordForCard) : group.mutations;
+    // Mutation entries are sampled uniformly. Extra Bleed tickets favor the
+    // promised damage type while retaining other conversions and Echo's restrictions.
+    let mutations = matchingMutations;
+    if (blood && group.kind === "convert") {
+      mutations = [];
+      for (const mutation of matchingMutations) {
+        const copies = convertedKeyword(mutation.card) === "bleed" ? CORRUPTION_BLOOD_RITE_BLEED_WEIGHT : 1;
+        for (let index = 0; index < copies; index++) mutations.push(mutation);
+      }
+    }
+    modified.push(weight === group.weight && mutations === group.mutations ? group : { ...group, weight, mutations });
+  }
+  return modified;
 }

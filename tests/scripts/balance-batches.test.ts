@@ -44,3 +44,32 @@ it("resumes completed groups and rejects incompatible or concurrent checkpoints"
     rmSync(checkpoint, { recursive: true, force: true });
   }
 }, 25000);
+
+it("assigns deterministic groups to shards without changing their results", () => {
+  const root = mkdtempSync(join(tmpdir(), "alchemy-balance-assignment-"));
+  const run = (checkpoint: string, overrides: Record<string, string> = {}) =>
+    spawnSync(process.execPath, ["scripts/run-balance-batches.mjs"], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ALCHEMY_BALANCE_CHECKPOINT: join(root, checkpoint),
+        ALCHEMY_BALANCE_BATCH_GROUPS: "1",
+        ALCHEMY_BALANCE_ITERATIONS: "1",
+        ...overrides,
+      },
+      encoding: "utf8",
+      timeout: 12000,
+    });
+  try {
+    expect(run("plain").status).toBe(0);
+    expect(run("even", { ALCHEMY_BALANCE_SHARD_COUNT: "2", ALCHEMY_BALANCE_SHARD_INDEX: "0" }).status).toBe(0);
+    expect(run("odd", { ALCHEMY_BALANCE_SHARD_COUNT: "2", ALCHEMY_BALANCE_SHARD_INDEX: "1" }).status).toBe(0);
+    expect(readFileSync(join(root, "plain/core/0.json"), "utf8")).toEqual(
+      readFileSync(join(root, "even/core/0.json"), "utf8"),
+    );
+    expect(existsSync(join(root, "odd/core/0.json"))).toBe(false);
+    expect(existsSync(join(root, "odd/core/1.json"))).toBe(true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}, 25000);

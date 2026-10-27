@@ -228,7 +228,12 @@ function resourceChoice(
 }
 
 function joinLines(lines: EffectDescription): CardDescriptionPart[] {
-  return lines.flatMap((line, index) => (index ? ["; ", ...line] : line));
+  const parts: CardDescriptionPart[] = [];
+  for (const [index, line] of lines.entries()) {
+    if (index) parts.push("; ");
+    parts.push(...line);
+  }
+  return parts;
 }
 
 function chanceLines(
