@@ -45,6 +45,20 @@ describe("visitBattleCardEffects", () => {
       failureEffects: [{ kind: "gain-gold", amount: 3 }],
     });
     expect(chance).toEqual(before);
+
+    const partial = mapEffectChildren(chance, (child, index) =>
+      index === 2 ? { kind: "gain-gold", amount: 4 } : child,
+    );
+    expect(partial.kind).toBe("chance");
+    if (partial.kind !== "chance") throw new Error("Expected chance");
+    expect(partial.successEffects).toEqual(chance.successEffects);
+    expect(partial.successEffects).not.toBe(chance.successEffects);
+    expect(partial.failureEffects[0]).toEqual({ kind: "gain-gold", amount: 4 });
+    const copied = mapEffectChildren(chance, (child) => child, false);
+    expect(copied).not.toBe(chance);
+    if (copied.kind !== "chance") throw new Error("Expected chance");
+    expect(copied.successEffects).not.toBe(chance.successEffects);
+    expect(copied.failureEffects).not.toBe(chance.failureEffects);
   });
 
   it("visits wrappers and nested effects in authored order without changing the tree", () => {

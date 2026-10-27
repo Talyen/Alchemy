@@ -12,10 +12,6 @@ export { canEnterLabyrinthNode } from "./map-state";
 
 const COMBAT_NODE_TYPES = new Set<LabyrinthNodeType>(["combat", "elite", "boss"]);
 
-function usedEnemyIds(map: LabyrinthMap): Set<string> {
-  return new Set(Object.values(map.nodes).flatMap((node) => (node.enemyId ? [node.enemyId] : [])));
-}
-
 function pickEnemyId(type: EnemyType, used: ReadonlySet<string>, rng: () => number): string | undefined {
   const pool = enemiesByType[type];
   const preferred = pool.filter((enemy) => !used.has(enemy.id));
@@ -229,13 +225,13 @@ export function expandBeyondBoss(
     return entrance ? { ...map, currentFloor: depth, currentNodeId: entrance.id } : map;
   }
 
-  const generated = generateFloor(
-    depth,
-    rng,
-    usedEnemyIds(map),
-    Object.values(map.nodes).filter((node) => node.cleared && node.type !== "entrance").length,
-    deck,
-  );
+  const usedEnemies = new Set<string>();
+  let clearedRooms = 0;
+  for (const node of Object.values(map.nodes)) {
+    if (node.enemyId) usedEnemies.add(node.enemyId);
+    if (node.cleared && node.type !== "entrance") clearedRooms++;
+  }
+  const generated = generateFloor(depth, rng, usedEnemies, clearedRooms, deck);
   return {
     ...map,
     floors: [...map.floors, generated.floor],

@@ -22,7 +22,8 @@ export function campaignLootDepth(currentAct: number, destinationIndexInAct: num
  */
 export function labyrinthLootDepth(map: LabyrinthMap | null, pendingNodeId: string | null = null): number {
   if (!map) return 1;
-  const cleared = Object.values(map.nodes).filter((node) => node?.cleared && node.type !== "entrance").length;
+  let cleared = 0;
+  for (const node of Object.values(map.nodes)) if (node?.cleared && node.type !== "entrance") cleared++;
   const pending = pendingNodeId ? map.nodes[pendingNodeId] : undefined;
   return Math.max(1, cleared + (pending?.cleared ? 0 : 1));
 }

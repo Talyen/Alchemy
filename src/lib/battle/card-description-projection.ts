@@ -155,13 +155,16 @@ function sourceMagnitude(
   path: number[],
   field: CardMagnitudeReference["field"],
 ): CardMagnitude | undefined {
-  return getCardDescription(card)
-    .flatMap((line) => line.parts)
-    .find(
-      (part): part is CardMagnitude =>
+  for (const line of getCardDescription(card)) {
+    for (const part of line.parts) {
+      if (
         typeof part !== "string" &&
-        part.references.some((reference) => reference.field === field && referenceMatchesPath(reference, path)),
-    );
+        part.references.some((reference) => reference.field === field && referenceMatchesPath(reference, path))
+      )
+        return part;
+    }
+  }
+  return undefined;
 }
 
 /** Extra effects are read-only display bindings; the source card is never changed or executed. */
