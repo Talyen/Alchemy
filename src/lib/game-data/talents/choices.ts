@@ -1,6 +1,6 @@
 import { keywordDefinitions } from "../keywords";
 import type { KeywordId } from "../types";
-import { getTalentsForKeyword } from "./talent-pool-definitions";
+import { getTalentsForKeyword, talentPoolByKeyword } from "./talent-pool-definitions";
 import { TALENT_TREE_KEYWORD_IDS } from "./xp-keywords";
 import type { TalentDefinition } from "./types";
 
@@ -30,7 +30,7 @@ export function getTalentTreeKeywordIds(): KeywordId[] {
 }
 
 export function countImplementedTalents(keywordId: KeywordId): number {
-  return getTalentsForKeyword(keywordId).length;
+  return talentPoolByKeyword.get(keywordId)?.length ?? 0;
 }
 
 export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
@@ -39,9 +39,17 @@ export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
 
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
   const unlocked = new Set(unlockedIds);
-  for (const row of getTalentRows(keywordId)) {
-    const missing = row.filter((talent) => !unlocked.has(talent.id));
+  const talents = getTalentsForKeyword(keywordId);
+  let start = 0;
+  for (const size of [...TALENT_ROW_SIZES, talents.length]) {
+    const end = Math.min(start + size, talents.length);
+    const missing: TalentDefinition[] = [];
+    for (let index = start; index < end; index++) {
+      const talent = talents[index]!;
+      if (!unlocked.has(talent.id)) missing.push(talent);
+    }
     if (missing.length) return missing;
+    start = end;
   }
   return [];
 }

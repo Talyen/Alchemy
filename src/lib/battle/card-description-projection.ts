@@ -21,7 +21,7 @@ function referenceMatchesPath(reference: CardMagnitudeReference, path: readonly 
   return (
     reference.effectIndex === path[0] &&
     (reference.effectPath?.length ?? 0) === path.length - 1 &&
-    (reference.effectPath ?? []).every((index, position) => index === path[position + 1])
+    (!reference.effectPath || reference.effectPath.every((index, position) => index === path[position + 1]))
   );
 }
 

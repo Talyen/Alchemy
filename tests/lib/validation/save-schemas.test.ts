@@ -97,4 +97,6 @@ it("deduplicateFromSet and deduplicatedSetArraySchema repairs malformed discover
     expect(schema.parse(null)).toEqual([]);
   }
   expect(saved).toEqual(["rogue", null, "knight", "rogue", 42, "unknown", "toString"]);
+  expect(deduplicateFromSet(["unknown", "rogue", "unknown", "knight", "rogue"], ids)).toEqual(["rogue", "knight"]);
+  expect(deduplicateFromSet([], ids)).toEqual([]);
 });

@@ -68,8 +68,10 @@ function collectObserved<T>(
   for (const outcome of feedback) {
     const observations = read(outcome);
     const candidate = observations.get(effect) ?? [];
-    if (exact && (candidate.length !== first.length || candidate.some((entry, index) => !equal(entry, first[index]!))))
+    if (candidate.length !== first.length || candidate.some((entry, index) => !equal(entry, first[index]!))) {
       exact = false;
+      break;
+    }
   }
   return exact
     ? { kind: "exact", values: first }
@@ -124,9 +126,12 @@ export function inspectResolutionOutcomes(
       },
       attack: (packet) => {
         if (!current) return;
-        const packets = outcome.packets.get(current) ?? [];
+        let packets = outcome.packets.get(current);
+        if (!packets) {
+          packets = [];
+          outcome.packets.set(current, packets);
+        }
         packets.push(packet);
-        outcome.packets.set(current, packets);
       },
       directFeedback: (amounts) => {
         if (current) outcome.directAmounts.set(current, amounts);

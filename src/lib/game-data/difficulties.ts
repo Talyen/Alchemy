@@ -98,8 +98,8 @@ export function getDifficultyModifiers(characterId: CharacterId, difficultyId: D
 
 export function getGoldMultiplier(characterId: CharacterId, difficultyId: DifficultyId | null): number {
   if (!difficultyId) return 1;
-  const modifiers = getDifficultyModifiers(characterId, difficultyId);
-  const goldMod = modifiers.find((m) => m.kind === "gold-multiplier");
+  const difficulty = difficultyConfigs[characterId].difficulties.find((entry) => entry.id === difficultyId);
+  const goldMod = difficulty?.modifiers.find((m) => m.kind === "gold-multiplier");
   return goldMod?.amount ?? 1;
 }
 
