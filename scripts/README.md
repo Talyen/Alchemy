@@ -268,7 +268,12 @@ worktrees. Until adoption, integration supports the old clean-main layout.
 `status --task <slug>` reports the task checkout, original base, changes, recorded
 integration and the next action. It is a read-only snapshot; it cannot infer whether
 review or checks were completed. Successful integration records attempts and elapsed
-verification and integration time in its state file; older records lack these metrics.
+verification and integration time in its state file. It records the verified main
+commit for review of the exact integrated delta; older records fall back to the
+original base and may include concurrent main changes. Failed attempts write separate
+records under `reports/integrations/attempts/` with their phase, reason and timings;
+they do not replace integration or cleanup state. Abrupt process termination cannot
+write a failure record. Older records lack these metrics and the verified review base.
 
 Integration holds a per-task lock. Under the shared repository lock it snapshots
 main and merges it into the clean task, releases the shared lock to verify the

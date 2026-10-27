@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -232,7 +232,63 @@ async function showTaskStatus(task) {
   }
 }
 
+function recordFailedIntegration(task, tracker, error) {
+  try {
+    let directory = root;
+    for (const segment of ["reports", "integrations", "attempts"]) {
+      directory = path.join(directory, segment);
+      if (fs.lstatSync(directory, { throwIfNoEntry: false })?.isSymbolicLink())
+        throw new Error("Attempt report directory is a symlink");
+      try {
+        fs.mkdirSync(directory);
+      } catch (error) {
+        if (error.code !== "EEXIST" || fs.lstatSync(directory).isSymbolicLink()) throw error;
+      }
+    }
+    const file = path.join(directory, `${task}-${randomUUID()}.json`);
+    fs.writeFileSync(
+      file,
+      JSON.stringify(
+        {
+          task,
+          status: "failed",
+          phase: tracker.phase,
+          reason: String(error?.message ?? error).slice(0, 2000),
+          startedAt: new Date(tracker.started).toISOString(),
+          elapsedMs: Date.now() - tracker.started,
+          attempts: tracker.attempts,
+          verificationMs: tracker.verificationMs,
+        },
+        null,
+        2,
+      ) + "\n",
+      { flag: "wx" },
+    );
+    console.error(`Failed integration attempt: ${file}`);
+  } catch (reportError) {
+    console.error(`Could not record failed integration attempt: ${reportError.message}`);
+  }
+}
+
 export async function main(argv = process.argv.slice(2)) {
+  const taskIndex = argv.indexOf("--task");
+  const task =
+    argv[0] === "integrate"
+      ? slugify(
+          argv.find((arg) => arg.startsWith("--task="))?.slice(7) ?? (taskIndex >= 0 ? argv[taskIndex + 1] : "") ?? "",
+        )
+      : "";
+  const tracker =
+    task && task !== "integration" ? { started: Date.now(), phase: "setup", attempts: 0, verificationMs: 0 } : null;
+  try {
+    return await runMain(argv, tracker);
+  } catch (error) {
+    if (tracker) recordFailedIntegration(task, tracker, error);
+    throw error;
+  }
+}
+
+async function runMain(argv, tracker) {
   const [cmd, ...rest] = argv;
 
   if (["create", "status", "integrate", "finish", "setup-integration", "remove", "list", "prune"].includes(cmd)) {
@@ -337,6 +393,20 @@ export async function main(argv = process.argv.slice(2)) {
     });
     console.log(`Branch: ${branch || "detached"}\nHead: ${head}\nOriginal base: ${base}`);
     console.log(`Committed task paths since shared main ancestor:\n${changes || "  none"}`);
+    const validRevision = (value) => typeof value === "string" && /^[a-f0-9]{40,64}$/u.test(value);
+    if (state?.integration === "passed" && state.commit === head) {
+      const exactBase = validRevision(state.reviewBase) ? state.reviewBase : null;
+      const reviewBase = exactBase ?? (validRevision(base) ? base : null);
+      if (reviewBase && validRevision(head)) {
+        const reviewPaths = git("-C", taskPath, "diff", "--no-renames", "--name-only", reviewBase, head);
+        console.log(
+          exactBase
+            ? `Integrated changes against verified main ${reviewBase}:\n${reviewPaths || "  none"}`
+            : `Changes since original base ${reviewBase} (may include concurrent main changes):\n${reviewPaths || "  none"}`,
+        );
+        console.log(`Review from the task checkout: git diff ${reviewBase} ${head}`);
+      } else console.log("Integration review base unavailable; inspect task history and integration evidence.");
+    }
     console.log(`Working paths:\n${dirty || "  none"}`);
     console.log(`Recorded integration: ${state ? `${state.integration}/${state.cleanup} at ${state.commit}` : "none"}`);
     if (markers.length)
@@ -388,8 +458,10 @@ export async function main(argv = process.argv.slice(2)) {
     if (taskPort === port) taskPort = 20000 + ((taskPort - 20000 + 1) % 40000);
     // Keep this task stable while peers verify independently. The shared lock
     // protects only main snapshots, merges and advancement, never test-lane waits.
+    if (tracker) tracker.phase = "task lock";
     const taskLock = await acquireExclusivePort(taskPort, { label: "Task integration lock" });
     try {
+      if (tracker) tracker.phase = "checkout validation";
       const records = git(root, ["worktree", "list", "--porcelain", "-z"], true).split("\0\0");
       const mainRecord = records.find((record) => record.split("\0").includes("branch refs/heads/main"));
       if (!mainRecord) throw new Error("main must have a registered checkout; nothing integrated.");
@@ -486,6 +558,7 @@ export async function main(argv = process.argv.slice(2)) {
             cleanup: "passed",
             evidence,
             ...(previous?.commit === head && previous.metrics ? { metrics: previous.metrics } : {}),
+            ...(previous?.commit === head && previous.reviewBase ? { reviewBase: previous.reviewBase } : {}),
           });
           console.log(`Task finished. State: ${stateFile}`);
           await showTaskStatus(task);
@@ -497,6 +570,7 @@ export async function main(argv = process.argv.slice(2)) {
             cleanup: "blocked",
             error: error.message,
             ...(previous?.commit === head && previous.metrics ? { metrics: previous.metrics } : {}),
+            ...(previous?.commit === head && previous.reviewBase ? { reviewBase: previous.reviewBase } : {}),
           });
           throw new Error(
             `Integration remains complete; cleanup blocked: ${error.message}. Retry: node scripts/agent-worktree.mjs finish --task ${task}`,
@@ -507,14 +581,20 @@ export async function main(argv = process.argv.slice(2)) {
       }
       console.log(`Integration phase: verify and advance main; retain task checkout and browsers.`);
       let taskHead;
+      let reviewBase;
       const integrationStarted = Date.now();
       let attempts = 0;
       let verificationMs = 0;
       for (;;) {
         attempts++;
+        if (tracker) {
+          tracker.attempts = attempts;
+          tracker.phase = "snapshot lock";
+        }
         const snapshotLock = await acquireExclusivePort(port, { label: "Integration lock" });
         let mainHead;
         try {
+          if (tracker) tracker.phase = "snapshot and merge";
           clean(mainPath, "main");
           clean(taskPath, `agent/${task}`);
           mainHead = git(mainPath, ["rev-parse", "HEAD"]);
@@ -533,6 +613,7 @@ export async function main(argv = process.argv.slice(2)) {
           .split("\0")
           .filter(Boolean);
         if (paths.length) {
+          if (tracker) tracker.phase = "verification";
           const { commandInvocation } = await import(
             pathToFileURL(path.join(taskPath, "scripts/lib/command-invocation.mjs")).href + `?commit=${taskHead}`
           );
@@ -542,10 +623,16 @@ export async function main(argv = process.argv.slice(2)) {
             stdio: "inherit",
           });
           verificationMs += Date.now() - verificationStarted;
-          if (result.status !== 0) throw new Error("Integration verification failed; task was not advanced into main.");
+          if (tracker) tracker.verificationMs = verificationMs;
+          if (result.status !== 0)
+            throw new Error(
+              `Integration verification failed (exit ${result.status ?? "unavailable"}); task was not advanced into main.`,
+            );
         }
+        if (tracker) tracker.phase = "advance lock";
         const advanceLock = await acquireExclusivePort(port, { label: "Integration lock" });
         try {
+          if (tracker) tracker.phase = "revalidate and advance";
           clean(taskPath, `agent/${task}`);
           clean(mainPath, "main");
           if (git(taskPath, ["rev-parse", "HEAD"]) !== taskHead)
@@ -555,15 +642,18 @@ export async function main(argv = process.argv.slice(2)) {
             continue;
           }
           git(mainPath, ["merge", "--ff-only", taskHead]);
+          reviewBase = mainHead;
           break;
         } finally {
           await advanceLock.release();
         }
       }
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
+      if (tracker) tracker.phase = "record integration";
       saveState({
         task,
         commit: taskHead,
+        reviewBase,
         integration: "passed",
         cleanup: "pending",
         checkout: taskPath,
