@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { equalWeightByType } from "@/lib/balance/report-run";
+import {
+  collectAnomalies,
+  compactCoreRow,
+  equalWeightByType,
+  mergeCoreMetrics,
+  type CoreRow,
+} from "@/lib/balance/report-run";
+import { createEmptyAnomalies } from "@/lib/balance/anomalies";
 import { emptyRateCell, type RateCell } from "@/lib/balance/report-rankings";
 
 function rate(winRate: number, n: number): RateCell {
@@ -50,4 +57,28 @@ describe("equalWeightByType", () => {
       emptyRateCell(),
     );
   });
+});
+
+it("retains anomaly peaks, counts, ordering and sub-threshold maxima in compact checkpoints", () => {
+  const sample = (block: number, poison: number) => ({
+    characterId: "knight" as const,
+    enemyId: "skeleton",
+    anomalies: { ...createEmptyAnomalies(), maxPlayerBlock: block, maxPlayerPoison: poison },
+  });
+  const base: CoreRow = {
+    characterId: "knight",
+    enemyId: "skeleton",
+    enemyType: "normal",
+    tier: "early",
+    cell: emptyRateCell(),
+    cardPlayCounts: {},
+    results: [sample(12, 30), sample(120, 10), sample(130, 3)],
+  };
+  const rows: CoreRow[] = [base, { ...base, tier: "late", results: [sample(130, 44), sample(320, 10)] }];
+  const direct = collectAnomalies(rows);
+  const saved = JSON.parse(JSON.stringify(rows.map(compactCoreRow))) as Array<ReturnType<typeof compactCoreRow>>;
+  expect(saved[0]!.row.results).toHaveLength(2);
+  expect(saved[1]!.row.results).toHaveLength(1);
+  expect(collectAnomalies(saved.map((entry) => entry.row)).anomalies).toEqual(direct.anomalies);
+  expect(mergeCoreMetrics(saved)).toEqual(direct.metrics);
 });

@@ -26,7 +26,7 @@ import {
   runTrinketSweep,
 } from "./report-sweeps";
 import { simulateBatch } from "./simulator-batch";
-import type { BalanceBatchResult, TalentPreset } from "./simulator-types";
+import type { BalanceBatchResult, BattleSimulationResult, TalentPreset } from "./simulator-types";
 
 export type { ReportRunOptions } from "./report-options";
 export { equalWeightByType } from "./core-report-summary";
@@ -44,12 +44,11 @@ function withPhaseTiming<T>(label: string, fn: () => T): T {
   return result;
 }
 
-interface CoreRow extends CoreRateRow {
-  results: BalanceBatchResult["results"];
+export interface CoreRow extends CoreRateRow {
+  results: Array<Pick<BattleSimulationResult, "characterId" | "enemyId" | "anomalies">>;
 }
 
-function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
-  const rows: CoreRow[] = [];
+export function* coreScenarios(options: ReportRunOptions): Iterable<() => CoreRow> {
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const decks = Array.from({ length: options.deckSeeds }, (_, deckIndex) => {
@@ -57,45 +56,55 @@ function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
         return buildClassSimDeck(characterId, tier.preset, deckSeed);
       });
       for (const matchup of coreMatchupsForTier(tier)) {
-        const batches: BalanceBatchResult[] = [];
-        for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
-          const { fightSeed } = coreScenarioSeeds({
-            tier: tier.preset,
+        yield () => {
+          const batches: BalanceBatchResult[] = [];
+          for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
+            const { fightSeed } = coreScenarioSeeds({
+              tier: tier.preset,
+              characterId,
+              enemyId: matchup.enemyId,
+              depth: matchup.depth,
+              deckIndex,
+            });
+            const deck = decks[deckIndex];
+            batches.push(
+              simulateBatch(
+                buildBalanceBatchConfig(options, {
+                  characterId,
+                  enemyId: matchup.enemyId,
+                  depth: matchup.depth,
+                  preset: tier.preset,
+                  seed: fightSeed,
+                  ...(deck ? { deck } : {}),
+                }),
+              ),
+            );
+          }
+          return {
             characterId,
             enemyId: matchup.enemyId,
-            depth: matchup.depth,
-            deckIndex,
-          });
-          const deck = decks[deckIndex];
-          batches.push(
-            simulateBatch(
-              buildBalanceBatchConfig(options, {
-                characterId,
-                enemyId: matchup.enemyId,
-                depth: matchup.depth,
-                preset: tier.preset,
-                seed: fightSeed,
-                ...(deck ? { deck } : {}),
-              }),
+            enemyType: matchup.enemyType,
+            tier: tier.preset,
+            cell: combineRateCells(batches.map(rateCellFromBatch)),
+            cardPlayCounts: sumCardPlayCounts(batches.map((batch) => batch.cardPlayCounts)),
+            results: batches.flatMap((batch) =>
+              batch.results.map(({ characterId: resultCharacterId, enemyId, anomalies }) => ({
+                characterId: resultCharacterId,
+                enemyId,
+                anomalies,
+              })),
             ),
-          );
-        }
-        rows.push({
-          characterId,
-          enemyId: matchup.enemyId,
-          enemyType: matchup.enemyType,
-          tier: tier.preset,
-          cell: combineRateCells(batches.map(rateCellFromBatch)),
-          cardPlayCounts: sumCardPlayCounts(batches.map((batch) => batch.cardPlayCounts)),
-          results: batches.flatMap((batch) => batch.results),
-        });
+          };
+        };
       }
     }
   }
-  return rows;
 }
 
-function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; metrics: AnomalyMetricRow[] } {
+export function collectAnomalies(rows: readonly CoreRow[]): {
+  anomalies: AnomalyReportRow[];
+  metrics: AnomalyMetricRow[];
+} {
   const byField: Record<string, { field: string; maxValue: number; battles: number; peakScenario: string }> = {};
   const perTier: Record<TalentPreset, Record<string, number>> = { early: {}, mid: {}, late: {} };
   for (const row of rows) {
@@ -141,13 +150,57 @@ function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; met
   return { anomalies: Object.values(byField).sort((a, b) => b.maxValue - a.maxValue), metrics };
 }
 
-export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
-  const core = withPhaseTiming("core scenarios", () => runCoreScenarios(options));
-  const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
+export interface CompactCoreRow {
+  row: CoreRow;
+  metrics: AnomalyMetricRow[];
+}
 
-  const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));
-  const rankedSweep = (label: string, run: () => PairedTierRow[]) =>
-    withPhaseTiming(label, () => run().sort((a, b) => a.deltas.late.delta - b.deltas.late.delta));
+export function compactCoreRow(row: CoreRow): CompactCoreRow {
+  const { metrics } = collectAnomalies([row]);
+  const threshold = getAnomalyThreshold(row.tier);
+  return {
+    row: {
+      ...row,
+      results: row.results.filter((result) => ANOMALY_METRICS.some(({ key }) => result.anomalies[key] > threshold)),
+    },
+    metrics,
+  };
+}
+
+export function mergeCoreMetrics(chunks: readonly CompactCoreRow[]): AnomalyMetricRow[] {
+  const maxima = new Map<string, { field: string; values: Record<TalentPreset, number> }>(
+    ANOMALY_METRICS.map(({ label }) => [label, { field: label, values: { early: 0, mid: 0, late: 0 } }]),
+  );
+  for (const chunk of chunks) {
+    for (const metric of chunk.metrics) {
+      const entry = maxima.get(metric.field);
+      if (!entry) throw new Error(`Unknown anomaly metric: ${metric.field}`);
+      for (const tier of ["early", "mid", "late"] as const)
+        entry.values[tier] = Math.max(entry.values[tier], metric.values[tier]);
+    }
+  }
+  return [...maxima.values()].sort((left, right) => right.values.late - left.values.late);
+}
+
+type CoreSummary = Pick<BalanceReportModel, "enemies" | "classes" | "classMatchups">;
+type SweepSummary = Pick<
+  BalanceReportModel,
+  | "boons"
+  | "cardsIsolatedSkeleton"
+  | "cardsIsolatedElite"
+  | "cardsInClass"
+  | "talents"
+  | "companions"
+  | "gear"
+  | "affixes"
+>;
+
+export function composeBalanceReport(
+  options: ReportRunOptions,
+  core: CoreSummary,
+  sweeps: SweepSummary,
+  anomalySummary: { anomalies: AnomalyReportRow[]; metrics: AnomalyMetricRow[] },
+): BalanceReportModel {
   return {
     meta: {
       samplingMode: options.mode ?? "custom",
@@ -158,7 +211,21 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
       cardDeckSamples: options.cardDeckSamples,
       deckSeeds: options.deckSeeds,
     },
-    ...summary,
+    ...core,
+    ...sweeps,
+    anomalies: anomalySummary.anomalies,
+    anomalyMetrics: anomalySummary.metrics,
+  };
+}
+
+export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
+  const core = withPhaseTiming("core scenarios", () => [...coreScenarios(options)].map((run) => run()));
+  const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
+
+  const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));
+  const rankedSweep = (label: string, run: () => PairedTierRow[]) =>
+    withPhaseTiming(label, () => run().sort((a, b) => a.deltas.late.delta - b.deltas.late.delta));
+  const sweeps = {
     boons: rankedSweep("boon sweep", () => runTrinketSweep(options)),
     cardsIsolatedSkeleton: rankedSweep("card isolated (skeleton)", () => runCardSweepIsolated(options, "skeleton")),
     cardsIsolatedElite: rankedSweep("card isolated (elite)", () => runCardSweepIsolated(options, "mimic")),
@@ -167,7 +234,6 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
     companions: rankedSweep("companion sweep", () => runCompanionSweep(options)),
     gear: rankedSweep("gear sweep", () => runGearSweep(options)),
     affixes: rankedSweep("affix sweep", () => runAffixSweep(options)),
-    anomalies,
-    anomalyMetrics: metrics,
   };
+  return composeBalanceReport(options, summary, sweeps, { anomalies, metrics });
 }

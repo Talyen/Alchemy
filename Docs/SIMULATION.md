@@ -31,6 +31,9 @@ npm run balance:sim
 # Run the exhaustive comparison with the original sample counts
 npm run balance:sim:full
 
+# Process at most 10 scenario groups per invocation; repeat to resume.
+ALCHEMY_BALANCE_MODE=full npm run balance:sim:batch
+
 # Increase iterations per scenario
 ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
 
@@ -56,6 +59,20 @@ Companions, Trinkets, Gear and affixes at Early/Mid/Late progression.
 `reports/balance-findings.*` and `reports/balance-full/`; small cells remain
 exploratory. Exact sample counts belong to [the balance owner](../src/lib/balance/)
 and the generated report's methodology.
+
+For a resumable sweep, `balance:sim:batch` saves each completed core matchup or
+paired group atomically under `reports/balance-batches/`. Repeat the command until
+it writes the complete report in `reports/balance-batches/report/`. Set
+`ALCHEMY_BALANCE_BATCH_GROUPS` to a positive group count (default 10) to bound each
+invocation. A group is indivisible, so this is not a time guarantee. Set
+`ALCHEMY_BALANCE_CHECKPOINT` to use a different directory. Checkpoints bind the
+source, edition and report options; changed inputs require a fresh directory.
+Interrupted groups are recomputed; completed groups remain usable. Existing
+`balance:sim` and `balance:sim:full` behavior is unchanged. Heavy local runs still
+require the admission and authorization described in Contributing.
+Only one process may use a checkpoint at a time. A process killed without cleanup
+can leave `.lock`; inspect the recorded PID and remove it only after confirming its
+owner is no longer active. Never remove a live or ambiguous lock.
 
 Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `findings-collector.ts` attaches report identity separately from metric rules and shares one sampled-median evaluator between enemy-type and class equity; candidate order remains explicit in `collectBalanceFindings`. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
 

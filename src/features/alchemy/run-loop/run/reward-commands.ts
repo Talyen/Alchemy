@@ -68,11 +68,12 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
       // Skipping is only permitted for card rewards (or when no choices are offered).
       // Non-card rewards (gear, trinket, boon) must be claimed with an explicit choice,
       // so a null claim there is rejected and the rewards screen stays put (matching the UI).
-      const rewardState = readRewardActivity(session.activity).state;
+      const rewardActivity = readRewardActivity(session.activity);
+      const rewardState = snapshotTransactionValue(rewardActivity.state);
       if (
         choiceId === null
           ? rewardState.rewardType !== "card" && rewardState.choices.length > 0
-          : !resolveRewardChoice(snapshotTransactionValue(rewardState), choiceId)
+          : !resolveRewardChoice(rewardState, choiceId)
       )
         return rejectCommand("Reward cannot be claimed", null);
       if (!beginRewardClaim(draft)) return rejectCommand("Reward cannot be claimed", null);
@@ -91,12 +92,12 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
       const campaignReward = projectCampaignReward(draft);
       const result = finalizeRewardState({
         rewardState: {
-          ...snapshotTransactionValue(readRewardActivity(session.activity).state),
+          ...rewardState,
           materials: campaignReward.materials,
           selectedId: choiceId,
         },
-        companionRewardCards: readRewardActivity(session.activity).companionCards
-          ? snapshotTransactionValue(readRewardActivity(session.activity).companionCards)
+        companionRewardCards: rewardActivity.companionCards
+          ? snapshotTransactionValue(rewardActivity.companionCards)
           : null,
       });
 

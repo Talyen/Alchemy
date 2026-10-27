@@ -27,6 +27,7 @@ export interface ScenarioRunResult {
   inputEvents?: InputEventSample[];
   longAnimationFrames?: LongAnimationFrameSample[];
   longAnimationFrameSupported?: boolean;
+  /** Keys ending in Ms are durations; other observations are unitless. */
   observations?: Record<string, number>;
   caseIdentity?: string;
   exploratory?: boolean;
@@ -305,8 +306,9 @@ export function renderSummaryMarkdown(options: {
           .filter((value): value is number => value !== undefined && Number.isFinite(value));
         if (values.length === 0) continue;
         const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+        const unit = key.endsWith("Ms") ? " ms" : "";
         lines.push(
-          `| ${key} | ${fmt(average, 1)} ms | ${fmt(Math.min(...values), 1)} ms | ${fmt(Math.max(...values), 1)} ms |`,
+          `| ${key} | ${fmt(average, 1)}${unit} | ${fmt(Math.min(...values), 1)}${unit} | ${fmt(Math.max(...values), 1)}${unit} |`,
         );
       }
       lines.push("");

@@ -86,26 +86,39 @@ function rowsFromComparisons(collected: PairedStatsById): PairedTierRow[] {
   }));
 }
 
-export function runPairedSweep(options: ReportRunOptions, groups: Iterable<PairedSweepGroup>): PairedTierRow[] {
+export interface PairedGroupResult {
+  tier: TalentPreset;
+  entries: Array<{ id: string; stats: PairedWinStats }>;
+}
+
+export function runPairedGroup(options: ReportRunOptions, group: PairedSweepGroup): PairedGroupResult {
+  const entries: PairedGroupResult["entries"] = [];
+  const referenceConfig = buildBalanceBatchConfig(options, group.reference);
+  let reference: WinSeries | undefined;
+  for (const { id, scenario, referenceSide = "baseline" } of group.variants) {
+    const variantConfig = buildBalanceBatchConfig(options, scenario);
+    assertMatchedPair(referenceConfig, variantConfig, id);
+    // Every variant in a group compares with this exact simulation result.
+    reference ??= simulateWinSeries(referenceConfig);
+    const variant = simulateWinSeries(variantConfig);
+    const baseline = referenceSide === "baseline" ? reference : variant;
+    const treatment = referenceSide === "treatment" ? reference : variant;
+    entries.push({ id, stats: pairedWinStats(baseline.outcomes, treatment.outcomes, baseline.turns, treatment.turns) });
+  }
+  return { tier: group.reference.preset, entries };
+}
+
+export function summarizePairedGroups(groups: Iterable<PairedGroupResult>): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
   for (const group of groups) {
-    const referenceConfig = buildBalanceBatchConfig(options, group.reference);
-    let reference: WinSeries | undefined;
-    for (const { id, scenario, referenceSide = "baseline" } of group.variants) {
-      const variantConfig = buildBalanceBatchConfig(options, scenario);
-      assertMatchedPair(referenceConfig, variantConfig, id);
-      // Every variant in a group compares with this exact simulation result.
-      reference ??= simulateWinSeries(referenceConfig);
-      const variant = simulateWinSeries(variantConfig);
-      const baseline = referenceSide === "baseline" ? reference : variant;
-      const treatment = referenceSide === "treatment" ? reference : variant;
-      addComparison(
-        collected,
-        group.reference.preset,
-        id,
-        pairedWinStats(baseline.outcomes, treatment.outcomes, baseline.turns, treatment.turns),
-      );
-    }
+    for (const { id, stats } of group.entries) addComparison(collected, group.tier, id, stats);
   }
   return rowsFromComparisons(collected);
+}
+
+export function runPairedSweep(options: ReportRunOptions, groups: Iterable<PairedSweepGroup>): PairedTierRow[] {
+  function* results(): Iterable<PairedGroupResult> {
+    for (const group of groups) yield runPairedGroup(options, group);
+  }
+  return summarizePairedGroups(results());
 }

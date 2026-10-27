@@ -2982,7 +2982,7 @@
   "catalog.cardLibrary.concussive-shot.line1": {"id":"description.6299bb9c9ab5205c","values":{}},
   "catalog.cardLibrary.crystal-bulwark.line0": {"id":"description.b9408218ba835430","values":{"value0":1}},
   "catalog.cardLibrary.crystal-bulwark.line1": {"id":"description.f67c52545b3a933","values":{"value0":1}},
-  "catalog.cardLibrary.dark-pact.line0": {"id":"description.4bf7638d4bccd71d","values":{"value0":2}},
+  "catalog.cardLibrary.dark-pact.line0": {"id":"description.4bf7638d4bccd71d","values":{"value0":3}},
   "catalog.cardLibrary.dark-pact.line1": {"id":"description.32916c10202b1318","values":{"value0":1}},
   "catalog.cardLibrary.dark-pact.line2": {"id":"description.b6b1a842bc1e8274","values":{"value0":1}},
   "catalog.cardLibrary.earthquake.line0": {"id":"description.b1cd9c17a2ab891d","values":{"value0":2}},
