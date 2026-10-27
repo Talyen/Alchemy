@@ -52,6 +52,7 @@ export function isNonFoldingEffect(effect: BattleCardEffect): boolean {
  */
 function scalePotionEffect(effect: BattleCardEffect, scale: number | "double"): BattleCardEffect {
   if (isUnscalableEffect(effect)) return effect;
+  if (scale !== "double" && (effect.kind === "draw-cards" || effect.kind === "random-draw")) return effect;
   const scaleValue = (value: number, bonusMultiplier = 1) =>
     scale === "double" ? value * 2 : value + scale * bonusMultiplier;
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {

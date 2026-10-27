@@ -6,6 +6,7 @@ import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { applyCardEffects } from "@/lib/battle";
 import { makeState } from "../../fixtures/battle";
 import { createSeededRng } from "@/lib/rng";
+import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 import { chance, potion, repeated, roundTrip } from "./fixtures";
 
 it("distills alternate magnitudes together, marks them, and preserves the source", () => {
@@ -84,15 +85,27 @@ it("rejects an unsupported Distill but preserves both valid ingredients when fol
   expect(roundTrip(mixed)).toEqual(mixed);
 });
 
-it("distills random ranges like doubling does, without touching their bounds logic", () => {
+it("distills random damage but preserves draw counts", () => {
   const source = potion([
     { kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn", "holy"] },
     { kind: "random-draw", minAmount: 1, maxAmount: 6 },
   ]);
   expect(strengthenPotion(source)!.effects).toEqual([
     { kind: "random-damage", minAmount: 2, maxAmount: 4, damageTypePool: ["burn", "holy"] },
-    { kind: "random-draw", minAmount: 2, maxAmount: 7 },
+    { kind: "random-draw", minAmount: 1, maxAmount: 6 },
   ]);
+});
+
+it("preserves a Twin Offering draw gift when distilling a Potion", () => {
+  const reusable = getCorruptionMutationGroups(cardById["health-potion"]!).find((group) => group.kind === "reusable")!
+    .mutations[0]!.card;
+  const withDraw = getCorruptionMutationGroups(reusable).find((group) => group.kind === "draw")!.mutations[0]!.card;
+  const result = strengthenPotion(withDraw)!;
+  expect(result.effects).toEqual([
+    { kind: "heal", amount: 9 },
+    { kind: "draw-cards", amount: 1 },
+  ]);
+  expect(roundTrip(result)).toEqual(result);
 });
 
 it("offers three distinct seeded Potions including recovery or defense", () => {
