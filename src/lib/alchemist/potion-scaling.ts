@@ -10,7 +10,7 @@ import {
   getCardEffect,
   isPotionCard,
   mapEffectChildren,
-  withCardDescription,
+  renderCardDescription,
   type BattleCard,
   type BattleCardEffect,
   type CardDescription,
@@ -120,7 +120,12 @@ function rebuildScaledPotion(card: BattleCard, effects: BattleCardEffect[], dist
   let description = carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects));
   if (distilled) description = markDistilledMagnitudes(description, card.effects, effects);
   appendCardDescriptionTrailer(description, card.tags, card.consume === true);
-  return cloneBattleCard(withCardDescription({ ...card, effects }, description));
+  return cloneBattleCard({
+    ...card,
+    effects,
+    description,
+    descriptionLines: renderCardDescription(effects, description).descriptionLines,
+  });
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {

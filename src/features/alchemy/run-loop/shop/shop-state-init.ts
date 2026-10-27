@@ -19,8 +19,8 @@ import {
   TRINKET_SHOP_OFFERED,
 } from "@/lib/game-constants";
 import {
-  getOfferableCardPool,
-  getStandardPotionPool,
+  getOfferableCardPoolView,
+  getStandardPotionPoolView,
   selectRewardCards,
   trinketLibrary,
   type BattleCard,
@@ -40,13 +40,17 @@ import { createInstanceId } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
+export function merchantShopPoolView(modifiers: readonly EncounterRewardTraitId[] = []): readonly BattleCard[] {
+  return labyrinthCardShopPool(getOfferableCardPoolView(), modifiers);
+}
+
 export function merchantShopPool(modifiers: readonly EncounterRewardTraitId[] = []): BattleCard[] {
-  return labyrinthCardShopPool(getOfferableCardPool(), modifiers);
+  return [...merchantShopPoolView(modifiers)];
 }
 
 export function resampleCardShopOfferings(
   deck: BattleCard[],
-  pool: BattleCard[],
+  pool: readonly BattleCard[],
   currentItems: BattleCard[],
   count: number,
   rng: () => number,
@@ -141,7 +145,7 @@ export function createInitialShopState(
 ): ShopState {
   return {
     ...emptyShopState(),
-    cards: selectRewardCards(deck, merchantShopPool(modifiers), SHOP_CARDS_OFFERED, [], rng),
+    cards: selectRewardCards(deck, merchantShopPoolView(modifiers), SHOP_CARDS_OFFERED, [], rng),
   };
 }
 
@@ -154,7 +158,7 @@ export function createInitialAlchemistState(
     ...emptyAlchemistState(),
     brewOffers: createAlchemistBrewOffers(rng, modifiers),
     potions: applyStrongSpiritsToPotions(
-      selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED, [], rng),
+      selectRewardCards(deck, getStandardPotionPoolView(), ALCHEMIST_POTIONS_OFFERED, [], rng),
       modifiers,
     ),
   };

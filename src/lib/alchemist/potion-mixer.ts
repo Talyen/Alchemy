@@ -10,7 +10,7 @@ import {
   carryCardDescriptionMarks,
   getCardDescription,
   mapCardDescriptionReferences,
-  withCardDescription,
+  renderCardDescription,
   mixedPotion,
   isPotionCard,
   visitBattleCardEffects,
@@ -72,21 +72,17 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
     effects.push(...part.effects);
   }
   appendCardDescriptionTrailer(description, tags, true);
-  return cloneBattleCard(
-    withCardDescription(
-      {
-        id: `${MIXED_POTION_CARD_ID}-crafted`,
-        title: MIXED_POTION_TITLE,
-        descriptionLines: [],
-        art: mixedPotion,
-        cost: MIXED_POTION_COST,
-        consume: true,
-        ...(tags.length ? { tags } : {}),
-        effects,
-      },
-      description,
-    ),
-  );
+  return cloneBattleCard({
+    id: `${MIXED_POTION_CARD_ID}-crafted`,
+    title: MIXED_POTION_TITLE,
+    descriptionLines: renderCardDescription(effects, description).descriptionLines,
+    description,
+    art: mixedPotion,
+    cost: MIXED_POTION_COST,
+    consume: true,
+    ...(tags.length ? { tags } : {}),
+    effects,
+  });
 }
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard {

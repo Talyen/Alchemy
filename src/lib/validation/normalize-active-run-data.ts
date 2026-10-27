@@ -5,7 +5,7 @@ import {
   cardHasKeyword,
   characters,
   cloneBattleCard,
-  getOfferableCardPool,
+  getOfferableCardPoolView,
   isStandardPotionCard,
   selectRewardCards,
   type BattleCard,
@@ -50,7 +50,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
   ): PersistedBattleCard[] {
     const filtered = filterLiveCards(choices);
     if (filtered.length > 0 || !canPick) return filtered;
-    const pool = getOfferableCardPool();
+    const pool = getOfferableCardPoolView();
     const tagged = keyword ? pool.filter((card) => cardHasKeyword(card, keyword)) : [];
     return selectRewardCards(
       runDeck,

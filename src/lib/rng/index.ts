@@ -147,10 +147,11 @@ export function getBattleRng(state: { rng?: Rng }): Rng {
 }
 
 export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
-  return shuffleOwned([...items], rng);
+  return shuffleInPlace([...items], rng);
 }
 
-function shuffleOwned<T>(items: T[], rng: Rng): T[] {
+/** Shuffle an array owned by the caller, preserving the same draws as shuffle. */
+export function shuffleInPlace<T>(items: T[], rng: Rng): T[] {
   for (let index = items.length - 1; index > 0; index -= 1) {
     const swapIndex = rngInt(rng, index + 1);
     const item = items[index]!;
@@ -170,7 +171,7 @@ function sampleOwned<T>(items: T[], count: number, rng: Rng): T[] {
   if (count === 0) return [];
   // Keep the full shuffle: even a small sample must preserve seeded results
   // and the stream position used by subsequent rewards and encounters.
-  shuffleOwned(items, rng);
+  shuffleInPlace(items, rng);
   items.length = Math.min(count, items.length);
   return items;
 }

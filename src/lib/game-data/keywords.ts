@@ -18,6 +18,13 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   const base = cachedEffectKeywords(card.effects);
   if (!card.consume && !card.tags?.length) return [...base];
   if (card.consume && !card.tags?.length) return base.includes("consume") ? [...base] : [...base, "consume"];
+  if (card.tags?.length === 1) {
+    const tag = card.tags[0]!;
+    const keywords = [...base];
+    if (card.consume && !base.includes("consume")) keywords.push("consume");
+    if (!keywords.includes(tag)) keywords.push(tag);
+    return keywords;
+  }
   const keywords = new Set(base);
   if (card.consume) keywords.add("consume");
   for (const tag of card.tags ?? []) keywords.add(tag);
@@ -26,7 +33,13 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
 
 /** Internal read-only view for consumers that do not retain or mutate keywords. */
 export function getCardKeywordView(card: BattleCard): readonly KeywordId[] {
-  return !card.consume && !card.tags?.length ? cachedEffectKeywords(card.effects) : getCardKeywords(card);
+  const base = cachedEffectKeywords(card.effects);
+  if (
+    (!card.consume || base.includes("consume")) &&
+    (!card.tags?.length || card.tags.every((tag) => base.includes(tag)))
+  )
+    return base;
+  return getCardKeywords(card);
 }
 
 /** Predicate callers can use the immutable cache without copying its array. */

@@ -1,7 +1,7 @@
 import {
   characters,
   cloneBattleCard,
-  getOfferableCardPool,
+  getOfferableCardPoolView,
   selectRewardCards,
   type BattleCard,
   type BestiaryEntry,
@@ -41,7 +41,7 @@ function createWildwoodDraftChoices(
 ): BattleCard[] {
   return selectRewardCards(
     draftedCards,
-    getOfferableCardPool(),
+    getOfferableCardPoolView(),
     DRAFT_CHOICES,
     draftedCards,
     rng,

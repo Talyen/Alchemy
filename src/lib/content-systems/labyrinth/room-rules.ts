@@ -29,7 +29,10 @@ const MYSTERY_REWARDS = [
   ["enlightening", "gainXP"],
 ] as const;
 
-export function labyrinthCardShopPool(pool: BattleCard[], modifiers: readonly EncounterRewardTraitId[]): BattleCard[] {
+export function labyrinthCardShopPool<T extends readonly BattleCard[]>(
+  pool: T,
+  modifiers: readonly EncounterRewardTraitId[],
+): T | BattleCard[] {
   let theme: KeywordId | undefined;
   for (const id of modifiers) {
     theme = MARKET_THEMES[id];

@@ -20,7 +20,7 @@ import {
   createShopRefreshAction,
 } from "./shop-commands-core";
 import { computeRemoveCardPrice, draftShopDiscounts, getShopBuyPrice, readShopDiscounts } from "./shop-pricing";
-import { merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
+import { merchantShopPoolView, resampleCardShopOfferings } from "./shop-state-init";
 
 export function createMerchantShopCommands(gameSession: GameSession) {
   const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions(
@@ -67,7 +67,7 @@ export function createMerchantShopCommands(gameSession: GameSession) {
         ...state,
         cards: resampleCardShopOfferings(
           snapshotTransactionValue(draft.run.activeRun.runDeck),
-          merchantShopPool(modifiers),
+          merchantShopPoolView(modifiers),
           state.cards,
           SHOP_CARDS_OFFERED,
           createDraftRunRandomSource(draft, "shops"),

@@ -13,7 +13,7 @@ import {
   isCompanionSummonCard,
   mapEffectChildren,
   visitBattleCardEffects,
-  withCardDescription,
+  renderCardDescription,
   type BattleCard,
   type BattleCardEffect,
   type DamageType,
@@ -155,7 +155,11 @@ function convertEffect(effect: BattleCardEffect, source: KeywordId, destination:
     mapped.damageTypePool &&
     DAMAGE_KEYWORDS.includes(destination)
   ) {
-    const damageTypePool = mapped.damageTypePool.map((type) => (type === source ? (destination as DamageType) : type));
+    const changesPool = mapped.damageTypePool.includes(source as DamageType);
+    if (!changesPool && (mapped.kind === "random-damage" || mapped.damageType !== source)) return mapped;
+    const damageTypePool = changesPool
+      ? mapped.damageTypePool.map((type) => (type === source ? (destination as DamageType) : type))
+      : mapped.damageTypePool;
     if (mapped.kind === "random-damage") return { ...mapped, damageTypePool };
     return {
       ...mapped,
@@ -163,11 +167,8 @@ function convertEffect(effect: BattleCardEffect, source: KeywordId, destination:
       damageTypePool,
     };
   }
-  if (mapped.kind === "damage" && DAMAGE_KEYWORDS.includes(destination)) {
-    return {
-      ...mapped,
-      damageType: mapped.damageType === source ? (destination as DamageType) : mapped.damageType,
-    };
+  if (mapped.kind === "damage" && mapped.damageType === source && DAMAGE_KEYWORDS.includes(destination)) {
+    return { ...mapped, damageType: destination as DamageType };
   }
   if (mapped.kind === "player-status" && mapped.status === source && BUFF_KEYWORDS.includes(destination))
     return { ...mapped, status: destination as "block" | "armor" | "forge" | "thorns" };
@@ -202,7 +203,11 @@ function finishAlteration(
   );
   const description = carryCardDescriptionMarks(previous, createEffectDescription(effects));
   appendCardDescriptionTrailer(description, result.tags, result.consume === true);
-  return cloneBattleCard(withCardDescription(result, description));
+  return cloneBattleCard({
+    ...result,
+    description,
+    descriptionLines: renderCardDescription(effects, description).descriptionLines,
+  });
 }
 
 interface PendingVariant {
@@ -290,11 +295,11 @@ function getPendingVariants(
         effect.kind === "cleanse-player-status-to-damage",
     );
     if (!damage) return [];
-    const effects = [...card.effects];
     return [
       {
         sourceKeyword: null,
-        build: () => finishAlteration(card, keyword, effects, { tags: [...(card.tags ?? []), "archery"] }, analysis),
+        build: () =>
+          finishAlteration(card, keyword, [...card.effects], { tags: [...(card.tags ?? []), "archery"] }, analysis),
       },
     ];
   }
@@ -319,19 +324,28 @@ function getPendingVariants(
     return [{ sourceKeyword: null, build: () => result }];
   }
   if (keyword === "consume" && !isCompanionSummonCard(card)) {
-    const effects = [...card.effects];
     return [
-      { sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, { consume: true }, analysis) },
+      {
+        sourceKeyword: null,
+        build: () => finishAlteration(card, keyword, [...card.effects], { consume: true }, analysis),
+      },
     ];
   }
   if (keyword !== "wish" && keyword !== "dodge" && keyword !== "companion") return [];
   if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES, analysis)) return [];
   if (keyword === "companion" && !hasCompanion()) return [];
-  const effects = [...card.effects];
-  if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
-  else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
-  else effects.push({ kind: "companion-action", amount: 1 });
-  return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, {}, analysis) }];
+  return [
+    {
+      sourceKeyword: null,
+      build: () => {
+        const effects = [...card.effects];
+        if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
+        else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
+        else effects.push({ kind: "companion-action", amount: 1 });
+        return finishAlteration(card, keyword, effects, {}, analysis);
+      },
+    },
+  ];
 }
 
 export function getTransmutationVariants(

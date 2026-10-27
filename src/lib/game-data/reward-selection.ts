@@ -1,5 +1,5 @@
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE_FRACTION } from "../game-constants";
-import { pickRandom, shuffle } from "@/lib/rng";
+import { pickRandom, shuffle, shuffleInPlace } from "@/lib/rng";
 import { getCardKeywordView } from "./keywords";
 import { isCompanionSummonCard } from "./cards/card-pools";
 import type { BattleCard, KeywordId } from "./types";
@@ -12,8 +12,8 @@ function buildKeywordFrequency(deck: BattleCard[], seedKeywords: KeywordId[]): R
 }
 
 function buildAffinityPool(
-  candidates: BattleCard[],
-  deck: BattleCard[],
+  candidates: readonly BattleCard[],
+  deck: readonly BattleCard[],
   freq: Record<string, number>,
   count: number,
   activeRng: () => number,
@@ -38,7 +38,7 @@ function buildAffinityPool(
   return result;
 }
 
-function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number): BattleCard[] {
+function dampenCompanionCandidates(candidates: readonly BattleCard[], rng: () => number): BattleCard[] {
   return candidates.filter(
     (card) => !isCompanionSummonCard(card) || rng() < REWARD_SELECTION_CONFIG.companionOwnedKeepFraction,
   );
@@ -57,7 +57,7 @@ function removeChosenCard(pool: BattleCard[], id: string): void {
 
 export function selectRewardCards(
   deck: BattleCard[] = [],
-  allCards: BattleCard[],
+  allCards: readonly BattleCard[],
   count: number,
   exclude: BattleCard[] = [],
   rng: () => number,
@@ -75,11 +75,11 @@ export function selectRewardCards(
   const effectiveCandidates = candidates.length > 0 ? candidates : pool;
   const boostCompanions = !hasCompanion;
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;
-  const weightedCandidates = companionCopies > 1 ? [...effectiveCandidates] : effectiveCandidates;
-  if (companionCopies > 1) {
+  const weightedCandidates = companionCopies > 1 ? [...effectiveCandidates] : undefined;
+  if (weightedCandidates) {
     for (const card of effectiveCandidates) if (isCompanionSummonCard(card)) weightedCandidates.push(card);
   }
-  const randomPool = shuffle(weightedCandidates, rng);
+  const randomPool = weightedCandidates ? shuffleInPlace(weightedCandidates, rng) : shuffle(effectiveCandidates, rng);
   const selected: BattleCard[] = [];
   const freq = buildKeywordFrequency(deck, seedKeywords);
   const affinityPool = buildAffinityPool(

@@ -1,9 +1,9 @@
-import { getOfferableCardPool, selectRewardCards, type BattleCard } from "./game-data";
+import { getOfferableCardPoolView, selectRewardCards, type BattleCard } from "./game-data";
 import { DRAFT_CHOICES } from "./game-constants";
 import { getImmediateDamage, getImmediateDefense } from "./battle";
 
 export function createStarterDraftChoices(draftedCards: BattleCard[], rng: () => number): BattleCard[] {
-  const pool = getOfferableCardPool();
+  const pool = getOfferableCardPoolView();
   const selected: BattleCard[] = [];
   const attacks: BattleCard[] = [];
   const defenses: BattleCard[] = [];

@@ -14,7 +14,7 @@ import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
   cardById,
   cardHasKeyword,
-  getOfferableCardPool,
+  getOfferableCardPoolView,
   selectRewardCards,
   type BattleCard,
   type KeywordId,
@@ -49,8 +49,8 @@ export interface MysteryEffectContext {
   rng: () => number;
 }
 
-function getMysteryCardChoicePool(tag?: KeywordId): BattleCard[] {
-  const pool = getOfferableCardPool();
+function getMysteryCardChoicePool(tag?: KeywordId): readonly BattleCard[] {
+  const pool = getOfferableCardPoolView();
   if (!tag) return pool;
   const tagged = pool.filter((card) => cardHasKeyword(card, tag));
   if (tagged.length === 0) {

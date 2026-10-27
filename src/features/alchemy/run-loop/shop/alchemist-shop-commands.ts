@@ -17,7 +17,7 @@ import { strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/b
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import {
   cloneBattleCard,
-  getStandardPotionPool,
+  getStandardPotionPoolView,
   isMixedPotionCard,
   isPotionCard,
   type BattleCard,
@@ -109,7 +109,7 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
         potions: applyStrongSpiritsToPotions(
           resampleCardShopOfferings(
             snapshotTransactionValue(draft.run.activeRun.runDeck),
-            getStandardPotionPool(),
+            getStandardPotionPoolView(),
             state.potions,
             ALCHEMIST_POTIONS_OFFERED,
             createDraftRunRandomSource(draft, "shops"),

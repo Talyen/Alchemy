@@ -94,3 +94,19 @@ it("keeps nested effect keywords in order for rewards and XP, including both cha
   });
   expect(getCardKeywords(card)).toEqual(["bleed", "leech", "health", "block", "mana", "consume", "archery"]);
 });
+
+it("preserves keyword order and detached results for single and repeated tags", () => {
+  const card = makeTestCard({ effects: [{ kind: "heal", amount: 1 }], tags: ["health"] });
+  const baseView = getCardKeywordView(card);
+  expect(baseView).toEqual(["health"]);
+  expect(getCardKeywordView(card)).toBe(baseView);
+  const detached = getCardKeywords(card);
+  detached.push("burn");
+  expect(getCardKeywordView(card)).toEqual(["health"]);
+  card.consume = true;
+  expect(getCardKeywords(card)).toEqual(["health", "consume"]);
+  card.tags = ["consume"];
+  expect(getCardKeywords(card)).toEqual(["health", "consume"]);
+  card.tags = ["archery", "archery"];
+  expect(getCardKeywordView(card)).toEqual(["health", "consume", "archery"]);
+});

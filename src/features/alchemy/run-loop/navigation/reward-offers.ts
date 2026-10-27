@@ -4,7 +4,6 @@ import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constan
 import {
   cardHasKeyword,
   isCompanionSummonCard,
-  getOfferableCardPool,
   getOfferableCardPoolView,
   getStandardPotionPoolView,
   selectRewardCards,
@@ -91,7 +90,7 @@ export function createRewardOffer({
   rewardModifiers = [],
   createInstanceId,
 }: RewardOfferInput): RewardOffer {
-  const cards = getOfferableCardPool();
+  const cards = getOfferableCardPoolView();
   // "boon" and "trinket" rewards draw from the same trinketLibrary with
   // different exclusion sets: boons exclude currently-active effects (so a
   // reward never duplicates what is already equipped), trinkets exclude the
