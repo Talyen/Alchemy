@@ -9,6 +9,7 @@ import {
   cloneBattleCard,
   getCardKeywords,
   isCompanionSummonCard,
+  type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
 import {
@@ -308,10 +309,10 @@ it("saves three valid, reproducible choices per card even when the visit needs m
 
 it("skips ineligible cards without consuming random choices", () => {
   const original = [cardById.slash!, cardById.heal!];
-  const withIneligible = [
+  const withIneligible: BattleCard[] = [
     ...original,
     { ...cardById.block!, corrupted: true },
-    { ...cardById.slash!, transmuted: true },
+    { ...cardById.slash!, transmuted: "burn" },
   ];
   const before = createSeededRng(123);
   const after = createSeededRng(123);
