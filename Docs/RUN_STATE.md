@@ -45,6 +45,11 @@ fixed seeds and 64 derived from the UTC date. A failing test names its seed. Rep
 one case with `ALCHEMY_SAVE_PROPERTY_SEED=<seed> npm run test:unit -- tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts`;
 local execution follows the focused-test policy in Contributing. The pilot does not
 shrink inputs, so preserve a failing seed as a focused regression when useful.
+The [generated Gear rejection test](../tests/features/alchemy/shared/stores/commands/gear-rejection-generated.test.ts)
+shuffles and repeats rejected equipment and crafting actions against an active run.
+It checks that the complete gameplay revision, including ownership and RNG, remains
+unchanged and no commit is published. Its test names include the seed; the default
+unit tier uses 16 fixed seeds and nightly uses 128. These are controlled fixtures.
 
 Shop purchase/refresh recipes and `runShopTransaction` live together in
 `shop-commands-core.ts`; payment, acquisition, rollback and post-commit feedback
