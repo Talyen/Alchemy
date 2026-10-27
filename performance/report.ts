@@ -150,6 +150,14 @@ export function bandLabel(band: TargetCheck["band"]): string {
   return "RED";
 }
 
+function runFailureReason(run: ScenarioRunResult): string | undefined {
+  if (run.notes?.length) return run.notes.join("; ");
+  if (!run.metrics.valid) return run.metrics.invalidReason ?? "invalid metrics";
+  const invalidSegment = run.segments?.find((segment) => !segment.valid);
+  if (invalidSegment) return `${invalidSegment.name}: ${invalidSegment.invalidReason ?? "invalid segment"}`;
+  return undefined;
+}
+
 export function renderSummaryMarkdown(options: {
   environment: EnvironmentInfo;
   aggregates: ScenarioAggregate[];
@@ -200,7 +208,7 @@ export function renderSummaryMarkdown(options: {
   }
 
   const failedRuns = aggregates.flatMap((agg) =>
-    agg.runs.filter((run) => run.measured && run.notes?.length).map((run) => `${agg.scenario} run ${run.runIndex}`),
+    agg.runs.filter((run) => run.measured && runFailureReason(run)).map((run) => `${agg.scenario} run ${run.runIndex}`),
   );
   if (failedRuns.length) {
     lines.push("## Failed measured runs", "");
@@ -310,8 +318,9 @@ export function renderSummaryMarkdown(options: {
     lines.push("| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |");
     for (const run of agg.runs.filter((r) => r.measured)) {
       const m = run.metrics;
+      const failure = runFailureReason(run);
       lines.push(
-        `| ${run.runIndex} | ${m.valid ? "yes" : (m.invalidReason ?? "no")} | ${fmt(m.averageFps, 1)} | ${fmt(m.p95FrameTime)} | ${fmt(m.p99FrameTime)} | ${fmt(m.onePercentLowFps, 1)} | ${m.hitchesOver50ms} | ${m.longTasksOver50ms} |`,
+        `| ${run.runIndex} | ${failure ? `no: ${escapeCell(failure)}` : "yes"} | ${fmt(m.averageFps, 1)} | ${fmt(m.p95FrameTime)} | ${fmt(m.p99FrameTime)} | ${fmt(m.onePercentLowFps, 1)} | ${m.hitchesOver50ms} | ${m.longTasksOver50ms} |`,
       );
       if (run.tracePath) {
         lines.push(`| | | Trace: \`${run.tracePath}\` | | | | | |`);

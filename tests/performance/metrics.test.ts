@@ -395,6 +395,31 @@ it("renderSummaryMarkdown renders environment and target table", () => {
   });
   expect(failed).toContain("Failed measured runs");
   expect(failed).toContain("These runs failed and cannot establish a performance improvement");
+  expect(failed).toContain("| 1 | no: Replay action path diverged |");
+  const failedSegment = renderSummaryMarkdown({
+    environment,
+    aggregates: aggregates.map((aggregate) => ({
+      ...aggregate,
+      runs: aggregate.runs.map((run) => ({
+        ...run,
+        segments: [
+          {
+            name: "crafting",
+            actions: 2,
+            inputEvents: 0,
+            maxInputDelayMs: 0,
+            longAnimationFrames: 0,
+            metrics,
+            valid: false,
+            invalidReason: "insufficient frames (15 < 20)",
+          },
+        ],
+      })),
+    })),
+  });
+  expect(failedSegment).toContain("Failed measured runs");
+  expect(failedSegment).toContain("| 1 | no: crafting: insufficient frames (15 < 20) |");
+  expect(md).toContain("| 1 | yes |");
   expect(md).toContain("# Performance profile");
   expect(md).toContain("battle-effects");
   expect(md).toContain("GREEN");
