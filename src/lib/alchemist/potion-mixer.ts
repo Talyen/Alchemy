@@ -93,7 +93,7 @@ export function tryCreateMixedPotion(cardA: BattleCard | undefined, cardB: Battl
   return prepareMixedPotion(cardA, cardB);
 }
 
-export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
+function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
   if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
     throw new Error("Invalid potion indices for mixing");
   }
@@ -111,5 +111,3 @@ export function tryMixPotionDeck(deck: BattleCard[], indexA: number, indexB: num
   const potion = tryCreateMixedPotion(cardA, cardB);
   return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
 }
-
-export { doublePotionPotency } from "./potion-scaling";

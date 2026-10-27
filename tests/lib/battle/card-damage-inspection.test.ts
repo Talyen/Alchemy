@@ -209,7 +209,8 @@ describe("rule-preserving tooltip inspection", () => {
     const rng = vi.fn(() => {
       throw new Error("Preview sampled the live status choice");
     });
-    expect(getBattleCardDescriptionInspection(card, { ...state, rng }).descriptionLines).toEqual([
+    const stateWithRng = { ...state, rng };
+    expect(getBattleCardDescriptionInspection(card, stateWithRng).descriptionLines).toEqual([
       "Gain 10 Block or 3 Armor",
     ]);
     expect(rng).not.toHaveBeenCalled();
