@@ -192,7 +192,10 @@ function packageRenderer(
   const source = `import cp from 'node:child_process';
     import fs from 'node:fs';
     import { syncBuiltinESMExports } from 'node:module';
-    cp.spawnSync = (_command, args) => { console.log(JSON.stringify(args));
+    const spawnSync = cp.spawnSync;
+    cp.spawnSync = (command, args, options) => {
+      if (command === 'python3') return spawnSync(command, args, options);
+      console.log(JSON.stringify(args));
       if (${createBuilderOutput} && args.includes('--config')) {
         const config = JSON.parse(fs.readFileSync(args[args.indexOf('--config') + 1], 'utf8'));
         fs.mkdirSync(config.directories.output + '/win-unpacked', { recursive: true });
