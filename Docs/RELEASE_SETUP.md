@@ -34,6 +34,12 @@ electron-builder assembles the application. All packages also exclude source map
 The packaging verifier inspects `app.asar` for maps and CI credentials.
 Reporting failures and offline play never block startup, saves, gameplay, or quit.
 
+Sentry Electron 8 replaces `sendDefaultPii` with `dataCollection` and changes
+the default collection of IP addresses. Before upgrading from 7, follow the
+[upstream migration guide](https://github.com/getsentry/sentry-electron/blob/8.0.0/MIGRATION.md#upgrading-from-7x-to-8x),
+preserve the current privacy contract in both processes, and verify a packaged
+test event and source-map symbolication. Do not assume the old option still applies.
+
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) runs in the release pipeline; art authoring sources stay in [WORKFLOWS-ASSETS](./WORKFLOWS-ASSETS.md).
 
 ## Player notices and asset provenance
