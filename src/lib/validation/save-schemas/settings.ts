@@ -35,6 +35,9 @@ export const SettingsSaveFieldsSchema = z.object({
 });
 
 export type SettingsSaveFields = z.output<typeof SettingsSaveFieldsSchema>;
+export const SETTINGS_SAVE_KEYS = Object.freeze(
+  Object.keys(SettingsSaveFieldsSchema.shape) as Array<keyof SettingsSaveFields>,
+);
 
 export function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return SettingsSaveFieldsSchema.parse({});

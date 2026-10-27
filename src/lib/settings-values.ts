@@ -39,6 +39,16 @@ export function clampSpecialEffectsPct(value: number): number {
   );
 }
 
+// The same field-to-range mapping is used by live setters and direct hydration.
+export const settingsNumberNormalizers = {
+  brightness: clampBrightnessPct,
+  backgroundParticlesIntensity: clampSpecialEffectsPct,
+  backgroundGlowIntensity: clampSpecialEffectsPct,
+  musicVolume: clampVolumePct,
+  sfxVolume: clampVolumePct,
+  masterVolume: clampVolumePct,
+} as const;
+
 export function resolveAutoplayEnabled(fields: {
   rememberAutoplayPreference: boolean;
   autoplayEnabled: boolean;

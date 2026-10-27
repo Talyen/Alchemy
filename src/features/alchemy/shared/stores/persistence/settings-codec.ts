@@ -1,36 +1,20 @@
-import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "@/lib/validation";
-import {
-  clampBrightnessPct,
-  clampSpecialEffectsPct,
-  clampVolumePct,
-  resolveAutoplayEnabled,
-} from "@/lib/settings-values";
+import { SETTINGS_SAVE_KEYS, createDefaultSettingsSaveFields, type SettingsSaveFields } from "@/lib/validation";
+import { settingsNumberNormalizers, resolveAutoplayEnabled } from "@/lib/settings-values";
 import type { createSettingsStore } from "../session/settings-state";
 
-// Defaults own the persisted field list; methods and unrelated save fields never encode.
-const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
-
 export function selectSettingsSaveFields(state: SettingsSaveFields): SettingsSaveFields {
-  const selected = createDefaultSettingsSaveFields();
-  for (const key of SETTINGS_SAVE_KEYS) Object.assign(selected, { [key]: state[key] });
-  return selected;
+  return Object.fromEntries(SETTINGS_SAVE_KEYS.map((key) => [key, state[key]])) as SettingsSaveFields;
 }
 
 export function createSettingsPersistenceCodec(store: ReturnType<typeof createSettingsStore>) {
   function prepareHydration(fields: SettingsSaveFields) {
     const selected = selectSettingsSaveFields(fields);
-    const normalized = {
-      ...selected,
-      brightness: clampBrightnessPct(selected.brightness),
-      backgroundParticlesIntensity: clampSpecialEffectsPct(selected.backgroundParticlesIntensity),
-      backgroundGlowIntensity: clampSpecialEffectsPct(selected.backgroundGlowIntensity),
-      musicVolume: clampVolumePct(selected.musicVolume),
-      sfxVolume: clampVolumePct(selected.sfxVolume),
-      masterVolume: clampVolumePct(selected.masterVolume),
-      // Loading with remember off clears a stored autoplay choice.
-      autoplayEnabled: resolveAutoplayEnabled(selected),
-    };
-    return (prepareObservers: () => void = () => {}) => store.commitHydration(normalized, prepareObservers);
+    for (const key of Object.keys(settingsNumberNormalizers) as Array<keyof typeof settingsNumberNormalizers>) {
+      selected[key] = settingsNumberNormalizers[key](selected[key]);
+    }
+    // Loading with remember off clears a stored autoplay choice.
+    selected.autoplayEnabled = resolveAutoplayEnabled(selected);
+    return (prepareObservers: () => void = () => {}) => store.commitHydration(selected, prepareObservers);
   }
   return {
     createDefault: createDefaultSettingsSaveFields,

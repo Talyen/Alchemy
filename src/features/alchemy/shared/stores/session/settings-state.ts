@@ -1,12 +1,7 @@
 import { createNotificationChannel } from "./notification-channel";
-import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "@/lib/validation";
+import { SETTINGS_SAVE_KEYS, createDefaultSettingsSaveFields, type SettingsSaveFields } from "@/lib/validation";
 export { createDefaultSettingsSaveFields, type SettingsSaveFields } from "@/lib/validation";
-import {
-  clampBrightnessPct,
-  clampSpecialEffectsPct,
-  clampVolumePct,
-  resolveAutoplayEnabled,
-} from "@/lib/settings-values";
+import { settingsNumberNormalizers, resolveAutoplayEnabled } from "@/lib/settings-values";
 import { createStore } from "zustand/vanilla";
 import { logError } from "@/lib/error-logger";
 
@@ -44,14 +39,17 @@ export function createSettingsStore(
       ...createDefaultSettingsSaveFields(),
 
       setDisplayMode: (displayMode) => set({ displayMode }),
-      setBrightness: (brightness) => set({ brightness: clampBrightnessPct(brightness) }),
+      setBrightness: (brightness) => set({ brightness: settingsNumberNormalizers.brightness(brightness) }),
       setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>
-        set({ backgroundParticlesIntensity: clampSpecialEffectsPct(backgroundParticlesIntensity) }),
+        set({
+          backgroundParticlesIntensity:
+            settingsNumberNormalizers.backgroundParticlesIntensity(backgroundParticlesIntensity),
+        }),
       setBackgroundGlowIntensity: (backgroundGlowIntensity) =>
-        set({ backgroundGlowIntensity: clampSpecialEffectsPct(backgroundGlowIntensity) }),
-      setMusicVolume: (musicVolume) => set({ musicVolume: clampVolumePct(musicVolume) }),
-      setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolumePct(sfxVolume) }),
-      setMasterVolume: (masterVolume) => set({ masterVolume: clampVolumePct(masterVolume) }),
+        set({ backgroundGlowIntensity: settingsNumberNormalizers.backgroundGlowIntensity(backgroundGlowIntensity) }),
+      setMusicVolume: (musicVolume) => set({ musicVolume: settingsNumberNormalizers.musicVolume(musicVolume) }),
+      setSfxVolume: (sfxVolume) => set({ sfxVolume: settingsNumberNormalizers.sfxVolume(sfxVolume) }),
+      setMasterVolume: (masterVolume) => set({ masterVolume: settingsNumberNormalizers.masterVolume(masterVolume) }),
       setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
       setBossLyricsEnabled: (bossLyricsEnabled) => set({ bossLyricsEnabled }),
       setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
@@ -73,11 +71,11 @@ export function createSettingsStore(
   }, isActive);
   let installing = false;
   const notify = notifications.publish;
-  const savedKeys = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
   // Run inside the FIFO channel: progress observers can themselves change
   // settings, and those later publications must not overtake the original one.
   notifications.subscribe((state, previous, liveChange) => {
-    if (liveChange && savedKeys.some((key) => !Object.is(state[key], previous[key]))) beforeChangeNotification();
+    if (liveChange && SETTINGS_SAVE_KEYS.some((key) => !Object.is(state[key], previous[key])))
+      beforeChangeNotification();
   });
   Object.freeze(store.getState());
   store.subscribe((state, previous) => {
