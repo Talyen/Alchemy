@@ -1909,6 +1909,7 @@
   "description.e6d14193c24c45": {"text":"毎ターンカードを一枚引き、{{value0}}%の確率でさらに{{value1}}枚引く","sourceHash":"9d45795442cd2f25aab66cb3ac487abe0555ff0c509f7990db4b41d9349cf4e6","reviewed":true},
   "description.e70c832eacc162": {"text":"敵の<keyword0>気絶</keyword0>の発動閾値が{{value0}}パーセントポイント減少する","sourceHash":"64512044c556de3a98c4c19fcc95f706f93f04fb5759c9797cb85e1653f1f59c","reviewed":true},
   "description.e891efbec79367e2": {"text":"ダメージを受けても<keyword0>装甲</keyword0>を失わなくなる","sourceHash":"60e7d871872ab581fca8342f4db21bcfb7b43ffaddd19f8ea88b53f8faca8714","reviewed":true},
+  "description.e93673cbde2d0877": {"text":"<magnitude0>{{value0}}</magnitude0>の<keyword0>炎上</keyword0>ダメージを与え、自分の<keyword1>鍛造</keyword1>の半分だけ増加する（合計<magnitude1>{{value1}}</magnitude1>）","sourceHash":"56fd4b04f1b669ee73358034755913f752984994122d56374bad9f998b2d2e8b","reviewed":true},
   "description.e952e13b22774ee3": {"text":"盾の甲虫の<keyword0>仲間</keyword0>","sourceHash":"af66e13e5ab9a4a9c3a874804a3bb9d513bfcaccf55eadb2f29043580b13a01a","reviewed":true},
   "description.e95d6f3d5bd87145": {"text":"敵の攻撃が追加で<keyword0>ブロック</keyword0>を{{value0}}取り除く","sourceHash":"8854a147ba83d58808b866334f092cf9a6fd2767482ea4643aa09630be6b0a0f","reviewed":true},
   "description.e9bd13fd70346705": {"text":"<keyword0>ブロック</keyword0>の半分を消費し、<keyword1>炎上</keyword1>ダメージを与える","sourceHash":"0a919a74763089ea572e30e686c8028cddb951d56101b42dc0ebe1c5b14cd92e","reviewed":true},

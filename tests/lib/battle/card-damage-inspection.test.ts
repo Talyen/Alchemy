@@ -328,8 +328,48 @@ describe("rule-preserving tooltip inspection", () => {
         enemyStatuses: { bleed: 2 },
       }),
     );
-    expect(result.descriptionLines).toEqual(card.descriptionLines);
+    expect(result.descriptionLines).toEqual(
+      "forgeBonusPercent" in effect ? [`${card.descriptionLines[0]} (6 total)`] : card.descriptionLines,
+    );
     expect(result.effects[0]).toEqual(effect);
+  });
+
+  it.each([
+    [0, 1],
+    [4, 3],
+    [5, 4],
+    [10, 6],
+    [11, 7],
+    [14, 8],
+  ])("keeps Burning Blade's formula and shows its known total at %i Forge", (forge, total) => {
+    const card = cardById["burning-blade"]!;
+    const rng = vi.fn(() => {
+      throw new Error("live RNG consumed");
+    });
+    const state = patchBattleState({ hand: [card], playerStatuses: { forge }, rng });
+    const before = JSON.stringify({ state, card });
+    const result = getBattleCardDescriptionInspection(card, state);
+    expect(result.descriptionLines).toEqual([`Deal 1 Burn damage, increased by half your Forge (${total} total)`]);
+    expect(result.effects[0]).toEqual(card.effects[0]);
+    expect(JSON.stringify({ state, card })).toBe(before);
+    expect(rng).not.toHaveBeenCalled();
+    const played = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0);
+    expect(played.state.enemyHealth).toBe(state.enemyHealth - total);
+  });
+
+  it("includes known Burn bonuses once without adding Ignite twice or predicting a Critical", () => {
+    const card = cardById["burning-blade"]!;
+    const state = patchBattleState({
+      playerStatuses: { forge: 11 },
+      talentEffects: { forgeBurnDamagePercent: 25 },
+      gearEffects: { flatBurnDamage: 2 },
+      flags: { nextHitCrit: true },
+      enemyMitigation: { block: 20, armor: 20 },
+    });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
+      "Deal 1 Burn damage, increased by half your Forge (9 total)",
+    ]);
+    expect(card.descriptionLines).toEqual(["Deal 1 Burn damage, increased by half your Forge"]);
   });
 
   it("does not append triggered follow-ups or duplicate the original effect sentence", () => {

@@ -1909,6 +1909,7 @@
   "description.e6d14193c24c45": {"text":"每回合抽一张牌，有{{value0}}%几率额外抽{{value1}}张","sourceHash":"ccf192830d7fd53b60e725627047c78aa07efbedafd2ff6b51c185d67795ec53","reviewed":true},
   "description.e70c832eacc162": {"text":"敌人的<keyword0>眩晕</keyword0>阈值降低{{value0}}个百分点","sourceHash":"2b993fb0535a7f14045f76df5fa0d393c6dd7c76f6254a239484596258b2ac49","reviewed":true},
   "description.e891efbec79367e2": {"text":"受到伤害时你不再失去<keyword0>护甲</keyword0>","sourceHash":"6a399e6f17ee54fb2c292f3b4c72b766129842f5db5f605ba6c9aae33de2c25d","reviewed":true},
+  "description.e93673cbde2d0877": {"text":"造成<magnitude0>{{value0}}</magnitude0>点<keyword0>灼烧</keyword0>伤害，增加相当于你<keyword1>锻造</keyword1>一半的伤害（共<magnitude1>{{value1}}</magnitude1>点）","sourceHash":"56103a66fad6e47b0508376832d26844d936a2657a01a8aa29e304260ede9332","reviewed":true},
   "description.e952e13b22774ee3": {"text":"盾甲虫<keyword0>伙伴</keyword0>","sourceHash":"53ba1f3d23bc72c1a4b1ca4a1cde03686b4b0633af42eed58d9506a246c0cb35","reviewed":true},
   "description.e95d6f3d5bd87145": {"text":"敌人的攻击额外移除{{value0}}点<keyword0>格挡</keyword0>","sourceHash":"dc790ec696f1b9c43639630f73a34ae6051453834987cffe5d3fe2fcbfedf9df","reviewed":true},
   "description.e9bd13fd70346705": {"text":"消耗一半<keyword0>格挡</keyword0>，造成<keyword1>灼烧</keyword1>伤害","sourceHash":"7bab049dad7557981455646ad0eea78376bd2488ad05746fc51cc88be8b90067","reviewed":true},
