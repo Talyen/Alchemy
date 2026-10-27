@@ -5,6 +5,7 @@ import type { GearInstance } from "./types";
 import { uniqueItemList } from "./unique-catalog";
 
 const ALL_BASE_ITEM_IDS = gearBaseItemList.map((base) => base.id);
+const ALL_BASE_ITEM_ID_SET = new Set(ALL_BASE_ITEM_IDS);
 
 export function getOwnedUniqueDefinitionIds(inventories?: Record<string, GearInstance[]> | null): Set<string> {
   const owned = new Set<string>();
@@ -23,10 +24,15 @@ export function getGearLootAvailability(
   ownedUniqueIds: ReadonlySet<string> = new Set(),
   baseItemIds: readonly string[] = ALL_BASE_ITEM_IDS,
 ): LootAvailability {
+  const allowedBases = baseItemIds === ALL_BASE_ITEM_IDS ? ALL_BASE_ITEM_ID_SET : null;
   return {
     basic: baseItemIds.some((id) => Boolean(gearDefinitions[gearDefinitionId(id, "basic")])),
     astral: baseItemIds.some((id) => Boolean(gearDefinitions[gearDefinitionId(id, "astral")])),
-    unique: uniqueItemList.some((unique) => baseItemIds.includes(unique.baseItemId) && !ownedUniqueIds.has(unique.id)),
+    unique: uniqueItemList.some(
+      (unique) =>
+        (allowedBases ? allowedBases.has(unique.baseItemId) : baseItemIds.includes(unique.baseItemId)) &&
+        !ownedUniqueIds.has(unique.id),
+    ),
   };
 }
 

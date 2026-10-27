@@ -43,11 +43,14 @@ export function labyrinthCampfireHealing(baseFraction: number, modifiers: readon
   return Math.min(1, baseFraction * (modifiers.includes("deep-rest") ? LABYRINTH_MODIFIER_CONFIG.double : 1));
 }
 
-export function isLabyrinthMysteryEligible(event: MysteryEvent, modifiers: readonly EncounterRewardTraitId[]): boolean {
+export function labyrinthMysteryEligibility(modifiers: readonly EncounterRewardTraitId[]) {
   const preferredKind = MYSTERY_REWARDS.find(([id]) => modifiers.includes(id))?.[1];
-  return event.choices.some((choice) =>
-    choice.effects.some((effect) => !preferredKind || effect.kind === preferredKind),
-  );
+  return (event: MysteryEvent): boolean =>
+    event.choices.some((choice) => choice.effects.some((effect) => !preferredKind || effect.kind === preferredKind));
+}
+
+export function isLabyrinthMysteryEligible(event: MysteryEvent, modifiers: readonly EncounterRewardTraitId[]): boolean {
+  return labyrinthMysteryEligibility(modifiers)(event);
 }
 
 export function applyLabyrinthMysteryModifiers(

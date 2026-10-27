@@ -1,5 +1,5 @@
 import { visitBattleCardEffects, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import { getBattleCardPlayTarget } from "./card-classification";
+import { effectTarget, getBattleCardPlayTarget } from "./card-classification";
 import { inspectBattleCardOutcomes } from "./card-damage-inspection";
 import type { InspectedPackets } from "./inspection-outcomes";
 import type { BattleSnapshot } from "./types";
@@ -7,25 +7,30 @@ import type { BattleSnapshot } from "./types";
 type Target = "player" | "enemy";
 
 function isCost(effect: BattleCardEffect): boolean {
-  return ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind);
+  return (
+    effect.kind === "lose-health" ||
+    effect.kind === "self-damage" ||
+    effect.kind === "lose-mana" ||
+    effect.kind === "lose-max-mana"
+  );
 }
 
 function withoutCosts(effects: readonly BattleCardEffect[]): BattleCardEffect[] {
-  return effects.flatMap((effect): BattleCardEffect[] => {
-    if (isCost(effect)) return [];
-    if (effect.kind === "chance" && effect.probability >= 1) return withoutCosts(effect.successEffects);
-    if (effect.kind === "chance" && effect.probability <= 0) return withoutCosts(effect.failureEffects);
-    if (effect.kind === "chance")
-      return [
-        {
-          ...effect,
-          successEffects: withoutCosts(effect.successEffects),
-          failureEffects: withoutCosts(effect.failureEffects),
-        },
-      ];
-    if (effect.kind === "repeat-over-turns") return [{ ...effect, effects: withoutCosts(effect.effects) }];
-    return [effect];
-  });
+  const result: BattleCardEffect[] = [];
+  for (const effect of effects) {
+    if (isCost(effect)) continue;
+    if (effect.kind === "chance" && effect.probability >= 1) result.push(...withoutCosts(effect.successEffects));
+    else if (effect.kind === "chance" && effect.probability <= 0) result.push(...withoutCosts(effect.failureEffects));
+    else if (effect.kind === "chance")
+      result.push({
+        ...effect,
+        successEffects: withoutCosts(effect.successEffects),
+        failureEffects: withoutCosts(effect.failureEffects),
+      });
+    else if (effect.kind === "repeat-over-turns") result.push({ ...effect, effects: withoutCosts(effect.effects) });
+    else result.push(effect);
+  }
+  return result;
 }
 
 function numericKind(effect: BattleCardEffect): "attack" | "utility" | null {
@@ -102,7 +107,7 @@ export function getBattleCardAnimationTarget(card: BattleCard, snapshot: BattleS
   let uncertainBranch = false;
   visitBattleCardEffects(effects, (effect) => {
     if (effect.kind === "chance") uncertainBranch ||= effect.probability > 0 && effect.probability < 1;
-    else if (effect.kind !== "repeat-over-turns") targets.add(getBattleCardPlayTarget({ ...card, effects: [effect] }));
+    else if (effect.kind !== "repeat-over-turns") targets.add(effectTarget(effect) ?? "enemy");
   });
   // Most cards have one recipient. Unknown branches never consume live RNG to
   // choose a more attractive animation; retain the authored primary recipient.
@@ -128,7 +133,7 @@ export function getBattleCardAnimationTarget(card: BattleCard, snapshot: BattleS
       unknown = true;
       return;
     }
-    const recipient: Target = kind === "attack" ? "enemy" : getBattleCardPlayTarget({ ...card, effects: [effect] });
+    const recipient: Target = kind === "attack" ? "enemy" : (effectTarget(effect) ?? "enemy");
     if (Number.isFinite(amount) && (amount > largest || (amount === largest && recipient === preferred))) {
       largest = amount;
       target = recipient;

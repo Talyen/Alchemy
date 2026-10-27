@@ -94,8 +94,10 @@ export function createRewardOffer({
   // reward never duplicates what is already equipped), trinkets exclude the
   // permanent collection. The split is load-bearing for persistence, which
   // serializes each reward type on its own branch.
-  const boons = trinketLibrary.filter((entry) => !excludedBoonIds.includes(entry.id));
-  const trinkets = trinketLibrary.filter((entry) => !ownedTrinketIds.includes(entry.id));
+  const excludedBoons = new Set(excludedBoonIds);
+  const ownedTrinkets = new Set(ownedTrinketIds);
+  const boons = trinketLibrary.filter((entry) => !excludedBoons.has(entry.id));
+  const trinkets = trinketLibrary.filter((entry) => !ownedTrinkets.has(entry.id));
   const availability = getRewardLootAvailability(ownedUniqueIds, {
     cards: cards.length > 0,
     boons: boons.length > 0,

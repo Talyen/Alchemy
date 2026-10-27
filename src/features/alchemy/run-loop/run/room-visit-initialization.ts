@@ -9,9 +9,9 @@ import { createTransmutationOffers } from "@/lib/alchemist/transmutation";
 import {
   activeLabyrinthBenefits,
   applyLabyrinthMysteryModifiers,
-  isLabyrinthMysteryEligible,
+  labyrinthMysteryEligibility,
 } from "@/lib/content-systems/labyrinth/room-rules";
-import { isMysteryLootEligible, pickResolvedMysteryEvent } from "@/lib/mystery";
+import { mysteryLootEligibility, pickResolvedMysteryEvent } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/commands/loot-progress";
 import {
@@ -120,15 +120,12 @@ export function beginMysteryVisitInTransaction(draft: RunTransaction): void {
     draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
   );
   const lootProgress = resolveDraftLootProgress(draft);
+  const eligibleRoom = labyrinthMysteryEligibility(modifiers);
+  const eligibleLoot = mysteryLootEligibility(lootProgress, ownedTrinkets);
   setMysteryEvent(
     draft,
     applyLabyrinthMysteryModifiers(
-      pickResolvedMysteryEvent(
-        rng,
-        ownedTrinkets,
-        (event) =>
-          isLabyrinthMysteryEligible(event, modifiers) && isMysteryLootEligible(event, lootProgress, ownedTrinkets),
-      ),
+      pickResolvedMysteryEvent(rng, ownedTrinkets, (event) => eligibleRoom(event) && eligibleLoot(event)),
       modifiers,
       draft.run.activeRun.runMaxHealth,
     ),

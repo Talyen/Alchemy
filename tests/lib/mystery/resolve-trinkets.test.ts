@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
-import { findMysteryEvent, isMysteryLootEligible } from "@/lib/mystery";
+import { findMysteryEvent, isMysteryLootEligible, mysteryLootEligibility } from "@/lib/mystery";
 import { resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
 
 const eventWithTwoTrinkets = {
@@ -117,4 +117,20 @@ it("rejects repeated named Boons within a choice before Astral Gear unlocks", ()
     kind: "gainGeneratedGear",
     astral: true,
   });
+});
+
+it("reuses early-room eligibility across choices without carrying ownership between events", () => {
+  const early = { depth: 1, highestCompletedDifficulty: null };
+  const eligible = mysteryLootEligibility(early, ["bone-charm"]);
+  const owned = {
+    ...eventWithTwoTrinkets,
+    choices: [{ label: "Owned", effects: [eventWithTwoTrinkets.choices[0]!.effects[0]!] }],
+  };
+  const unowned = {
+    ...eventWithTwoTrinkets,
+    choices: [{ label: "Unowned", effects: [eventWithTwoTrinkets.choices[0]!.effects[1]!] }],
+  };
+  expect(eligible(owned)).toBe(false);
+  expect(eligible(unowned)).toBe(true);
+  expect(eligible(unowned)).toBe(true);
 });

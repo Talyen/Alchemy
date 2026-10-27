@@ -189,13 +189,11 @@ export function describeKnownStatusOptions(
   const parts: CardDescription[number]["parts"] = ["Gain "];
   const previous = getCardDescription(card);
   const statuses = effect.forgeAmount !== undefined ? (["block", "forge", "armor"] as const) : effect.statusPool;
+  const amountSource = statuses.length ? sourceMagnitude(previous, path, "amount") : undefined;
+  const forgeSource = effect.forgeAmount !== undefined ? sourceMagnitude(previous, path, "forgeAmount") : undefined;
   statuses.forEach((status, index) => {
     if (index) parts.push(index === statuses.length - 1 ? (statuses.length > 2 ? ", or " : " or ") : ", ");
-    const source = sourceMagnitude(
-      previous,
-      path,
-      status === "forge" && effect.forgeAmount !== undefined ? "forgeAmount" : "amount",
-    );
+    const source = status === "forge" && effect.forgeAmount !== undefined ? forgeSource : amountSource;
     const effectIndex = effects.length;
     effects.push({ kind: "player-status", status, amount: amounts.get(status)! });
     parts.push(

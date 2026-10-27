@@ -39,24 +39,29 @@ export function resolveMysteryEventTrinkets(event: MysteryEvent, ownedTrinketIds
   };
 }
 
+export function mysteryLootEligibility(progress: LootProgress, ownedTrinketIds: readonly string[]) {
+  if (isLootEligible("astral", progress.depth)) return (_event: MysteryEvent) => true;
+  const owned = new Set(ownedTrinketIds);
+  let available = 0;
+  for (const entry of trinketLibrary) if (!owned.has(entry.id)) available++;
+  return (event: MysteryEvent): boolean =>
+    event.choices.every((choice) => {
+      let seen: Set<string> | undefined;
+      let needed = 0;
+      for (const effect of choice.effects) {
+        if (effect.kind !== "gainTrinket") continue;
+        if (owned.has(effect.trinketId) || seen?.has(effect.trinketId)) return false;
+        (seen ??= new Set()).add(effect.trinketId);
+        needed += 1;
+      }
+      return needed <= available;
+    });
+}
+
 export function isMysteryLootEligible(
   event: MysteryEvent,
   progress: LootProgress,
   ownedTrinketIds: readonly string[],
 ): boolean {
-  if (isLootEligible("astral", progress.depth)) return true;
-  const owned = new Set(ownedTrinketIds);
-  let available = 0;
-  for (const entry of trinketLibrary) if (!owned.has(entry.id)) available++;
-  return event.choices.every((choice) => {
-    const seen = new Set<string>();
-    let needed = 0;
-    for (const effect of choice.effects) {
-      if (effect.kind !== "gainTrinket") continue;
-      if (owned.has(effect.trinketId) || seen.has(effect.trinketId)) return false;
-      seen.add(effect.trinketId);
-      needed += 1;
-    }
-    return needed <= available;
-  });
+  return mysteryLootEligibility(progress, ownedTrinketIds)(event);
 }

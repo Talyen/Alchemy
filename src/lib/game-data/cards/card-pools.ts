@@ -1,5 +1,5 @@
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
-import type { BattleCard } from "../types";
+import type { BattleCard, BattleCardEffect } from "../types";
 import { visitBattleCardEffects } from "../effect-tree";
 import { cardLibrary } from "./library/cards";
 
@@ -40,6 +40,12 @@ export function getStandardPotionPool(): BattleCard[] {
   return [...standardPotionPool];
 }
 
+const summonCache = new WeakMap<readonly BattleCardEffect[], boolean>();
+
 export function isCompanionSummonCard(card: Pick<BattleCard, "effects">): boolean {
-  return visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
+  const cached = summonCache.get(card.effects);
+  if (cached !== undefined) return cached;
+  const result = visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
+  summonCache.set(card.effects, result);
+  return result;
 }

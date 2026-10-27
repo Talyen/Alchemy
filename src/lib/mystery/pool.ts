@@ -352,8 +352,8 @@ export function findMysteryEvent(eventId: string): MysteryEvent | null {
   return mysteryPool.find((event) => event.id === eventId) ?? null;
 }
 
-function pickMysteryEvent(rng: () => number, eligible: (event: MysteryEvent) => boolean = () => true): MysteryEvent {
-  const event = pickRandom(mysteryPool.filter(eligible), rng);
+function pickMysteryEvent(rng: () => number, eligible?: (event: MysteryEvent) => boolean): MysteryEvent {
+  const event = pickRandom(eligible ? mysteryPool.filter(eligible) : mysteryPool, rng);
   if (!event) throw new Error("mysteryPool is empty");
   return event;
 }

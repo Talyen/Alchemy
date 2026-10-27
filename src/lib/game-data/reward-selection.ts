@@ -62,8 +62,8 @@ export function selectRewardCards(
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
   if (count <= 0) return [];
-  const excludedIds = new Set(exclude.map((card) => card.id));
-  const pool = excludedIds.size === 0 ? allCards : allCards.filter((card) => !excludedIds.has(card.id));
+  const excludedIds = exclude.length ? new Set(exclude.map((card) => card.id)) : null;
+  const pool = excludedIds ? allCards.filter((card) => !excludedIds.has(card.id)) : allCards;
   if (pool.length === 0) return [];
   const hasCompanion = deck.some(isCompanionSummonCard);
   // A Companion-only Wish still offers all its choices when the deck already

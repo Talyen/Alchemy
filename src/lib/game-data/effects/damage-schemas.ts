@@ -41,7 +41,10 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
     })
     .refine(
       (data) =>
-        [data.equalToBlock, data.equalToArmor, data.forgeBonusPercent !== undefined].filter(Boolean).length <= 1,
+        Number(Boolean(data.equalToBlock)) +
+          Number(Boolean(data.equalToArmor)) +
+          Number(data.forgeBonusPercent !== undefined) <=
+        1,
       {
         message: "damage effect must have at most one of equalToBlock/equalToArmor/forgeBonusPercent",
       },

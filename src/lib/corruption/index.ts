@@ -104,5 +104,7 @@ export function corruptDeckCard(
   if (!selectedCard) return { deck, result: null };
   const result = corruptCard(selectedCard, library, rng, modifiers);
   if (!result) return { deck, result: null };
-  return { deck: deck.map((card, index) => (index === cardIndex ? result.corruptedCard : card)), result };
+  const updatedDeck = deck.slice();
+  updatedDeck[cardIndex] = result.corruptedCard;
+  return { deck: updatedDeck, result };
 }

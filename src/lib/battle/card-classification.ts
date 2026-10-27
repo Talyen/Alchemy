@@ -82,7 +82,7 @@ export function damageOnlyEffects(effects: readonly BattleCardEffect[]): BattleC
   return damage;
 }
 
-function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
+export function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
   switch (effect.kind) {
     case "damage":
     case "random-damage":

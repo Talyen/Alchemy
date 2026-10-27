@@ -119,9 +119,12 @@ function withKnownUtilityAmount(
 
 function firstAttack(outcome: InspectedPackets | undefined): BattleCardEffect | undefined {
   if (!outcome || outcome.kind === "unknown") return;
-  const alternatives = outcome.kind === "exact" ? [outcome.packets] : outcome.outcomes;
-  if (!alternatives.length || alternatives.some((packets) => !packets[0])) return;
-  return summarize(alternatives.map((packets) => packets[0]!));
+  if (outcome.kind === "exact") {
+    const packet = outcome.packets[0];
+    return packet ? summarize([packet]) : undefined;
+  }
+  if (!outcome.outcomes.length || outcome.outcomes.some((packets) => !packets[0])) return;
+  return summarize(outcome.outcomes.map((packets) => packets[0]!));
 }
 
 /** Adjust known fixed literals inline without replacing scaling or conditional rules. */

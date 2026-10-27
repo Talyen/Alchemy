@@ -10,6 +10,7 @@ export const localization = i18next.createInstance();
 let source: Record<string, string> = {};
 let sourceIds = new Map<string, string>();
 const englishDefaults: Record<string, string> = {};
+let englishPluralRules: Intl.PluralRules | undefined;
 // Cache only the locale-independent parsing; catalogs and translations remain live.
 const displayMessage = memoizeShortText((value) => buildDescriptionMessage([{ text: value }]));
 for (const [id, message] of Object.entries(
@@ -51,7 +52,11 @@ function translateMessage(
   if (locale === "en-XA") {
     const form: unknown =
       typeof values.count === "number"
-        ? localization.getResource("en", "translation", `${key}_${new Intl.PluralRules("en").select(values.count)}`)
+        ? localization.getResource(
+            "en",
+            "translation",
+            `${key}_${(englishPluralRules ??= new Intl.PluralRules("en")).select(values.count)}`,
+          )
         : undefined;
     return pseudolocalize(typeof form === "string" ? form : defaultValue).replace(
       /{{\s*(\w+)\s*}}/g,

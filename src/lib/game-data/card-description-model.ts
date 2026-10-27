@@ -140,11 +140,21 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
     parts: line.parts.map((part) => {
       if (typeof part === "string") return part;
       const prior = identities.get(magnitudeSignature(part));
+      let corrupted = false;
+      let isDistilled = false;
+      if (marked.size || distilled.size) {
+        for (const reference of part.references) {
+          const key = referenceKey(reference);
+          corrupted ||= marked.has(key);
+          isDistilled ||= distilled.has(key);
+          if (corrupted && isDistilled) break;
+        }
+      }
       return {
         ...part,
         ...(prior ? { id: prior.id } : {}),
-        ...(part.references.some((reference) => marked.has(referenceKey(reference))) ? { corrupted: true } : {}),
-        ...(part.references.some((reference) => distilled.has(referenceKey(reference))) ? { distilled: true } : {}),
+        ...(corrupted ? { corrupted: true } : {}),
+        ...(isDistilled ? { distilled: true } : {}),
       };
     }),
   }));
