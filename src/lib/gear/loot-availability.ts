@@ -25,6 +25,7 @@ export function getGearLootAvailability(
   ownedUniqueIds: ReadonlySet<string> = NO_OWNED_UNIQUES,
   baseItemIds: readonly string[] = ALL_BASE_ITEM_IDS,
 ): LootAvailability {
+  if (baseItemIds.length === 0) return { basic: false, astral: false, unique: false };
   const allowedBases = baseItemIds === ALL_BASE_ITEM_IDS ? ALL_BASE_ITEM_ID_SET : new Set(baseItemIds);
   let basic = false;
   let astral = false;

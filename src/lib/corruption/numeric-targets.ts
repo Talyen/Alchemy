@@ -17,6 +17,8 @@ export interface CorruptionTarget extends CardEffectAddress {
   affectsCost: boolean;
 }
 
+const COST_EFFECT_KINDS = new Set(["self-damage", "lose-health", "lose-mana", "lose-max-mana"]);
+
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const seen = new Set<string>();
   const targets: CorruptionTarget[] = [];
@@ -42,9 +44,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
       ...(reference.effectPath ? { effectPath: reference.effectPath } : {}),
       field: reference.field,
       edits,
-      affectsCost: edits.some((edit) =>
-        ["self-damage", "lose-health", "lose-mana", "lose-max-mana"].includes(edit.kind),
-      ),
+      affectsCost: edits.some((edit) => COST_EFFECT_KINDS.has(edit.kind)),
     });
   }
   return targets;

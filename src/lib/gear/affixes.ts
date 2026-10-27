@@ -54,7 +54,7 @@ function normalizedAffixValue(
 
 // Save repair, effect aggregation, and tooltips must accept the same rolls.
 // Visit directly so aggregation does not need an intermediate roll array.
-function forEachNormalizedAffixRoll(
+export function forEachNormalizedAffixRoll(
   rawAffixes: readonly AffixRollInput[] | null | undefined,
   rarity: GearRarity | null | undefined,
   visit: (definition: GearAffixDefinition, value: number) => void,

@@ -20,7 +20,7 @@ import { appendUniqueMany } from "@/lib/utils";
 export function upgradeWishCard(card: BattleCard): BattleCard {
   // Widen upper bounds before raising lower bounds: intermediate cards must
   // remain valid even when an authored random range starts with equal bounds.
-  const targets = getEditableCorruptionTargets(card).toSorted(
+  const targets = getEditableCorruptionTargets(card).sort(
     (a, b) => Number(b.field === "maxAmount") - Number(a.field === "maxAmount"),
   );
   return targets.reduce((next, target) => {
@@ -41,9 +41,13 @@ export function buildWishOptions(
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
-  const candidates = getOfferableCardPool().filter(
-    (candidate) => candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate)),
-  );
+  const candidates = getOfferableCardPool();
+  let kept = 0;
+  for (const candidate of candidates) {
+    if (candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate)))
+      candidates[kept++] = candidate;
+  }
+  candidates.length = kept;
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const battleRng = getBattleRng(state);
   let undiscovered: BattleCard[] = [];

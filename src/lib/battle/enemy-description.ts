@@ -22,7 +22,6 @@ export type EnemyDescriptionContext = Readonly<
 >;
 
 function scaleEffect(effect: EnemyAbilityEffect, context: EnemyDescriptionContext): EnemyAbilityEffect {
-  const room = (amount: number) => Math.round(amount * context.roomScalingMultiplier);
   switch (effect.kind) {
     case "chance":
       return {
@@ -43,10 +42,10 @@ function scaleEffect(effect: EnemyAbilityEffect, context: EnemyDescriptionContex
     }
     case "heal":
     case "player-status":
-      return { ...effect, amount: room(effect.amount) };
+      return { ...effect, amount: Math.round(effect.amount * context.roomScalingMultiplier) };
     case "remove-enemy-armor":
       return effect.amount !== undefined && !effect.halve && !effect.removeAll
-        ? { ...effect, amount: room(effect.amount) }
+        ? { ...effect, amount: Math.round(effect.amount * context.roomScalingMultiplier) }
         : effect;
     case "multiply-enemy-status":
       return effect;

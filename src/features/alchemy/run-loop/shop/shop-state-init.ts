@@ -35,7 +35,7 @@ import {
 } from "@/lib/gear";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { isLootEligible, resolveLootWeights, type LootProgress } from "@/lib/loot";
-import { sampleItemsExcluding } from "@/lib/rng";
+import { sampleItems, sampleItemsExcluding } from "@/lib/rng";
 import { createInstanceId } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
@@ -65,7 +65,9 @@ function sampleUnownedTrinkets(
 ): TrinketEntry[] {
   const owned = new Set(ownedIds);
   const available = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  const novel = sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, new Set(currentIds), (entry) => entry.id);
+  const novel = currentIds.length
+    ? sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, new Set(currentIds), (entry) => entry.id)
+    : sampleItems(available, TRINKET_SHOP_OFFERED, rng);
   if (novel.length >= TRINKET_SHOP_OFFERED) return novel;
   // Too few unseen offerings: top up from the same pool, keeping only the
   // already-sampled novel picks excluded (current shelf items may return).

@@ -56,10 +56,10 @@ export function refillEmptyDrawPile(state: BattleState): BattleState {
 
 function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
   const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
-  return {
-    hand: [...hand, ...(slots >= queued.length ? queued : queued.slice(0, slots))],
-    pendingHandCards: queued.slice(slots),
-  };
+  const nextHand = [...hand];
+  const delivered = Math.min(slots, queued.length);
+  for (let index = 0; index < delivered; index++) nextHand.push(queued[index]!);
+  return { hand: nextHand, pendingHandCards: queued.slice(slots) };
 }
 
 export function deliverPendingHandCards(state: BattleState): BattleState {

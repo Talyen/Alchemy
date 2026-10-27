@@ -37,7 +37,7 @@ function generateGearOfferings({
   baseItemIds,
   createId = createInstanceId,
 }: GenerateGearOfferingsOptions): GearInstance[] {
-  if (count === 0) return [];
+  if (count === 0 || (baseItemIds?.length === 0 && Number.isInteger(count) && count > 0)) return [];
   const allowed = baseItemIds === undefined ? null : new Set(baseItemIds);
   // Catalog order owns seeded sampling; caller order and duplicates do not.
   const basePool = allowed ? gearBaseItemList.filter((base) => allowed.has(base.id)) : gearBaseItemList;
