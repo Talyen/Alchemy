@@ -304,7 +304,7 @@ it("renderSummaryMarkdown renders environment and target table", () => {
           profile: "continuous",
           metrics,
           targets: classifyTargets(metrics, "continuous"),
-          observations: { rendererStartupReadyMs: 2400 },
+          observations: { rendererStartupReadyMs: 2400, fixtureHandCards: 7 },
           rawSamplePath: "/reports/battle-effects-1-sample.json",
           memorySamples: [
             {
@@ -425,6 +425,8 @@ it("renderSummaryMarkdown renders environment and target table", () => {
   expect(md).toContain("GREEN");
   expect(md).toContain("abc123");
   expect(md).toContain("rendererStartupReadyMs");
+  expect(md).toContain("| rendererStartupReadyMs | 2400.0 ms | 2400.0 ms | 2400.0 ms |");
+  expect(md).toContain("| fixtureHandCards | 7.0 | 7.0 | 7.0 |");
   expect(md).toContain("[sample](/reports/battle-effects-1-sample.json)");
   expect(md).toContain("| Renderer JS heap | 10.0 | 30.0 | 12.0 | 2.0 |");
   expect(md).toContain("| Combined Electron working set | 100.0 | 200.0 | 110.0 | 10.0 |");
