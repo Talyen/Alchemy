@@ -29,7 +29,11 @@ export function nominalCardValue(effects: readonly BattleCardEffect[]): { damage
     else if (effect.kind === "player-status") {
       const amount = effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount;
       const pool = effect.statusPool ?? [effect.status];
-      defense += (amount * pool.filter((status) => status === "block" || status === "armor").length) / pool.length;
+      let defensiveStatuses = 0;
+      for (const status of pool) {
+        if (status === "block" || status === "armor") defensiveStatuses++;
+      }
+      defense += (amount * defensiveStatuses) / pool.length;
     } else if (effect.kind === "remove-harmful-status") defense += (effect.amount ?? 1) * AUTOPLAY_EFFECT_SCORE.cleanse;
     else if (effect.kind === "remove-player-status") defense += AUTOPLAY_EFFECT_SCORE.cleanse;
     else if (effect.kind === "dodge-next-attack") defense++;

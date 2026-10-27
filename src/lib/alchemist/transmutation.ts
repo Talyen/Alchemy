@@ -336,9 +336,11 @@ export function createTransmutationOffers(
       const offer = pickRandom(pool, rng);
       if (offer) selected.push(offer);
     }
-    const remaining = available.filter((offer) => !selected.includes(offer));
-    while (selected.length < 3 && remaining.length) {
-      selected.push(takeRandomItem(remaining, rng)!);
+    if (selected.length < 3) {
+      const remaining = available.filter((offer) => !selected.includes(offer));
+      while (selected.length < 3 && remaining.length) {
+        selected.push(takeRandomItem(remaining, rng)!);
+      }
     }
     for (const { keyword, alterations } of selected) {
       const alteration = pickRandom(alterations, rng)!;

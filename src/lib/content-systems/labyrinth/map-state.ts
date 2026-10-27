@@ -4,7 +4,12 @@ import { gridKey, neighboringGridKeys } from "./grid";
 export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
   const floor = map.floors.find((entry) => entry.depth === depth);
   if (!floor) return [];
-  return floor.nodeIds.map((id) => map.nodes[id]).filter((node): node is LabyrinthNode => Boolean(node));
+  const nodes: LabyrinthNode[] = [];
+  for (const id of floor.nodeIds) {
+    const node = map.nodes[id];
+    if (node) nodes.push(node);
+  }
+  return nodes;
 }
 
 export function labyrinthFloorVisualStates(map: LabyrinthMap): Map<string, LabyrinthNodeVisualState> {

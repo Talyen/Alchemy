@@ -122,11 +122,13 @@ function buildStatusChips(
 ): StatusChip[] {
   if (!statuses) return [];
   const blockBuildup = cc ? isStunFreezeBuildupBlocked(cc) : false;
-  return order.flatMap((id): StatusChip[] => {
-    if (blockBuildup && (id === "stun" || id === "freeze")) return [];
+  const chips: StatusChip[] = [];
+  for (const id of order) {
+    if (blockBuildup && (id === "stun" || id === "freeze")) continue;
     const value = statuses[id] ?? 0;
-    return value > 0 ? [{ id, value, ...(id === "phoenixFeather" ? { hideValue: true } : {}) }] : [];
-  });
+    if (value > 0) chips.push({ id, value, ...(id === "phoenixFeather" ? { hideValue: true } : {}) });
+  }
+  return chips;
 }
 
 function buildActiveCcChips(cc: CcState): StatusChip[] {
@@ -175,9 +177,10 @@ function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
       });
   }
 
-  const echoCount = state.pendingTurnStartEffects.filter((pulse) =>
-    pulse.effects.some((effect) => effect.kind !== "damage"),
-  ).length;
+  let echoCount = 0;
+  for (const pulse of state.pendingTurnStartEffects) {
+    if (pulse.effects.some((effect) => effect.kind !== "damage")) echoCount++;
+  }
   if (echoCount > 0) chips.push({ id: "echo", value: echoCount });
 
   chips.push(...buildActiveCcChips(state.playerCC));

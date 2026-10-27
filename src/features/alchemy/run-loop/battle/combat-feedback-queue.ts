@@ -113,6 +113,7 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
     for (const sample of samples) {
       // Overlap penalties cannot decrease the score; ties keep the earlier route.
       if (score >= bestScore) break;
+      if (sample.previous.length === 0) continue;
       const next = footprint(item, sample.frame, routeGeometry);
       for (const previous of sample.previous) {
         const width = Math.max(

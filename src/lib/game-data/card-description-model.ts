@@ -127,11 +127,13 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
   const identities = new Map<string, CardMagnitude>();
   const marked = new Set<string>();
   const distilled = new Set<string>();
-  for (const part of previous.flatMap((line) => line.parts)) {
-    if (typeof part === "string") continue;
-    identities.set(magnitudeSignature(part), part);
-    if (part.corrupted) for (const reference of part.references) marked.add(referenceKey(reference));
-    if (part.distilled) for (const reference of part.references) distilled.add(referenceKey(reference));
+  for (const line of previous) {
+    for (const part of line.parts) {
+      if (typeof part === "string") continue;
+      identities.set(magnitudeSignature(part), part);
+      if (part.corrupted) for (const reference of part.references) marked.add(referenceKey(reference));
+      if (part.distilled) for (const reference of part.references) distilled.add(referenceKey(reference));
+    }
   }
   return description.map((line) => ({
     ...line,
