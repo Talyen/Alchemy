@@ -100,9 +100,8 @@ export function resampleEquipmentShopOfferings(
     : modifiers.includes("armorer")
       ? gearBaseItemList.filter((item) => item.compatibleSlots.includes("body")).map((item) => item.id)
       : gearBaseItemList.map((item) => item.id);
-  const currentBases = new Set<string | undefined>(
-    currentItems.map((item) => gearDefinitions[item.definitionId]?.baseItemId),
-  );
+  const currentBases = new Set<string | undefined>();
+  for (const item of currentItems) currentBases.add(gearDefinitions[item.definitionId]?.baseItemId);
   const novelBases = baseItems.filter((id) => !currentBases.has(id));
   const sample = (count: number, baseItemIds: readonly string[]) => {
     if (modifiers.includes("masterwork")) {
@@ -125,7 +124,8 @@ export function resampleEquipmentShopOfferings(
   };
   const novel = sample(Math.min(EQUIPMENT_SHOP_OFFERED, novelBases.length), novelBases);
   if (novel.length >= EQUIPMENT_SHOP_OFFERED) return novel;
-  const selected = new Set<string | undefined>(novel.map((item) => gearDefinitions[item.definitionId]?.baseItemId));
+  const selected = new Set<string | undefined>();
+  for (const item of novel) selected.add(gearDefinitions[item.definitionId]?.baseItemId);
   const fallbackBases = baseItems.filter((id) => !selected.has(id));
   return [...novel, ...sample(EQUIPMENT_SHOP_OFFERED - novel.length, fallbackBases.length ? fallbackBases : baseItems)];
 }

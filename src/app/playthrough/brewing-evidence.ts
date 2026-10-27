@@ -83,31 +83,64 @@ export function recordBrewingCommit(
 }
 
 export function summarizeBrewing(careers: CareerResult[]) {
-  const visits = careers.flatMap((c) => c.telemetry.brewing ?? []);
-  const decisions = visits.flatMap((v) => v.decisions);
   const services = ["mix", "distill", "campfire-new", "campfire-mix", "purchase", "refresh"] as const;
+  const summaries = new Map<
+    string,
+    {
+      eligibleVisits: number;
+      affordableVisits: number;
+      beneficialVisits: number;
+      reasons: Map<string, number>;
+    }
+  >();
+  const decisions = new Map<string, number>();
+  let recordedCareers = 0;
+  let truncated = false;
+  let shopVisits = 0;
+  let campfireVisits = 0;
+  let goldSpent = 0;
+  for (const career of careers) {
+    if (career.telemetry.brewing !== undefined) recordedCareers++;
+    if (career.telemetry.brewingTruncated) truncated = true;
+    for (const visit of career.telemetry.brewing ?? []) {
+      if (visit.omittedDecisions > 0) truncated = true;
+      if (visit.activity === "alchemist") shopVisits++;
+      if (visit.activity === "campfire") campfireVisits++;
+      for (const opportunity of visit.opportunities) {
+        let summary = summaries.get(opportunity.kind);
+        if (!summary) {
+          summary = { eligibleVisits: 0, affordableVisits: 0, beneficialVisits: 0, reasons: new Map() };
+          summaries.set(opportunity.kind, summary);
+        }
+        if (opportunity.eligible > 0) summary.eligibleVisits++;
+        if (opportunity.affordable > 0) summary.affordableVisits++;
+        if (opportunity.beneficial > 0) summary.beneficialVisits++;
+        for (const reason of new Set(opportunity.reasons))
+          summary.reasons.set(reason, (summary.reasons.get(reason) ?? 0) + 1);
+      }
+      for (const decision of visit.decisions) {
+        goldSpent += decision.goldSpent;
+        decisions.set(decision.kind, (decisions.get(decision.kind) ?? 0) + 1);
+      }
+    }
+  }
   return {
-    recordedCareers: careers.filter((c) => c.telemetry.brewing !== undefined).length,
-    missingCareers: careers.filter((c) => c.telemetry.brewing === undefined).length,
-    truncated: careers.some((c) => c.telemetry.brewingTruncated) || visits.some((v) => v.omittedDecisions > 0),
-    shopVisits: visits.filter((v) => v.activity === "alchemist").length,
-    campfireVisits: visits.filter((v) => v.activity === "campfire").length,
-    goldSpent: decisions.reduce((sum, d) => sum + d.goldSpent, 0),
+    recordedCareers,
+    missingCareers: careers.length - recordedCareers,
+    truncated,
+    shopVisits,
+    campfireVisits,
+    goldSpent,
     services: services.map((kind) => {
-      const opportunities = visits.flatMap((v) => v.opportunities.filter((o) => o.kind === kind));
+      const summary = summaries.get(kind);
       const actionKind = kind === "purchase" ? "buy-potion" : kind === "refresh" ? "alchemist-refresh" : kind;
       return {
         kind,
-        eligibleVisits: opportunities.filter((o) => o.eligible > 0).length,
-        affordableVisits: opportunities.filter((o) => o.affordable > 0).length,
-        beneficialVisits: opportunities.filter((o) => o.beneficial > 0).length,
-        used: decisions.filter((d) => d.kind === actionKind).length,
-        reasons: Object.fromEntries(
-          [...new Set(opportunities.flatMap((o) => o.reasons))].map((reason) => [
-            reason,
-            opportunities.filter((o) => o.reasons.includes(reason)).length,
-          ]),
-        ),
+        eligibleVisits: summary?.eligibleVisits ?? 0,
+        affordableVisits: summary?.affordableVisits ?? 0,
+        beneficialVisits: summary?.beneficialVisits ?? 0,
+        used: decisions.get(actionKind) ?? 0,
+        reasons: Object.fromEntries(summary?.reasons ?? []),
       };
     }),
   };

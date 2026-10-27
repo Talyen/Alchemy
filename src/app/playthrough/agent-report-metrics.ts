@@ -68,10 +68,11 @@ export function selectorForDefeats(battles: Battle[], minRoom?: number): AgentEv
 export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetric[] {
   return MILESTONE_KINDS.map((kind) => {
     const firstRuns = careers.flatMap((career) => {
-      const reachedRuns = Object.entries(career.telemetry.milestones)
-        .filter(([key]) => key.startsWith(`${kind}:`))
-        .map(([, run]) => run + 1);
-      return reachedRuns.length ? [Math.min(...reachedRuns)] : [];
+      let first: number | undefined;
+      for (const [key, run] of Object.entries(career.telemetry.milestones)) {
+        if (key.startsWith(`${kind}:`)) first = first === undefined ? run + 1 : Math.min(first, run + 1);
+      }
+      return first === undefined ? [] : [first];
     });
     return {
       kind,
@@ -176,22 +177,25 @@ export function buildRunProgression(careers: CompletedCareer[]): AgentRunProgres
 export function buildRunOutcomes(careers: CompletedCareer[]): AgentRunOutcomeMetric[] {
   const runCount = Math.max(0, ...careers.map((career) => career.outcomes.length));
   return Array.from({ length: runCount }, (_, run) => {
-    const outcomes = careers.map((career) => career.outcomes[run]).filter((outcome) => outcome !== undefined);
+    let count = 0;
     let victories = 0;
     let defeats = 0;
     let rooms = 0;
-    for (const outcome of outcomes) {
+    for (const career of careers) {
+      const outcome = career.outcomes[run];
+      if (outcome === undefined) continue;
+      count++;
       victories += outcome.outcome === "victory" ? 1 : 0;
       defeats += outcome.outcome === "defeat" ? 1 : 0;
       rooms += outcome.rooms;
     }
     return {
       run: run + 1,
-      runs: outcomes.length,
+      runs: count,
       victories,
       defeats,
-      victoryRate: rate(victories, outcomes.length),
-      meanRooms: outcomes.length ? round(rooms / outcomes.length) : null,
+      victoryRate: rate(victories, count),
+      meanRooms: count ? round(rooms / count) : null,
     };
   });
 }
@@ -226,20 +230,20 @@ export function buildDeckCohesion(careers: CompletedCareer[]): AgentDeckCohesion
     for (const snapshot of byRun.values())
       samples.push({ hero: career.config.hero, keywordCounts: snapshot.keywordCounts });
   }
-  const totalKeywords = samples.reduce(
-    (sum, sample) => sum + Object.values(sample.keywordCounts).reduce((a, b) => a + b, 0),
-    0,
-  );
-  if (!samples.length || totalKeywords === 0)
-    return { samples: samples.length, heroKeywordShare: null, dominantKeywordShare: null, topKeywords: [] };
+  let totalKeywords = 0;
   const allKeywords = new Map<string, number>();
   let heroKeywordCount = 0;
   for (const sample of samples) {
+    let sampleTotal = 0;
     for (const [keyword, count] of Object.entries(sample.keywordCounts)) {
+      sampleTotal += count;
       allKeywords.set(keyword, (allKeywords.get(keyword) ?? 0) + count);
       if ((characters[sample.hero].keywords as readonly string[]).includes(keyword)) heroKeywordCount += count;
     }
+    totalKeywords += sampleTotal;
   }
+  if (!samples.length || totalKeywords === 0)
+    return { samples: samples.length, heroKeywordShare: null, dominantKeywordShare: null, topKeywords: [] };
   const sorted = [...allKeywords.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return {
     samples: samples.length,

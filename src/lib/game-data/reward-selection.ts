@@ -62,7 +62,8 @@ export function selectRewardCards(
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
   if (count <= 0) return [];
-  const excludedIds = exclude.length ? new Set(exclude.map((card) => card.id)) : null;
+  const excludedIds = exclude.length ? new Set<string>() : null;
+  if (excludedIds) for (const card of exclude) excludedIds.add(card.id);
   const pool = excludedIds ? allCards.filter((card) => !excludedIds.has(card.id)) : allCards;
   if (pool.length === 0) return [];
   const hasCompanion = deck.some(isCompanionSummonCard);

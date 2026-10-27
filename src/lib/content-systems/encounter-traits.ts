@@ -122,9 +122,11 @@ export function eligibleEncounterTraitIds<Category extends EncounterTraitCategor
   mode: EncounterMode,
   category: Category,
 ): Array<EncounterTraitIdFor<Category>> {
-  return Object.values(ENCOUNTER_TRAITS)
-    .filter((trait) => trait.category === category && trait.modes.includes(mode))
-    .map((trait) => trait.id as EncounterTraitIdFor<Category>);
+  const ids: Array<EncounterTraitIdFor<Category>> = [];
+  for (const trait of Object.values(ENCOUNTER_TRAITS)) {
+    if (trait.category === category && trait.modes.includes(mode)) ids.push(trait.id as EncounterTraitIdFor<Category>);
+  }
+  return ids;
 }
 
 function isEncounterTraitId(value: string): value is EncounterTraitId {
@@ -137,9 +139,14 @@ export function sanitizeEncounterTraitIds(
   values: readonly string[],
   category: EncounterTraitCategory,
 ): EncounterTraitId[] {
-  return [...new Set(values)].filter(
-    (value): value is EncounterTraitId => isEncounterTraitId(value) && ENCOUNTER_TRAITS[value].category === category,
-  );
+  const seen = new Set<string>();
+  const result: EncounterTraitId[] = [];
+  for (const value of values) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    if (isEncounterTraitId(value) && ENCOUNTER_TRAITS[value].category === category) result.push(value);
+  }
+  return result;
 }
 
 export function pickEncounterTrait<Category extends EncounterTraitCategory>(

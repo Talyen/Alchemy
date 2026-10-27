@@ -37,6 +37,7 @@ function generateGearOfferings({
   baseItemIds,
   createId = createInstanceId,
 }: GenerateGearOfferingsOptions): GearInstance[] {
+  if (count === 0) return [];
   const allowed = baseItemIds === undefined ? null : new Set(baseItemIds);
   // Catalog order owns seeded sampling; caller order and duplicates do not.
   const basePool = allowed ? gearBaseItemList.filter((base) => allowed.has(base.id)) : gearBaseItemList;
@@ -44,7 +45,8 @@ function generateGearOfferings({
   // alone exclude selected bases; the sampled order never needs a second mutation.
   const sampledBases = sampleItems(basePool, count, rng);
   const reservedBases = new Map<string, "ordinary" | "unique">();
-  const baseIds = new Set(basePool.map((base) => base.id));
+  const baseIds = new Set<string>();
+  for (const base of basePool) baseIds.add(base.id);
   const availableUniques = uniqueItemList.filter(
     (unique) => !ownedUniqueIds.has(unique.id) && baseIds.has(unique.baseItemId),
   );

@@ -30,7 +30,11 @@ function referencesPath(magnitude: CardMagnitude, path: readonly number[]): bool
 }
 
 function magnitudePositions(line: CardDescription[number], path: readonly number[]): number[] {
-  return line.parts.flatMap((part, index) => (typeof part !== "string" && referencesPath(part, path) ? [index] : []));
+  const positions: number[] = [];
+  line.parts.forEach((part, index) => {
+    if (typeof part !== "string" && referencesPath(part, path)) positions.push(index);
+  });
+  return positions;
 }
 
 function ruleShape(effect: BattleCardEffect | undefined): string {
@@ -80,13 +84,15 @@ function rangeRuleClauses(
 }
 
 function signature(line: CardDescription[number]): string {
-  return line.parts
-    .flatMap((part) => (typeof part === "string" ? [] : part.references))
-    .map(
-      (reference) =>
+  const references: string[] = [];
+  for (const part of line.parts) {
+    if (typeof part === "string") continue;
+    for (const reference of part.references)
+      references.push(
         `${reference.effectIndex}/${reference.effectPath?.join("/") ?? ""}/${reference.kind}/${reference.field}/${reference.multiplier ?? 1}`,
-    )
-    .join("|");
+      );
+  }
+  return references.join("|");
 }
 
 function lineFitsEffects(

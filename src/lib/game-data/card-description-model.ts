@@ -115,7 +115,7 @@ export interface RenderedCardMagnitude {
 }
 
 function referenceKey(reference: CardMagnitudeReference): string {
-  return `${reference.kind}/${reference.effectIndex}/${(reference.effectPath ?? []).join("/")}/${reference.field}`;
+  return `${reference.kind}/${reference.effectIndex}/${reference.effectPath?.join("/") ?? ""}/${reference.field}`;
 }
 
 function magnitudeSignature(magnitude: CardMagnitude): string {
