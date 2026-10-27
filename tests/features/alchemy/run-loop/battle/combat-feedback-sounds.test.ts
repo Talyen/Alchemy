@@ -1,11 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { battleEventSounds } from "@/lib/audio/sound-registry";
-import {
-  playCombatTextSounds,
-  playResolvedCardSound,
-  playCompanionSound,
-} from "@/features/alchemy/run-loop/battle/controller-utils";
+import { playCombatTextSounds, playResolvedCombatSound } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { selectCombatSound } from "@/features/alchemy/run-loop/battle/combat-sound-selection";
 import { mergeCombatText } from "@/lib/battle/combat-text-events";
 import type { CombatTextEvent } from "@/lib/battle";
@@ -20,7 +16,7 @@ beforeEach(() => {
 describe("one sound selected from committed action results", () => {
   it("plays a typed critical once instead of layering a generic clash over a focal cue", () => {
     const events: CombatTextEvent[] = [{ target: "enemy", kind: "damage", stat: "burn", amount: 8, critical: true }];
-    const sound = playResolvedCardSound("fireball", events);
+    const sound = playResolvedCombatSound("fireball", events);
     playCombatTextSounds(events, sound);
     expect(playBattleEvent).toHaveBeenCalledExactlyOnceWith("hitBurnCritical");
     expect(playCardSound).not.toHaveBeenCalled();
@@ -98,7 +94,7 @@ describe("one sound selected from committed action results", () => {
     expect(
       selectCombatSound([{ target: "player", kind: "damage", stat: "health", amount: 40, impact: false }, heal], false),
     ).toBe("playerHeal");
-    const sound = playResolvedCardSound("fireball", [{ ...critical, healthLost: 2 }], true);
+    const sound = playResolvedCombatSound("fireball", [{ ...critical, healthLost: 2 }], true);
     playCombatTextSounds([critical], sound);
     expect(playBattleEvent).toHaveBeenCalledExactlyOnceWith("deathsDoor");
   });
@@ -141,26 +137,26 @@ describe("one sound selected from committed action results", () => {
 
   it("retains authored action identity but chooses actual branches and companion turn outcomes", () => {
     const hit: CombatTextEvent = { target: "enemy", kind: "damage", stat: "physical", amount: 3 };
-    expect(playResolvedCardSound("slash", [hit])).toBe("slash.ogg");
+    expect(playResolvedCombatSound("slash", [hit])).toBe("slash.ogg");
     expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
-    expect(playResolvedCardSound("slash", [{ ...hit, critical: true }])).toBe(battleEventSounds.slashCritical);
+    expect(playResolvedCombatSound("slash", [{ ...hit, critical: true }])).toBe(battleEventSounds.slashCritical);
     expect(playBattleEvent).toHaveBeenLastCalledWith("slashCritical");
-    expect(playResolvedCardSound("cinderbloom", [{ ...hit, stat: "poison" }])).toBe(battleEventSounds.hitPiercing);
+    expect(playResolvedCombatSound("cinderbloom", [{ ...hit, stat: "poison" }])).toBe(battleEventSounds.hitPiercing);
     expect(playBattleEvent).toHaveBeenLastCalledWith("hitPiercing");
     expect(
-      playResolvedCardSound("molten-bulwark", [
+      playResolvedCombatSound("molten-bulwark", [
         { ...hit, stat: "burn" },
         { target: "player", kind: "status", stat: "block", amount: 4 },
       ]),
     ).toBe(battleEventSounds.blockGain);
     expect(playBattleEvent).toHaveBeenLastCalledWith("blockGain");
-    expect(playResolvedCardSound("astral-arrow", [{ ...hit, stat: "freeze" }])).toBe(battleEventSounds.astralFreeze);
+    expect(playResolvedCombatSound("astral-arrow", [{ ...hit, stat: "freeze" }])).toBe(battleEventSounds.astralFreeze);
     expect(playBattleEvent).toHaveBeenLastCalledWith("astralFreeze");
-    expect(playResolvedCardSound("astral-arrow", [{ ...hit, stat: "poison", critical: true }])).toBe(
+    expect(playResolvedCombatSound("astral-arrow", [{ ...hit, stat: "poison", critical: true }])).toBe(
       battleEventSounds.astralPiercingCritical,
     );
     expect(playBattleEvent).toHaveBeenLastCalledWith("astralPiercingCritical");
-    playCompanionSound("wolf", [{ ...hit, stat: "bleed" }]);
+    playResolvedCombatSound(undefined, [{ ...hit, stat: "bleed" }]);
     expect(playBattleEvent).toHaveBeenLastCalledWith("hitPiercing");
     expect(playCardSound).toHaveBeenCalledTimes(1);
   });

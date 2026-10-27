@@ -77,6 +77,16 @@ describe("alchemy visit transactions and resume", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toEqual([result]);
     expect(readRunProfile(defaultGameSession).gold).toBe(0);
   });
+  it("rejects invalid Campfire ingredient indices without consuming the visit", () => {
+    initializeAlchemyVisit("campfire", defaultGameSession);
+    const before = snapshotRun(defaultGameSession);
+    for (const index of [-1, 3, 0.5, NaN, Infinity]) {
+      expect(brewAtCampfire({ kind: "combine", indices: [index, 1] }, defaultGameSession)).toBeNull();
+      expect(brewAtCampfire({ kind: "combine", indices: [1, index] }, defaultGameSession)).toBeNull();
+    }
+    expect(snapshotRun(defaultGameSession)).toEqual(before);
+    expect(brewAtCampfire({ kind: "combine", indices: [1, 2] }, defaultGameSession)).not.toBeNull();
+  });
   it("Rest commits healing once and prevents brewing", () => {
     initializeAlchemyVisit("campfire", defaultGameSession);
     expect(restAtCampfire(defaultGameSession)).toBe(true);

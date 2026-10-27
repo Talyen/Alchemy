@@ -16,6 +16,7 @@ import {
   craftingCurrencyBlockedReason,
   findGearEquippedCharacter,
   flattenGearInventories,
+  gearDefinitions,
   GEAR_CHARACTER_IDS,
   getGearInstanceTitle,
   type ArmorySlot,
@@ -33,7 +34,6 @@ import { COMBAT_LOCKED_MESSAGE } from "./armory/armory-item-state";
 import type { ArmoryInventoryFilters } from "./armory/armory-inventory-filtering";
 import type { ArmorySortOption } from "./armory/armory-ordering";
 import { ArmoryPickerPanel } from "./armory/armory-picker-panel";
-import { applyCurrencyToGear, itemsMatchingSlot } from "./armory/armory-screen-actions";
 import "./armory/armory-screen.css";
 import { ArmoryTransferOverlay } from "./armory/armory-transfer-overlay";
 import type { CraftingResult } from "./armory/crafting-result";
@@ -104,7 +104,11 @@ export function ArmoryScreen({
   const pickerItems = useMemo(() => {
     if (selectedSlot === "trinket") return [];
     const equippedId = loadout[selectedSlot];
-    return itemsMatchingSlot(sharedInventory, selectedSlot).filter((item) => item.instanceId !== equippedId);
+    return sharedInventory.filter(
+      (item) =>
+        item.instanceId !== equippedId &&
+        (gearDefinitions[item.definitionId]?.compatibleSlots.includes(selectedSlot) ?? false),
+    );
   }, [sharedInventory, loadout, selectedSlot]);
   const ownedTrinkets = useMemo(() => {
     const owned = new Set(ownedTrinketIds);
@@ -208,22 +212,19 @@ export function ArmoryScreen({
         playUISound("error");
         return;
       }
-      const applied = applyCurrencyToGear({
-        editable,
-        activeCurrencyId,
-        instance,
-        onApplyCurrency,
-        clearCurrency: clearTargeting,
-        afterProgressSaved,
+      if (!onApplyCurrency(activeCurrencyId, instance.instanceId)) {
+        playUISound("error");
+        showNotice("Crafting could not be completed. No currency was spent.", "error");
+        return;
+      }
+      clearTargeting();
+      afterProgressSaved(() => playUISound("craft"));
+      setNotice("");
+      const sequence = ++feedbackSequence.current;
+      afterProgressSaved(() => {
+        if (feedbackSequence.current === sequence)
+          setCraftingResult({ before: instance, currencyId: activeCurrencyId });
       });
-      if (applied) {
-        setNotice("");
-        const sequence = ++feedbackSequence.current;
-        afterProgressSaved(() => {
-          if (feedbackSequence.current === sequence)
-            setCraftingResult({ before: instance, currencyId: activeCurrencyId });
-        });
-      } else showNotice("Crafting could not be completed. No currency was spent.", "error");
     });
   };
 

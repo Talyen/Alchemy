@@ -149,6 +149,29 @@ describe("settings store", () => {
     expect(useSettingsStore.getState().backgroundGlowIntensity).toBe(100);
   });
 
+  it("applies the same numeric bounds to live changes and direct hydration", () => {
+    const cases = [
+      ["brightness", "setBrightness", 50, 150, 100],
+      ["backgroundParticlesIntensity", "setBackgroundParticlesIntensity", 0, 100, 100],
+      ["backgroundGlowIntensity", "setBackgroundGlowIntensity", 0, 100, 100],
+      ["musicVolume", "setMusicVolume", 0, 100, 50],
+      ["sfxVolume", "setSfxVolume", 0, 100, 50],
+      ["masterVolume", "setMasterVolume", 0, 100, 50],
+    ] as const;
+    for (const [field, action, min, max, fallback] of cases) {
+      for (const [input, expected] of [
+        [-10, min],
+        [200, max],
+        [Number.NaN, fallback],
+      ] as const) {
+        useSettingsStore.getState()[action](input);
+        expect(useSettingsStore.getState()[field]).toBe(expected);
+        settingsPersistenceCodec.hydrate({ ...settingsPersistenceCodec.createDefault(), [field]: input });
+        expect(useSettingsStore.getState()[field]).toBe(expected);
+      }
+    }
+  });
+
   it("clears stored autoplay when remember is turned off", () => {
     const settings = useSettingsStore.getState();
     settings.setRememberAutoplayPreference(true);

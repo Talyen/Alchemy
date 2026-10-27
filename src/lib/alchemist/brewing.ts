@@ -1,24 +1,10 @@
-import {
-  BattleCardEffectSchema,
-  areBattleCardEffectsEqual,
-  cloneBattleCard,
-  appendCardDescriptionTrailer,
-  createEffectDescription,
-  carryCardDescriptionMarks,
-  getCardDescription,
-  getCardEffect,
-  getStandardPotionPool,
-  isPotionCard,
-  withCardDescription,
-  type BattleCard,
-  type BattleCardEffect,
-  type CardDescription,
-} from "@/lib/game-data";
-import { POTION_DISTILL_BONUS, CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
+import { cloneBattleCard, getStandardPotionPool, isPotionCard, type BattleCard } from "@/lib/game-data";
+import { CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
-import { doublePotionPotency } from "./potion-mixer";
+import { doublePotionPotency } from ".";
 import type { EncounterRewardTraitId } from "../content-systems/encounter-traits";
-import { distillPotionEffect } from "./potion-scaling";
+
+export { strengthenPotion } from "./potion-scaling";
 
 export type BrewOperation =
   | { kind: "new"; offerIndex: number }
@@ -28,63 +14,6 @@ export function getCampfireBrewKind(deck: readonly BattleCard[]): "new" | "combi
   let potions = 0;
   for (const card of deck) if (isPotionCard(card) && ++potions === 2) return "combine";
   return "new";
-}
-
-/** A distilled magnitude references a field whose value grew; mark exactly those. */
-function markDistilledMagnitudes(
-  description: CardDescription,
-  before: readonly BattleCardEffect[],
-  after: readonly BattleCardEffect[],
-) {
-  return description.map((line) => ({
-    ...line,
-    parts: line.parts.map((part) => {
-      if (typeof part === "string") return part;
-      const increased = part.references.some((reference) => {
-        const beforeValue = (getCardEffect(before, reference) as Record<string, unknown> | undefined)?.[
-          reference.field
-        ];
-        const afterValue = (getCardEffect(after, reference) as Record<string, unknown> | undefined)?.[reference.field];
-        return (
-          typeof afterValue === "number" &&
-          (beforeValue === undefined || (typeof beforeValue === "number" && afterValue > beforeValue))
-        );
-      });
-      return increased ? { ...part, distilled: true } : part;
-    }),
-  }));
-}
-
-export function strengthenPotion(card: BattleCard): BattleCard | null {
-  if (!isPotionCard(card)) return null;
-  const effects = card.effects.map(distillPotionEffect);
-  if (
-    effects.some((effect) => effect.kind === "remove-harmful-status" && effect.removeAll) &&
-    !effects.some((effect) => effect.kind === "heal")
-  ) {
-    effects.push({ kind: "heal", amount: POTION_DISTILL_BONUS });
-  }
-  if (effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)) return null;
-  if (
-    effects.length === card.effects.length &&
-    effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))
-  )
-    return null;
-  const description = markDistilledMagnitudes(
-    carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)),
-    card.effects,
-    effects,
-  );
-  appendCardDescriptionTrailer(description, card.tags, card.consume === true);
-  return cloneBattleCard(
-    withCardDescription(
-      {
-        ...card,
-        effects,
-      },
-      description,
-    ),
-  );
 }
 
 const DEFENSIVE_POTION_IDS: ReadonlySet<string> = new Set(["health-potion", "stoneskin-potion", "panacea-potion"]);

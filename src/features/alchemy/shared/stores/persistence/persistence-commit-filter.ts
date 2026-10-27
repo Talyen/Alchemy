@@ -4,7 +4,7 @@ import { createDefaultProfileSaveFields, type ProfileSaveFields } from "../sessi
 import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-save-fields";
 import { projectRunResumeSnapshot } from "./run-resume-codec";
 import { sessionRuntime } from "../session/session-runtime";
-import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "../session/settings-state";
+import { SETTINGS_SAVE_KEYS } from "@/lib/validation";
 
 // Both autosave and the progress gate use the resume codec's projection.
 // Adding a saved field there also makes it participate in change detection.
@@ -35,11 +35,6 @@ export function subscribePersistenceCommits(listener: () => void, gameSession: G
     unsubscribeGameplay();
   });
 }
-
-// Settings save keys derive from the defaults factory (same pattern as
-// PROFILE_SAVE_KEYS below), so a future persisted field is compared
-// automatically. Transient UI state lives outside this store entirely.
-const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
 
 // Profile save keys derive from the defaults factory, so a future persisted
 // profile field is compared automatically while collectionTab/collectionPages

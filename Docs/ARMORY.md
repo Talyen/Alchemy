@@ -13,7 +13,7 @@ Start from these owners:
 - `armory/armory-screen-types.ts` — screen props composed from the gear read slice and route commands.
 - `armory-screen.tsx` (sibling of `armory/`) — screen composition and interaction wiring.
 - `armory/armory-equipment-panel.tsx` and `armory/armory-picker-panel.tsx` — equipment and inventory presentation, receiving targeting state and callbacks from the screen.
-- `armory/` — picker grids (`ArmoryPagedGrid` owner in `paged-picker-grid.tsx`, slot-filtered via `itemsMatchingSlot` in `armory-screen-actions.ts`), targeting state (`use-armory-targeting-state.ts`, `armory-item-state.ts`), panels, parts, and overlays — presentation only; they receive domain state and commands through props.
+- `armory/` — picker grids (`ArmoryPagedGrid` owner in `paged-picker-grid.tsx`, slot-filtered by the screen), targeting state (`use-armory-targeting-state.ts`, `armory-item-state.ts`), panels, parts, and overlays — presentation only; they receive domain state and commands through props.
 
 Targeting interaction contract: `use-armory-targeting-events.ts` owns the workspace, context-menu, currency-click, and salvage-click selector groups. When adding an Armory interactive element, check its membership in those groups and keep the targeting-events matrix test in sync. Header controls and their dismissal behavior follow [Armory browsing UI](./UI_BROWSING.md#armory-crafting-and-salvage).
 

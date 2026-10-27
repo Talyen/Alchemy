@@ -1,6 +1,7 @@
 import { keywordDefinitions } from "../keywords";
 import type { KeywordId } from "../types";
 import { getTalentsForKeyword } from "./talent-pool-definitions";
+import { TALENT_TREE_KEYWORD_IDS } from "./xp-keywords";
 import type { TalentDefinition } from "./types";
 
 export { getTalentsForKeyword } from "./talent-pool-definitions";
@@ -25,7 +26,7 @@ export function chunkIntoRows<T>(items: T[], sizes: readonly number[] | number):
 }
 
 export function getTalentTreeKeywordIds(): KeywordId[] {
-  return (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => countImplementedTalents(kw) > 0);
+  return (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => TALENT_TREE_KEYWORD_IDS.has(kw));
 }
 
 export function countImplementedTalents(keywordId: KeywordId): number {

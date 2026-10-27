@@ -211,12 +211,17 @@ export function getBattleCardDescriptionInspection(
     // existing status/tooltips, and unknown alternatives retain the authored rule.
     const attack = firstAttack(outcome);
     if (!attack) return view;
-    if (effect.kind === "random-damage")
-      return attack.kind === "random-damage"
-        ? { ...effect, minAmount: attack.minAmount, maxAmount: attack.maxAmount, damageTypePool: attack.damageTypePool }
-        : attack.kind === "damage"
-          ? { ...effect, minAmount: attack.amount, maxAmount: attack.amount, damageTypePool: [attack.damageType] }
-          : view;
+    if (effect.kind === "random-damage") {
+      if (attack.kind === "random-damage") {
+        const projected = { ...effect, minAmount: attack.minAmount, maxAmount: attack.maxAmount };
+        if (attack.damageTypePool === undefined) delete projected.damageTypePool;
+        else projected.damageTypePool = attack.damageTypePool;
+        return projected;
+      }
+      return attack.kind === "damage"
+        ? { ...effect, minAmount: attack.amount, maxAmount: attack.amount, damageTypePool: [attack.damageType] }
+        : view;
+    }
     if (attack.kind === "random-damage") {
       rebuild = true;
       return attack;
@@ -225,7 +230,10 @@ export function getBattleCardDescriptionInspection(
       const types = attack.damageTypePool;
       if (attack.damageType !== effect.damageType || JSON.stringify(types) !== JSON.stringify(effect.damageTypePool))
         rebuild = true;
-      return { ...effect, amount: attack.amount, damageType: attack.damageType, damageTypePool: types };
+      const projected = { ...effect, amount: attack.amount, damageType: attack.damageType };
+      if (types === undefined) delete projected.damageTypePool;
+      else projected.damageTypePool = types;
+      return projected;
     }
     return view;
   }
