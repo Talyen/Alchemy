@@ -62,6 +62,11 @@ rather than bypassing the check.
 If Electron's binary download was skipped or the installation is incomplete, run
 `npm run ensure:electron` before `npm run dev:desktop`. It repairs the existing
 Electron installation; it does not build the renderer or launch the game.
+Desktop startup also prepares the patched Steamworks native binding. Its
+[native prerequisites](../scripts/steamworks/README.md) include Rust and a
+platform linker. If a task worktree links `node_modules` and the binding needs
+rebuilding, remove only that checkout's dependency symlink and run `npm ci` to
+create a task-local installation; never modify the shared installation.
 
 Set `ALCHEMY_DEV_PORT` to a free port for concurrent development checkouts, for
 example `ALCHEMY_DEV_PORT=5273 npm run dev:desktop` in a POSIX shell. Vite, desktop

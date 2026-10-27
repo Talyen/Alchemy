@@ -20,7 +20,8 @@ hashes without writing previews. Preparing a snapshot requires an explicit
 sync. Production assets use committed `assets/sources/` masters. Use `--port 4318`
 when the port is occupied. Keep the port when
 reopening to retain browser-local choices. Snapshots under ignored
-`reports/audio-review/` follow [transient cleanup](../README.md#cleanup-clean--explicit-reset-prunetransient--expiry).
+`reports/audio-review/` are retained by ordinary cleanup; explicit report cleanup
+can remove them. See [cleanup](../README.md#cleanup-clean--explicit-reset-prunetransient--expiry).
 
 The server exposes only board files and prepared media, not the library or
 repository. If the installed encoder lacks its binary, restore it with

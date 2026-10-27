@@ -54,6 +54,13 @@ override, including `test:unit` without paths. Avoid overlapping expensive runs 
 an overloaded host. Release packaging, signing, publication and uploads retain
 their release rules. No check command authorizes a push or CI dispatch.
 
+On the shared Mac, focused regressions have a 30-second limit and use one worker;
+retry a timeout and investigate before widening scope or changing that limit.
+Essential authorized local builds, heavier tests and rendered inspection use the
+shared host lane described in `/Users/ryanmcintire/Developer/.coordination/README.md`.
+Run that evidence before protected integration, not while holding its lock. The
+host lane does not grant permission for heavy verification.
+
 Run the task gate before handoff. Protected integration checks the merged task
 against pinned main/task commits, then revalidates both under the integration lock
 before advancing the clean integration checkout on `main`. If main advances during verification, integration

@@ -26,17 +26,18 @@ On the shared Mac, media production uses the bounded host lane from
 
 ```sh
 python3 /Users/ryanmcintire/Developer/.coordination/heavy_lane.py \
-  --owner <thread-id> --wait 30 --timeout 900 -- \
+  --owner <thread-id> --wait 900 --timeout 300 -- \
   npm run trailer -- capture --recipe trailers/boss-spotlight.json --bundle output/trailers/my-capture
 
 python3 /Users/ryanmcintire/Developer/.coordination/heavy_lane.py \
-  --owner <thread-id> --wait 30 --timeout 900 -- \
+  --owner <thread-id> --wait 900 --timeout 300 -- \
   npm run trailer -- render --bundle output/trailers/my-capture
 ```
 
-Use separate capture and render leases on the shared Mac: the full lossless 4K
-recipe can take longer than one 15-minute lease when both phases are combined.
-`make` combines the phases for a dedicated runner or shorter review recipe.
+Use separate capture and render leases on the shared Mac. For work that cannot
+finish within a lease, capture selected clips and render numbered chunks as
+described below. `make` combines the phases for a dedicated runner or shorter
+review recipe. Investigate a timeout before changing the work or its limits.
 
 `--draft` captures at device scale 1 and renders at half the delivery dimensions.
 Frame rate, actions, music positions and edit timing stay identical. Drafts are
