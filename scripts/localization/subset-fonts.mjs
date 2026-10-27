@@ -2,7 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import languages from "../../src/lib/localization/locales/languages.json" with { type: "json" };
 import packed from "../../src/lib/localization/locales/runtime.json" with { type: "json" };
 import { unpackCatalogs } from "../../src/lib/localization/catalog-format.mjs";
@@ -12,9 +13,30 @@ const root = path.resolve(import.meta.dirname, "../..");
 const args = process.argv.slice(2);
 if (args.length && (args.length !== 2 || args[0] !== "--source-dir"))
   throw new Error("Usage: npm run i18n:fonts -- [--source-dir <original-font-directory>]");
+if (!process.env.ALCHEMY_FONT_PYTHON && process.platform !== "win32") {
+  const result = spawnSync(
+    "python3",
+    [
+      path.join(root, "scripts/lyrics-trial/managed-env.py"),
+      "--environment",
+      "fonts",
+      "--font-version",
+      FONTTOOLS_VERSION,
+      process.execPath,
+      fileURLToPath(import.meta.url),
+      ...args,
+    ],
+    { cwd: root, stdio: "inherit" },
+  );
+  if (result.error) throw result.error;
+  process.exit(result.status ?? 1);
+}
 const python = process.env.ALCHEMY_FONT_PYTHON ?? "python3";
+const inheritedLock = Number(process.env.ALCHEMY_FONT_LOCK_FD);
+const lockStdio = Number.isSafeInteger(inheritedLock) && inheritedLock >= 3 ? [inheritedLock] : [];
 const version = execFileSync(python, ["-c", "import fontTools; print(fontTools.__version__)"], {
   encoding: "utf8",
+  stdio: ["ignore", "pipe", "inherit", ...lockStdio],
 }).trim();
 if (version !== FONTTOOLS_VERSION) throw new Error(`Font regeneration requires fonttools==${FONTTOOLS_VERSION}`);
 const cache = args[1] ? path.resolve(args[1]) : path.join(root, "reports/localization-font-sources");
@@ -61,7 +83,7 @@ try {
         "--no-recalc-timestamp",
         "--canonical-order",
       ],
-      { stdio: "inherit" },
+      { stdio: ["inherit", "inherit", "inherit", ...lockStdio] },
     );
     const subset = fs.readFileSync(output);
     if (missingGlyphs(subset, text, requirement.pattern).length)

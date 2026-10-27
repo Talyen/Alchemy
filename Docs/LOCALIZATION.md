@@ -123,11 +123,15 @@ digest, so omitted or corrupted bundled catalogs cannot pass packaging.
 Font regeneration is an explicit authoring operation, separate from offline checks:
 
 ```sh
-python3 -m venv .cache/font-tools
-.cache/font-tools/bin/python -m pip install fonttools==4.60.1
-ALCHEMY_FONT_PYTHON=.cache/font-tools/bin/python npm run i18n:fonts
+npm run i18n:fonts
 npm run i18n:check
 ```
+
+On macOS and Linux, the font command automatically prepares a pinned tool
+environment and holds its lock while running. It expires after 30 days without
+use. `ALCHEMY_FONT_PYTHON` still selects an existing Python environment explicitly;
+that environment and older `.cache/font-tools` installations are not deleted.
+On Windows, use an existing Python with the pinned fontTools version.
 
 The generator uses commit-pinned Google Fonts URLs and verifies source SHA-256
 digests before subsetting. `--source-dir <directory>` accepts those original TTF

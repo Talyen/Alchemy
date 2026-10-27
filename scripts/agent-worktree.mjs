@@ -627,8 +627,10 @@ async function runMain(argv, tracker) {
         }
         try {
           const helper = path.join(path.dirname(currentFile), "lyrics-trial/managed-env.py");
-          const managed = path.join(taskPath, ".cache/alchemy-lyrics-venv");
-          if (!fs.existsSync(helper) && fs.existsSync(managed))
+          const managed = ["lyrics", "fonts"].some((environment) =>
+            fs.existsSync(path.join(taskPath, `.cache/alchemy-${environment}-venv`)),
+          );
+          if (!fs.existsSync(helper) && managed)
             throw new Error("Managed environment ownership cannot be checked; checkout preserved");
           let releaseManaged = async () => {};
           if (fs.existsSync(helper) && process.platform !== "win32") {
@@ -637,9 +639,9 @@ async function runMain(argv, tracker) {
                 await import("./lib/managed-tool-lock.mjs")
               ).holdManagedToolLock(helper, taskPath);
             } catch (error) {
-              if (error.code !== "ENOENT" || fs.existsSync(managed)) throw error;
+              if (error.code !== "ENOENT" || managed) throw error;
             }
-          } else if (fs.existsSync(managed)) {
+          } else if (managed) {
             throw new Error("Managed environment ownership cannot be checked; checkout preserved");
           }
           try {

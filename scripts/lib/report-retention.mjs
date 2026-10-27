@@ -3,6 +3,25 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 
 const day = 86_400_000;
+const legacyToolPaths = [".cache/lyrics/venv", ".cache/font-tools", "reports/boss-lyrics/venv"];
+
+function legacyToolEnvironments(rootDir) {
+  return legacyToolPaths.flatMap((relative) => {
+    let current = rootDir;
+    try {
+      for (const segment of relative.split("/")) {
+        current = path.join(current, segment);
+        const stat = fs.lstatSync(current, { throwIfNoEntry: false });
+        if (!stat) return [];
+        if (stat.isSymbolicLink()) return [{ path: relative, reason: "Linked path; ownership unknown" }];
+        if (!stat.isDirectory()) return [{ path: relative, reason: "Unexpected path type; preserved" }];
+      }
+      return [{ path: relative, reason: "Legacy environment; ownership unknown" }];
+    } catch {
+      return [{ path: relative, reason: "Cannot inspect path; preserved" }];
+    }
+  });
+}
 // A review threshold is not permission to destroy unique diagnostics.
 export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 ** 3, maxEntries = 50_000 } = {}) {
   if (
@@ -23,6 +42,7 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
     protected: 0,
     candidates: [],
     expiringCandidates: [],
+    legacyToolEnvironments: legacyToolEnvironments(rootDir),
     permanentDeletionApproved: false,
     note: "Legacy diagnostics require exact-batch approval; marked runs can expire by policy. APFS allocation is not unique physical space.",
   };
@@ -175,8 +195,9 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
 
 export function writeRetentionReview(rootDir, options = {}) {
   const plan = reportRetentionPlan(rootDir, options);
-  const reports = path.join(rootDir, "reports"),
-    item = fs.lstatSync(reports, { throwIfNoEntry: false });
+  const reports = path.join(rootDir, "reports");
+  if (plan.legacyToolEnvironments.length && !fs.lstatSync(reports, { throwIfNoEntry: false })) fs.mkdirSync(reports);
+  const item = fs.lstatSync(reports, { throwIfNoEntry: false });
   if (!item?.isDirectory() || item.isSymbolicLink()) return plan;
   const target = path.join(reports, "retention-review.json"),
     current = fs.lstatSync(target, { throwIfNoEntry: false });
