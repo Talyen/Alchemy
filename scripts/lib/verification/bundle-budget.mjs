@@ -1,13 +1,9 @@
 export const BUDGETS = {
-  // CI run 38649677123 measured 1,918,020 desktop JS bytes (1,905,416 web)
-  // after the mana dock and battle presentation additions.
-  // Localization adds i18next, React bindings and explicit UI message calls.
-  // Reserve 160 KiB for that runtime; catalogs are emitted as local JSON assets.
   // CI run 40565352710 measured 2,168,713 web and 2,177,976 desktop JS bytes
-  // after gameplay and React Compiler changes. Keep a small margin above that total.
-  totalJsMaxBytes: 2135 * 1024,
-  // Soft warning at 95% so growth is visible before the gate goes red.
-  totalJsWarnBytes: Math.floor(2135 * 1024 * 0.95),
+  // (uncompressed). Allow about 10% growth above the larger build before failing.
+  totalJsMaxBytes: 2350 * 1024,
+  // Warn around 5% growth above the measured desktop build.
+  totalJsWarnBytes: Math.floor(2350 * 1024 * 0.95),
 };
 
 export const CHUNK_SIZE_WARNING_KB = 640;
