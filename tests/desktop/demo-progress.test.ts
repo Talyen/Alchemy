@@ -43,9 +43,14 @@ describe("desktop demo transfer isolation", () => {
     f.files.set("demo-save.json", JSON.stringify({ steamAccountId: "123", gold: 21 }));
     f.files.set("demo-save-recovery.json", JSON.stringify({ steamAccountId: "999", gold: 90 }));
     await writeFile(path.join(f.demoDirectory, "save.json.bak.1"), JSON.stringify({ steamAccountId: "123", gold: 19 }));
+    await writeFile(
+      path.join(f.demoDirectory, "save-recovery.json.bak.3"),
+      JSON.stringify({ steamAccountId: "123", gold: 17 }),
+    );
+    await writeFile(path.join(f.demoDirectory, "save.json.tmp"), JSON.stringify({ steamAccountId: "123", gold: 99 }));
     const source = await f.bridge.readSource();
     expect(source.readFailed).toBe(false);
-    expect(source.candidates.map((data: string) => JSON.parse(data).gold)).toEqual([21, 19]);
+    expect(source.candidates.map((data: string) => JSON.parse(data).gold)).toEqual([21, 19, 17]);
   });
   it("protects any existing full save including malformed data and temporary writes", async () => {
     const f = await fixture();

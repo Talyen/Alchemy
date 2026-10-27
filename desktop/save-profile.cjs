@@ -21,6 +21,12 @@ function createSaveSlots(directory, cloudFiles) {
   );
 }
 
+// Temporary files protect an established profile and must be deleted on clear,
+// but are never candidates for loading or demo import.
+function saveSlotFiles(slot, includeTemporary = false) {
+  return [slot.file, ...(includeTemporary ? [slot.tmp] : []), ...slot.backups];
+}
+
 async function retainLegacyMigrationReceipt(directory) {
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(path.join(directory, "legacy-migration.json"), "migrated", { flag: "wx" }).catch((error) => {
@@ -40,11 +46,7 @@ async function migrateLegacySaveProfile({ base, directory, account, isSavePayloa
     if (error.code !== "ENOENT") throw error;
   }
   await fs.mkdir(directory, { recursive: true });
-  const currentFiles = Object.values(createSaveSlots(directory, [])).flatMap((slot) => [
-    slot.file,
-    slot.tmp,
-    ...slot.backups,
-  ]);
+  const currentFiles = Object.values(createSaveSlots(directory, [])).flatMap((slot) => saveSlotFiles(slot, true));
   const established = (
     await Promise.all(
       currentFiles.map((file) =>
@@ -60,7 +62,7 @@ async function migrateLegacySaveProfile({ base, directory, account, isSavePayloa
   ).some(Boolean);
   if (!established)
     for (const slot of Object.values(createSaveSlots(base, []))) {
-      for (const source of [slot.file, ...slot.backups]) {
+      for (const source of saveSlotFiles(slot)) {
         let data;
         try {
           data = await fs.readFile(source, "utf8");
@@ -84,4 +86,10 @@ async function migrateLegacySaveProfile({ base, directory, account, isSavePayloa
   await retainLegacyMigrationReceipt(directory);
 }
 
-module.exports = { saveProfileDirectory, createSaveSlots, migrateLegacySaveProfile, retainLegacyMigrationReceipt };
+module.exports = {
+  saveProfileDirectory,
+  createSaveSlots,
+  saveSlotFiles,
+  migrateLegacySaveProfile,
+  retainLegacyMigrationReceipt,
+};

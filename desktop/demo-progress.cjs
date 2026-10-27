@@ -2,6 +2,8 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 
 const { steamAccountId, isSteamCloudEnabled } = require("./steam-context.cjs");
+const { createSaveSlots, saveSlotFiles } = require("./save-profile.cjs");
+const { createSerialOperations } = require("./serial-operations.cjs");
 
 function stampSaveOwner(data, client) {
   return stampSaveAccount(data, steamAccountId(client));
@@ -27,11 +29,7 @@ function createDemoProgressBridge({
 }) {
   const receiptPath = path.join(directory, "demo-initialization.json");
   const receiptCloudFile = "full-demo-initialization.json";
-  const localFiles = ["save.json", "save-recovery.json"].flatMap((name) => [
-    name,
-    `${name}.tmp`,
-    ...[1, 2, 3].map((i) => `${name}.bak.${i}`),
-  ]);
+  const slots = (base) => Object.values(createSaveSlots(base, []));
   async function exists(file) {
     try {
       await fs.access(file);
@@ -41,10 +39,10 @@ function createDemoProgressBridge({
       throw error;
     }
   }
-  let receiptQueue = Promise.resolve();
+  const receiptQueue = createSerialOperations();
   async function complete({ localOnly = false } = {}) {
     if (edition !== "full") return true;
-    const receipt = receiptQueue.then(async () => {
+    const receipt = receiptQueue.enqueue(async () => {
       try {
         await fs.mkdir(directory, { recursive: true });
         await fs.writeFile(`${receiptPath}.tmp`, "initialized", "utf8");
@@ -54,7 +52,6 @@ function createDemoProgressBridge({
         return false;
       }
     });
-    receiptQueue = receipt.catch(() => {});
     if (!(await receipt)) return false;
     // A local wipe requires a durable local receipt; Cloud remains best effort.
     // Cloud-first deletion still requires its receipt before removing mirrors.
@@ -72,7 +69,9 @@ function createDemoProgressBridge({
     if (edition !== "full") return result;
     try {
       result.initialized = await exists(receiptPath);
-      for (const name of localFiles) if (await exists(path.join(directory, name))) result.fullSaveExists = true;
+      for (const file of slots(directory).flatMap((slot) => saveSlotFiles(slot, true))) {
+        if (await exists(file)) result.fullSaveExists = true;
+      }
       const client = getSteam();
       const account = steamAccountId(client);
       if (isSteamCloudEnabled(client)) {
@@ -103,9 +102,9 @@ function createDemoProgressBridge({
       }
       if (platform === "win32") {
         for (const source of [...new Set([demoDirectory, legacyDemoDirectory].filter(Boolean))]) {
-          for (const name of localFiles.filter((name) => !name.endsWith(".tmp"))) {
+          for (const file of slots(source).flatMap((slot) => saveSlotFiles(slot))) {
             try {
-              add(await fs.readFile(path.join(source, name), "utf8"));
+              add(await fs.readFile(file, "utf8"));
             } catch (error) {
               if (error.code !== "ENOENT") throw error;
             }

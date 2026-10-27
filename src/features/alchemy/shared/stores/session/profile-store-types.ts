@@ -31,6 +31,11 @@ export function createDefaultProfileSaveFields(): ProfileSaveFields {
   };
 }
 
+// The codec and autosave change detection must select the same profile fields.
+export const PROFILE_SAVE_KEYS = Object.freeze(Object.keys(createDefaultProfileSaveFields())) as ReadonlyArray<
+  keyof ProfileSaveFields
+>;
+
 export interface ProfileStateFields extends ProfileSaveFields {
   collectionTab: CollectionTab;
   collectionPages: Record<CollectionTab, number>;
