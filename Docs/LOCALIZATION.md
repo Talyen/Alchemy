@@ -87,6 +87,10 @@ player-facing text changes. Draft wording may evolve in the isolated task worktr
 3. After semantic review, run `npm run i18n:finish -- <task-file.json> --reviewed`. The flag attests that the agent completed that pass; it is not an automated quality assessment. The tool copies freshness metadata from the prepared context and records review for the batch. Every locale is validated before any catalog is written; stale hashes, invalid placeholders/tags/plurals and duplicate locales are rejected. It applies the batch, regenerates outputs once, and runs complete freshness, font and export checks.
 
 An empty packet means no translations are pending; finishing it still checks freshness.
+To resume, run `npm run i18n:status -- <task-file.json>` (the default packet is
+used when omitted). This read-only status compares the packet with current English,
+glossary and pending catalogs, then checks result structure. It cannot establish
+semantic review or overall catalog freshness; finish still requires both.
 Legacy packets with per-entry `sourceHash` and `reviewed` fields remain accepted
 without the flag. Editable packets require `--reviewed`; a stale English or
 glossary snapshot is rejected even with that flag. Context and templates are

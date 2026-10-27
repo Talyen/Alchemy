@@ -68,3 +68,7 @@ export function validateBatch(
   context: WorkflowInput,
   options?: { reviewed?: boolean },
 ): Record<string, Record<string, Translation>>;
+export function inspectTranslationPacket(
+  input: unknown,
+  context: WorkflowInput,
+): { pending: number; state: "stale" | "incomplete" | "ready-for-review" | "empty"; detail: string };

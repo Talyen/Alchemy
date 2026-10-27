@@ -409,11 +409,35 @@ async function runMain(argv, tracker) {
     }
     console.log(`Working paths:\n${dirty || "  none"}`);
     console.log(`Recorded integration: ${state ? `${state.integration}/${state.cleanup} at ${state.commit}` : "none"}`);
+    const evidenceModule = path.join(path.dirname(currentFile), "lib/agent/task-evidence.mjs");
+    let currentPassingCheck = false;
+    if (fs.existsSync(evidenceModule)) {
+      const { latestTaskCheck } = await import(pathToFileURL(evidenceModule).href);
+      const check = latestTaskCheck(taskPath);
+      if (!check) console.log("Latest task check: no coverage receipt found.");
+      else if (check.error) console.log(`Latest check: freshness unavailable (${check.error}); ${check.file}`);
+      else {
+        currentPassingCheck = check.current && check.receipt.status === "passed";
+        console.log(
+          `Latest check: ${check.receipt.status ?? "unknown"}; ${check.current ? "current task selection and source" : "historical or freshness unverified"}; ${check.file}`,
+        );
+        console.log(
+          `Checked paths: ${check.receipt.selectedPaths?.length ?? "unknown"}; profile: ${check.receipt.profile ?? "unknown"}.`,
+        );
+        for (const step of check.receipt.steps ?? [])
+          console.log(`  ${step.status}: ${step.label}${step.reason ? ` — ${step.reason}` : ""}`);
+        for (const limitation of check.receipt.limitations ?? []) console.log(`  Deferred: ${limitation}`);
+      }
+    }
+    console.log("Visual quality, interaction review and CI status are not established by task status.");
     if (markers.length)
       console.log(`Blocked by unfinished Git operation: ${markers.join(", ")}; resolve it before continuing.`);
     else if (branch !== `agent/${task}`)
       console.log("Blocked: checkout is not on the expected task branch; inspect it.");
-    else if (dirty) console.log(`Next in ${taskPath}: review task-owned changes, run npm run check, and commit them.`);
+    else if (dirty)
+      console.log(
+        `Next in ${taskPath}: review task-owned changes, ${currentPassingCheck ? "confirm the check scope" : "run npm run check"}, and commit them.`,
+      );
     else if (state?.integration === "passed" && state.commit === head) {
       const contained = runGit(["merge-base", "--is-ancestor", head, "main"]);
       if (contained.status === 0)
@@ -427,7 +451,7 @@ async function runMain(argv, tracker) {
         `Next: review the task and its checks, then node scripts/agent-worktree.mjs integrate --task ${task}`,
       );
     console.log(
-      `Review and check completion are not recorded by status; confirm both before integration. State: ${stateFile}`,
+      `Review is not recorded by status; confirm it and the check scope before integration. State: ${stateFile}`,
     );
     return;
   }

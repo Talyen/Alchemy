@@ -42,6 +42,7 @@ it("selects an isolated current-source capture with explicit reproducible settin
 });
 
 it("rejects output traversal, invalid selections and resource settings before launching a browser", () => {
+  expect(parseVisualScenarioArgs(["--status"])).toEqual({ status: true });
   for (const args of [
     ["typo"],
     ["menu", "battle"],
@@ -55,6 +56,7 @@ it("rejects output traversal, invalid selections and resource settings before la
     ["menu", "--mode", "production"],
     ["menu", "--label", "before", "--label", "after"],
     ["menu", "--typo"],
+    ["--status", "battle"],
   ])
     expect(() => parseVisualScenarioArgs(args)).toThrow();
 });

@@ -15,6 +15,13 @@ Use four entry points for ordinary work:
 | Full repository validation (CI; local only by explicit request) | `npm run check:all`                            |
 | Focused unit diagnosis                                          | `npm run test:unit -- <one-or-two-test-files>` |
 
+| Change                                        | Additional work                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Code or documentation                         | Use the task gate; run a focused unit when it answers a concrete question.                  |
+| Player-facing text                            | After wording settles, prepare, translate and review the localization packet.               |
+| Visible UI                                    | Compare matched rendered states and exercise affected interactions; translate changed text. |
+| Explicitly requested heavy local verification | Follow the authorization and host-lane rules below before running it.                       |
+
 `check` selects the isolated task, including its uncommitted work. In a mixed or
 unrecorded checkout, name task-owned paths explicitly, including deletions and
 both sides of renames. Add `--plan` to inspect the selected scope before running.

@@ -14,6 +14,7 @@ const languages = JSON.parse(fs.readFileSync(path.join(ROOT, "src/lib/localizati
 export function parseVisualScenarioArgs(argv) {
   const { flags, values, rest } = parseKnownFlags(argv, {
     list: {},
+    status: {},
     help: { short: "h" },
     headed: {},
     label: { takesValue: true },
@@ -26,6 +27,10 @@ export function parseVisualScenarioArgs(argv) {
   for (const [key, value] of values) if (value.length !== 1) throw new UsageError(`Repeated option: --${key}`);
   const value = (key, fallback) => values.get(key)?.[0] ?? fallback;
   const scenario = rest[0];
+  if (flags.has("status")) {
+    if (rest.length || values.size || flags.size !== 1) throw new UsageError("--status takes no other options");
+    return { status: true };
+  }
   if (flags.has("help") || flags.has("list")) return { list: true };
   if (rest.length !== 1 || !VISUAL_SCENARIOS.includes(scenario))
     throw new UsageError(`Choose one scenario: ${VISUAL_SCENARIOS.join(", ")}. Use --help for options.`);
@@ -59,10 +64,46 @@ export function parseVisualScenarioArgs(argv) {
 
 export async function runVisualScenario(argv = process.argv.slice(2)) {
   const options = parseVisualScenarioArgs(argv);
+  if (options.status) {
+    const parent = path.join(ROOT, "reports/visual-review");
+    const captures = [];
+    for (const label of fs.existsSync(parent) ? fs.readdirSync(parent, { withFileTypes: true }) : []) {
+      if (!label.isDirectory()) continue;
+      const labelDir = path.join(parent, label.name);
+      for (const entry of fs.readdirSync(labelDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const file = path.join(labelDir, entry.name, "scenario.json");
+        try {
+          const data = JSON.parse(fs.readFileSync(file, "utf8"));
+          captures.push({ file, data, modified: fs.statSync(file).mtimeMs });
+        } catch (error) {
+          if (error.code !== "ENOENT") console.log(`Unreadable capture manifest: ${file}`);
+        }
+      }
+    }
+    captures.sort((a, b) => b.modified - a.modified);
+    for (const { file, data } of captures.slice(0, 10)) {
+      let capture = {};
+      try {
+        capture = JSON.parse(fs.readFileSync(path.join(path.dirname(file), "capture.json"), "utf8"));
+      } catch {
+        // Failed or interrupted captures may not have browser metadata.
+      }
+      console.log(
+        `${data.label}: ${data.scenario} — ${data.status}; commit ${data.commit}${data.dirty ? " (dirty)" : ""}; ${data.locale}, seed ${data.seed}, ${data.viewport?.width}x${data.viewport?.height}, ${data.edition}, ${data.mode}; ${capture.platform ?? "unknown platform"}, Chromium ${capture.browserVersion ?? "unknown"}; ${file}`,
+      );
+    }
+    if (!captures.length) console.log("No scenario captures found in this checkout.");
+    console.log(
+      "Captures do not establish visual quality or exercised interactions. Compare matching settings and inspect browser/version metadata before review.",
+    );
+    return 0;
+  }
   if (options.list) {
     console.log(`Usage: npm run visual:scenario -- <scenario> [--label before|after] [--locale en] [--viewport 1920x1080]
   [--seed 42] [--mode dev|preview] [--port 4179] [--headed]
 Scenarios: ${VISUAL_SCENARIOS.join(", ")}
+Use --status to list recent captures in this checkout and their settings.
 Defaults: current-source dev server, isolated browser storage, seed 42, reduced motion, muted audio.
 Repeat the same scenario/options in the original and candidate checkouts with different labels.
 Preview mode requires a fresh web build. Occupied ports fail without stopping or reusing a server.`);

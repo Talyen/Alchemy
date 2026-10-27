@@ -17,6 +17,10 @@ Alchemy is a fantasy roguelite deckbuilder. Use plain language and player-facing
 4. Run `node scripts/agent-worktree.mjs integrate --task <slug>` from the original workspace. The [integration tool](./scripts/README.md#integration-and-finish-phases) merges current main, checks the pinned combined result outside the shared lock, then advances main under the lock, retrying if main changes. Resolve understood conflicts in the task and retry; report ambiguous ones. Never bypass the tool.
 5. Review integration, then run `node scripts/agent-worktree.mjs finish --task <slug>` from the original workspace. It preserves evidence, closes task browsers and removes the worktree while retaining its branch. Keep it open while further requested work or a preview needs it. Keep unintegrated work committed and recoverable.
 
+For ordinary work, [the task guide](./CONTRIBUTING.md#what-to-run-when-you-change)
+selects the check and any additional visual or localization work. `status` shows
+the latest task-check receipt and next lifecycle action; it cannot attest review.
+
 Preserve unrelated work in every checkout. Never switch another checkout's branch,
 overwrite dirty main, discard edits, force-remove worktrees or delete task branches.
 The [Git safety guard](./scripts/README.md#worktree--git-safety) blocks unsafe commands

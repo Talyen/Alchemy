@@ -10,5 +10,5 @@ export interface VisualScenarioOptions {
   mode: "dev" | "preview";
   headed: boolean;
 }
-export function parseVisualScenarioArgs(argv: string[]): VisualScenarioOptions | { list: true };
+export function parseVisualScenarioArgs(argv: string[]): VisualScenarioOptions | { list: true } | { status: true };
 export function runVisualScenario(argv?: string[]): Promise<number>;

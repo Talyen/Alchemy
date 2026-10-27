@@ -235,6 +235,42 @@ export function editableTranslationPackets(packets) {
   }));
 }
 
+// This checks packet identity and structure only; review is a separate human or agent judgment.
+export function inspectTranslationPacket(input, context) {
+  const expected = translationPackets(context);
+  const packets = Array.isArray(input) ? input : [input];
+  const identities = (items) =>
+    items
+      .flatMap((packet) =>
+        Object.entries(packet?.messages ?? {}).map(([id, message]) => `${packet.locale}\0${id}\0${message.sourceHash}`),
+      )
+      .sort();
+  const pending = expected.reduce((count, packet) => count + Object.keys(packet.messages).length, 0);
+  if (JSON.stringify(identities(packets)) !== JSON.stringify(identities(expected)))
+    return {
+      pending,
+      state: "stale",
+      detail: "Pending messages or English/glossary context changed; prepare the packet again.",
+    };
+  try {
+    for (const packet of packets) {
+      if (
+        JSON.stringify(Object.keys(packet.messages ?? {}).sort()) !==
+        JSON.stringify(Object.keys(packet.results ?? {}).sort())
+      )
+        throw new Error("Results must include exactly the prepared messages");
+    }
+    validateBatch(packets, context, { reviewed: true });
+  } catch (error) {
+    return { pending, state: "incomplete", detail: error.message };
+  }
+  return {
+    pending,
+    state: pending ? "ready-for-review" : "empty",
+    detail: "Semantic review and catalog freshness are not established by packet status.",
+  };
+}
+
 export function validateBatch(input, { messages, glossary, catalogs }, { reviewed = false } = {}) {
   const packets = Array.isArray(input) ? input : [input];
   const next = {};
