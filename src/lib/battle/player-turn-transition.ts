@@ -184,7 +184,8 @@ function performDrawAndResetPhase(
   // Enemy-phase deliveries and overflow queues have not had a playable turn yet.
   const returningFlightUids: number[] = [];
   if (state.uniqueGear.returningFlightUids.length > 0) {
-    const eligibleUids = new Set(state.hand.map((card) => card.uid));
+    const eligibleUids = new Set<number | undefined>();
+    for (const card of state.hand) eligibleUids.add(card.uid);
     for (const card of state.pendingHandCards) eligibleUids.add(card.uid);
     for (const uid of state.uniqueGear.returningFlightUids) {
       if (eligibleUids.has(uid)) returningFlightUids.push(uid);

@@ -44,7 +44,8 @@ function generateGearOfferings({
   // alone exclude selected bases; the sampled order never needs a second mutation.
   const sampledBases = sampleItems(basePool, count, rng);
   const reservedBases = new Map<string, "ordinary" | "unique">();
-  const baseIds = new Set(basePool.map((base) => base.id));
+  const baseIds = new Set<string>();
+  for (const base of basePool) baseIds.add(base.id);
   const availableUniques = uniqueItemList.filter(
     (unique) => !ownedUniqueIds.has(unique.id) && baseIds.has(unique.baseItemId),
   );
