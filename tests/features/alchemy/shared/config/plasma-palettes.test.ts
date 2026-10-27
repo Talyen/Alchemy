@@ -122,6 +122,19 @@ describe("getPlasmaKeywordsForEnemy", () => {
     expect(getEnemyKeywordShineColors(entry, ["tempered"])).toEqual(getKeywordBorderShineColors(["poison", "forge"]));
   });
 
+  it("uses the encounter modifier instead of a matching saved trait for shine", () => {
+    const entry: BestiaryEntry = {
+      ...baseEntry,
+      traits: [
+        { id: "tempered", title: "Old modifier", description: "Poison" },
+        { id: "other", title: "Other", description: "Burn" },
+      ],
+    };
+    expect(getEnemyKeywordShineColors(entry, ["tempered", "tempered"])).toEqual(
+      getKeywordBorderShineColors(["burn", "forge"]),
+    );
+  });
+
   it("maps enemy keywords to a plasma pair with wildcard fallback", () => {
     const entry: BestiaryEntry = {
       ...baseEntry,

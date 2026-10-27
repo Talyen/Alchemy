@@ -13,9 +13,9 @@ import {
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { gearDefinitions, getGearInstanceKeywordIds, getUniqueGearShineColors, type GearInstance } from "@/lib/gear";
-import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { extractKeywordIds } from "@/lib/keyword-text";
+import { selectEnemyTraits } from "./enemy-trait-selection";
 import {
   getCompanionShineColors,
   getInspectionKeywordShineColors,
@@ -113,11 +113,11 @@ export function getPlasmaKeywordsForEnemy(entry: BestiaryEntry): KeywordId[] {
 }
 
 function getEnemyTraitKeywordIds(entry: BestiaryEntry, modifiers: readonly EncounterCombatTraitId[] = []): KeywordId[] {
-  const modifierIds = modifiers.length ? new Set<string>(modifiers) : undefined;
-  const descriptions: string[] = [];
-  for (const trait of entry.traits) if (!modifierIds?.has(trait.id)) descriptions.push(trait.description);
-  for (const id of modifiers) descriptions.push(ENCOUNTER_TRAITS[id].enemyTrait.description);
-  return getPlasmaKeywordsForText(descriptions.join(" "));
+  return getPlasmaKeywordsForText(
+    selectEnemyTraits(entry, modifiers)
+      .map((trait) => trait.description)
+      .join(" "),
+  );
 }
 
 export function getEnemyKeywordShineColors(
