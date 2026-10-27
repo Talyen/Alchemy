@@ -40,6 +40,26 @@ Game build identity is distinct from schema and content versions. Ordinary compa
 
 Increment the schema version for structural or meaning changes that require a supported payload transformation. Do not bump for safe additive defaults. Content versions are reserved for content ID/meaning remaps, not ordinary balance tuning. `save-versions.ts` owns one compatibility classification (supported, retired, newer schema, or newer content) plus timestamp ordering. Schema protection takes precedence over content protection; both precede retired-format rejection. There is no migration pipeline while the supported floor equals the current schema. Add transformations only when supported formats diverge.
 
+### Saved card definition revisions
+
+`BattleCard.definitionVersion` is optional additive metadata for an identifiable
+card-rule normalization within the current save format; absence means revision 0.
+It does not raise the supported schema floor or reset a saved card from the catalog.
+Ordinary numerical tuning does not advance it.
+
+Shield Bash revision 1 changes its single half-Block damage selector to spend that
+Block. `normalizeSavedCardDefinition()` runs through `hydrateCard()` for active-run
+decks, saved offers and restored battle piles (including pending hands and Wish
+queues). It updates only that selector, its matching description clause and the
+revision marker. Modified numbers, damage type, extra effects, magnitude marks,
+cost and card metadata remain owned by the saved payload. Already-current cards
+are not changed again. Queued committed turn effects are not reinterpreted.
+
+Unidentifiable older flat-damage forms, multiple resource selectors, damage pools,
+or unmatched/custom wording remain unchanged and unversioned; the normalizer
+returns an explicit ambiguous result for diagnosis rather than guessing. Do not
+claim those payloads migrated. Fresh catalog cards already carry revision 1.
+
 ### Schema change contract
 
 Choose a safe additive default or a transformation under [When to increment](#when-to-increment).

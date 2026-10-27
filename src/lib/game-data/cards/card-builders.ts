@@ -8,6 +8,7 @@ import { getCompanionDescriptionLines } from "./companion-turn-description";
 
 interface CardBaseInput {
   id: BattleCard["id"];
+  definitionVersion?: number;
   title?: string;
   art?: BattleCard["art"];
   cost?: number;
@@ -48,6 +49,7 @@ type EffectsCardInput<E extends BattleCardEffect[]> = CardBaseInput & {
 };
 export function effectsCard<const E extends BattleCardEffect[]>({
   id,
+  definitionVersion,
   title,
   art,
   effects,
@@ -61,6 +63,7 @@ export function effectsCard<const E extends BattleCardEffect[]>({
   return withCardDescription(
     {
       id,
+      ...(definitionVersion !== undefined && { definitionVersion }),
       title: deriveTitle(id, title),
       descriptionLines: [],
       art: art ?? getCatalogArt(id),
@@ -74,7 +77,14 @@ export function effectsCard<const E extends BattleCardEffect[]>({
 }
 
 type SummonCompanionCardInput = CardBaseInput & { companionId: import("../types").CompanionId };
-export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: SummonCompanionCardInput): BattleCard {
+export function summonCompanionCard({
+  id,
+  definitionVersion,
+  title,
+  art,
+  companionId,
+  cost = 1,
+}: SummonCompanionCardInput): BattleCard {
   const companion = companionLibrary[companionId];
   const turnEffects = companion.turnStartEffects;
   if (turnEffects.length === 0)
@@ -89,6 +99,7 @@ export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: S
   return withCardDescription(
     {
       id,
+      ...(definitionVersion !== undefined && { definitionVersion }),
       title: title ?? companionTitle ?? deriveTitle(id),
       descriptionLines,
       art: art ?? companion.art,
