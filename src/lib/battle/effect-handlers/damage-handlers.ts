@@ -3,10 +3,13 @@ import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES, harmfulPlayerStatusIds } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
-import { applyPotionMultiplier } from "../amount-helpers";
+import { applyPotionMultiplier, scalePercent } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage, mitigatePlayerStatusDamage } from "../status-helpers";
-import { addPlayerStatus } from "../status-state";
+import { addPlayerStatus, setPlayerStatus } from "../status-state";
+import { applyBlockDepletionRewards } from "../player-rewards";
+import { resolvePendingBattleReactions } from "../enemy-attack-damage";
+import { mergeCombatText } from "../combat-text-events";
 import { rangeBoundsError } from "./simple-handlers";
 import { resolvePlayerCrowdControlTriggers } from "../status-cc";
 
@@ -14,6 +17,26 @@ export const DAMAGE_HANDLERS = {
   damage: (state, card, effect, potionMult, combatTexts, context) => {
     const descriptionDamage = state.observer ? { effect, potionMultiplier: potionMult } : undefined;
     effect = resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0);
+    if (effect.spendBlock && effect.equalToBlock) {
+      const block = state.playerStatuses.block;
+      const spent = Math.min(block, Math.max(0, scalePercent(block, effect.equalToBlockPercent ?? 100)));
+      const before = state;
+      state = setPlayerStatus(state, "block", block - spent);
+      if (spent > 0)
+        mergeCombatText(combatTexts, {
+          target: "player",
+          kind: "damage",
+          stat: "block",
+          amount: spent,
+          impact: false,
+          feedback: "secondary",
+        });
+      state = resolvePendingBattleReactions(applyBlockDepletionRewards(before, state, combatTexts), combatTexts);
+      // Pay before Dodge/mitigation. Recorded hit echoes retain the paid amount,
+      // while a full card replay grants and spends Block again.
+      const { spendBlock: _spend, equalToBlock: _equal, equalToBlockPercent: _percent, ...hit } = effect;
+      effect = { ...hit, amount: spent };
+    }
     let damageType = effect.damageType;
     if (effect.damageTypePool && effect.damageTypePool.length > 0) {
       const picked = pickRandom(effect.damageTypePool, getBattleRng(state));

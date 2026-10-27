@@ -10,6 +10,7 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
       lifesteal: z.boolean().optional(),
       equalToBlock: z.boolean().optional(),
       equalToBlockPercent: z.number().int().min(1).max(100).optional(),
+      spendBlock: z.boolean().optional(),
       equalToArmor: z.boolean().optional(),
       forgeBonusPercent: z.number().int().min(1).max(100).optional(),
       ignoreArmor: z.boolean().optional(),
@@ -38,6 +39,9 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
     )
     .refine((data) => data.equalToBlockPercent === undefined || data.equalToBlock === true, {
       message: "equalToBlockPercent requires equalToBlock",
+    })
+    .refine((data) => !data.spendBlock || data.equalToBlock === true, {
+      message: "spendBlock requires equalToBlock",
     })
     .refine(
       (data) =>

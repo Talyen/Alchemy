@@ -8,6 +8,7 @@ import type { ObservedAttack, ObservedDirectAmount } from "./resolution-observer
 import type { BattleSnapshot } from "./types";
 import {
   describeKnownConditionalDamage,
+  describeKnownBlockSpendDamage,
   describeKnownStatusOptions,
   projectCardDescription,
 } from "./card-description-projection";
@@ -141,6 +142,10 @@ export function getBattleCardDescriptionInspection(
   const outcomes = inspectBattleCardOutcomes(card, snapshot, side);
   let rebuild = false;
   const statusOptions: Array<{ path: number[]; amounts: ReadonlyMap<string, number> }> = [];
+  const blockSpendDamage = new Map<
+    string,
+    { amount: number; damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"] }
+  >();
   const conditionalDamage: Array<{
     path: number[];
     amount: number;
@@ -195,6 +200,12 @@ export function getBattleCardDescriptionInspection(
     }
     const utility = withKnownUtilityAmount(effect, outcome);
     if (utility) return utility;
+    if (effect.kind === "damage" && effect.spendBlock && effect.equalToBlock) {
+      const attack = firstAttack(outcome);
+      if (attack?.kind === "damage" && !attack.damageTypePool)
+        blockSpendDamage.set(key, { amount: attack.amount, damageType: attack.damageType });
+      return view;
+    }
     if (effect.kind === "player-status" && effect.statusPool && outcome?.directAmounts.kind !== "unknown") {
       const direct = outcome?.directAmounts;
       const alternatives =
@@ -275,5 +286,6 @@ export function getBattleCardDescriptionInspection(
       conditional.damageType,
       conditional.condition,
     );
+  result = describeKnownBlockSpendDamage(result, blockSpendDamage);
   return result;
 }

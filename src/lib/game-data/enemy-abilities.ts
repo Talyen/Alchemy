@@ -12,6 +12,7 @@ const ENEMY_DAMAGE_FIELDS = [
   "doubleIfEnemyBleeding",
   "equalToBlock",
   "equalToBlockPercent",
+  "spendBlock",
   "forgeBonusPercent",
   "ignoreArmor",
   "ignoreBlock",

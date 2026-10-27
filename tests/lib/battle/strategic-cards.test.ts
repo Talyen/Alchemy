@@ -1,6 +1,7 @@
 import { getEffectiveDamageScore } from "@/lib/battle/autoplay-policy";
 import { describe, expect, it } from "vitest";
 import { cardById, BattleCardEffectSchema, type BattleCard } from "@/lib/game-data";
+import { repeatUniqueCardDamage } from "@/lib/battle/unique-card-effects";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
@@ -33,16 +34,93 @@ function play(id: string, patch: BattleStatePatch = {}) {
 }
 
 describe("strategic cards", () => {
-  it.each([0, 1, 2, 3, 6])("Shield Bash gains Block before dealing half of it (%i)", (block) => {
+  it.each([0, 1, 2, 3, 6])("Shield Bash gains Block before spending half of it (%i)", (block) => {
     const result = play("shield-bash", { playerStatuses: { block } });
+    expect(validateCardDescriptionParity(cardById["shield-bash"]!)).toEqual([]);
     expect(result.state.enemyHealth).toBe(100 - Math.round((block + 2) / 2));
-    expect(result.state.playerStatuses.block).toBe(block + 2);
-    expect(result.combatTexts.some((event) => event.kind === "damage" && event.stat === "block")).toBe(false);
+    expect(result.state.playerStatuses.block).toBe(block + 2 - Math.round((block + 2) / 2));
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({
+        kind: "damage",
+        stat: "block",
+        amount: Math.round((block + 2) / 2),
+        impact: false,
+        feedback: "secondary",
+      }),
+    );
   });
   it("a real second card resolution uses the newly gained Block again", () => {
     const result = play("shield-bash", { playerStatuses: { block: 3 }, flags: { playNextCardTwice: true } });
-    expect(result.state.enemyHealth).toBe(93);
-    expect(result.state.playerStatuses.block).toBe(7);
+    expect(result.state.enemyHealth).toBe(95);
+    expect(result.state.playerStatuses.block).toBe(2);
+  });
+
+  it("spends five of ten Block in the approved eight-Block example", () => {
+    const result = play("shield-bash", { playerStatuses: { block: 8 } });
+    expect(result.state.playerStatuses.block).toBe(5);
+    expect(result.state.enemyHealth).toBe(95);
+  });
+  it("applies the modified Block grant before spending and ordinary damage bonuses once", () => {
+    const result = play("shield-bash", {
+      playerStatuses: { block: 12, forge: 20 },
+      talentEffects: { forgeBlockPercent: 25, blockStunDamagePercent: 10 },
+      gearEffects: { flatBlockGained: 2, flatStunDamage: 3 },
+    });
+    // Gain9, spend11 of21, retain10;11+20Forge+3flat+1from retainedBlock.
+    expect(result.state.playerStatuses.block).toBe(10);
+    expect(result.state.enemyHealth).toBe(65);
+  });
+  it("pays Block even when the hit is dodged or fully mitigated", () => {
+    for (const patch of [{ rng: () => 0 }, { enemyMitigation: { block: 100, armor: 100 } }]) {
+      const result = play("shield-bash", { playerStatuses: { block: 8 }, ...patch });
+      expect(result.state.playerStatuses.block).toBe(5);
+      expect(result.state.enemyHealth).toBe(100);
+    }
+  });
+  it("a critical changes the hit, never its Block cost", () => {
+    const result = play("shield-bash", { playerStatuses: { block: 8 }, flags: { nextHitCrit: true } });
+    expect(result.state.playerStatuses.block).toBe(5);
+    expect(result.state.enemyHealth).toBe(90);
+  });
+  it.each([0, 1, 5])("spends only actual available Block, including depletion (%i)", (block) => {
+    const source = cardById["shield-bash"]!;
+    const spendOnly = { ...source, effects: [source.effects[1]!] };
+    const texts: Array<import("@/lib/battle").CombatTextEvent> = [];
+    const result = applyCardEffects(
+      battle({ playerHealth: 50, playerStatuses: { block }, talentEffects: { blockDepletedHeal: 2 } }),
+      spendOnly,
+      texts,
+    );
+    expect(result.playerStatuses.block).toBe(block - Math.round(block / 2));
+    expect(result.enemyHealth).toBe(100 - Math.round(block / 2));
+    expect(result.playerHealth).toBe(block === 1 ? 52 : 50);
+  });
+  it("keeps non-spending Block scaling and saved effects unchanged", () => {
+    const source = cardById["shield-bash"]!;
+    const card = {
+      ...source,
+      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true, equalToBlockPercent: 50 }],
+    } as BattleCard;
+    const result = applyCardEffects(battle({ playerStatuses: { block: 5 } }), card, []);
+    expect(result.playerStatuses.block).toBe(5);
+    expect(result.enemyHealth).toBe(97);
+    expect(
+      BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "stun", amount: 0, spendBlock: true }).success,
+    ).toBe(false);
+  });
+
+  it("recorded hit echoes reuse the paid amount without spending Block again", () => {
+    const source = cardById["shield-bash"]!;
+    const damageEffects: Array<Extract<import("@/lib/game-data").BattleCardEffect, { kind: "damage" }>> = [];
+    const texts: Array<import("@/lib/battle").CombatTextEvent> = [];
+    const first = applyCardEffects(battle({ playerStatuses: { block: 8 } }), source, texts, {
+      manaAtStart: 3,
+      damageEffects,
+    });
+    expect(damageEffects).toEqual([{ kind: "damage", damageType: "stun", amount: 5 }]);
+    const echoed = repeatUniqueCardDamage(first, { ...source, effects: damageEffects }, texts);
+    expect(echoed.playerStatuses.block).toBe(5);
+    expect(echoed.enemyHealth).toBe(90);
   });
 
   it("rejected plays do not spend Block", () => {
@@ -108,7 +186,7 @@ describe("strategic cards", () => {
         [],
       );
       expect(state.playerHealth).toBe(100 - expected);
-      if (id === "shield-bash") expect(state.enemyMitigation.block).toBe(4);
+      if (id === "shield-bash") expect(state.enemyMitigation.block).toBe(2);
       if (id === "ice-shot") expect(state.playerCC.freezeSkipTurns).toBe(1);
     }
   });

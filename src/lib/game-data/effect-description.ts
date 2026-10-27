@@ -64,6 +64,10 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
       const type = capitalizeWord(effect.damageType);
       if (effect.equalToBlock) {
         const percent = effect.equalToBlockPercent ?? 100;
+        if (effect.spendBlock)
+          return [
+            `Spend ${percent === 100 ? "all " : percent === 50 ? "half " : `${percent}% of `}your Block to deal ${type} damage`,
+          ];
         return [
           `Deal ${type} damage equal to ${percent === 100 ? "" : percent === 50 ? "half " : `${percent}% of `}your Block`,
         ];

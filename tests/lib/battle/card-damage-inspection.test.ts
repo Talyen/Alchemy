@@ -84,9 +84,37 @@ describe("rule-preserving tooltip inspection", () => {
       gearEffects: { flatBlockGained: 2 },
     });
     const result = getBattleCardDescriptionInspection(card, state);
-    expect(result.descriptionLines).toEqual(["Gain 9 Block", "Deal Stun damage equal to half your Block"]);
+    expect(result.descriptionLines).toEqual(["Gain 9 Block", "Spend half your Block to deal 31 Stun damage"]);
     expect(result.effects[1]).toEqual(card.effects[1]);
     expect(card.descriptionLines[0]).toBe("Gain 2 Block");
+  });
+
+  it("previews the paid Stun hit with canonical bonuses without consuming live state or RNG", () => {
+    const card = cardById["shield-bash"]!;
+    const rng = vi.fn(() => {
+      throw new Error("live RNG consumed");
+    });
+    const state = patchBattleState({
+      hand: [card],
+      mana: 3,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      appliesFightPacing: false,
+      playerStatuses: { block: 12, forge: 20 },
+      talentEffects: { forgeBlockPercent: 25, blockStunDamagePercent: 10 },
+      gearEffects: { flatBlockGained: 2, flatStunDamage: 3 },
+      rng,
+    });
+    const before = JSON.stringify({ card, state });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
+      "Gain 9 Block",
+      "Spend half your Block to deal 35 Stun damage",
+    ]);
+    expect(JSON.stringify({ card, state })).toBe(before);
+    expect(rng).not.toHaveBeenCalled();
+    const actual = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0).state;
+    expect(actual.playerStatuses.block).toBe(10);
+    expect(actual.enemyHealth).toBe(65);
   });
 
   it("uses ordered production resource changes before a later fixed grant", () => {
@@ -248,8 +276,11 @@ describe("rule-preserving tooltip inspection", () => {
     const state = patchBattleState({ hand: [card], mana: 3, playerStatuses: { block }, rng });
     const before = JSON.stringify({ card, state });
     const result = getBattleCardDescriptionInspection(card, state);
-    expect(result.descriptionLines).toEqual(["Gain 2 Block", "Deal Stun damage equal to half your Block"]);
-    expect(result.effects).toEqual(card.effects);
+    expect(result.descriptionLines).toEqual([
+      "Gain 2 Block",
+      `Spend half your Block to deal ${Math.round((block + 2) / 2)} Stun damage`,
+    ]);
+    expect(result.effects.slice(0, card.effects.length)).toEqual(card.effects);
     expect(JSON.stringify({ card, state })).toBe(before);
     expect(rng).not.toHaveBeenCalled();
   });
