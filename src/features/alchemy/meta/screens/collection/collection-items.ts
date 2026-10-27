@@ -34,7 +34,11 @@ type CatalogItem = {
 export type CollectionTileItem = CatalogItem & { discovered: boolean };
 
 function sortByTitle<T extends { title: string }>(entries: readonly T[]): T[] {
-  return [...entries].sort((a, b) => displayText(a.title).localeCompare(displayText(b.title), localization.language));
+  if (localization.language === "en") return [...entries].sort((a, b) => a.title.localeCompare(b.title, "en"));
+  return entries
+    .map((entry) => ({ entry, title: displayText(entry.title) }))
+    .sort((a, b) => a.title.localeCompare(b.title, localization.language))
+    .map(({ entry }) => entry);
 }
 
 // Each tab owns its ordered content, default capacity, and hidden copy together.

@@ -6,6 +6,7 @@ import {
 } from "@/features/alchemy/meta/screens/collection/collection-items";
 import { cardLibrary, characters, enemyBestiary, KNIGHT_UNLOCK_MESSAGE, trinketLibrary } from "@/lib/game-data";
 import { uniqueItemList } from "@/lib/gear";
+import { displayText, localization } from "@/lib/localization/runtime";
 
 const emptyDiscoveries = {
   discoveredCardIds: [] as string[],
@@ -123,6 +124,24 @@ describe("collection item helpers", () => {
     });
     expect(revealed[1]).toEqual(hidden[1]);
     expect(getCollectionPageItems(input)).toEqual(hidden);
+  });
+
+  it("sorts by the current localized title on every page", async () => {
+    await localization.changeLanguage("en-XA");
+    try {
+      const expected = [...cardLibrary].sort((a, b) =>
+        displayText(a.title).localeCompare(displayText(b.title), localization.language),
+      );
+      const actual = getCollectionPageItems({
+        collectionTab: "cards",
+        ...emptyDiscoveries,
+        page: 0,
+        pageSize: cardLibrary.length,
+      });
+      expect(actual.map((item) => item.id)).toEqual(expected.map((card) => card.id));
+    } finally {
+      await localization.changeLanguage("en");
+    }
   });
 
   it("returns hidden unique copy until the unique is discovered", () => {
