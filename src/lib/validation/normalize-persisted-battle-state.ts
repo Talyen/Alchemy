@@ -221,6 +221,10 @@ function normalizeEnemy(input: unknown, defaultEnemy: BattleSnapshot["currentEne
 function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapshot) {
   const positiveOrDefault = (value: number, fallback: number) =>
     Number.isFinite(value) && value > 0 && value < Number.MAX_SAFE_INTEGER ? value : fallback;
+  // Negative saved Health is corruption, repaired to maximum. Zero survives
+  // for terminal battle resumption (victory / defeat settlement).
+  const normalizeHealth = (value: number, fallback: number, maximum: number) =>
+    value >= 0 ? Math.min(clampNonNegative(value, fallback), maximum) : maximum;
   const playerMaxHealth = positiveOrDefault(state.playerMaxHealth, defaults.playerMaxHealth);
   const enemyMaxHealth = positiveOrDefault(state.enemyMaxHealth, defaults.enemyMaxHealth);
   return {
@@ -229,16 +233,8 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
     roomScalingMultiplier: positiveOrDefault(state.roomScalingMultiplier, defaults.roomScalingMultiplier),
     playerMaxHealth,
     enemyMaxHealth,
-    // Negative saved Health is corruption, repaired to combatant maximums.
-    // Zero Health is preserved for terminal battle resumption (victory / defeat settlement).
-    playerHealth:
-      state.playerHealth >= 0
-        ? Math.min(clampNonNegative(state.playerHealth, defaults.playerHealth), playerMaxHealth)
-        : playerMaxHealth,
-    enemyHealth:
-      state.enemyHealth >= 0
-        ? Math.min(clampNonNegative(state.enemyHealth, defaults.enemyHealth), enemyMaxHealth)
-        : enemyMaxHealth,
+    playerHealth: normalizeHealth(state.playerHealth, defaults.playerHealth, playerMaxHealth),
+    enemyHealth: normalizeHealth(state.enemyHealth, defaults.enemyHealth, enemyMaxHealth),
     enemyRegeneration: clampNonNegative(state.enemyRegeneration, defaults.enemyRegeneration),
     enemyPhysicalDamageBonus: clampNonNegative(state.enemyPhysicalDamageBonus, defaults.enemyPhysicalDamageBonus),
     // Match SaveDataSchema's live-combat gold rule (Math.round, not floor):

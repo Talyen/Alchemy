@@ -41,6 +41,27 @@ function card(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 describe("encounter trait enemy actions", () => {
+  it("keeps both health-loss reactions when an enemy has Cinder Skin and Flickering", () => {
+    const state = makeTestBattleState({
+      enemyHealth: 10,
+      turn: 1,
+      currentEnemy: {
+        ...enemyById["fire-elemental"],
+        traits: [
+          { id: "cinder-skin", title: "Cinder Skin", description: "" },
+          { id: "flickering", title: "Flickering", description: "" },
+        ],
+      },
+    });
+    const result = damageEnemyHealth(state, 1).state;
+    expect(result.flags).toMatchObject({
+      enemyAttackDamageReduction: 1,
+      cinderSkinUsedThisTurn: true,
+      pendingCinderSkinReaction: true,
+    });
+    expect(state.flags.cinderSkinUsedThisTurn).toBe(false);
+  });
+
   it("resolves trait damage in authored order and stops riders after a lethal hit", () => {
     const state = patchBattleState({
       currentEnemy: enemyWith("toxic", "bloodletter", "combustible", "chilling", "zealot", "concussive"),

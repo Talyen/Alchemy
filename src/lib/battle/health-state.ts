@@ -28,28 +28,24 @@ export interface EnemyHitHealth {
 export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitHealth {
   const previousHealth = state.enemyHealth;
   const enemyHealth = clampHealth(previousHealth, -damage, state.enemyMaxHealth);
+  const survivedHealthLoss = enemyHealth > 0 && enemyHealth < previousHealth;
   const triggersCinderSkin =
-    enemyHealth > 0 &&
-    enemyHealth < previousHealth &&
+    survivedHealthLoss &&
     hasEnemyTrait(state, "cinder-skin") &&
     state.turn % 2 === 1 &&
     !state.flags.cinderSkinUsedThisTurn;
   const weakensAttack =
-    enemyHealth > 0 &&
-    enemyHealth < previousHealth &&
-    (hasEnemyTrait(state, "flickering") || hasEnemyTrait(state, "loose-rubble"));
+    survivedHealthLoss && (hasEnemyTrait(state, "flickering") || hasEnemyTrait(state, "loose-rubble"));
   return {
     state: {
       ...state,
       enemyHealth,
-      ...(weakensAttack ? { flags: { ...state.flags, enemyAttackDamageReduction: 1 } } : {}),
-      ...(triggersCinderSkin
+      ...(weakensAttack || triggersCinderSkin
         ? {
             flags: {
               ...state.flags,
               ...(weakensAttack ? { enemyAttackDamageReduction: 1 } : {}),
-              cinderSkinUsedThisTurn: true,
-              pendingCinderSkinReaction: true,
+              ...(triggersCinderSkin ? { cinderSkinUsedThisTurn: true, pendingCinderSkinReaction: true } : {}),
             },
           }
         : {}),
