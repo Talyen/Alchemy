@@ -8,6 +8,7 @@ import type { ObservedAttack, ObservedDirectAmount } from "./resolution-observer
 import type { BattleSnapshot } from "./types";
 import {
   describeKnownConditionalDamage,
+  describeKnownForgeDamageTotal,
   describeKnownBlockSpendDamage,
   describeKnownStatusOptions,
   projectCardDescription,
@@ -142,6 +143,11 @@ export function getBattleCardDescriptionInspection(
   const outcomes = inspectBattleCardOutcomes(card, snapshot, side);
   let rebuild = false;
   const statusOptions: Array<{ path: number[]; amounts: ReadonlyMap<string, number> }> = [];
+  const forgeDamage: Array<{
+    path: number[];
+    amount: number;
+    damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"];
+  }> = [];
   const blockSpendDamage = new Map<
     string,
     { amount: number; damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"] }
@@ -204,6 +210,12 @@ export function getBattleCardDescriptionInspection(
       const attack = firstAttack(outcome);
       if (attack?.kind === "damage" && !attack.damageTypePool)
         blockSpendDamage.set(key, { amount: attack.amount, damageType: attack.damageType });
+      return view;
+    }
+    if (effect.kind === "damage" && effect.forgeBonusPercent !== undefined) {
+      const attack = firstAttack(outcome);
+      if (attack?.kind === "damage" && !attack.damageTypePool)
+        forgeDamage.push({ path, amount: attack.amount, damageType: attack.damageType });
       return view;
     }
     if (effect.kind === "player-status" && effect.statusPool && outcome?.directAmounts.kind !== "unknown") {
@@ -287,5 +299,6 @@ export function getBattleCardDescriptionInspection(
       conditional.condition,
     );
   result = describeKnownBlockSpendDamage(result, blockSpendDamage);
+  for (const hit of forgeDamage) result = describeKnownForgeDamageTotal(result, hit.path, hit.amount, hit.damageType);
   return result;
 }

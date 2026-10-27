@@ -23,11 +23,17 @@ const card: BattleCard = makeTestCard({
   effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
 });
 
-function LiveInspection({ state }: { state: BattleSnapshot }) {
+function LiveInspection({
+  state,
+  inspectedCard = cardById.slash!,
+}: {
+  state: BattleSnapshot;
+  inspectedCard?: BattleCard;
+}) {
   const descriptionContext = useBattleDescriptionContext(state);
   return (
     <BattleCardButton
-      card={cardById.slash!}
+      card={inspectedCard}
       descriptionContext={descriptionContext}
       ariaLabel="Inspect Slash"
       shimmerActive={false}
@@ -79,6 +85,35 @@ describe("BattleCardButton", () => {
     );
     fireEvent.mouseEnter(screen.getByRole("button", { name: "Collection Slash" }).parentElement!);
     expect(screen.getByRole("tooltip").textContent).toContain("Deal 4 Physical damage");
+  });
+
+  it("updates the inline Forge total while preserving its formula and nonbattle description", () => {
+    const burningBlade = cardById["burning-blade"]!;
+    const { rerender } = render(
+      <LiveInspection inspectedCard={burningBlade} state={patchBattleState({ playerStatuses: { forge: 10 } })} />,
+    );
+    act(() => screen.getByRole("button", { name: "Inspect Slash" }).focus());
+    expect(screen.getByRole("tooltip").textContent).toContain(
+      "Deal 1 Burn damage, increased by half your Forge (6 total)",
+    );
+    rerender(
+      <LiveInspection inspectedCard={burningBlade} state={patchBattleState({ playerStatuses: { forge: 11 } })} />,
+    );
+    expect(screen.getByRole("tooltip").textContent).toContain(
+      "Deal 1 Burn damage, increased by half your Forge (7 total)",
+    );
+    rerender(
+      <BattleCardButton
+        card={burningBlade}
+        ariaLabel="Collection Burning Blade"
+        shimmerActive={false}
+        shimmerToken={undefined}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Collection Burning Blade" }).parentElement!);
+    expect(screen.getByRole("tooltip").textContent).toContain("Deal 1 Burn damage, increased by half your Forge");
+    expect(screen.getByRole("tooltip").textContent).not.toContain("total)");
+    expect(screen.getByRole("tooltip").textContent).not.toContain("Attack Power");
   });
 
   it("refreshes Bloodscent in Companion inspection when enemy Bleed changes", () => {

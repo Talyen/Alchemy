@@ -278,6 +278,45 @@ export function describeKnownConditionalDamage(
     : card;
 }
 
+/** Keep the Forge formula intact and bind its current total only in the inspection view. */
+export function describeKnownForgeDamageTotal(
+  card: BattleCard,
+  path: number[],
+  amount: number,
+  damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"],
+): BattleCard {
+  const effect = getCardEffect(card.effects, { effectIndex: path[0]!, effectPath: path.slice(1) });
+  if (effect?.kind !== "damage" || effect.forgeBonusPercent === undefined) return card;
+  const canonical = createEffectDescription([effect])[0];
+  const magnitudeIndex = canonical?.parts.findIndex((part) => typeof part !== "string") ?? -1;
+  const tail = canonical?.parts.slice(magnitudeIndex + 1);
+  if (magnitudeIndex < 0 || !tail?.length || !tail.every((part) => typeof part === "string")) return card;
+  const clause = tail.join("");
+  let bound = false;
+  const description = getCardDescription(card).map((line) => ({
+    ...line,
+    parts: line.parts.flatMap((part, index) => {
+      const previous = line.parts[index - 1];
+      if (
+        typeof part !== "string" ||
+        typeof previous !== "object" ||
+        !referencesPath(previous, path) ||
+        !part.startsWith(clause)
+      )
+        return [part];
+      bound = true;
+      return [
+        `${clause} (`,
+        cardMagnitude({ effectIndex: card.effects.length, kind: "damage", field: "amount" }, { editable: false }),
+        ` total)${part.slice(clause.length)}`,
+      ];
+    }),
+  }));
+  return bound
+    ? withCardDescription({ ...card, effects: [...card.effects, { kind: "damage", damageType, amount }] }, description)
+    : card;
+}
+
 /** Bind a known paid hit without replacing the authored resource-spending rule. */
 export function describeKnownBlockSpendDamage(
   card: BattleCard,
