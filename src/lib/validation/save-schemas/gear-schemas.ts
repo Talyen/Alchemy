@@ -20,12 +20,14 @@ export function normalizeGearInstanceArray(raw: unknown): Array<z.infer<typeof G
   // order in a heterogeneous list; all other save paths go through this helper.
   if (!Array.isArray(raw)) return [];
   const seen = new Set<string>();
-  return raw.flatMap((item) => {
+  const items: Array<z.infer<typeof GearInstanceSchema>> = [];
+  raw.forEach((item) => {
     const normalized = normalizeGearInstance(item);
-    if (!normalized || seen.has(normalized.instanceId)) return [];
+    if (!normalized || seen.has(normalized.instanceId)) return;
     seen.add(normalized.instanceId);
-    return [normalized];
+    items.push(normalized);
   });
+  return items;
 }
 
 export const GearInstanceArraySchema = z.preprocess(

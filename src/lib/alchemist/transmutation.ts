@@ -412,13 +412,14 @@ export function canTransmuteCard(
 ): boolean {
   if (!isTransmutableCard(card)) return false;
   const key = cardSnapshotKey(card);
+  let companionPresent: boolean | undefined;
   return choices.some((choice) => {
     const alteration = matchingAlteration(choice, key, sourceIndex, card.id);
     return (
       !!alteration &&
       // The saved alteration already proves compatibility with this exact
       // source. Only Companion additions depend on the rest of the live deck.
-      (!deck || choice.keyword !== "companion" || deck.some(isCompanionSummonCard))
+      (!deck || choice.keyword !== "companion" || (companionPresent ??= deck.some(isCompanionSummonCard)))
     );
   });
 }

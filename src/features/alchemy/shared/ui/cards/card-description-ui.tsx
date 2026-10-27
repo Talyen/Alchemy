@@ -3,7 +3,7 @@ import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { Fragment, type ReactNode } from "react";
 import { parseRichText, type RichTextNode } from "@/lib/localization/rich-text";
 
-import { renderCardDescription, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { renderCardDescription, type BattleCard, type CardMagnitude, type KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 import { TRANSMUTATION_PREFIXES } from "@/lib/game-constants";
@@ -85,13 +85,10 @@ export function DescriptionLines({
     // use effect-bound marks when the exact canonical line still corresponds.
     const bound = rendered?.descriptionLines[lineIndex] === line ? rendered.localizedLines[lineIndex] : undefined;
     const message = bound ?? buildDescriptionMessage([{ text: line }]);
-    const marks = new Map(
-      bound
-        ? rendered!.magnitudes
-            .filter((entry) => entry.lineIndex === lineIndex)
-            .map((entry) => [entry.id, entry.magnitude])
-        : [],
-    );
+    const marks = new Map<string, CardMagnitude>();
+    if (bound) {
+      for (const entry of rendered!.magnitudes) if (entry.lineIndex === lineIndex) marks.set(entry.id, entry.magnitude);
+    }
     return (
       <div key={`${idPrefix}-${lineIndex}`} className={tooltipBodyLineClass}>
         {i18n.read(() => renderMessage(message, undefined, marks))}

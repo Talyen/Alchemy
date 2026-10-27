@@ -89,12 +89,18 @@ function resolveStartingEnemyMitigation(
   startingArmor: number,
   startingBlock: number,
 ): EnemyMitigation {
-  const hasFortress = traits.some((trait) => trait.id === "iron-fortress");
+  let hasFortress = false;
+  let hasWhitehot = false;
+  traits.some((trait) => {
+    if (trait.id === "iron-fortress") hasFortress = true;
+    else if (trait.id === "whitehot") hasWhitehot = true;
+    return hasFortress && hasWhitehot;
+  });
   return {
     ...EMPTY_ENEMY_MITIGATION,
     armor: startingArmor + (hasFortress ? LABYRINTH_MODIFIER_CONFIG.fortressArmor : 0),
     block: startingBlock,
-    forge: traits.some((trait) => trait.id === "whitehot") ? LABYRINTH_MODIFIER_CONFIG.whitehotForge : 0,
+    forge: hasWhitehot ? LABYRINTH_MODIFIER_CONFIG.whitehotForge : 0,
   };
 }
 

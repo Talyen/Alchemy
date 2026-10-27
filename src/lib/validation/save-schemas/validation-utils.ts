@@ -39,7 +39,12 @@ export function safeParseWithErrors<T>(
 }
 
 export function deduplicateStrings(val: unknown): string[] {
-  return Array.isArray(val) ? [...new Set(val.filter((entry): entry is string => typeof entry === "string"))] : [];
+  if (!Array.isArray(val)) return [];
+  const strings = new Set<string>();
+  val.forEach((entry) => {
+    if (typeof entry === "string") strings.add(entry);
+  });
+  return [...strings];
 }
 
 export function deduplicatedStringArraySchema() {

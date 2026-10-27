@@ -177,12 +177,13 @@ const traitMetadata = new Map(
 
 function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): EnemyTrait[] {
   if (!Array.isArray(value)) return enemy?.traits ?? [];
-  const traits = value.flatMap((trait: unknown): EnemyTrait[] => {
-    if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return [];
+  const traits: EnemyTrait[] = [];
+  value.forEach((trait: unknown) => {
+    if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return;
     // Native traits come from today's enemy; reward benefits cannot become enemy actions.
-    if (enemy && sanitizeEncounterTraitIds([trait.id], "combat").length === 0) return [];
+    if (enemy && sanitizeEncounterTraitIds([trait.id], "combat").length === 0) return;
     const canonical = traitMetadata.get(trait.id);
-    return canonical ? [canonical] : [];
+    if (canonical) traits.push(canonical);
   });
   return [
     ...new Map(
@@ -195,7 +196,9 @@ function isSavedAbilityRoster(value: unknown): value is string[] {
   return (
     Array.isArray(value) &&
     value.length === 3 &&
-    new Set(value).size === 3 &&
+    value[0] !== value[1] &&
+    value[0] !== value[2] &&
+    value[1] !== value[2] &&
     value.every((id: unknown) => typeof id === "string" && Boolean(findEnemyAbilityCard(id)))
   );
 }

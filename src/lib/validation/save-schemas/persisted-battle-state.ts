@@ -90,24 +90,30 @@ const PersistedBattleStateWireSchema = z.looseObject({
   wishOptions: savedCardArraySchema("wishOptions").nullable().catch(null),
   wishQueue: z
     .array(z.unknown())
-    .transform((queues) =>
-      queues.flatMap((queue, index) =>
-        Array.isArray(queue) ? [parseSavedCardArray(queue, `wishQueue[${index}]`)] : [],
-      ),
-    )
+    .transform((queues) => {
+      const parsed: Array<ReturnType<typeof parseSavedCardArray>> = [];
+      queues.forEach((queue, index) => {
+        if (Array.isArray(queue)) parsed.push(parseSavedCardArray(queue, `wishQueue[${index}]`));
+      });
+      return parsed;
+    })
     .catch([]),
   pendingTurnStartEffects: z
     .array(z.unknown())
-    .transform((entries) =>
-      entries.flatMap((entry, index) => {
+    .transform((entries) => {
+      const parsed: Array<z.infer<typeof pendingTurnStartEffectSchema>> = [];
+      entries.forEach((entry, index) => {
         const result = pendingTurnStartEffectSchema.safeParse(entry);
-        if (result.success) return [result.data];
+        if (result.success) {
+          parsed.push(result.data);
+          return;
+        }
         recordNestedValidationWarnings([
           { path: `pendingTurnStartEffects[${index}]`, message: "malformed scheduled effect was dropped" },
         ]);
-        return [];
-      }),
-    )
+      });
+      return parsed;
+    })
     .catch([]),
   mana: z.number().catch(battleFallbacks.mana),
   maxMana: z.number().catch(battleFallbacks.maxMana),
@@ -132,14 +138,18 @@ const PersistedBattleStateWireSchema = z.looseObject({
   appliesFightPacing: z.boolean().catch(battleFallbacks.appliesFightPacing),
   difficultyModifiers: z
     .array(z.unknown())
-    .transform((modifiers) =>
-      modifiers.flatMap((modifier) => {
+    .transform((modifiers) => {
+      const parsed: Array<z.infer<typeof difficultyModifierSchema>> = [];
+      modifiers.forEach((modifier) => {
         const result = difficultyModifierSchema.safeParse(modifier);
-        return result.success ? [result.data] : [];
-      }),
-    )
+        if (result.success) parsed.push(result.data);
+      });
+      return parsed;
+    })
     .catch([]),
 });
+
+const BATTLE_CARD_PILES = ["deck", "hand", "pendingHandCards", "discard", "exhausted"] as const;
 
 // A battle block without any card piles is a fragment, not a fight: repair
 // corruption inside a battle, but never fabricate one from scattered fields
@@ -148,7 +158,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
 function hasBattleCardPiles(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  return ["deck", "hand", "pendingHandCards", "discard", "exhausted"].some((key) => Array.isArray(record[key]));
+  return BATTLE_CARD_PILES.some((key) => Array.isArray(record[key]));
 }
 
 function hasKnownEnemy(value: unknown): boolean {

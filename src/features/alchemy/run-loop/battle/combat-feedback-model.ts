@@ -102,7 +102,8 @@ export function prepareCombatFeedback(
         ...(event.kind !== "notice" ? { reservedDigits: String(Math.abs(event.amount)).length + 1 } : {}),
       })),
     };
-    for (const reaction of reactions.filter((entry) => entry.target === target)) {
+    for (const reaction of reactions) {
+      if (reaction.target !== target) continue;
       reaction.entries = burst.entries.filter(
         (entry) =>
           entry.kind === "damage" &&
