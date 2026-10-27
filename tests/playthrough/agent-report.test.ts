@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { buildAgentPlaythroughSummary, renderAgentPlaythroughSummaryMarkdown } from "@/app/playthrough/agent-report";
+import {
+  buildBattles,
+  buildRunOutcomes,
+  buildRunProgression,
+  buildSurvival,
+  distribution,
+  selectorForDefeats,
+} from "@/app/playthrough/agent-report-metrics";
+import { summarizeProgress } from "@/app/playthrough/progress-telemetry";
+import type { CompletedCareer } from "@/app/playthrough/agent-report-types";
 import type { CareerResult } from "@/app/playthrough/types";
 
 const config: CareerResult["config"] = {
@@ -86,6 +96,49 @@ describe("agent playthrough reports", () => {
     expect(serialized).not.toContain("raw-after-hash");
     expect(markdown).toContain("# Agent playthrough brief");
     expect(markdown).toContain("alternate combat policies");
+  });
+
+  it("retains report aggregates, first-seen order, and distinct career counts", () => {
+    const first = career() as CompletedCareer;
+    const second = career({ config: { ...config, seed: 2 } }) as CompletedCareer;
+    second.telemetry = {
+      ...second.telemetry,
+      battles: [
+        { enemy: "living-armor", boss: true, outcome: "victory", turns: 8, run: 0, room: 3 },
+        { enemy: "forge-golem", boss: false, outcome: "defeat", turns: 10, run: 0, room: 4 },
+      ],
+      milestones: { "talent:a": 3, "talent:b": 1, "equip-trinket:x": 0 },
+    };
+    const careers = [first, second];
+    const { battles, metrics } = buildBattles(careers);
+    expect(metrics).toMatchObject({
+      encounters: 12,
+      victories: 5,
+      defeats: 7,
+      meanTurns: 16.5,
+      bosses: { encounters: 6, victories: 5, defeats: 1, winRate: 83.33 },
+    });
+    expect(selectorForDefeats(battles, 18).seeds).toEqual([1]);
+    expect(distribution([10, 18, 2, 6])).toEqual({ count: 4, min: 2, q25: 5, median: 8, mean: 9, q75: 12, max: 18 });
+    expect(buildRunProgression(careers)).toMatchObject({ improved: 2, worsened: 0, tied: 0, meanRoomDelta: 8 });
+    expect(buildRunOutcomes(careers)).toMatchObject([
+      { run: 1, runs: 2, defeats: 2, meanRooms: 10 },
+      { run: 2, runs: 2, defeats: 2, meanRooms: 18 },
+    ]);
+    const runs = careers.flatMap((entry) =>
+      entry.outcomes.map((outcome, run) => ({ ...outcome, run, seed: entry.config.seed })),
+    );
+    expect(buildSurvival(runs)[10]).toEqual({ room: 10, reached: 4, defeats: 2, denominator: 4, rate: 100 });
+    const [progress] = summarizeProgress(careers);
+    expect(progress?.mortality[18]).toEqual({ room: 18, reached: 2, defeats: 2, denominator: 4 });
+    expect(progress?.bosses).toEqual([
+      { enemy: "forge-golem", reachedCareers: 2, careers: 2, encounters: 6, victories: 4 },
+      { enemy: "living-armor", reachedCareers: 2, careers: 2, encounters: 6, victories: 1 },
+    ]);
+    expect(progress?.milestones.find((milestone) => milestone.kind === "talent")).toMatchObject({
+      reached: 2,
+      meanFirstRunAmongReached: 1.5,
+    });
   });
 
   it("reports worker failures separately from gameplay defeats", () => {

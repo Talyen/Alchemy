@@ -21,7 +21,7 @@ function referenceMatchesPath(reference: CardMagnitudeReference, path: readonly 
   return (
     reference.effectIndex === path[0] &&
     (reference.effectPath?.length ?? 0) === path.length - 1 &&
-    (reference.effectPath ?? []).every((index, position) => index === path[position + 1])
+    (!reference.effectPath || reference.effectPath.every((index, position) => index === path[position + 1]))
   );
 }
 
@@ -93,13 +93,14 @@ function lineFitsEffects(
   line: CardDescription[number],
   before: readonly BattleCardEffect[],
   after: readonly BattleCardEffect[],
+  shape: (effect: BattleCardEffect | undefined) => string,
 ): boolean {
   return line.parts.every((part) => {
     if (typeof part === "string") return true;
     // Empty references were already tolerated here; saved descriptions reject them.
     if (part.references.length && cardMagnitudeValue(after, part) === null) return false;
     return part.references.every(
-      (reference) => ruleShape(getCardEffect(before, reference)) === ruleShape(getCardEffect(after, reference)),
+      (reference) => shape(getCardEffect(before, reference)) === shape(getCardEffect(after, reference)),
     );
   });
 }
@@ -107,7 +108,16 @@ function lineFitsEffects(
 /** Split compressed clauses only when their live values no longer share one literal. */
 export function projectCardDescription(card: BattleCard, effects: BattleCardEffect[], rebuild: boolean): BattleCard {
   const previous = getCardDescription(card);
-  const fits = (line: CardDescription[number]) => lineFitsEffects(line, card.effects, effects);
+  const shapes = new Map<BattleCardEffect | undefined, string>();
+  const shape = (effect: BattleCardEffect | undefined) => {
+    let value = shapes.get(effect);
+    if (value === undefined) {
+      value = ruleShape(effect);
+      shapes.set(effect, value);
+    }
+    return value;
+  };
+  const fits = (line: CardDescription[number]) => lineFitsEffects(line, card.effects, effects, shape);
   if (!rebuild && previous.every(fits)) return withCardDescription({ ...card, effects }, previous);
   const canonical = rangeRuleClauses(
     card,
@@ -151,11 +161,11 @@ export function projectCardDescription(card: BattleCard, effects: BattleCardEffe
 }
 
 function sourceMagnitude(
-  card: BattleCard,
+  description: CardDescription,
   path: number[],
   field: CardMagnitudeReference["field"],
 ): CardMagnitude | undefined {
-  for (const line of getCardDescription(card)) {
+  for (const line of description) {
     for (const part of line.parts) {
       if (
         typeof part !== "string" &&
@@ -177,11 +187,12 @@ export function describeKnownStatusOptions(
   const effect = getCardEffect(effects, { effectIndex: path[0]!, effectPath: path.slice(1) });
   if (effect?.kind !== "player-status" || !effect.statusPool) return card;
   const parts: CardDescription[number]["parts"] = ["Gain "];
+  const previous = getCardDescription(card);
   const statuses = effect.forgeAmount !== undefined ? (["block", "forge", "armor"] as const) : effect.statusPool;
   statuses.forEach((status, index) => {
     if (index) parts.push(index === statuses.length - 1 ? (statuses.length > 2 ? ", or " : " or ") : ", ");
     const source = sourceMagnitude(
-      card,
+      previous,
       path,
       status === "forge" && effect.forgeAmount !== undefined ? "forgeAmount" : "amount",
     );
@@ -199,7 +210,7 @@ export function describeKnownStatusOptions(
       ` ${capitalizeWord(status)}`,
     );
   });
-  const description = getCardDescription(card).map((line) => {
+  const description = previous.map((line) => {
     const positions = magnitudePositions(line, path);
     if (!positions.length) return line;
     const first = positions[0]!;
@@ -216,7 +227,8 @@ export function describeKnownConditionalDamage(
   damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"],
   condition: "bleeding" | "not-burning",
 ): BattleCard {
-  const source = sourceMagnitude(card, path, "amount");
+  const previous = getCardDescription(card);
+  const source = sourceMagnitude(previous, path, "amount");
   const effectIndex = card.effects.length;
   const clause =
     condition === "bleeding" ? "Doubled if the enemy was already Bleeding" : "Tripled if enemy was not Burning";
@@ -234,7 +246,7 @@ export function describeKnownConditionalDamage(
   ];
   let replaced = false;
   let matchingSource = false;
-  const description = getCardDescription(card).map((line) => ({
+  const description = previous.map((line) => ({
     ...line,
     parts: line.parts.flatMap((part) => {
       if (typeof part !== "string") matchingSource = referencesPath(part, path);

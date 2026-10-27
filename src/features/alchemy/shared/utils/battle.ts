@@ -122,11 +122,13 @@ function buildStatusChips(
 ): StatusChip[] {
   if (!statuses) return [];
   const blockBuildup = cc ? isStunFreezeBuildupBlocked(cc) : false;
-  return order.flatMap((id): StatusChip[] => {
-    if (blockBuildup && (id === "stun" || id === "freeze")) return [];
+  const chips: StatusChip[] = [];
+  for (const id of order) {
+    if (blockBuildup && (id === "stun" || id === "freeze")) continue;
     const value = statuses[id] ?? 0;
-    return value > 0 ? [{ id, value, ...(id === "phoenixFeather" ? { hideValue: true } : {}) }] : [];
-  });
+    if (value > 0) chips.push({ id, value, ...(id === "phoenixFeather" ? { hideValue: true } : {}) });
+  }
+  return chips;
 }
 
 function buildActiveCcChips(cc: CcState): StatusChip[] {

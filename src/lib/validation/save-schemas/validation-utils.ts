@@ -47,8 +47,13 @@ export function deduplicatedStringArraySchema() {
 }
 
 export function deduplicateFromSet<T extends string>(val: unknown, validIds: ReadonlySet<T> | readonly T[]): T[] {
+  if (!Array.isArray(val)) return [];
   const set: ReadonlySet<string> = validIds instanceof Set ? validIds : new Set<string>(validIds);
-  return deduplicateStrings(val).filter((id): id is T => set.has(id));
+  const result = new Set<T>();
+  for (const id of val) {
+    if (typeof id === "string" && set.has(id)) result.add(id as T);
+  }
+  return [...result];
 }
 
 export function toFiniteNonNegativeInt(value: unknown): number | null {

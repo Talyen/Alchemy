@@ -68,7 +68,9 @@ export function scaleEnemyAbilityDamage(
   const pressure = getEnemyAbilityPressure(state);
   let amount = Math.round(effect.amount * (alreadyRoomScaled ? 1 : state.roomScalingMultiplier));
   amount = Math.round(amount * pressure * damageMultiplier);
+  let gainLeech = false;
   for (const modifier of modifiers) {
+    if (modifier.kind === "enemy-attacks-gain-leech") gainLeech = true;
     if (
       (modifier.kind === "increase-enemy-physical-damage" && effect.damageType === "physical") ||
       modifier.kind === "increase-enemy-damage"
@@ -86,7 +88,7 @@ export function scaleEnemyAbilityDamage(
   return {
     ...effect,
     amount: effect.amount > 0 ? Math.max(1, amount) : amount,
-    ...(modifiers.some((modifier) => modifier.kind === "enemy-attacks-gain-leech") ? { lifesteal: true } : {}),
+    ...(gainLeech ? { lifesteal: true } : {}),
   };
 }
 

@@ -293,14 +293,17 @@ export function createTransmutationOffers(
 ): TransmutationChoice[] {
   const prismatic = modifiers.includes("prismatic-crucible");
   let guaranteed: KeywordId | undefined;
-  for (const modifier of modifiers) {
-    guaranteed = transmutationModifierKeyword(modifier);
-    if (guaranteed !== undefined) break;
+  if (!prismatic) {
+    for (const modifier of modifiers) {
+      guaranteed = transmutationModifierKeyword(modifier);
+      if (guaranteed !== undefined) break;
+    }
   }
   const choices = new Map<KeywordId, TransmutationChoice>();
   let companionPresent: boolean | undefined;
   const hasCompanion = () => (companionPresent ??= deck.some(isCompanionSummonCard));
   deck.forEach((source, sourceIndex) => {
+    if (!isTransmutableCard(source)) return;
     // Roll against this card so unrelated cards cannot crowd out useful choices.
     const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
       group.flatMap((keyword) => {
@@ -310,7 +313,7 @@ export function createTransmutationOffers(
     );
     const available = pools.flat();
     const selected = prismatic ? [...available] : [];
-    const guaranteedOffer = available.find((offer) => offer.keyword === guaranteed);
+    const guaranteedOffer = prismatic ? undefined : available.find((offer) => offer.keyword === guaranteed);
     if (!prismatic && guaranteedOffer) selected.push(guaranteedOffer);
     for (const pool of pools) {
       if (prismatic || pool.some((offer) => selected.includes(offer))) continue;

@@ -27,3 +27,18 @@ it("keeps overflow talents locked until the displayed fourth row is complete", (
   expect(getAllocatableTalentChoices("physical", purchased)).toEqual([talents[9]]);
   expect(getAllocatableTalentChoices("physical", [...purchased, talents[9]!.id])).toEqual(talents.slice(10));
 });
+
+it("offers the first incomplete row in order for every unlocked subset", () => {
+  const talents: TalentDefinition[] = Array.from({ length: 12 }, (_, index) => ({
+    id: `talent-${index}`,
+    keywordId: "physical",
+    description: "",
+  }));
+  vi.spyOn(pools, "getTalentsForKeyword").mockReturnValue(talents);
+  const rows = chunkIntoRows(talents, [1, 2, 3, 4]);
+  for (let mask = 0; mask < 1 << talents.length; mask++) {
+    const unlocked = talents.filter((_, index) => mask & (1 << index)).map((talent) => talent.id);
+    const expected = rows.map((row) => row.filter((talent) => !unlocked.includes(talent.id))).find((row) => row.length);
+    expect(getAllocatableTalentChoices("physical", unlocked)).toEqual(expected ?? []);
+  }
+});

@@ -21,11 +21,6 @@ const RARITY_RANK: Record<GearRarity, number> = {
   basic: 2,
 };
 
-function getGearRarityRank(instance: GearInstance): number {
-  const rarity = gearDefinitions[instance.definitionId]?.rarity;
-  return rarity ? RARITY_RANK[rarity] : 3;
-}
-
 /** Sortable row unifying the gear and trinket pipelines: trinkets always rank 0. */
 export interface ArmoryOrderRow {
   id: string;
@@ -39,7 +34,7 @@ export function gearOrderRow(instance: GearInstance): ArmoryOrderRow {
   return {
     id: instance.instanceId,
     title: getGearInstanceTitle(instance),
-    rank: getGearRarityRank(instance),
+    rank: definition?.rarity ? RARITY_RANK[definition.rarity] : 3,
     baseType: definition ? (gearBaseItems[definition.baseItemId]?.displayName ?? "") : "",
   };
 }
@@ -119,7 +114,8 @@ export function placeUnequip(
   visibleIds: readonly string[] = currentIds,
 ): string[] {
   const filtered = currentIds.filter((id) => id !== unequippedId);
-  const anchor = visibleIds.filter((id) => id !== unequippedId)[Math.max(0, page) * pageSize];
+  const visible = visibleIds === currentIds ? filtered : visibleIds.filter((id) => id !== unequippedId);
+  const anchor = visible[Math.max(0, page) * pageSize];
   const insertIndex = anchor === undefined ? 0 : Math.max(0, filtered.indexOf(anchor));
   return [...filtered.slice(0, insertIndex), unequippedId, ...filtered.slice(insertIndex)];
 }

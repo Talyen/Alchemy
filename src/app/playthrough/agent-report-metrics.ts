@@ -27,9 +27,8 @@ function mean(values: number[]): MaybeNumber {
   return values.length ? round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
 }
 
-function quantile(values: number[], probability: number): MaybeNumber {
-  if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b);
+function quantile(sorted: number[], probability: number): MaybeNumber {
+  if (!sorted.length) return null;
   const position = (sorted.length - 1) * probability;
   const lower = Math.floor(position);
   const upper = Math.ceil(position);
@@ -38,23 +37,28 @@ function quantile(values: number[], probability: number): MaybeNumber {
 }
 
 export function distribution(values: number[]): AgentDistribution {
+  const sorted = [...values].sort((a, b) => a - b);
   return {
     count: values.length,
     min: values.length ? Math.min(...values) : null,
-    q25: quantile(values, 0.25),
-    median: quantile(values, 0.5),
+    q25: quantile(sorted, 0.25),
+    median: quantile(sorted, 0.5),
     mean: mean(values),
-    q75: quantile(values, 0.75),
+    q75: quantile(sorted, 0.75),
     max: values.length ? Math.max(...values) : null,
   };
 }
 
 export function selectorForDefeats(battles: Battle[], minRoom?: number): AgentEvidenceSelector {
-  const defeats = battles.filter(
-    (battle) => battle.outcome === "defeat" && (minRoom === undefined || battle.room >= minRoom),
-  );
+  const seeds = new Set<number>();
+  for (const battle of battles) {
+    if (battle.outcome === "defeat" && (minRoom === undefined || battle.room >= minRoom)) {
+      seeds.add(battle.seed);
+      if (seeds.size === 12) break;
+    }
+  }
   const selector: AgentEvidenceSelector = {
-    seeds: [...new Set(defeats.map((battle) => battle.seed))].slice(0, 12),
+    seeds: [...seeds],
     outcomes: ["defeat"],
   };
   if (minRoom !== undefined) selector.rooms = { min: minRoom };
@@ -87,7 +91,21 @@ export function buildBattles(careers: CompletedCareer[]): { battles: Battle[]; m
     string,
     { enemy: string; boss: boolean; encounters: number; victories: number; defeats: number; turns: number }
   >();
+  let victories = 0;
+  let defeats = 0;
+  let bossEncounters = 0;
+  let bossVictories = 0;
+  let bossDefeats = 0;
+  let turns = 0;
   for (const battle of battles) {
+    victories += battle.outcome === "victory" ? 1 : 0;
+    defeats += battle.outcome === "defeat" ? 1 : 0;
+    turns += battle.turns;
+    if (battle.boss) {
+      bossEncounters++;
+      bossVictories += battle.outcome === "victory" ? 1 : 0;
+      bossDefeats += battle.outcome === "defeat" ? 1 : 0;
+    }
     const current = byEnemy.get(battle.enemy) ?? {
       enemy: battle.enemy,
       boss: battle.boss,
@@ -102,20 +120,19 @@ export function buildBattles(careers: CompletedCareer[]): { battles: Battle[]; m
     current.turns += battle.turns;
     byEnemy.set(battle.enemy, current);
   }
-  const bosses = battles.filter((battle) => battle.boss);
   return {
     battles,
     metrics: {
       encounters: battles.length,
-      victories: battles.filter((battle) => battle.outcome === "victory").length,
-      defeats: battles.filter((battle) => battle.outcome === "defeat").length,
-      winRate: rate(battles.filter((battle) => battle.outcome === "victory").length, battles.length),
-      meanTurns: mean(battles.map((battle) => battle.turns)),
+      victories,
+      defeats,
+      winRate: rate(victories, battles.length),
+      meanTurns: battles.length ? round(turns / battles.length) : null,
       bosses: {
-        encounters: bosses.length,
-        victories: bosses.filter((battle) => battle.outcome === "victory").length,
-        defeats: bosses.filter((battle) => battle.outcome === "defeat").length,
-        winRate: rate(bosses.filter((battle) => battle.outcome === "victory").length, bosses.length),
+        encounters: bossEncounters,
+        victories: bossVictories,
+        defeats: bossDefeats,
+        winRate: rate(bossVictories, bossEncounters),
       },
       byEnemy: [...byEnemy.values()]
         .map(({ turns, ...enemy }) => ({
@@ -137,14 +154,22 @@ export function buildRunProgression(careers: CompletedCareer[]): AgentRunProgres
       return { first, final };
     });
   const deltas = pairs.map(({ first, final }) => final - first);
+  let improved = 0;
+  let worsened = 0;
+  let tied = 0;
+  for (const delta of deltas) {
+    if (delta > 0) improved++;
+    else if (delta < 0) worsened++;
+    else if (delta === 0) tied++;
+  }
   return {
     careers: pairs.length,
     firstRunMeanRooms: mean(pairs.map(({ first }) => first)),
     finalRunMeanRooms: mean(pairs.map(({ final }) => final)),
     meanRoomDelta: mean(deltas),
-    improved: deltas.filter((delta) => delta > 0).length,
-    worsened: deltas.filter((delta) => delta < 0).length,
-    tied: deltas.filter((delta) => delta === 0).length,
+    improved,
+    worsened,
+    tied,
   };
 }
 
@@ -152,14 +177,21 @@ export function buildRunOutcomes(careers: CompletedCareer[]): AgentRunOutcomeMet
   const runCount = Math.max(0, ...careers.map((career) => career.outcomes.length));
   return Array.from({ length: runCount }, (_, run) => {
     const outcomes = careers.map((career) => career.outcomes[run]).filter((outcome) => outcome !== undefined);
-    const victories = outcomes.filter((outcome) => outcome.outcome === "victory").length;
+    let victories = 0;
+    let defeats = 0;
+    let rooms = 0;
+    for (const outcome of outcomes) {
+      victories += outcome.outcome === "victory" ? 1 : 0;
+      defeats += outcome.outcome === "defeat" ? 1 : 0;
+      rooms += outcome.rooms;
+    }
     return {
       run: run + 1,
       runs: outcomes.length,
       victories,
-      defeats: outcomes.filter((outcome) => outcome.outcome === "defeat").length,
+      defeats,
       victoryRate: rate(victories, outcomes.length),
-      meanRooms: mean(outcomes.map((outcome) => outcome.rooms)),
+      meanRooms: outcomes.length ? round(rooms / outcomes.length) : null,
     };
   });
 }
@@ -224,11 +256,13 @@ export function buildSurvival(runs: CareerRun[]): AgentCohortSummary["survivalBy
     maxRoom <= 128
       ? Array.from({ length: maxRoom + 1 }, (_, room) => room)
       : [...new Set([0, 1, 2, 4, 8, 16, 32, 64, maxRoom].filter((room) => room <= maxRoom))];
-  return rooms.map((room) => ({
-    room,
-    reached: runs.filter((run) => run.rooms >= room).length,
-    defeats: runs.filter((run) => run.rooms === room && run.outcome === "defeat").length,
-    denominator: runs.length,
-    rate: rate(runs.filter((run) => run.rooms >= room).length, runs.length),
-  }));
+  return rooms.map((room) => {
+    let reached = 0;
+    let defeats = 0;
+    for (const run of runs) {
+      if (run.rooms >= room) reached++;
+      if (run.rooms === room && run.outcome === "defeat") defeats++;
+    }
+    return { room, reached, defeats, denominator: runs.length, rate: rate(reached, runs.length) };
+  });
 }

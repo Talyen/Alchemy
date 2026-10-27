@@ -112,6 +112,12 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
   return best;
 }
 
+function ungroupedReactionCount(reaction: ReactionAnnouncement): number {
+  let count = 0;
+  for (const entry of reaction.entries) if (entry.kind !== "notice" && !entry.reactionId) count++;
+  return count;
+}
+
 /** Owns pending launches and expiry without moving, restarting, or extending visible entries. */
 export function scheduleCombatFeedback(
   bursts: CombatTextBurst[],
@@ -157,8 +163,7 @@ export function scheduleCombatFeedback(
       width: 280,
       height:
         COMBAT_TEXT_BASE_SIZE_PX *
-        (reaction.reactionIds.length * 1.5 +
-          Math.ceil(reaction.entries.filter((entry) => entry.kind !== "notice" && !entry.reactionId).length / 2) * 1.9),
+        (reaction.reactionIds.length * 1.5 + Math.ceil(ungroupedReactionCount(reaction) / 2) * 1.9),
       presentation: reaction.presentation ?? {
         lane: "announcement" as const,
         launchAt: now,
@@ -207,7 +212,8 @@ export function scheduleCombatFeedback(
       return presentation ? [presentation === entry.presentation ? entry : { ...entry, presentation }] : [];
     });
     if (!entries.length) return [];
-    const end = Math.max(...entries.map((entry) => endsAt(entry.presentation!)));
+    let end = -Infinity;
+    for (const entry of entries) end = Math.max(end, endsAt(entry.presentation!));
     return [{ ...burst, entries, lifetimeMs: end - burst.firstShownAt }];
   });
   const nextReactions = reactions.flatMap((reaction) => {
@@ -242,9 +248,11 @@ export function advanceCombatFeedback(bursts: CombatTextBurst[], reactions: Reac
 }
 
 export function nextCombatFeedbackDeadline(bursts: CombatTextBurst[], reactions: ReactionAnnouncement[]) {
-  const plans = [
-    ...bursts.flatMap((burst) => burst.entries.map((entry) => entry.presentation)),
-    ...reactions.map((reaction) => reaction.presentation),
-  ];
-  return Math.min(...plans.flatMap((plan) => (plan ? [plan.phase === "waiting" ? plan.launchAt : endsAt(plan)] : [])));
+  let deadline = Infinity;
+  const consider = (plan: CombatTextPresentation | undefined) => {
+    if (plan) deadline = Math.min(deadline, plan.phase === "waiting" ? plan.launchAt : endsAt(plan));
+  };
+  for (const burst of bursts) for (const entry of burst.entries) consider(entry.presentation);
+  for (const reaction of reactions) consider(reaction.presentation);
+  return deadline;
 }

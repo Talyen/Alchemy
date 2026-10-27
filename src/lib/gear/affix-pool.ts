@@ -18,7 +18,7 @@ function requiredAspect(def: GearDefinition): GearAffixAspect | null {
     : "defensive";
 }
 
-export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {
+function createEligibleAffixPool(definition: GearDefinition): GearAffixDefinition[] {
   const aspect = requiredAspect(definition);
   return gearAffixList.filter(
     (affix) =>
@@ -28,11 +28,14 @@ export function buildEligibleAffixPool(definition: GearDefinition): readonly Gea
   );
 }
 
+export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {
+  return createEligibleAffixPool(definition);
+}
+
 export function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {
-  const pool = buildEligibleAffixPool(definition);
-  const effectiveCount = Math.min(count, pool.length);
+  const remaining = createEligibleAffixPool(definition);
+  const effectiveCount = Math.min(count, remaining.length);
   const selected: GearAffixRoll[] = [];
-  const remaining = [...pool];
   const rarity = definition.rarity;
 
   for (let pick = 0; pick < effectiveCount; pick += 1) {
