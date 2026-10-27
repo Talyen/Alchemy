@@ -40,7 +40,8 @@ export function initializeGear(
   // Dangling equipped IDs (e.g. from older saves) are pruned here as well as
   // in the save pipeline, so in-memory state never references missing items.
   gear.loadouts = pruneOrphanGearLoadouts(flattenGearInventories(inventories), loadouts);
-  const owned = new Set(ownedTrinketIds.filter(isTrinketId));
+  const owned = new Set<string>();
+  for (const id of ownedTrinketIds) if (isTrinketId(id)) owned.add(id);
   gear.ownedTrinketIds = [...owned];
   const normalized = normalizeEquippedTrinkets(equippedTrinkets);
   const seen = new Set<string>();

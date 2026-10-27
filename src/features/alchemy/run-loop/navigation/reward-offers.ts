@@ -76,6 +76,8 @@ const HOARD_FILTERS: Partial<Record<EncounterRewardTraitId, (base: (typeof gearB
   "amulet-hoard": (base) => base.id.endsWith("-amulet"),
 };
 
+const NO_OWNED_UNIQUES: ReadonlySet<string> = new Set();
+
 export function createRewardOffer({
   source,
   lootProgress,
@@ -84,7 +86,7 @@ export function createRewardOffer({
   gearAstralChanceBonus = 0,
   ownedTrinketIds = [],
   excludedBoonIds = [],
-  ownedUniqueIds = new Set(),
+  ownedUniqueIds = NO_OWNED_UNIQUES,
   rewardModifiers = [],
   createInstanceId,
 }: RewardOfferInput): RewardOffer {
@@ -94,10 +96,10 @@ export function createRewardOffer({
   // reward never duplicates what is already equipped), trinkets exclude the
   // permanent collection. The split is load-bearing for persistence, which
   // serializes each reward type on its own branch.
-  const excludedBoons = new Set(excludedBoonIds);
-  const ownedTrinkets = new Set(ownedTrinketIds);
-  const boons = trinketLibrary.filter((entry) => !excludedBoons.has(entry.id));
-  const trinkets = trinketLibrary.filter((entry) => !ownedTrinkets.has(entry.id));
+  const excludedBoons = excludedBoonIds.length ? new Set(excludedBoonIds) : undefined;
+  const ownedTrinkets = ownedTrinketIds.length ? new Set(ownedTrinketIds) : undefined;
+  const boons = excludedBoons ? trinketLibrary.filter((entry) => !excludedBoons.has(entry.id)) : trinketLibrary;
+  const trinkets = ownedTrinkets ? trinketLibrary.filter((entry) => !ownedTrinkets.has(entry.id)) : trinketLibrary;
   const availability = getRewardLootAvailability(ownedUniqueIds, {
     cards: cards.length > 0,
     boons: boons.length > 0,

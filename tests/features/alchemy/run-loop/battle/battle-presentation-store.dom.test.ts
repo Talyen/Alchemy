@@ -34,6 +34,10 @@ describe("battle-presentation-store", () => {
       initial.setCardTransferInProgress((previous) => previous);
       initial.setHiddenHandCardKeys((previous) => previous);
       initial.setDisplayedBattle(null);
+      initial.clearCardGhosts();
+      initial.removeCardGhost("missing");
+      initial.resetCardTransfers();
+      initial.setCardTransfers((previous) => previous);
       expect(battlePresentation.getState()).toBe(initial);
       expect(notify).not.toHaveBeenCalled();
       initial.setOpeningDrawPending(true);

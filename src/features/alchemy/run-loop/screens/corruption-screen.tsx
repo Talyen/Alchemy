@@ -37,10 +37,13 @@ function CorruptionDeckPicker({
   onPageChange: (page: number) => void;
 }) {
   const i18n = useGameTranslation();
-  const corruptionOptions = useMemo(
-    () => runDeck.map((card, index) => ({ card, index })).filter(({ card }) => canCorruptCard(card)),
-    [runDeck],
-  );
+  const corruptionOptions = useMemo(() => {
+    const eligible: Array<{ card: BattleCard; index: number }> = [];
+    runDeck.forEach((card, index) => {
+      if (canCorruptCard(card)) eligible.push({ card, index });
+    });
+    return eligible;
+  }, [runDeck]);
 
   return (
     <CardSelectionGrid

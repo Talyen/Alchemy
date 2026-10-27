@@ -7,7 +7,9 @@ import { createEmptyTalentEffectManifest } from "./manifest-defaults";
 
 function* usableUnlockedTalents(unlockedTalents: UnlockedTalents): Iterable<TalentDefinition> {
   for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
-    for (const talentId of new Set(talentIds ?? [])) {
+    if (!talentIds?.length) continue;
+    const uniqueIds = talentIds.length === 1 ? talentIds : new Set(talentIds);
+    for (const talentId of uniqueIds) {
       const talent = getTalentById(talentId);
       if (isUsableTalentForKeyword(talent, keywordId as KeywordId)) yield talent;
     }

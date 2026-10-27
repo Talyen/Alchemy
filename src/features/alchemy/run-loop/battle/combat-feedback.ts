@@ -165,9 +165,9 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         const prepared = prepareCombatFeedback(events, ++actionId, timestamp, lifetimeMs);
         if (prepared.bursts.length === 0 && prepared.reactions.length === 0) return;
         const revision = ++textPlanRevision;
-        const dodged = new Set<Combatant>();
+        let dodged: Set<Combatant> | undefined;
         for (const event of events) {
-          if (event.kind === "notice" && event.stat === "dodge") dodged.add(event.target);
+          if (event.kind === "notice" && event.stat === "dodge") (dodged ??= new Set()).add(event.target);
         }
         const impacts: Partial<Pick<CombatFeedbackState, "playerImpactCue" | "enemyImpactCue">> = {};
         for (const key of ["playerImpactCue", "enemyImpactCue"] as const) {
@@ -194,8 +194,8 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
           return {
             ...scheduled,
             ...impacts,
-            playerDodgeToken: state.playerDodgeToken + Number(dodged.has("player")),
-            enemyDodgeToken: state.enemyDodgeToken + Number(dodged.has("enemy")),
+            playerDodgeToken: state.playerDodgeToken + Number(dodged?.has("player") ?? false),
+            enemyDodgeToken: state.enemyDodgeToken + Number(dodged?.has("enemy") ?? false),
           };
         });
         // A subscriber may reset or admit newer text during publication. Its

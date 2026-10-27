@@ -18,8 +18,13 @@ function selectTextShineKeywordIds(
   const affinity = new Set(affinityKeywords);
   const preferred: KeywordId[] = [];
   const remaining: KeywordId[] = [];
-  for (const id of instanceKeywordIds) (affinity.has(id) ? preferred : remaining).push(id);
-  return [...preferred, ...remaining].slice(0, MAX_TEXT_SHINE_KEYWORDS);
+  for (const id of instanceKeywordIds) {
+    if (affinity.has(id)) {
+      preferred.push(id);
+      if (preferred.length === MAX_TEXT_SHINE_KEYWORDS) return preferred;
+    } else if (remaining.length < MAX_TEXT_SHINE_KEYWORDS) remaining.push(id);
+  }
+  return [...preferred, ...remaining.slice(0, MAX_TEXT_SHINE_KEYWORDS - preferred.length)];
 }
 
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {

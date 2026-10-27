@@ -9,7 +9,7 @@ const EFFECT_KEYWORD_CACHE = new WeakMap<readonly BattleCardEffect[], readonly K
 function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly KeywordId[] {
   const cached = EFFECT_KEYWORD_CACHE.get(effects);
   if (cached) return cached;
-  const result = collectKeywordsFromBattleEffects(effects);
+  const result = Object.freeze(collectKeywordsFromBattleEffects(effects));
   EFFECT_KEYWORD_CACHE.set(effects, result);
   return result;
 }
@@ -22,6 +22,11 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   if (card.consume) keywords.add("consume");
   for (const tag of card.tags ?? []) keywords.add(tag);
   return [...keywords];
+}
+
+/** Internal read-only view for consumers that do not retain or mutate keywords. */
+export function getCardKeywordView(card: BattleCard): readonly KeywordId[] {
+  return !card.consume && !card.tags?.length ? cachedEffectKeywords(card.effects) : getCardKeywords(card);
 }
 
 /** Predicate callers can use the immutable cache without copying its array. */

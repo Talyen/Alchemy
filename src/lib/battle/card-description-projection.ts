@@ -151,7 +151,8 @@ export function projectCardDescription(card: BattleCard, effects: BattleCardEffe
   });
   // Saved custom prose and ingredient trailers are not replaced by the generic formatter.
   if (unboundEffects.length) {
-    const originalCanonical = new Set(createEffectDescription(card.effects).map((line) => JSON.stringify(line.parts)));
+    const originalCanonical = new Set<string>();
+    for (const line of createEffectDescription(card.effects)) originalCanonical.add(JSON.stringify(line.parts));
     for (const line of unboundEffects) {
       if (!originalCanonical.has(JSON.stringify(line.parts))) description.push(line);
     }

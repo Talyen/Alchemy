@@ -49,7 +49,7 @@ export function createRolledGearInstance(
   createId: () => string = createInstanceId,
 ): GearInstance {
   const affixCount = rollAffixCount(definition.rarity, rng);
-  // rollAffixes owns its new rolls, so another defensive copy is unnecessary.
+
   const affixes = rollAffixes(definition, affixCount, rng);
   return {
     instanceId: createId(),

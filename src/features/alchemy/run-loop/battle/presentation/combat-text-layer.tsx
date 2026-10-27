@@ -16,8 +16,13 @@ export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; pres
   }, [bursts]);
   const playerLayerRef = useRef<HTMLDivElement>(null);
   const enemyLayerRef = useRef<HTMLDivElement>(null);
-  const playerReactions = reactions.filter((entry) => entry.target === "player");
-  const enemyReactions = reactions.filter((entry) => entry.target === "enemy");
+  const targetReactions = useMemo(() => {
+    const targets: Record<ReactionAnnouncement["target"], ReactionAnnouncement[]> = { player: [], enemy: [] };
+    for (const reaction of reactions) targets[reaction.target].push(reaction);
+    return targets;
+  }, [reactions]);
+  const playerReactions = targetReactions.player;
+  const enemyReactions = targetReactions.enemy;
   const playerActive = targetBursts.player.length > 0 || playerReactions.length > 0;
   const enemyActive = targetBursts.enemy.length > 0 || enemyReactions.length > 0;
   const { playerPanelRef, enemyPanelRef, battleSceneRef } = refs;

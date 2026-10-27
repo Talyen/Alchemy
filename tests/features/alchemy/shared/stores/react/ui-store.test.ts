@@ -32,6 +32,36 @@ describe("clearCardHover", () => {
   });
 });
 
+it("avoids publishing unchanged hover, preview, and confirmation state", () => {
+  const listener = vi.fn();
+  const unsubscribe = useUiStore.subscribe(listener);
+  try {
+    const store = useUiStore.getState();
+    const updater = vi.fn((previous: string | null) => previous);
+    store.setHoveredCardId(updater);
+    store.setAutoplayPreviewCardId(null);
+    store.clearCardHover();
+    store.setShowClearSaveConfirm(false);
+    store.setEnemyInspectionOpen(false);
+    store.setCardInspection(null);
+    expect(updater).toHaveBeenCalledOnce();
+    expect(listener).not.toHaveBeenCalled();
+
+    store.setHoveredCardId("card-1");
+    store.setAutoplayPreviewCardId("card-2");
+    store.clearCardHover();
+    store.setShowClearSaveConfirm(true);
+    expect(listener).toHaveBeenCalledTimes(4);
+    expect(useUiStore.getState()).toMatchObject({
+      hoveredCardId: null,
+      autoplayPreviewCardId: null,
+      showClearSaveConfirm: true,
+    });
+  } finally {
+    unsubscribe();
+  }
+});
+
 describe("plasma registrations", () => {
   const red = { primary: "#ff0000", secondary: "#440000" };
   const blue = { primary: "#0000ff", secondary: "#000044" };

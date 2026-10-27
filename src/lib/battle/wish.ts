@@ -42,12 +42,14 @@ export function buildWishOptions(
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
   const candidates = getOfferableCardPool();
-  let kept = 0;
+  let candidateCount = 0;
   for (const candidate of candidates) {
-    if (candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate)))
-      candidates[kept++] = candidate;
+    if (candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate))) {
+      candidates[candidateCount++] = candidate;
+    }
   }
-  candidates.length = kept;
+  candidates.length = candidateCount;
+
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const battleRng = getBattleRng(state);
   let undiscovered: BattleCard[] = [];

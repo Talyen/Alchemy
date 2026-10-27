@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { ENCOUNTER_TRAITS, eligibleEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 import {
   areLabyrinthTraitsCompatible,
+  createEnemyModifierPicker,
   createRewardModifierPicker,
   getEnemyModifiersForNodeType,
   getRewardModifiersForNodeType,
@@ -10,6 +11,17 @@ import {
 import { LABYRINTH_SUPPORT_TYPES } from "@/lib/content-systems/labyrinth/data";
 import { createSeededRng } from "@/lib/rng";
 import { cardById } from "@/lib/game-data";
+
+it("reuses combat pools without changing room selections or the random stream", () => {
+  const cached = createEnemyModifierPicker();
+  const cachedRng = createSeededRng(874);
+  const referenceRng = createSeededRng(874);
+  for (const type of ["combat", "elite", "combat", "boss", "elite", "combat"] as const) {
+    const traits = ["starting-block", "plated"];
+    expect(cached(type, cachedRng, traits)).toEqual(getEnemyModifiersForNodeType(type, referenceRng, traits));
+  }
+  expect(cachedRng()).toBe(referenceRng());
+});
 
 it("reuses floor eligibility without changing the selected modifiers or random stream", () => {
   const deck = [cardById.slash!, cardById["wolf-companion"]!];

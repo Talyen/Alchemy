@@ -109,9 +109,9 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
     ) =>
       publish((state) => {
         const patch = typeof change === "function" ? change(state) : change;
-        if (Object.entries(patch).every(([key, value]) => Object.is(state[key as keyof typeof state], value)))
-          return state;
-        for (const value of Object.values(patch)) deepFreeze(value);
+        const keys = Object.keys(patch) as Array<keyof typeof patch>;
+        if (keys.every((key) => Object.is(state[key], patch[key]))) return state;
+        for (const key of keys) deepFreeze(patch[key]);
         return Object.freeze({ ...state, ...patch });
       }, true);
     let ghostIdCounter = 0;
@@ -164,14 +164,20 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
         }));
       },
 
-      removeCardGhost: (id) => set((s) => ({ cardGhosts: s.cardGhosts.filter((g) => g.id !== id) })),
+      removeCardGhost: (id) =>
+        set((s) =>
+          s.cardGhosts.some((ghost) => ghost.id === id)
+            ? { cardGhosts: s.cardGhosts.filter((ghost) => ghost.id !== id) }
+            : {},
+        ),
 
-      clearCardGhosts: () => set({ cardGhosts: [] }),
+      clearCardGhosts: () => set((s) => (s.cardGhosts.length ? { cardGhosts: [] } : {})),
 
       setCardTransfers: (transfers) =>
-        set((s) => ({
-          cardTransfers: structuredClone(typeof transfers === "function" ? transfers(s.cardTransfers) : transfers),
-        })),
+        set((s) => {
+          const next = typeof transfers === "function" ? transfers(s.cardTransfers) : transfers;
+          return next === s.cardTransfers ? {} : { cardTransfers: structuredClone(next) };
+        }),
 
       setHiddenHandCardKeys: (update) =>
         set((s) => {
@@ -187,7 +193,7 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
 
       resetHandTransferUi: () => set({ hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS, cardTransferInProgress: false }),
 
-      resetCardTransfers: () => set({ cardTransfers: [] }),
+      resetCardTransfers: () => set((s) => (s.cardTransfers.length ? { cardTransfers: [] } : {})),
 
       resetPresentation: () => {
         manaTimers.clearAll();

@@ -50,10 +50,19 @@ export function getEnemyModifiersForNodeType(
   rng: () => number,
   enemyTraits: readonly string[] = [],
 ): EncounterCombatTraitId[] {
-  const pool = shuffle(
-    eligibleEncounterTraitIds("labyrinth", "combat").filter((id) => isLabyrinthTraitEligible(id, type)),
-    rng,
+  const candidates = eligibleEncounterTraitIds("labyrinth", "combat").filter((id) =>
+    isLabyrinthTraitEligible(id, type),
   );
+  return selectEnemyModifiers(candidates, type, rng, enemyTraits);
+}
+
+function selectEnemyModifiers(
+  candidates: EncounterCombatTraitId[],
+  type: "combat" | "elite" | "boss",
+  rng: () => number,
+  enemyTraits: readonly string[],
+): EncounterCombatTraitId[] {
+  const pool = shuffle(candidates, rng);
   const selected: EncounterCombatTraitId[] = [];
   for (const id of pool) {
     if (
@@ -64,6 +73,19 @@ export function getEnemyModifiersForNodeType(
     if (selected.length === (type === "combat" ? 1 : 2)) break;
   }
   return selected;
+}
+
+/** Reuse the catalog projection for rooms on the same floor. */
+export function createEnemyModifierPicker() {
+  const pools = new Map<"combat" | "elite" | "boss", EncounterCombatTraitId[]>();
+  return (type: "combat" | "elite" | "boss", rng: () => number, enemyTraits: readonly string[] = []) => {
+    let candidates = pools.get(type);
+    if (!candidates) {
+      candidates = eligibleEncounterTraitIds("labyrinth", "combat").filter((id) => isLabyrinthTraitEligible(id, type));
+      pools.set(type, candidates);
+    }
+    return selectEnemyModifiers(candidates, type, rng, enemyTraits);
+  };
 }
 
 export function getRewardModifiersForNodeType(
