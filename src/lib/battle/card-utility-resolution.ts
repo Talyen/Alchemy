@@ -10,6 +10,7 @@ import { applyPotionMultiplier, halveRounded } from "./amount-helpers";
 import { writeCombatFlag } from "./action-context";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { mergeCombatText } from "./combat-text-events";
+import { scaleGoldReward } from "./resource-state";
 import { hasCardHealing, type EffectHandlers, type EffectHandler } from "./effect-handlers/handler-types";
 import type { BattleState, CombatTextEvent } from "./types";
 
@@ -219,13 +220,11 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
         context?.feedback,
       );
     },
-    "remove-harmful-status": (state, _card, effect, potionMult, texts, context) =>
-      port.cleanse(
-        state,
-        effect.removeAll ? Infinity : applyPotionMultiplier(effect.amount ?? 0, potionMult),
-        texts,
-        context?.feedback,
-      ),
+    "remove-harmful-status": (state, _card, effect, potionMult, texts, context) => {
+      const amount = applyPotionMultiplier(effect.amount ?? 0, potionMult);
+      if (!effect.removeAll) state.observer?.descriptionMagnitude?.("amount", amount);
+      return port.cleanse(state, effect.removeAll ? Infinity : amount, texts, context?.feedback);
+    },
     "remove-player-status": (state, _card, effect, _multiplier, texts, context) =>
       port.cleanseStatus(state, effect.status, texts, context?.feedback),
     "remove-enemy-armor": (state, _card, effect, potionMult, texts, context) => {
@@ -234,6 +233,7 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
         : effect.removeAll
           ? state.enemyMitigation.armor
           : applyPotionMultiplier(effect.amount ?? 0, potionMult);
+      if (!effect.halve && !effect.removeAll) state.observer?.descriptionMagnitude?.("amount", amount);
       const next = reduceEnemyArmor(state, amount);
       const removed = state.enemyMitigation.armor - next.enemyMitigation.armor;
       if (removed > 0)
@@ -259,10 +259,11 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
       return port.summon(summoned, combatTexts);
     },
     "gain-gold": (state, _card, effect, potionMult, combatTexts, context) => {
+      const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
+      state.observer?.descriptionMagnitude?.("amount", scaleGoldReward(adjustedGold, state.gearEffects));
       if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {
         return state;
       }
-      const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
       return port.gold(state, adjustedGold, combatTexts, context?.feedback);
     },
     ...FLAG_HANDLERS,

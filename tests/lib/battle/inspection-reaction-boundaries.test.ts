@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { getBattleDamageInspectionCard } from "@/lib/battle/card-damage-inspection";
+import { inspectBattleCardOutcomes } from "@/lib/battle/card-damage-inspection";
+import { inspectedDamage } from "../../fixtures/inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
@@ -25,11 +26,13 @@ function inspect(card: BattleCard, patch: BattleStatePatch, expected: number[]) 
     rng,
   });
   const before = JSON.stringify({ card, state });
-  const preview = getBattleDamageInspectionCard(card, state);
+  const outcomes = inspectBattleCardOutcomes(card, state);
   expect(rng).not.toHaveBeenCalled();
   expect(JSON.stringify({ card, state })).toBe(before);
   const actual = playBattleCardResolved(state, card.id, 0);
-  const projected = preview.effects.flatMap((effect) => (effect.kind === "damage" ? [effect.amount] : []));
+  const projected = card.effects.flatMap((effect, index) =>
+    effect.kind === "damage" ? [inspectedDamage(outcomes.get(String(index)))] : [],
+  );
   return { projected, actual, expected };
 }
 

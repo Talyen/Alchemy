@@ -19,7 +19,7 @@ Use “Deal N [type] damage”, “Gain N Mana”, “Gain/Lose N Mana Crystals�
 
 ## Add a new status effect
 
-1. Extend `PlayerStatusId` or `EnemyStatusId` in `src/lib/game-data/types.ts`. Classify the status in the applicable harmful/beneficial lists and display order there.
+1. Extend `PlayerStatusId` or the enemy status list in `src/lib/game-data/types.ts`. Add eligible enemy damage statuses to `ENEMY_STATUS_DAMAGE_IDS`. Classify the status in the applicable harmful/beneficial lists and display order there.
 2. Add its initial value to `defaultBattleState()` in `src/lib/battle/battle-setup-defaults.ts`. Saved status records normalize against these defaults in `normalize-persisted-battle-state.ts`; an undeclared key is dropped during load.
 3. If cards can apply, remove, or multiply the status, update the relevant allowlists in `src/lib/game-data/effects/shared-schemas.ts` and `status-schemas.ts`, plus description metadata in `effect-metadata.ts`. Extending the status union alone does not make it a valid card effect. Keep each operation limited to the statuses it supports.
 4. Route status assignment through `src/lib/battle/status-state.ts`. Add player-side grant/reaction logic in `status-player.ts` when applicable, and damage riders in `damage-status-riders.ts` only when damage applies the status.

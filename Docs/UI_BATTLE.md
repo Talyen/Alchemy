@@ -319,9 +319,10 @@ Card hover and keyboard inspection in the battle hand, Wish, and the pile viewer
 show current offensive damage before defenses and critical strikes. Fixed player
 Block, Armor, Forge, Thorns, healing, Mana and Gold numerals also use known direct
 execution results inside their original sentences. They exclude existing totals,
-separate procs and overheal conversions; healing reports adjusted power before its
-Health cap. Authored resource formulas, random choices, durations and conditions
-remain intact, and uncertain or unobserved results retain their authored values. Inspection
+separate procs and overheal conversions; healing and Mana report adjusted grants
+before their resource caps. Nominal Wish, draw, Companion-action, Cleanse and fixed
+Armor-removal counts also include Potion potency. Authored formulas, durations
+and conditions remain intact. Inspection
 runs production card resolution against detached battle alternatives, including
 payment, pre-triggers, ordered effects, and reactions that affect later packets.
 Forge, prepared conversions, resource changes, conditions, and fight pacing
@@ -330,13 +331,28 @@ not final Health loss or a total of all reactions and damage over time.
 
 Finite random outcomes retain their correlated state through later effects.
 Agreement produces an exact value; disagreement produces an adjusted range or
-damage-type alternatives. Chance clauses remain separate. Unknown drawn-card
+damage-type alternatives. Random status choices show each branch's known quantity;
+random extra resource grants are not promised. Chance clauses remain separate.
+Shared phrases such as "twice" split into their individual effect sentences when
+the known values differ, preserving opening bonuses and authored future effects.
+Same-type Frozen alternatives use the same attack calculator at the effect's ordered state.
+An active doubled/tripled condition states its replacement total with "instead"
+while retaining the authored factor; additive damage bonuses need not double the
+fully modified hit. Separate reactions and Viper follow-ups remain separate.
+
+Unknown drawn-card
 identities or inspection work limits leave dependent damage at its authored
-value; already known earlier packets remain usable. Delayed attacks also retain
+value; already known earlier packets and state-independent nominal counts remain usable. Delayed attacks also retain
 authored values because future resources and pacing are unknown. Inspection
 never consumes live RNG, resources, or prepared effects. Collection and other
 nonbattle views retain authored descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
 defines execution seams, uncertainty limits, and effect-authoring requirements.
+
+Proportions, per-Mana coefficients, explicit Forge-scaling operands, multiplication
+factors, durations and charges remain rule operands. Replacing one with a current
+total would change or count its formula twice; these rules do not gain a separate
+total display. Direct resource costs retain their authored limits; typed self-damage
+uses the production resistance calculation before Health loss or death protection.
 
 ## Deck and pile inspection
 

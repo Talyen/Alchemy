@@ -5,13 +5,14 @@ import { DAMAGE_TYPES, harmfulPlayerStatusIds } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
-import { dealSelfDamage } from "../status-helpers";
+import { dealSelfDamage, mitigatePlayerStatusDamage } from "../status-helpers";
 import { addPlayerStatus } from "../status-state";
 import { rangeBoundsError } from "./simple-handlers";
 import { resolvePlayerCrowdControlTriggers } from "../status-cc";
 
 export const DAMAGE_HANDLERS = {
   damage: (state, card, effect, potionMult, combatTexts, context) => {
+    const descriptionDamage = state.observer ? { effect, potionMultiplier: potionMult } : undefined;
     effect = resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0);
     let damageType = effect.damageType;
     if (effect.damageTypePool && effect.damageTypePool.length > 0) {
@@ -23,9 +24,19 @@ export const DAMAGE_HANDLERS = {
       damageType,
       amount: applyPotionMultiplier(effect.amount, potionMult),
     };
-    return dealDamageToEnemy(state, card, adjustedEffect, combatTexts, context);
+    return dealDamageToEnemy(
+      state,
+      card,
+      adjustedEffect,
+      combatTexts,
+      descriptionDamage ? { manaAtStart: state.mana, ...context, descriptionDamage } : context,
+    );
   },
   "self-damage": (state, _card, effect, _potionMult, combatTexts) => {
+    state.observer?.descriptionMagnitude?.(
+      "amount",
+      mitigatePlayerStatusDamage(state, effect.amount, effect.damageType),
+    );
     const {
       state: postDamage,
       healthLost,

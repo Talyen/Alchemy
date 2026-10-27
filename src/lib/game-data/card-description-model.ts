@@ -75,7 +75,7 @@ export function getCardEffect(
   return effect;
 }
 
-function cardMagnitudeValue(effects: readonly BattleCardEffect[], magnitude: CardMagnitude): number | null {
+export function cardMagnitudeValue(effects: readonly BattleCardEffect[], magnitude: CardMagnitude): number | null {
   let value: number | null = null;
   for (const reference of magnitude.references) {
     const effect = getCardEffect(effects, reference);

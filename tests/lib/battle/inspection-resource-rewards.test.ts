@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { cardById, companionLibrary, type BattleCard, type BattleCardEffect, type KeywordId } from "@/lib/game-data";
 import { createMixedPotion } from "@/lib/alchemist";
 import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
-import { getBattleDamageInspectionCard } from "@/lib/battle/card-damage-inspection";
+import { inspectBattleCardOutcomes } from "@/lib/battle/card-damage-inspection";
+import { inspectedDamage } from "../../fixtures/inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
@@ -26,7 +27,7 @@ function compare(card: BattleCard, patch: BattleStatePatch, expected: Array<numb
     ...patch,
   });
   const before = JSON.stringify({ card, state });
-  const preview = getBattleDamageInspectionCard(card, state);
+  const outcomes = inspectBattleCardOutcomes(card, state);
   expect(rng).not.toHaveBeenCalled();
   expect(JSON.stringify({ card, state })).toBe(before);
   const result = playBattleCardResolved(state, card.id, 0);
@@ -44,13 +45,8 @@ function compare(card: BattleCard, patch: BattleStatePatch, expected: Array<numb
     expected.map((amount) => (typeof amount === "number" ? amount : amount[0])),
   );
   expect(
-    preview.effects.flatMap(
-      (effect): Array<number | [number, number]> =>
-        effect.kind === "damage"
-          ? [effect.amount]
-          : effect.kind === "random-damage"
-            ? [[effect.minAmount, effect.maxAmount]]
-            : [],
+    card.effects.flatMap((effect, index) =>
+      effect.kind === "damage" ? [inspectedDamage(outcomes.get(String(index)))] : [],
     ),
   ).toEqual(expected);
 }
