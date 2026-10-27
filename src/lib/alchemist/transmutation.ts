@@ -244,16 +244,16 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
           ),
       }));
   }
-  const effects = [...card.effects];
   if (keyword === "archery") {
     const damage = visitBattleCardEffects(
-      effects,
+      card.effects,
       (effect) =>
         effect.kind === "damage" ||
         effect.kind === "random-damage" ||
         effect.kind === "cleanse-player-status-to-damage",
     );
     if (!damage) return [];
+    const effects = [...card.effects];
     return [
       {
         sourceKeyword: null,
@@ -274,20 +274,23 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
       }
       return mapEffectChildren(effect, infuseDamage);
     };
-    const altered = effects.map(infuseDamage);
+    const altered = card.effects.map(infuseDamage);
     if (!damage) return [];
     // Leech can expand combined damage lines; count the actual preview.
     const result = finishAlteration(card, keyword, altered);
     if (hasEffectLines(result, CORRUPTION_MAX_EFFECT_LINES + 1)) return [];
     return [{ sourceKeyword: null, build: () => result }];
   }
-  if (keyword === "consume" && !isCompanionSummonCard(card))
+  if (keyword === "consume" && !isCompanionSummonCard(card)) {
+    const effects = [...card.effects];
     return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, { consume: true }) }];
+  }
   if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES)) return [];
+  if (keyword !== "wish" && keyword !== "dodge" && (keyword !== "companion" || !hasCompanion())) return [];
+  const effects = [...card.effects];
   if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
   else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
-  else if (keyword === "companion" && hasCompanion()) effects.push({ kind: "companion-action", amount: 1 });
-  else return [];
+  else effects.push({ kind: "companion-action", amount: 1 });
   return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects) }];
 }
 

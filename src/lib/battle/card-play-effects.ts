@@ -172,6 +172,7 @@ function applyNatureCardPlayGearRewards(
   combatTexts: CombatTextEvent[],
   hadNoThornsOnPlay: boolean,
 ): BattleState {
+  if (state.gearEffects.thornsOnNatureCardWithoutThorns <= 0 && state.gearEffects.armorOnNatureCard <= 0) return state;
   if (!isNatureCard(card)) return state;
   let nextState = state;
   if (hadNoThornsOnPlay && state.gearEffects.thornsOnNatureCardWithoutThorns > 0) {

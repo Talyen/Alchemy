@@ -84,12 +84,11 @@ export function placeTransfer(
   currentSlot: ArmorySlot,
 ): string[] {
   const compatibleAdditional = additionalDisplaced
-    .slice()
-    .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot))
     .filter((d) => {
       const def = gearDefinitions[d.instance.definitionId];
       return currentSlot !== "trinket" && (def?.compatibleSlots.includes(currentSlot) ?? false);
-    });
+    })
+    .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot));
 
   const additionalIds = compatibleAdditional.map((d) => d.instance.instanceId);
   // Displaced hand items may already be visible in this category. Remove them

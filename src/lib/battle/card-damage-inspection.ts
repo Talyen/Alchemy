@@ -121,10 +121,14 @@ function firstAttack(outcome: InspectedPackets | undefined): BattleCardEffect | 
   if (!outcome || outcome.kind === "unknown") return;
   if (outcome.kind === "exact") {
     const packet = outcome.packets[0];
-    return packet ? summarize([packet]) : undefined;
+    return packet && !Number.isNaN(packet.amount) ? { ...packet } : packet ? summarize([packet]) : undefined;
   }
-  if (!outcome.outcomes.length || outcome.outcomes.some((packets) => !packets[0])) return;
-  return summarize(outcome.outcomes.map((packets) => packets[0]!));
+  const firstPackets: DamageEffect[] = [];
+  for (const packets of outcome.outcomes) {
+    if (!packets[0]) return;
+    firstPackets.push(packets[0]);
+  }
+  return firstPackets.length ? summarize(firstPackets) : undefined;
 }
 
 /** Adjust known fixed literals inline without replacing scaling or conditional rules. */

@@ -280,12 +280,15 @@ function selfCostOutcomes(
         ...(effect.probability < 1 ? selfCostOutcomes(effect.failureEffects, outcomes, revivedHealth) : []),
       ];
       // At most two meaningful worst cases: Feather retained or already spent.
-      outcomes = [false, true].flatMap((phoenixFeather) => {
-        const matching = branches.filter((outcome) => outcome.phoenixFeather === phoenixFeather);
-        return matching.length
-          ? [{ health: Math.min(...matching.map((outcome) => outcome.health)), phoenixFeather }]
-          : [];
-      });
+      let withoutFeather: number | undefined;
+      let withFeather: number | undefined;
+      for (const branch of branches) {
+        if (branch.phoenixFeather) withFeather = Math.min(withFeather ?? Infinity, branch.health);
+        else withoutFeather = Math.min(withoutFeather ?? Infinity, branch.health);
+      }
+      outcomes = [];
+      if (withoutFeather !== undefined) outcomes.push({ health: withoutFeather, phoenixFeather: false });
+      if (withFeather !== undefined) outcomes.push({ health: withFeather, phoenixFeather: true });
     }
   }
   return outcomes;
