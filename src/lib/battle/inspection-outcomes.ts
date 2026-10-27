@@ -45,7 +45,7 @@ interface Outcome {
   packets: Map<BattleCardEffect, ObservedAttack[]>;
   directAmounts: Map<BattleCardEffect, readonly ObservedDirectAmount[]>;
   magnitudes: Map<BattleCardEffect, Map<ObservedMagnitudeField, number>>;
-  ineligible: Set<BattleCardEffect>;
+  ineligible?: Set<BattleCardEffect>;
   complete: boolean;
 }
 
@@ -90,13 +90,13 @@ export function inspectResolutionOutcomes(
   const outcomes: Outcome[] = [];
   let runs = 0;
   let steps = 0;
+  let hasExcludedBranches = false;
   while (pending.length > 0) {
     const choices = pending.pop()!;
     const outcome: Outcome = {
       packets: new Map(),
       directAmounts: new Map(),
       magnitudes: new Map(),
-      ineligible: new Set(),
       complete: false,
     };
     let decisionIndex = 0;
@@ -131,7 +131,12 @@ export function inspectResolutionOutcomes(
           excluded = branches;
           excludedBranches.set(effect, excluded);
         }
-        for (const nested of excluded[success ? 1 : 0]) outcome.ineligible.add(nested);
+        const ineligible = excluded[success ? 1 : 0];
+        if (ineligible.length) {
+          hasExcludedBranches = true;
+          const excludedEffects = (outcome.ineligible ??= new Set());
+          for (const nested of ineligible) excludedEffects.add(nested);
+        }
       },
       attack: (packet) => {
         if (!current) return;
@@ -187,8 +192,10 @@ export function inspectResolutionOutcomes(
   }
 
   const inspected = new Map<BattleCardEffect, InspectedPackets>();
+  // Most cards have no excluded chance branches, so their outcomes are already
+  // the complete feedback set for every effect.
   for (const effect of sources) {
-    const feedback = outcomes.filter((outcome) => !outcome.ineligible.has(effect));
+    const feedback = hasExcludedBranches ? outcomes.filter((outcome) => !outcome.ineligible?.has(effect)) : outcomes;
     const magnitudes = new Map<ObservedMagnitudeField, number>();
     const initialMagnitudes = feedback[0]?.magnitudes.get(effect);
     if (initialMagnitudes) {

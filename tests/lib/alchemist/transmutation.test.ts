@@ -60,12 +60,15 @@ it("Prismatic Crucible saves every compatible keyword and preserves a later sele
     const expected = TRANSMUTATION_KEYWORD_GROUPS.flat().filter(
       (keyword) => getTransmutationVariants(card, keyword, deck).length,
     );
-    expect(
-      choices
-        .filter((choice) => choice.alterations.some((entry) => entry.sourceIndex === sourceIndex))
-        .map((choice) => choice.keyword)
-        .sort(),
-    ).toEqual(expected.sort());
+    const offered = choices.filter((choice) => choice.alterations.some((entry) => entry.sourceIndex === sourceIndex));
+    expect(offered.map((choice) => choice.keyword).sort()).toEqual(expected.sort());
+    for (const choice of offered) {
+      const alteration = choice.alterations.find((entry) => entry.sourceIndex === sourceIndex)!;
+      expect(getTransmutationVariants(card, choice.keyword, deck)).toContainEqual({
+        sourceKeyword: alteration.sourceKeyword,
+        result: alteration.result,
+      });
+    }
   });
   const offered = choices.filter((choice) => choice.alterations.some((entry) => entry.sourceIndex === 0));
   expect(offered.length).toBeGreaterThan(3);

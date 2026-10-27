@@ -8,6 +8,7 @@ import {
   getCardEffect,
   mapCardDescriptionReferences,
   type CardMagnitudeReference,
+  type CardDescription,
   isMixedPotionCard,
   isCompanionSummonCard,
   mapEffectChildren,
@@ -62,12 +63,14 @@ const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
   forge: ["forgeBonusPercent"],
 };
 
-function hasEffectLines(card: BattleCard, minimum: number): boolean {
+function hasEffectLines(card: BattleCard, minimum: number, analysis?: VariantAnalysis): boolean {
+  if (analysis?.effectLineCount !== undefined) return analysis.effectLineCount >= minimum;
   let count = 0;
-  for (const line of getCardDescription(card)) {
-    if (line.role === "effect" && ++count >= minimum) return true;
+  for (const line of sourceDescription(card, analysis)) {
+    if (line.role === "effect" && ++count >= minimum) break;
   }
-  return false;
+  if (analysis) analysis.effectLineCount = count;
+  return count >= minimum;
 }
 
 function isTransmutableCard(card: BattleCard): boolean {
@@ -179,6 +182,7 @@ function finishAlteration(
   keyword: KeywordId,
   effects: BattleCardEffect[],
   extra: Partial<BattleCard> = {},
+  analysis?: VariantAnalysis,
 ): BattleCard {
   const result = {
     ...card,
@@ -189,7 +193,7 @@ function finishAlteration(
     title: `${TRANSMUTATION_PREFIXES[keyword]} ${card.title}`,
   };
   const previous = mapCardDescriptionReferences(
-    getCardDescription(card),
+    sourceDescription(card, analysis),
     (reference) =>
       ({
         ...reference,
@@ -206,7 +210,24 @@ interface PendingVariant {
   build: () => BattleCard;
 }
 
-function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: () => boolean): PendingVariant[] {
+interface VariantAnalysis {
+  sources: Map<readonly KeywordId[], Set<KeywordId>>;
+  convertible: Map<KeywordId, boolean>;
+  effectLineCount?: number;
+  description?: CardDescription;
+}
+
+function sourceDescription(card: BattleCard, analysis?: VariantAnalysis): CardDescription {
+  if (!analysis) return getCardDescription(card);
+  return (analysis.description ??= getCardDescription(card));
+}
+
+function getPendingVariants(
+  card: BattleCard,
+  keyword: KeywordId,
+  hasCompanion: () => boolean,
+  analysis?: VariantAnalysis,
+): PendingVariant[] {
   if (!isTransmutableCard(card) || cardHasKeyword(card, keyword)) return [];
   // Companion-only Wishes are omitted from affinity metadata but still grant Wish.
   if (keyword === "wish" && visitBattleCardEffects(card.effects, (effect) => effect.kind === "wish")) return [];
@@ -218,23 +239,34 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
         ? RESOURCE_KEYWORDS
         : null;
   if (family) {
-    const sources = new Set<KeywordId>();
-    visitBattleCardEffects(card.effects, (effect) => {
-      const source = convertibleSource(effect);
-      if (
-        source &&
-        family.includes(source) &&
-        (effect.kind === "random-damage" ||
-          ("amount" in effect && typeof effect.amount === "number" && effect.amount > 0))
-      ) {
-        if ((effect.kind === "damage" || effect.kind === "random-damage") && effect.damageTypePool)
-          for (const type of effect.damageTypePool) sources.add(type);
-        else sources.add(source);
-      }
-    });
+    let sources = analysis?.sources.get(family);
+    if (!sources) {
+      sources = new Set<KeywordId>();
+      const found = sources;
+      visitBattleCardEffects(card.effects, (effect) => {
+        const source = convertibleSource(effect);
+        if (
+          source &&
+          family.includes(source) &&
+          (effect.kind === "random-damage" ||
+            ("amount" in effect && typeof effect.amount === "number" && effect.amount > 0))
+        ) {
+          if ((effect.kind === "damage" || effect.kind === "random-damage") && effect.damageTypePool)
+            for (const type of effect.damageTypePool) found.add(type);
+          else found.add(source);
+        }
+      });
+      analysis?.sources.set(family, sources);
+    }
     const variants: PendingVariant[] = [];
     for (const sourceKeyword of sources) {
-      if (sourceKeyword === keyword || !canConvertSource(card.effects, sourceKeyword)) continue;
+      if (sourceKeyword === keyword) continue;
+      let convertible = analysis?.convertible.get(sourceKeyword);
+      if (convertible === undefined) {
+        convertible = canConvertSource(card.effects, sourceKeyword);
+        analysis?.convertible.set(sourceKeyword, convertible);
+      }
+      if (!convertible) continue;
       variants.push({
         sourceKeyword,
         build: () =>
@@ -242,6 +274,8 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
             card,
             keyword,
             card.effects.map((effect) => convertEffect(effect, sourceKeyword, keyword)),
+            {},
+            analysis,
           ),
       });
     }
@@ -260,7 +294,7 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
     return [
       {
         sourceKeyword: null,
-        build: () => finishAlteration(card, keyword, effects, { tags: [...(card.tags ?? []), "archery"] }),
+        build: () => finishAlteration(card, keyword, effects, { tags: [...(card.tags ?? []), "archery"] }, analysis),
       },
     ];
   }
@@ -280,22 +314,24 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
     const altered = card.effects.map(infuseDamage);
     if (!damage) return [];
     // Leech can expand combined damage lines; count the actual preview.
-    const result = finishAlteration(card, keyword, altered);
+    const result = finishAlteration(card, keyword, altered, {}, analysis);
     if (hasEffectLines(result, CORRUPTION_MAX_EFFECT_LINES + 1)) return [];
     return [{ sourceKeyword: null, build: () => result }];
   }
   if (keyword === "consume" && !isCompanionSummonCard(card)) {
     const effects = [...card.effects];
-    return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, { consume: true }) }];
+    return [
+      { sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, { consume: true }, analysis) },
+    ];
   }
   if (keyword !== "wish" && keyword !== "dodge" && keyword !== "companion") return [];
-  if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES)) return [];
+  if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES, analysis)) return [];
   if (keyword === "companion" && !hasCompanion()) return [];
   const effects = [...card.effects];
   if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
   else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
   else effects.push({ kind: "companion-action", amount: 1 });
-  return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects) }];
+  return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, {}, analysis) }];
 }
 
 export function getTransmutationVariants(
@@ -332,12 +368,14 @@ export function createTransmutationOffers(
   const hasCompanion = () => (companionPresent ??= deck.some(isCompanionSummonCard));
   deck.forEach((source, sourceIndex) => {
     if (!isTransmutableCard(source)) return;
+    // These facts depend only on this source card, not the destination keyword.
+    const analysis: VariantAnalysis = { sources: new Map(), convertible: new Map() };
     // Roll against this card so unrelated cards cannot crowd out useful choices.
     const available: Array<{ keyword: KeywordId; alterations: PendingVariant[] }> = [];
     const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) => {
       const pool: typeof available = [];
       for (const keyword of group) {
-        const alterations = getPendingVariants(source, keyword, hasCompanion);
+        const alterations = getPendingVariants(source, keyword, hasCompanion, analysis);
         if (!alterations.length) continue;
         const offer = { keyword, alterations };
         pool.push(offer);
