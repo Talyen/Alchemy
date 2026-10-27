@@ -9,6 +9,7 @@ import {
   translationPackets,
   editableTranslationPackets,
   validateBatch,
+  inspectTranslationPacket,
 } from "../../../scripts/localization/catalog.mjs";
 
 const message = { text: "Deal <damage>{{amount}}</damage> damage", context: "Attack damage", terms: ["damage"] };
@@ -18,6 +19,28 @@ const valid = () => ({
   text: "Verursache <damage>{{amount}}</damage> Schaden",
   sourceHash: sourceHash(message, glossary, "de"),
   reviewed: true,
+});
+
+it("reports stale and incomplete packets without attesting semantic review", () => {
+  const context = {
+    messages,
+    glossary: Object.fromEntries(TARGETS.map((locale) => [locale, glossary])),
+    catalogs: Object.fromEntries(
+      TARGETS.map((locale) => [
+        locale,
+        locale === "de" ? {} : { attack: { ...valid(), sourceHash: sourceHash(message, glossary, locale) } },
+      ]),
+    ),
+  };
+  const [packet] = editableTranslationPackets(translationPackets(context));
+  expect(inspectTranslationPacket([packet], context).state).toBe("incomplete");
+  const completed = { ...packet!, results: { attack: valid().text } };
+  const ready = inspectTranslationPacket([completed], context);
+  expect(ready.state).toBe("ready-for-review");
+  expect(ready.detail).toContain("Semantic review");
+  expect(inspectTranslationPacket([{ ...completed, results: {} }], context).state).toBe("incomplete");
+  const changed = { ...context, messages: { attack: { ...message, text: `${message.text} now` } } };
+  expect(inspectTranslationPacket([completed], changed).state).toBe("stale");
 });
 
 it("prepares only pending canonical messages with unreviewed editable plural templates", () => {

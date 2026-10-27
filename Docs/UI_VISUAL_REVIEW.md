@@ -67,6 +67,9 @@ actual browser version and headings, and `scenario.json` identifying
 settings, commit, dirty paths and success/failure. Failed runs retain available
 diagnostics and must not be used as accepted captures. Task finishing preserves this
 review evidence. These are opt-in captures, not new automatic pixel baselines.
+Use `npm run visual:scenario -- --status` to list recent captures in this checkout
+with their settings and source commit. Check browser metadata and dirty source too;
+the listing does not establish matching renders, visual quality or interaction review.
 
 The runner uses existing save fixtures, seeded cosmetic randomness, a fixed clock,
 muted audio, reduced motion and disabled battle animations. It waits for settled

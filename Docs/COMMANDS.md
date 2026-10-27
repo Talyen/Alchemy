@@ -10,6 +10,12 @@ Choose an operation here. [Contributing](../CONTRIBUTING.md) owns task checks;
 ordinary verification workflow and permissions. This reference lists other operations.
 `package.json` owns the complete script list.
 
+For ordinary work use `npm run check`, `npm run check -- <paths>`,
+`npm run test:unit -- <one-or-two-test-files>`, and `npm run context -- <paths>`.
+Full checks require the permissions in Contributing. Earlier names such as
+`check:task`, `check:full`, and `test:full` remain supported compatibility
+commands; their exact scopes are in [verification](../scripts/VERIFICATION.md#compatibility-commands-and-test-runners).
+
 | Task                        | Command                            | Notes                                                                                             |
 | --------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Develop in the browser      | `npm run dev`                      | From the original workspace, serves current local `main`; task worktrees serve their own source   |
@@ -34,6 +40,7 @@ ordinary verification workflow and permissions. This reference lists other opera
 For changed player-facing text, use `npm run i18n:prepare -- <task-file.json>`,
 translate and separately review its result templates, then run
 `npm run i18n:finish -- <task-file.json> --reviewed`. [Localization](./LOCALIZATION.md#agent-workflow) owns the workflow.
+Use `npm run i18n:status -- <task-file.json>` to inspect a packet without writing it.
 
 Use [Agent discovery](./AGENT_DISCOVERY.md) for optional lookup/measurement
 commands and [Plans](./Plans/README.md) for plan creation and completion.
@@ -41,7 +48,8 @@ commands and [Plans](./Plans/README.md) for plan creation and completion.
 requires no active or blocked plans and does not finish or delete them.
 See [Contributing](../CONTRIBUTING.md#hooks-and-workflow-hygiene) for plan handoff requirements.
 
-Use `npm run visual:scenario -- --list` for repeatable seeded screen captures.
+Use `npm run visual:scenario -- --list` for repeatable seeded screen captures and
+`npm run visual:scenario -- --status` to locate recent capture settings.
 
 ## Local development
 

@@ -67,6 +67,13 @@ Shop purchase/refresh recipes and `runShopTransaction` live together in
 remain under one transaction. Merchant removal and Alchemist mixing use that
 same guard directly.
 
+For a Merchant card purchase, change card-specific selection or acquisition in
+`merchant-shop-commands.ts`; change shared payment and purchase guards in
+`shop-commands-core.ts`. The shared transaction checks the active shop and owns
+rejection and feedback; the merchant capability binding enforces session lifetime.
+Neither is a forwarding-only layer. Start with the linked shop actions test when
+tracing a change; keep rejected actions from spending Gold or publishing a commit.
+
 Composition wrappers such as `createShopActions` and session capability bindings
 retain a specific role: assembling route authority and revoking retained actions
 when the session ends. Keep those ownership checks when simplifying forwarding.

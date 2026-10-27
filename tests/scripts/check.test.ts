@@ -280,10 +280,25 @@ describe("full source-aware completion gate", () => {
       commandExposures: Array<{ key: string; rawBytes: number; exposedBytes: number }>;
       summary: string;
     };
-    expect(record.artifacts).toEqual([
-      expect.objectContaining({ role: "primary", existsAtWrite: true }),
-      expect.objectContaining({ role: "secondary", existsAtWrite: true }),
-    ]);
+    expect(record.artifacts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: "primary",
+          existsAtWrite: true,
+          path: expect.stringMatching(/ci-static\.md$/u),
+        }),
+        expect.objectContaining({
+          role: "secondary",
+          existsAtWrite: true,
+          path: expect.stringMatching(/ci-static\.log$/u),
+        }),
+        expect.objectContaining({
+          role: "primary",
+          existsAtWrite: true,
+          path: expect.stringMatching(/coverage\.json$/u),
+        }),
+      ]),
+    );
     expect(record.commandExposures).toContainEqual(expect.objectContaining({ key: "ci-static", rawBytes: 21 }));
     const failureExposure = record.commandExposures.find((entry) => entry.key === "ci-static");
     expect(failureExposure?.exposedBytes).toBeGreaterThanOrEqual(21);

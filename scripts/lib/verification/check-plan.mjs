@@ -70,7 +70,11 @@ export function resolveCheckPlan(
       command: "node",
       args: ["scripts/run-prettier.mjs", "--check", ...formatPaths],
       enabled: !full && smallFormatBatch,
-      reason: full ? "included in full static checks" : "empty or large formatting batch deferred to CI",
+      reason: full
+        ? "included in full static checks"
+        : formatPaths.length
+          ? "large formatting batch deferred to CI"
+          : "no applicable formatting files",
     },
     {
       key: "local-lint",
@@ -78,7 +82,11 @@ export function resolveCheckPlan(
       command: "node",
       args: ["scripts/run-compact.mjs", "oxlint", ...lintPaths, "--format", "stylish", "--max-warnings=0"],
       enabled: !full && smallLintBatch,
-      reason: full ? "included in full static checks" : "empty or large lint batch deferred to CI",
+      reason: full
+        ? "included in full static checks"
+        : lintPaths.length
+          ? "large lint batch deferred to CI"
+          : "no applicable lint files",
     },
     {
       key: "documentation-format",

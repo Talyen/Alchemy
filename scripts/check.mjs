@@ -202,6 +202,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   }
   if (full && !options.runner) assertHeavyLocalAllowed("Full completion gate");
   const before = digestFn();
+  const mainHead = raw?.flags.has("task") ? gitOutput(["rev-parse", "main"]).trim() : null;
   const cache =
     options.runner || !selection.needsCodeChecks
       ? null
@@ -285,6 +286,10 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       {
         runId,
         sourceDigest: before.hash,
+        sourceHead: before.head ?? null,
+        mainHead,
+        selection: raw?.flags.has("task") ? "task" : "other",
+        status: failed ? "failed" : "passed",
         selectedPaths: paths,
         profile: full ? "full" : "local",
         steps,
@@ -307,6 +312,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     console.log(
       "Deferred: unit suites, compilation, broad static checks, builds and browser/Electron acceptance to CI.",
     );
+  console.log("Not established by this check: visual quality, exercised interactions and platform acceptance.");
   writeCurrentRun({
     rootDir: ROOT,
     runId,

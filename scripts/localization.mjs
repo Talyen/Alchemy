@@ -18,6 +18,7 @@ import {
   translationPackets,
   editableTranslationPackets,
   validateBatch,
+  inspectTranslationPacket,
 } from "./localization/catalog.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -118,9 +119,9 @@ function writeSteamExports(messages, glossary) {
 }
 
 try {
-  if (!["extract", "tasks", "apply", "check", "prepare", "finish"].includes(command))
+  if (!["extract", "tasks", "apply", "check", "prepare", "finish", "status"].includes(command))
     throw new Error(
-      "Usage: localization.mjs prepare [tasks.json]|finish <tasks.json>|extract|tasks|apply <results.json>|check",
+      "Usage: localization.mjs prepare [tasks.json]|status [tasks.json]|finish <tasks.json>|extract|tasks|apply <results.json>|check",
     );
   const reviewComplete = process.argv.includes("--reviewed");
   const extra = process.argv.slice(3);
@@ -132,13 +133,40 @@ try {
     throw new Error("Use prepare [packet.json], or finish <packet.json> --reviewed after semantic review");
   const inputFile = extra.find((arg) => !arg.startsWith("--"));
   if (["finish", "apply"].includes(command) && !inputFile) throw new Error("A translation result file is required");
-  if (!["prepare", "finish", "apply"].includes(command) && inputFile)
+  if (!["prepare", "finish", "apply", "status"].includes(command) && inputFile)
     throw new Error(`${command} accepts no file argument`);
   const packetFile = path.resolve(inputFile ?? path.join(ROOT, "reports/localization/tasks.json"));
   const savedPacket = command === "prepare" && fs.existsSync(packetFile) ? fs.readFileSync(packetFile, "utf8") : null;
   const drafts = savedPacket === null ? [] : JSON.parse(savedPacket);
   const { messages, issues } = await extractMessages();
   const glossary = read("glossary");
+  if (command === "status") {
+    const context = {
+      messages,
+      glossary,
+      catalogs: Object.fromEntries(TARGETS.map((locale) => [locale, read(locale)])),
+    };
+    const pending = translationPackets(context).reduce(
+      (count, packet) => count + Object.keys(packet.messages).length,
+      0,
+    );
+    if (!fs.existsSync(packetFile)) {
+      console.log(
+        `No packet at ${packetFile}; ${pending} pending translations. Run npm run i18n:prepare after wording settles.`,
+      );
+    } else {
+      const result = inspectTranslationPacket(JSON.parse(fs.readFileSync(packetFile, "utf8")), context);
+      console.log(
+        `Packet: ${packetFile}\nStatus: ${result.state}; ${result.pending} pending translations.\n${result.detail}`,
+      );
+      if (result.state === "stale") console.log(`Next: npm run i18n:prepare -- ${packetFile}`);
+      else if (result.state === "incomplete")
+        console.log("Next: complete or repair packet results, then review their meaning.");
+      else console.log(`Next: review meaning, then npm run i18n:finish -- ${packetFile} --reviewed`);
+    }
+    if (issues.length)
+      console.log(`English extraction reported ${issues.length} issue(s); run npm run i18n:check for details.`);
+  }
   // Refresh drafts before writing derived catalogs, so malformed packets leave
   // both the working file and catalogs untouched.
   let packets =
@@ -203,7 +231,7 @@ try {
     writeSteamExports(messages, glossary);
     console.log(`Applied reviewed translations for ${Object.keys(next).join(", ") || "no pending locales"}`);
     if (command === "finish") checkCatalogs(messages, glossary, issues);
-  } else {
+  } else if (command === "check") {
     checkCatalogs(messages, glossary, issues);
   }
 } catch (error) {

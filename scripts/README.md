@@ -210,8 +210,10 @@ node scripts/agent-worktree.mjs integrate --task <slug>
 node scripts/agent-worktree.mjs finish --task <slug>
 ```
 
-Status shows the task checkout, base, working paths and recorded integration, then
-suggests the next action. It does not infer that review or checks were completed;
+Status shows the task checkout, base, working paths, recorded integration and latest
+check receipt. It marks a task receipt current only when main, source identity and
+selected paths still match. Other and older receipts remain historical or unverified.
+It suggests the next action but does not attest review, visual acceptance or CI;
 confirm those separately before integration. Commands that edit or check task files
 run in the task checkout; integration and finish run from the original workspace.
 
