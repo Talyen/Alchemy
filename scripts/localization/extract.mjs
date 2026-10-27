@@ -58,6 +58,7 @@ const textProperties = new Set([
   "body",
   "helpText",
   "tooltip",
+  "tooltipEffect",
   "text",
   "benefitDescription",
   "nonCombatBenefitDescription",
