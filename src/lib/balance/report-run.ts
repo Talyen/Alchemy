@@ -168,7 +168,7 @@ export function compactCoreRow(row: CoreRow): CompactCoreRow {
 }
 
 export function mergeCoreMetrics(chunks: readonly CompactCoreRow[]): AnomalyMetricRow[] {
-  const maxima = new Map(
+  const maxima = new Map<string, { field: string; values: Record<TalentPreset, number> }>(
     ANOMALY_METRICS.map(({ label }) => [label, { field: label, values: { early: 0, mid: 0, late: 0 } }]),
   );
   for (const chunk of chunks) {
