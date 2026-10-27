@@ -65,7 +65,12 @@ export function parsePersistedErrorLog(raw: string | null): LoggedError[] {
     return [];
   }
   if (!Array.isArray(parsed)) return [];
-  return capErrors(parsed.map(normalizePersistedError).filter((entry): entry is LoggedError => entry !== null));
+  const errors: LoggedError[] = [];
+  for (const value of parsed) {
+    const entry = normalizePersistedError(value);
+    if (entry !== null) errors.push(entry);
+  }
+  return capErrors(errors);
 }
 
 function loadPersisted(): LoggedError[] {

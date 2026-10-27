@@ -213,16 +213,12 @@ export function offerRunChoices(
       else if (visit.mysteryChosenChoice)
         offer("mystery-continue", "continue", 1, () => flow.advanceToNextDestination("mystery"));
       else
-        visit.mysteryEvent?.choices.forEach((choice, index) =>
-          offer(
-            "mystery",
-            choice.label,
-            1 +
-              characters[config.hero].keywords.filter((keyword) => choice.label.toLowerCase().includes(keyword)).length,
-            () => flow.handleMysteryChoice(choice),
-            index,
-          ),
-        );
+        visit.mysteryEvent?.choices.forEach((choice, index) => {
+          const label = choice.label.toLowerCase();
+          let keywordMatches = 0;
+          for (const keyword of characters[config.hero].keywords) if (label.includes(keyword)) keywordMatches++;
+          offer("mystery", choice.label, 1 + keywordMatches, () => flow.handleMysteryChoice(choice), index);
+        });
       break;
     }
     case "corruption":

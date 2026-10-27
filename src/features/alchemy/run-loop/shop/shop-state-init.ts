@@ -95,11 +95,12 @@ export function resampleEquipmentShopOfferings(
   currentItems: readonly GearInstance[] = [],
   createId: () => string = createInstanceId,
 ): GearInstance[] {
-  const baseItems = modifiers.includes("bowyer")
-    ? ["shortbow", "longbow", "recurve-bow"]
-    : modifiers.includes("armorer")
-      ? gearBaseItemList.filter((item) => item.compatibleSlots.includes("body")).map((item) => item.id)
-      : gearBaseItemList.map((item) => item.id);
+  const baseItems: string[] = [];
+  if (modifiers.includes("bowyer")) baseItems.push("shortbow", "longbow", "recurve-bow");
+  else {
+    const armorer = modifiers.includes("armorer");
+    for (const item of gearBaseItemList) if (!armorer || item.compatibleSlots.includes("body")) baseItems.push(item.id);
+  }
   const currentBases = new Set<string | undefined>();
   for (const item of currentItems) currentBases.add(gearDefinitions[item.definitionId]?.baseItemId);
   const novelBases = currentBases.size ? baseItems.filter((id) => !currentBases.has(id)) : baseItems;
@@ -124,7 +125,8 @@ export function resampleEquipmentShopOfferings(
   };
   const novel = sample(Math.min(EQUIPMENT_SHOP_OFFERED, novelBases.length), novelBases);
   if (novel.length >= EQUIPMENT_SHOP_OFFERED) return novel;
-  const selected = new Set<string | undefined>(novel.map((item) => gearDefinitions[item.definitionId]?.baseItemId));
+  const selected = new Set<string | undefined>();
+  for (const item of novel) selected.add(gearDefinitions[item.definitionId]?.baseItemId);
   const fallbackBases = baseItems.filter((id) => !selected.has(id));
   return [...novel, ...sample(EQUIPMENT_SHOP_OFFERED - novel.length, fallbackBases.length ? fallbackBases : baseItems)];
 }

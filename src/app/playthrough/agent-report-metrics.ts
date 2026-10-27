@@ -66,13 +66,14 @@ export function selectorForDefeats(battles: Battle[], minRoom?: number): AgentEv
 }
 
 export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetric[] {
+  const milestoneEntries = careers.map((career) => Object.entries(career.telemetry.milestones));
   return MILESTONE_KINDS.map((kind) => {
     const firstRuns: number[] = [];
     const prefix = `${kind}:`;
-    for (const career of careers) {
+    for (const entries of milestoneEntries) {
       let first = Infinity;
       let reached = false;
-      for (const [key, run] of Object.entries(career.telemetry.milestones)) {
+      for (const [key, run] of entries) {
         if (!key.startsWith(prefix)) continue;
         reached = true;
         first = Math.min(first, run + 1);
@@ -90,9 +91,10 @@ export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetri
 }
 
 export function buildBattles(careers: CompletedCareer[]): { battles: Battle[]; metrics: AgentBattleMetrics } {
-  const battles = careers.flatMap((career) =>
-    career.telemetry.battles.map((battle) => ({ ...battle, seed: career.config.seed })),
-  );
+  const battles: Battle[] = [];
+  for (const career of careers) {
+    for (const battle of career.telemetry.battles) battles.push({ ...battle, seed: career.config.seed });
+  }
   const byEnemy = new Map<
     string,
     { enemy: string; boss: boolean; encounters: number; victories: number; defeats: number; turns: number }
@@ -240,20 +242,20 @@ export function buildDeckCohesion(careers: CompletedCareer[]): AgentDeckCohesion
     for (const snapshot of byRun.values())
       samples.push({ hero: career.config.hero, keywordCounts: snapshot.keywordCounts });
   }
-  const totalKeywords = samples.reduce(
-    (sum, sample) => sum + Object.values(sample.keywordCounts).reduce((a, b) => a + b, 0),
-    0,
-  );
-  if (!samples.length || totalKeywords === 0)
-    return { samples: samples.length, heroKeywordShare: null, dominantKeywordShare: null, topKeywords: [] };
+  let totalKeywords = 0;
   const allKeywords = new Map<string, number>();
   let heroKeywordCount = 0;
   for (const sample of samples) {
+    let sampleTotal = 0;
     for (const [keyword, count] of Object.entries(sample.keywordCounts)) {
+      sampleTotal += count;
       allKeywords.set(keyword, (allKeywords.get(keyword) ?? 0) + count);
       if ((characters[sample.hero].keywords as readonly string[]).includes(keyword)) heroKeywordCount += count;
     }
+    totalKeywords += sampleTotal;
   }
+  if (!samples.length || totalKeywords === 0)
+    return { samples: samples.length, heroKeywordShare: null, dominantKeywordShare: null, topKeywords: [] };
   const sorted = [...allKeywords.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return {
     samples: samples.length,

@@ -35,7 +35,10 @@ export function allRegisteredMusicFiles(): string[] {
 }
 
 export function getBossMusicKey(bossId: string): string | undefined {
-  return Object.entries(MUSIC_CATALOG).find(([, entry]) => entry.bossId === bossId)?.[0];
+  for (const key in MUSIC_CATALOG) {
+    if (Object.hasOwn(MUSIC_CATALOG, key) && MUSIC_CATALOG[key]?.bossId === bossId) return key;
+  }
+  return undefined;
 }
 
 /**

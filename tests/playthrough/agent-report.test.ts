@@ -8,6 +8,8 @@ import {
   distribution,
   selectorForDefeats,
 } from "@/app/playthrough/agent-report-metrics";
+import { summarizeBrewing } from "@/app/playthrough/brewing-evidence";
+import { comparePlaythroughReports } from "@/app/playthrough/report";
 import { summarizeProgress } from "@/app/playthrough/progress-telemetry";
 import type { CompletedCareer } from "@/app/playthrough/agent-report-types";
 import type { CareerResult } from "@/app/playthrough/types";
@@ -139,6 +141,71 @@ describe("agent playthrough reports", () => {
       reached: 2,
       meanFirstRunAmongReached: 1.5,
     });
+  });
+
+  it("preserves brewing exposure and paired battle matching in reports", () => {
+    const baseline = career();
+    baseline.telemetry.brewing = [
+      {
+        run: 0,
+        room: 2,
+        activity: "alchemist",
+        omittedDecisions: 0,
+        opportunities: [
+          { kind: "mix", eligible: 1, affordable: 1, beneficial: 0, reasons: ["available", "available", "cost"] },
+          { kind: "purchase", eligible: 1, affordable: 0, beneficial: 0, reasons: ["cost"] },
+        ],
+        decisions: [{ step: 1, kind: "buy-potion", id: "potion", score: 1, goldSpent: 5, deckDelta: 1 }],
+      },
+      {
+        run: 0,
+        room: 3,
+        activity: "campfire",
+        omittedDecisions: 1,
+        opportunities: [{ kind: "mix", eligible: 1, affordable: 0, beneficial: 1, reasons: ["cost", "other"] }],
+        decisions: [{ step: 2, kind: "mix", id: "mix", score: 1, goldSpent: 0, deckDelta: -1 }],
+      },
+    ];
+    expect(summarizeBrewing([baseline])).toMatchObject({
+      recordedCareers: 1,
+      missingCareers: 0,
+      truncated: true,
+      shopVisits: 1,
+      campfireVisits: 1,
+      goldSpent: 5,
+      services: expect.arrayContaining([
+        {
+          kind: "mix",
+          eligibleVisits: 2,
+          affordableVisits: 1,
+          beneficialVisits: 1,
+          used: 1,
+          reasons: { available: 1, cost: 2, other: 1 },
+        },
+        {
+          kind: "purchase",
+          eligibleVisits: 1,
+          affordableVisits: 0,
+          beneficialVisits: 0,
+          used: 1,
+          reasons: { cost: 1 },
+        },
+      ]),
+    });
+    const snapshot = (stage: "start" | "settle", run: number, room: number, playerHealth: number) =>
+      ({ stage, run, room, playerHealth }) as CareerResult["telemetry"]["battleSnapshots"][number];
+    baseline.telemetry.battleSnapshots = [snapshot("start", 0, 1, 100), snapshot("settle", 0, 1, 80)];
+    const current = career();
+    current.telemetry.battleSnapshots = [
+      snapshot("settle", 1, 1, 60),
+      snapshot("start", 0, 1, 100),
+      snapshot("settle", 0, 1, 70),
+      snapshot("settle", 0, 1, 10),
+      snapshot("start", 1, 1, 100),
+      snapshot("start", 2, 2, 100),
+    ];
+    const metrics = comparePlaythroughReports([baseline], [current])[0]!.metrics;
+    expect(metrics.find((metric) => metric.metric === "netHealthLostPerBattle")?.meanDelta).toBe(15);
   });
 
   it("reports worker failures separately from gameplay defeats", () => {

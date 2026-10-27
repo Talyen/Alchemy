@@ -108,7 +108,8 @@ export function createRewardOffer({
   for (const modifier of rewardModifiers) {
     const hoardFilter = HOARD_FILTERS[modifier];
     if (hoardFilter) {
-      const baseIds = gearBaseItemList.filter(hoardFilter).map((base) => base.id);
+      const baseIds: string[] = [];
+      for (const base of gearBaseItemList) if (hoardFilter(base)) baseIds.push(base.id);
       const gearAvailable = getGearLootAvailability(ownedUniqueIds, baseIds);
       if (baseIds.length === 0 || (!gearAvailable.basic && !gearAvailable.astral)) break;
       const weights = weightsFor({ ...gearAvailable, card: false, boon: false, trinket: false, unique: false });
