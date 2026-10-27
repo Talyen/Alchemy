@@ -166,9 +166,11 @@ successful runs expire after 30 days and failed runs after 90 days. The latest
 success and failure per command, current run, referenced baselines, pinned or
 owned runs, legacy runs, and unknown evidence stay protected. Other performance,
 visual, integration and experimental evidence is not automatically expired.
-The automatically managed lyric-tool environment is also removed after 30 days
-without use, but only while its inherited process lock can be acquired. Legacy or
-unknown environments, shared dependencies and all trailer environments stay untouched.
+Automatically managed lyric and font tool environments are also removed after 30
+days without use, but only while their inherited process locks can be acquired.
+Known legacy environments are listed in `reports/retention-review.json` and remain
+untouched. Unknown environments, shared dependencies and all trailer environments
+also stay untouched.
 At producer completion it also writes a bounded
 `reports/retention-review.json`: a 1 GiB review threshold, latest success/failure per
 command retained, pins/owners and referenced baselines protected, and at most 64
@@ -325,8 +327,8 @@ closes only task browsers, preserves the complete `reports/` directory and other
 non-build ignored files in a unique evidence bundle, then removes only that
 registered checkout. The task branch remains. A failure prints a finish retry
 command and leaves integration complete; inspect the state file and reported
-recovery path before retrying. Finishing also holds the managed lyric environment
-lock for the whole removal, and refuses to proceed while that tool is active.
+recovery path before retrying. Finishing also holds the managed lyric and font
+environment locks for the whole removal, and refuses to proceed while either tool is active.
 
 Cleanup rejects changed/locked registrations, unfinished work, submodules,
 symlinks in evidence and links escaping the task. It stages the checkout under

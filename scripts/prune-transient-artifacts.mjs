@@ -74,26 +74,37 @@ export function pruneExpiredArtifacts({
   const cutoff = now - days * 86_400_000;
   const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
-  if (transientDirs === TRANSIENT_DIRS) removed.push(...pruneFailedBuilds(rootDir, { dryRun, now }));
-  // Only the managed lyric environment participates. Its inherited OS lock
-  // remains held by the tool process even if its launcher terminates.
+  if (transientDirs === TRANSIENT_DIRS) {
+    const cache = fs.lstatSync(path.join(rootDir, ".cache"), { throwIfNoEntry: false });
+    if (!cache || (cache.isDirectory() && !cache.isSymbolicLink()))
+      removed.push(...pruneFailedBuilds(rootDir, { dryRun, now }));
+  }
+  // Only registered managed environments participate. Their inherited OS
+  // locks remain held by the tool processes if their launchers terminate.
   if (transientDirs === TRANSIENT_DIRS) {
     const helper = path.join(ROOT, "scripts/lyrics-trial/managed-env.py");
-    const target = path.join(rootDir, ".cache/alchemy-lyrics-venv");
-    const attempt = (preview) => {
-      const result = spawnSync("python3", [helper, "--prune", "--root", rootDir, ...(preview ? ["--dry-run"] : [])], {
-        encoding: "utf8",
-        timeout: 30_000,
-      });
-      try {
-        return result.status === 0 && JSON.parse(result.stdout).removed === true;
-      } catch {
-        return false;
+    for (const environment of ["lyrics", "fonts"]) {
+      const relative = `.cache/alchemy-${environment}-venv`;
+      const target = path.join(rootDir, relative);
+      const attempt = (preview) => {
+        const result = spawnSync(
+          "python3",
+          [helper, "--prune", "--environment", environment, "--root", rootDir, ...(preview ? ["--dry-run"] : [])],
+          {
+            encoding: "utf8",
+            timeout: 30_000,
+          },
+        );
+        try {
+          return result.status === 0 && JSON.parse(result.stdout).removed === true;
+        } catch {
+          return false;
+        }
+      };
+      if (attempt(true)) {
+        const { bytes } = measurePath(target);
+        if (dryRun || attempt(false)) removed.push({ path: relative, bytes });
       }
-    };
-    if (attempt(true)) {
-      const { bytes } = measurePath(target);
-      if (dryRun || attempt(false)) removed.push({ path: ".cache/alchemy-lyrics-venv", bytes });
     }
   }
   // Only newly created, explicitly expiring run receipts are eligible. Historical
@@ -229,6 +240,10 @@ async function main(argv = process.argv.slice(2)) {
     if (result.skippedActive) {
       console.log("Artifact tool is active; pruning skipped.");
       return 0;
+    }
+    if (result.review.legacyToolEnvironments.length) {
+      console.log("Legacy tool environments retained for review:");
+      for (const entry of result.review.legacyToolEnvironments) console.log(`  ${entry.path}: ${entry.reason}`);
     }
     if (result.removed.length === 0) {
       console.log(`No transient artifacts older than ${options.days} day${options.days === 1 ? "" : "s"}.`);

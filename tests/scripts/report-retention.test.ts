@@ -111,3 +111,21 @@ it("expires only old recognized verification receipts and leaves unknown files i
   expect(fs.existsSync(unknown)).toBe(true);
   expect(fs.existsSync(fresh)).toBe(true);
 });
+
+it("automatically records known legacy tool environments for review without deleting them", async () => {
+  const root = fixture();
+  for (const relative of [".cache/lyrics/venv", ".cache/font-tools", "reports/boss-lyrics/venv"]) {
+    const directory = path.join(root, relative);
+    fs.mkdirSync(directory, { recursive: true });
+    fs.writeFileSync(path.join(directory, "keep"), "legacy");
+  }
+  await pruneTransientArtifacts({ rootDir: root, now });
+  const review = JSON.parse(fs.readFileSync(path.join(root, "reports/retention-review.json"), "utf8"));
+  expect(review.legacyToolEnvironments.map((entry: { path: string }) => entry.path)).toEqual([
+    ".cache/lyrics/venv",
+    ".cache/font-tools",
+    "reports/boss-lyrics/venv",
+  ]);
+  for (const entry of review.legacyToolEnvironments)
+    expect(fs.readFileSync(path.join(root, entry.path, "keep"), "utf8")).toBe("legacy");
+});

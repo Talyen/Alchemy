@@ -36,6 +36,7 @@ export function resolveLocale(
 let preference: LanguagePreference = "auto";
 let steamLanguage: string | null = null;
 let revision = 0;
+let initialization = 0;
 const listeners = new Set<() => void>();
 export const languagePreference = () => preference;
 export const subscribeLanguage = (listener: () => void) => {
@@ -66,6 +67,7 @@ export function setLanguagePreference(value: LanguagePreference): void {
 }
 export async function initializeLanguage(): Promise<void> {
   const requestRevision = ++revision;
+  const requestInitialization = ++initialization;
   try {
     const stored = tryLocalStorageGetItem(STORAGE_KEY);
     const saved = stored.ok ? stored.value : null;
@@ -75,17 +77,20 @@ export async function initializeLanguage(): Promise<void> {
   }
   applyLanguage();
   let timeout: ReturnType<typeof setTimeout> | undefined;
+  let detectedLanguage: string | null;
   try {
-    steamLanguage = await Promise.race([
+    detectedLanguage = await Promise.race([
       getDesktopApi()?.steamGetGameLanguage?.() ?? Promise.resolve(null),
       new Promise<null>((resolve) => {
         timeout = setTimeout(() => resolve(null), 1500);
       }),
     ]);
   } catch {
-    steamLanguage = null;
+    detectedLanguage = null;
   } finally {
     if (timeout !== undefined) clearTimeout(timeout);
   }
+  if (requestInitialization !== initialization) return;
+  steamLanguage = detectedLanguage;
   if (requestRevision === revision) applyLanguage();
 }
