@@ -318,8 +318,7 @@ function normalizeWishChoices(state: BattleSnapshot) {
     if (options.length > 0) wishQueue.push(options);
   }
   if (wishOptions?.length) return { wishOptions, wishQueue };
-  const [nextWishOptions = null, ...remainingQueue] = wishQueue;
-  return { wishOptions: nextWishOptions, wishQueue: remainingQueue };
+  return { wishOptions: wishQueue.shift() ?? null, wishQueue };
 }
 
 function normalizeSurvival(state: BattleSnapshot, saved: DecodedPersistedBattle, defaults: BattleSnapshot) {

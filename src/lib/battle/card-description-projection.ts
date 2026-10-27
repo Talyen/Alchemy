@@ -194,9 +194,9 @@ export function describeKnownStatusOptions(
   path: number[],
   amounts: ReadonlyMap<string, number>,
 ): BattleCard {
-  const effects = [...card.effects];
-  const effect = getCardEffect(effects, { effectIndex: path[0]!, effectPath: path.slice(1) });
+  const effect = getCardEffect(card.effects, { effectIndex: path[0]!, effectPath: path.slice(1) });
   if (effect?.kind !== "player-status" || !effect.statusPool) return card;
+  const effects = [...card.effects];
   const parts: CardDescription[number]["parts"] = ["Gain "];
   const previous = getCardDescription(card);
   const statuses = effect.forgeAmount !== undefined ? (["block", "forge", "armor"] as const) : effect.statusPool;
