@@ -61,9 +61,8 @@ export function preloadBattleSounds(handCardIds: readonly string[], abilityIds: 
   // Enemy abilities play through playCardSound(ability.id), so their card
   // sounds are warmed alongside the visible hand.
   const names = new Set<string>(Object.values(battleEventSounds).filter((name) => name !== null));
-  for (const cardId of [...handCardIds, ...abilityIds]) {
-    for (const name of getCardSounds(cardId)) names.add(name);
-  }
+  for (const cardId of handCardIds) for (const name of getCardSounds(cardId)) names.add(name);
+  for (const cardId of abilityIds) for (const name of getCardSounds(cardId)) names.add(name);
   preloadSounds([...names]);
 }
 

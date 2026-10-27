@@ -27,8 +27,12 @@ export function buildFindings(
   coverageGaps: AgentMilestoneMetric[],
 ): AgentFinding[] {
   const findings: AgentFinding[] = [];
-  const victories = runs.filter((run) => run.outcome === "victory").length;
-  const defeats = runs.filter((run) => run.outcome === "defeat").length;
+  let victories = 0;
+  let defeats = 0;
+  for (const run of runs) {
+    if (run.outcome === "victory") victories++;
+    if (run.outcome === "defeat") defeats++;
+  }
 
   if (!careers.length) {
     findings.push({
@@ -107,7 +111,8 @@ export function buildFindings(
 
   if (defeats > 0 && terminalRooms.median !== null) {
     const lateRoom = Math.max(1, Math.round(terminalRooms.median));
-    const lateDefeats = battles.filter((battle) => battle.outcome === "defeat" && battle.room >= lateRoom).length;
+    let lateDefeats = 0;
+    for (const battle of battles) if (battle.outcome === "defeat" && battle.room >= lateRoom) lateDefeats++;
     // Attention heuristic only; this is deliberately not a balance gate.
     if (lateDefeats >= 5 && lateDefeats / defeats >= 0.5) {
       findings.push({

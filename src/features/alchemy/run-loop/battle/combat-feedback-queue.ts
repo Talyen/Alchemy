@@ -61,13 +61,7 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
   }
   const routes: Spread[] =
     item.presentation.lane === "announcement"
-      ? [
-          0,
-          ...Array.from(
-            { length: Math.ceil((item.height ?? 64) / M.reactionRowPx) * (ahead.length + 1) },
-            (_, index) => [-(index + 1), index + 1],
-          ).flat(),
-        ]
+      ? [0]
       : item.presentation.lane !== "impact"
         ? [0, -1, 1, -2, 2, -3, 3]
         : item.family === "heal" && recentDamage
@@ -75,9 +69,13 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
           : item.family === "damage" && recentHeal
             ? [-1, -2, -3, -4, -5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5]
             : [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, 6, 7, 8, 9];
-  if (item.presentation.lane === "impact") {
+  if (item.presentation.lane === "announcement") {
+    const rows = Math.ceil((item.height ?? 64) / M.reactionRowPx) * (ahead.length + 1);
+    for (let index = 1; index <= rows; index++) routes.push(-index, index);
+  } else if (item.presentation.lane === "impact") {
     // Dense bursts can use extra fixed rows instead of reusing an occupied path.
-    routes.push(...Array.from({ length: (Math.ceil(ahead.length / 3) + 1) * 3 }, (_, index) => 10 + index));
+    const extraRows = (Math.ceil(ahead.length / 3) + 1) * 3;
+    for (let index = 0; index < extraRows; index++) routes.push(10 + index);
   }
   const oldRoutes = new Map<QueueItem, ReturnType<typeof combatTextRoute>>();
   const samples = [];
@@ -224,7 +222,7 @@ export function scheduleCombatFeedback(
         a.receivedAt - b.receivedAt ||
         Number(b.presentation.lane === "announcement") - Number(a.presentation.lane === "announcement"),
     );
-    const ahead = [...visible].sort((a, b) => a.presentation.launchAt - b.presentation.launchAt);
+    const ahead = visible.sort((a, b) => a.presentation.launchAt - b.presentation.launchAt);
     for (const item of waiting) {
       const launchAt = item.scheduled ? item.presentation.launchAt : staggeredLaunch(item, ahead, now);
       const presentation: CombatTextPresentation = {

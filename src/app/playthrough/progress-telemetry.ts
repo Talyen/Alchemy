@@ -58,6 +58,7 @@ export function summarizeProgress(results: CareerResult[]) {
       encounters: enemyStats.get(enemy)!.encounters,
       victories: enemyStats.get(enemy)!.victories,
     }));
+    const milestoneEntries = complete.map((career) => Object.entries(career.telemetry.milestones));
     const milestones = [
       "talent",
       "building",
@@ -70,10 +71,11 @@ export function summarizeProgress(results: CareerResult[]) {
       "salvage",
     ].map((kind) => {
       const firstRuns: number[] = [];
-      for (const career of complete) {
+      const prefix = `${kind}:`;
+      for (const entries of milestoneEntries) {
         let first: number | undefined;
-        for (const [key, run] of Object.entries(career.telemetry.milestones)) {
-          if (key.startsWith(`${kind}:`)) first = first === undefined ? run + 1 : Math.min(first, run + 1);
+        for (const [key, run] of entries) {
+          if (key.startsWith(prefix)) first = first === undefined ? run + 1 : Math.min(first, run + 1);
         }
         if (first !== undefined) firstRuns.push(first);
       }

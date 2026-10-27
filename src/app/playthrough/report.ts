@@ -78,6 +78,15 @@ export function comparePlaythroughReports(
     throw new Error("Comparison requires the same ordered scenario manifest (including fixtures and policies)");
   if ([...baseline, ...current].some((result) => result.status !== "completed"))
     throw new Error("Cannot compare balance with incomplete careers");
+  const brewingSummaries = new Map<CareerResult, ReturnType<typeof summarizeBrewing>>();
+  const brewingSummary = (result: CareerResult) => {
+    let summary = brewingSummaries.get(result);
+    if (!summary) {
+      summary = summarizeBrewing([result]);
+      brewingSummaries.set(result, summary);
+    }
+    return summary;
+  };
   const metrics = {
     victoryFraction: (result: CareerResult) =>
       result.outcomes.filter((outcome) => outcome.outcome === "victory").length / result.outcomes.length,
@@ -88,22 +97,31 @@ export function comparePlaythroughReports(
       Math.max(1, result.telemetry.battles.length),
     finalGold: (result: CareerResult) => result.finalSave.gold,
     netHealthLostPerBattle: (result: CareerResult) => {
-      const starts = result.telemetry.battleSnapshots.filter((snapshot) => snapshot.stage === "start");
-      const settled = starts.flatMap((start) => {
-        const end = result.telemetry.battleSnapshots.find(
-          (snapshot) => snapshot.stage === "settle" && snapshot.run === start.run && snapshot.room === start.room,
-        );
-        return end ? [start.playerHealth - end.playerHealth] : [];
-      });
-      return settled.reduce((sum, health) => sum + health, 0) / Math.max(1, settled.length);
+      const ends = new Map<number, Map<number, number>>();
+      for (const snapshot of result.telemetry.battleSnapshots) {
+        if (snapshot.stage !== "settle" || Number.isNaN(snapshot.run) || Number.isNaN(snapshot.room)) continue;
+        let rooms = ends.get(snapshot.run);
+        if (!rooms) ends.set(snapshot.run, (rooms = new Map<number, number>()));
+        if (!rooms.has(snapshot.room)) rooms.set(snapshot.room, snapshot.playerHealth);
+      }
+      let count = 0;
+      let lost = 0;
+      for (const start of result.telemetry.battleSnapshots) {
+        if (start.stage !== "start" || Number.isNaN(start.run) || Number.isNaN(start.room)) continue;
+        const rooms = ends.get(start.run);
+        if (!rooms?.has(start.room)) continue;
+        lost += start.playerHealth - rooms.get(start.room)!;
+        count++;
+      }
+      return lost / Math.max(1, count);
     },
     firstVictoryRunCensored: (result: CareerResult) => {
       const first = result.outcomes.findIndex((outcome) => outcome.outcome === "victory");
       return first < 0 ? result.config.runs + 1 : first + 1;
     },
-    brewingGoldSpent: (result: CareerResult) => summarizeBrewing([result]).goldSpent,
+    brewingGoldSpent: (result: CareerResult) => brewingSummary(result).goldSpent,
     brewingServices: (result: CareerResult) =>
-      summarizeBrewing([result])
+      brewingSummary(result)
         .services.filter((service) => ["mix", "distill", "campfire-new", "campfire-mix"].includes(service.kind))
         .reduce((sum, service) => sum + service.used, 0),
   };

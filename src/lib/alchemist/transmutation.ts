@@ -399,7 +399,7 @@ function matchingAlteration(
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
   const selection = visit.transmutation;
-  if (!selection) return [];
+  if (!selection || !selection.choices.length) return [];
   const { source, sourceIndex } = selection;
   if (!source || sourceIndex == null) return [];
   const key = cardSnapshotKey(source);
@@ -417,7 +417,7 @@ export function canTransmuteCard(
   sourceIndex?: number,
   deck?: readonly BattleCard[],
 ): boolean {
-  if (!isTransmutableCard(card)) return false;
+  if (!choices.length || !isTransmutableCard(card)) return false;
   const key = cardSnapshotKey(card);
   let companionPresent: boolean | undefined;
   return choices.some((choice) => {

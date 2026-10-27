@@ -104,15 +104,20 @@ export function prepareCombatFeedback(
     };
     for (const reaction of reactions) {
       if (reaction.target !== target) continue;
-      reaction.entries = burst.entries.filter(
-        (entry) =>
+      const remaining: typeof burst.entries = [];
+      reaction.entries = [];
+      for (const entry of burst.entries) {
+        if (
           entry.kind === "damage" &&
           entry.impact !== false &&
           DAMAGE_TYPES.includes(entry.stat as DamageType) &&
           entry.reactionId !== undefined &&
-          reaction.reactionIds.includes(entry.reactionId),
-      );
-      burst.entries = burst.entries.filter((entry) => !reaction.entries.includes(entry));
+          reaction.reactionIds.includes(entry.reactionId)
+        )
+          reaction.entries.push(entry);
+        else remaining.push(entry);
+      }
+      burst.entries = remaining;
     }
     if (burst.entries.length) bursts.push(burst);
     let strongest: { amount: number; visual: NonNullable<ReturnType<typeof getCombatImpactVisual>> } | undefined;
