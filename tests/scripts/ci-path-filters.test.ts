@@ -282,6 +282,16 @@ describe("desktop CI artifact flow", () => {
 });
 
 describe("build failure visibility", () => {
+  it("retains nightly performance diagnostics with a valid fixed retention period", () => {
+    const upload = workflowJob("nightly", "performance-discovery").steps.find(
+      (step) => step.name === "Upload replay and diagnostics",
+    )!;
+    expect(upload.if).toBe("always()");
+    expect(upload.with?.["retention-days"]).toBe(7);
+    expect(upload.with?.path).toContain("reports/performance/");
+    expect(upload.with?.path).toContain("reports/compact/");
+  });
+
   it.each([
     ["ci", "build"],
     ["ci", "ship-gate"],

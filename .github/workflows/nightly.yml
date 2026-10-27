@@ -137,7 +137,7 @@ jobs:
             reports/performance/
             reports/current-run.*
             reports/compact/
-          retention-days: ${{ failure() && 7 || 1 }}
+          retention-days: 7
           if-no-files-found: ignore
 
   ship-gate-full:
