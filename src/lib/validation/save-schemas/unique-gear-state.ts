@@ -32,14 +32,16 @@ export const UniqueGearBattleStateSchema = z
     archeryEchoes: z
       .array(z.unknown())
       .transform((entries) => {
-        const parsed: Array<z.output<typeof echoCardSchema>> = [];
+        const parsed: Array<z.infer<typeof echoCardSchema>> = [];
         entries.forEach((entry, index) => {
           const result = echoCardSchema.safeParse(entry);
-          if (result.success) parsed.push(result.data);
-          else
-            recordNestedValidationWarnings([
-              { path: `uniqueGear.archeryEchoes[${index}]`, message: "malformed Archery echo was dropped" },
-            ]);
+          if (result.success) {
+            parsed.push(result.data);
+            return;
+          }
+          recordNestedValidationWarnings([
+            { path: `uniqueGear.archeryEchoes[${index}]`, message: "malformed Archery echo was dropped" },
+          ]);
         });
         return parsed;
       })

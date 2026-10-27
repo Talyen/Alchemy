@@ -19,34 +19,33 @@ export interface CorruptionTarget extends CardEffectAddress {
 
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const seen = new Set<string>();
-  return renderCardDescription(card.effects, getCardDescription(card)).magnitudes.flatMap(
-    ({ id, magnitude, value, lineIndex }) => {
-      const reference = magnitude.references[0]!;
-      if (magnitude.editable === false || seen.has(id)) return [];
-      // These are fixed rules even when their renderer spells out the quantity.
-      if (value === 1 && (magnitude.format === "cleanse" || magnitude.format === "turns")) return [];
-      seen.add(id);
-      const edits = magnitude.references.map(
-        (entry): NumericEffectEdit => ({
-          ...entry,
-          expectedValue: value * (entry.multiplier ?? 1),
-          multiplier: entry.multiplier ?? 1,
-        }),
-      );
-      return [
-        {
-          id,
-          lineIndex,
-          value,
-          effectIndex: reference.effectIndex,
-          ...(reference.effectPath ? { effectPath: reference.effectPath } : {}),
-          field: reference.field,
-          edits,
-          affectsCost: edits.some((edit) =>
-            ["self-damage", "lose-health", "lose-mana", "lose-max-mana"].includes(edit.kind),
-          ),
-        },
-      ];
-    },
-  );
+  const targets: CorruptionTarget[] = [];
+  for (const { id, magnitude, value, lineIndex } of renderCardDescription(card.effects, getCardDescription(card))
+    .magnitudes) {
+    const reference = magnitude.references[0]!;
+    if (magnitude.editable === false || seen.has(id)) continue;
+    // These are fixed rules even when their renderer spells out the quantity.
+    if (value === 1 && (magnitude.format === "cleanse" || magnitude.format === "turns")) continue;
+    seen.add(id);
+    const edits = magnitude.references.map(
+      (entry): NumericEffectEdit => ({
+        ...entry,
+        expectedValue: value * (entry.multiplier ?? 1),
+        multiplier: entry.multiplier ?? 1,
+      }),
+    );
+    targets.push({
+      id,
+      lineIndex,
+      value,
+      effectIndex: reference.effectIndex,
+      ...(reference.effectPath ? { effectPath: reference.effectPath } : {}),
+      field: reference.field,
+      edits,
+      affectsCost: edits.some((edit) =>
+        ["self-damage", "lose-health", "lose-mana", "lose-max-mana"].includes(edit.kind),
+      ),
+    });
+  }
+  return targets;
 }

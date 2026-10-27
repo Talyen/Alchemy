@@ -122,9 +122,11 @@ export function eligibleEncounterTraitIds<Category extends EncounterTraitCategor
   mode: EncounterMode,
   category: Category,
 ): Array<EncounterTraitIdFor<Category>> {
-  return Object.values(ENCOUNTER_TRAITS)
-    .filter((trait) => trait.category === category && trait.modes.includes(mode))
-    .map((trait) => trait.id as EncounterTraitIdFor<Category>);
+  const ids: Array<EncounterTraitIdFor<Category>> = [];
+  for (const trait of Object.values(ENCOUNTER_TRAITS)) {
+    if (trait.category === category && trait.modes.includes(mode)) ids.push(trait.id as EncounterTraitIdFor<Category>);
+  }
+  return ids;
 }
 
 function isEncounterTraitId(value: string): value is EncounterTraitId {

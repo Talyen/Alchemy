@@ -51,14 +51,16 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
 const MysteryChoicePersistSchema = z.object({
   label: z.string(),
   effects: z.array(z.unknown()).transform((effects) => {
-    const parsed: Array<z.output<typeof MysteryEffectSchema>> = [];
+    const parsed: Array<z.infer<typeof MysteryEffectSchema>> = [];
     effects.forEach((effect, index) => {
       const result = MysteryEffectSchema.safeParse(effect);
-      if (result.success) parsed.push(result.data);
-      else
-        recordNestedValidationWarnings([
-          { path: `mystery.effects[${index}]`, message: "malformed Mystery effect was dropped" },
-        ]);
+      if (result.success) {
+        parsed.push(result.data);
+        return;
+      }
+      recordNestedValidationWarnings([
+        { path: `mystery.effects[${index}]`, message: "malformed Mystery effect was dropped" },
+      ]);
     });
     return parsed;
   }),

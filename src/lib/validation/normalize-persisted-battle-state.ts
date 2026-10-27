@@ -196,7 +196,9 @@ function isSavedAbilityRoster(value: unknown): value is string[] {
   return (
     Array.isArray(value) &&
     value.length === 3 &&
-    new Set(value).size === 3 &&
+    value[0] !== value[1] &&
+    value[0] !== value[2] &&
+    value[1] !== value[2] &&
     value.every((id: unknown) => typeof id === "string" && Boolean(findEnemyAbilityCard(id)))
   );
 }

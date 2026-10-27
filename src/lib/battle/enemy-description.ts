@@ -35,7 +35,6 @@ function scaleEffect(effect: EnemyAbilityEffect, context: EnemyDescriptionContex
       const damage = (amount: number, damageType = effect.damageType) =>
         scaleEnemyAbilityDamage(context, { ...effect, amount, damageType }).amount;
       return {
-        ...effect,
         ...scaleEnemyAbilityDamage(context, effect),
         ...(effect.amountIfTargetFrozen !== undefined
           ? { amountIfTargetFrozen: damage(effect.amountIfTargetFrozen, effect.damageTypeIfTargetFrozen) }

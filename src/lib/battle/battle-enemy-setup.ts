@@ -99,23 +99,31 @@ function modifierAmount(modifiers: DifficultyModifier[], kind: DifficultyModifie
 
 export function initializeEnemyState(enemy: BestiaryEntry, battleRooms: number, modifiers: DifficultyModifier[]) {
   const roomMul = 1 + Math.max(0, battleRooms - 1) * ROOM_SCALING_INCREMENT;
-  const hasTrait = (id: string) => enemy.traits.some((trait) => trait.id === id);
+  let livingArmor = false;
+  let startingBlock = false;
+  let regenerates = false;
+  let shieldedArrival = false;
+  for (const trait of enemy.traits) {
+    if (trait.id === "living-armor") livingArmor = true;
+    else if (trait.id === "starting-block") startingBlock = true;
+    else if (trait.id === "regeneration") regenerates = true;
+    else if (trait.id === "shielded-arrival") shieldedArrival = true;
+  }
   const companion = modifiers.find((modifier) => modifier.kind === "start-companion");
-  const traitArmor = hasTrait("living-armor") ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul) : 0;
-  const traitBlock = hasTrait("starting-block") ? Math.round(ENEMY_STARTING_BLOCK * roomMul) : 0;
+  const traitArmor = livingArmor ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul) : 0;
+  const traitBlock = startingBlock ? Math.round(ENEMY_STARTING_BLOCK * roomMul) : 0;
   const regeneration = enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION;
   return {
     enemyMaxHealth: Math.round(
       scaleEnemyHealth(enemy, roomMul) * modifierAmount(modifiers, "enemy-health-multiplier", 1),
     ),
-    enemyRegeneration: hasTrait("regeneration") ? Math.round(regeneration * roomMul) : 0,
+    enemyRegeneration: regenerates ? Math.round(regeneration * roomMul) : 0,
     roomScalingMultiplier: roomMul,
     startingArmor: modifierAmount(modifiers, "enemy-starting-armor") + traitArmor,
     startBlock: modifierAmount(modifiers, "start-block"),
     manaBonus: modifierAmount(modifiers, "start-max-mana"),
     startCompanion: Boolean(companion),
     startCompanionId: companion?.companionId ?? "wolf",
-    startingEnemyBlock:
-      traitBlock + (hasTrait("shielded-arrival") ? LABYRINTH_MODIFIER_CONFIG.shieldedArrivalBlock : 0),
+    startingEnemyBlock: traitBlock + (shieldedArrival ? LABYRINTH_MODIFIER_CONFIG.shieldedArrivalBlock : 0),
   };
 }

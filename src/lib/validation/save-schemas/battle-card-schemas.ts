@@ -11,8 +11,11 @@ function parseSavedEffectList(values: unknown[]): {
   const parsed: Array<z.infer<typeof BattleCardEffectSchema>> = [];
   values.forEach((value, i) => {
     const result = BattleCardEffectSchema.safeParse(value);
-    if (result.success) parsed.push({ ...result.data });
-    else errors.push({ path: `effects[${i}]`, message: result.error.message });
+    if (!result.success) {
+      errors.push({ path: `effects[${i}]`, message: result.error.message });
+    } else {
+      parsed.push({ ...result.data });
+    }
   });
   return { values: parsed.length === values.length ? parsed : [], errors };
 }

@@ -307,17 +307,25 @@ export function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapsh
   );
   if (first.some((outcome) => outcome.health <= 0)) return true;
 
-  const keywords = getCardKeywords(card);
+  const talents = state.talentEffects;
+  const hasRepeatChance =
+    talents.burnCardPlayTwiceChance > 0 ||
+    talents.freezeCardPlayTwiceChance > 0 ||
+    talents.natureCardPlayTwiceChance > 0 ||
+    talents.poisonCardPlayTwiceChance > 0 ||
+    talents.stunCardPlayTwiceChance > 0 ||
+    talents.wishCardPlayTwiceChance > 0;
   const mayRepeat =
     state.flags.playNextCardTwice ||
-    keywords.some((keyword) => {
-      if (keyword === "burn") return state.talentEffects.burnCardPlayTwiceChance > 0;
-      if (keyword === "freeze") return state.talentEffects.freezeCardPlayTwiceChance > 0;
-      if (keyword === "nature") return state.talentEffects.natureCardPlayTwiceChance > 0;
-      if (keyword === "poison") return state.talentEffects.poisonCardPlayTwiceChance > 0;
-      if (keyword === "stun") return state.talentEffects.stunCardPlayTwiceChance > 0;
-      if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
-      return false;
-    });
+    (hasRepeatChance &&
+      getCardKeywords(card).some((keyword) => {
+        if (keyword === "burn") return state.talentEffects.burnCardPlayTwiceChance > 0;
+        if (keyword === "freeze") return state.talentEffects.freezeCardPlayTwiceChance > 0;
+        if (keyword === "nature") return state.talentEffects.natureCardPlayTwiceChance > 0;
+        if (keyword === "poison") return state.talentEffects.poisonCardPlayTwiceChance > 0;
+        if (keyword === "stun") return state.talentEffects.stunCardPlayTwiceChance > 0;
+        if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
+        return false;
+      }));
   return mayRepeat && selfCostOutcomes(card.effects, first, revivedHealth).some((outcome) => outcome.health <= 0);
 }

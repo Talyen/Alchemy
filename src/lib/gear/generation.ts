@@ -44,7 +44,8 @@ function generateGearOfferings({
   // alone exclude selected bases; the sampled order never needs a second mutation.
   const sampledBases = sampleItems(basePool, count, rng);
   const reservedBases = new Map<string, "ordinary" | "unique">();
-  const baseIds = new Set(basePool.map((base) => base.id));
+  const baseIds = new Set<string>();
+  for (const base of basePool) baseIds.add(base.id);
   const availableUniques = uniqueItemList.filter(
     (unique) => !ownedUniqueIds.has(unique.id) && baseIds.has(unique.baseItemId),
   );
@@ -63,17 +64,20 @@ function generateGearOfferings({
   };
 
   for (let index = 0; index < count; index += 1) {
-    const repeatableBases: typeof basePool = [];
     const unusedBases: typeof basePool = [];
     let repeatableCount = 0;
     for (const base of basePool) {
       const reservation = reservedBases.get(base.id);
       if (reservation === "unique") continue;
       repeatableCount++;
-      if (fillCount) repeatableBases.push(base);
       if (reservation === undefined) unusedBases.push(base);
     }
-    const eligibleBases = unusedBases.length > 0 ? unusedBases : repeatableBases;
+    const eligibleBases =
+      unusedBases.length > 0
+        ? unusedBases
+        : fillCount
+          ? basePool.filter((base) => reservedBases.get(base.id) !== "unique")
+          : [];
     if (eligibleBases.length === 0) break;
 
     const availability: LootAvailability = {

@@ -101,14 +101,16 @@ const PersistedBattleStateWireSchema = z.looseObject({
   pendingTurnStartEffects: z
     .array(z.unknown())
     .transform((entries) => {
-      const parsed: Array<z.output<typeof pendingTurnStartEffectSchema>> = [];
+      const parsed: Array<z.infer<typeof pendingTurnStartEffectSchema>> = [];
       entries.forEach((entry, index) => {
         const result = pendingTurnStartEffectSchema.safeParse(entry);
-        if (result.success) parsed.push(result.data);
-        else
-          recordNestedValidationWarnings([
-            { path: `pendingTurnStartEffects[${index}]`, message: "malformed scheduled effect was dropped" },
-          ]);
+        if (result.success) {
+          parsed.push(result.data);
+          return;
+        }
+        recordNestedValidationWarnings([
+          { path: `pendingTurnStartEffects[${index}]`, message: "malformed scheduled effect was dropped" },
+        ]);
       });
       return parsed;
     })
@@ -137,7 +139,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
   difficultyModifiers: z
     .array(z.unknown())
     .transform((modifiers) => {
-      const parsed: DifficultyModifier[] = [];
+      const parsed: Array<z.infer<typeof difficultyModifierSchema>> = [];
       modifiers.forEach((modifier) => {
         const result = difficultyModifierSchema.safeParse(modifier);
         if (result.success) parsed.push(result.data);
@@ -147,6 +149,8 @@ const PersistedBattleStateWireSchema = z.looseObject({
     .catch([]),
 });
 
+const BATTLE_CARD_PILES = ["deck", "hand", "pendingHandCards", "discard", "exhausted"] as const;
+
 // A battle block without any card piles is a fragment, not a fight: repair
 // corruption inside a battle, but never fabricate one from scattered fields
 // (an empty deck with a placeholder enemy could resume into an unplayable
@@ -154,7 +158,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
 function hasBattleCardPiles(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  return ["deck", "hand", "pendingHandCards", "discard", "exhausted"].some((key) => Array.isArray(record[key]));
+  return BATTLE_CARD_PILES.some((key) => Array.isArray(record[key]));
 }
 
 function hasKnownEnemy(value: unknown): boolean {

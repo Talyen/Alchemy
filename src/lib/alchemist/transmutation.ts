@@ -232,9 +232,10 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
         else sources.add(source);
       }
     });
-    return [...sources]
-      .filter((source) => source !== keyword && canConvertSource(card.effects, source))
-      .map((sourceKeyword) => ({
+    const variants: PendingVariant[] = [];
+    for (const sourceKeyword of sources) {
+      if (sourceKeyword === keyword || !canConvertSource(card.effects, sourceKeyword)) continue;
+      variants.push({
         sourceKeyword,
         build: () =>
           finishAlteration(
@@ -242,7 +243,9 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
             keyword,
             card.effects.map((effect) => convertEffect(effect, sourceKeyword, keyword)),
           ),
-      }));
+      });
+    }
+    return variants;
   }
   if (keyword === "archery") {
     const damage = visitBattleCardEffects(
@@ -285,8 +288,9 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
     const effects = [...card.effects];
     return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, { consume: true }) }];
   }
+  if (keyword !== "wish" && keyword !== "dodge" && keyword !== "companion") return [];
   if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES)) return [];
-  if (keyword !== "wish" && keyword !== "dodge" && (keyword !== "companion" || !hasCompanion())) return [];
+  if (keyword === "companion" && !hasCompanion()) return [];
   const effects = [...card.effects];
   if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
   else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
@@ -329,15 +333,21 @@ export function createTransmutationOffers(
   deck.forEach((source, sourceIndex) => {
     if (!isTransmutableCard(source)) return;
     // Roll against this card so unrelated cards cannot crowd out useful choices.
-    const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
-      group.flatMap((keyword) => {
+    const available: Array<{ keyword: KeywordId; alterations: PendingVariant[] }> = [];
+    const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) => {
+      const pool: typeof available = [];
+      for (const keyword of group) {
         const alterations = getPendingVariants(source, keyword, hasCompanion);
-        return alterations.length ? [{ keyword, alterations }] : [];
-      }),
-    );
-    const available = pools.flat();
+        if (!alterations.length) continue;
+        const offer = { keyword, alterations };
+        pool.push(offer);
+        available.push(offer);
+      }
+      return pool;
+    });
     const selected = prismatic ? [...available] : [];
-    const guaranteedOffer = prismatic ? undefined : available.find((offer) => offer.keyword === guaranteed);
+    const guaranteedOffer =
+      prismatic || guaranteed === undefined ? undefined : available.find((offer) => offer.keyword === guaranteed);
     if (!prismatic && guaranteedOffer) selected.push(guaranteedOffer);
     for (const pool of pools) {
       if (prismatic || pool.some((offer) => selected.includes(offer))) continue;
@@ -393,10 +403,12 @@ export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
   const { source, sourceIndex } = selection;
   if (!source || sourceIndex == null) return [];
   const key = cardSnapshotKey(source);
-  return selection.choices.flatMap((choice) => {
+  const offers: BattleCard[] = [];
+  for (const choice of selection.choices) {
     const alteration = matchingAlteration(choice, key, sourceIndex, source.id);
-    return alteration ? [alteration.result] : [];
-  });
+    if (alteration) offers.push(alteration.result);
+  }
+  return offers;
 }
 
 export function canTransmuteCard(
@@ -407,13 +419,14 @@ export function canTransmuteCard(
 ): boolean {
   if (!isTransmutableCard(card)) return false;
   const key = cardSnapshotKey(card);
+  let companionPresent: boolean | undefined;
   return choices.some((choice) => {
     const alteration = matchingAlteration(choice, key, sourceIndex, card.id);
     return (
       !!alteration &&
       // The saved alteration already proves compatibility with this exact
       // source. Only Companion additions depend on the rest of the live deck.
-      (!deck || choice.keyword !== "companion" || deck.some(isCompanionSummonCard))
+      (!deck || choice.keyword !== "companion" || (companionPresent ??= deck.some(isCompanionSummonCard)))
     );
   });
 }
