@@ -213,9 +213,10 @@ through `awardMaterialsDuringRun` for an active run or `addMaterialsToStockpile`
 otherwise. Preview still uses `computeSalvageYield`; confirm pays exactly that
 yield. Repeating the request cannot pay twice.
 
-Crafting and dev spawning accept profile-lifetime randomness, defaulting to
-`Math.random`; neither consumes a run RNG stream. The headless player injects
-its career crafting source through the same `applyCurrencyToGear` command.
+Crafting and dev spawning default to the session's run `rewards` RNG stream;
+draws commit or roll back with the action. The stream is saved with an active
+run, but inactive runs have no run snapshot. The headless player can inject its
+separate career crafting source through the same `applyCurrencyToGear` command.
 Rewards and shops grant instances and permanent Trinkets through
 `deck-mutations.ts` within their existing commands, retaining discovery and run
 recap accounting. Acquisition follows the [Auto Equip policy](#data-model); it never creates a Boon.

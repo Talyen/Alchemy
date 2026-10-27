@@ -130,7 +130,7 @@ export const CONTEXT_TASKS = {
   agents: {
     matches: /^(?:AGENTS\.md$|\.agents\/|scripts\/(?:agent-|lib\/agent\/)|tests\/scripts\/agent-)/,
     docs: [owner("Docs/AGENT_DISCOVERY.md"), owner("scripts/README.md", "Agent owner lookup")],
-    entrypoints: ["scripts/agent-context.mjs", "scripts/agent-diff.mjs"],
+    entrypoints: ["scripts/agent-worktree.mjs", "scripts/agent-context.mjs", "scripts/agent-diff.mjs"],
   },
   playthrough: {
     matches:
