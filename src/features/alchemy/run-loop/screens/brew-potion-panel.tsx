@@ -4,7 +4,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
 import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react";
-import { FlaskConical, Merge, MoveRight, Pipette, Plus, X } from "lucide-react";
+import { FlaskConical, Merge, MoveRight, Pipette, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
@@ -429,26 +429,6 @@ export function BrewPotionPanel({
                   >
                     <FlaskConical aria-hidden="true" className="h-10 w-10" />
                   </div>
-                )}
-                {kind === "combine" && sourceCards[selected[slot] ?? -1] && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute -top-2 -right-2 z-10 h-7 w-7 rounded-full"
-                    aria-label={i18n.text("brewing.clear-slot", "Remove Potion from slot {{slot}}", { slot: slot + 1 })}
-                    disabled={submitted || isProgressSavePending()}
-                    onClick={() => {
-                      setSelected((previous) => {
-                        const next = [...previous];
-                        next[slot] = -1;
-                        return next;
-                      });
-                      setPickingSlot(null);
-                      focusAfterChoice.current = slot;
-                    }}
-                  >
-                    <X aria-hidden="true" className="h-4 w-4" />
-                  </Button>
                 )}
               </div>
             </div>
