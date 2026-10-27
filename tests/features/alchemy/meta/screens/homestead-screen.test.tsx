@@ -2,7 +2,14 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomesteadScreen } from "@/features/alchemy/meta/screens/homestead-screen";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { cardLibrary, defaultCompanionBondLevels, keywordDefinitions } from "@/lib/game-data";
+import {
+  cardLibrary,
+  defaultCompanionBondLevels,
+  getEffectiveCardDescriptionLines,
+  keywordDefinitions,
+} from "@/lib/game-data";
+import { getCompanionId, getCompanionNode } from "@/features/alchemy/meta/screens/homestead/node-model";
+import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { playUISound } from "@/lib/audio";
@@ -238,7 +245,7 @@ describe("HomesteadScreen", () => {
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
   });
 
-  it("shows only unbonded costs and bonds a Companion on the second page without leaving it", async () => {
+  it("previews the first Bond's muted effects and bonds a Companion on the second page without leaving it", async () => {
     render(<HomesteadScreen {...defaultProps} discoveredCardIds={cardLibrary.map((card) => card.id)} />);
     fireEvent.click(screen.getByRole("button", { name: "Companions" }));
     await screen.findByRole("img", { name: "Wolf" });
@@ -246,10 +253,41 @@ describe("HomesteadScreen", () => {
     const panel = await inspect("Mana Moth");
     expect(within(panel).getByRole("img", { name: "Bond 0 of 3" })).toBeTruthy();
     expect(within(panel).getByRole("group", { name: /^Bond cost:/ })).toBeTruthy();
+    expect(panel.textContent).toContain("Gain 1 Mana each turn, with a 25% chance to grant 1 more, allowing overflow");
+    const mana = within(panel).getByText("Mana");
+    expect(mana.classList.contains(keywordDefinitions.mana.colorClass)).toBe(true);
+    expect(mana.classList.contains("opacity-80")).toBe(true);
+    expect(mana.classList.contains("saturate-[0.6]")).toBe(true);
     fireEvent.click(nodeTile("Mana Moth"));
     expect(defaultProps.onBondCompanion).toHaveBeenCalledExactlyOnceWith("mana-moth");
     expect(screen.queryByRole("img", { name: "Wolf" })).toBeNull();
   });
+
+  it.each(cardLibrary.filter((card) => getCompanionId(card)))(
+    "keeps $title first-Bond previews, owned tiers, costs and discovery locks aligned",
+    (card) => {
+      const id = getCompanionId(card)!;
+      for (let level = 0; level <= COMPANION_MAX_TIER; level++) {
+        const bonds = { ...defaultCompanionBondLevels, [id]: level };
+        const original = { ...bonds };
+        const node = getCompanionNode(card, true, bonds, defaultProps.materialInventory);
+        const displayedTier = level === 0 ? 1 : level;
+        expect(node.bonuses).toEqual(
+          getEffectiveCardDescriptionLines(card, { companionBondLevels: { ...bonds, [id]: displayedTier } }),
+        );
+        expect(node.level).toBe(level);
+        expect(node.cost).toEqual(COMPANION_BOND_TIERS[level] ?? null);
+        expect(node.affordable).toBe(level < COMPANION_MAX_TIER);
+        expect(getCompanionNode(card, true, bonds, emptyInventory()).affordable).toBe(false);
+        const hidden = getCompanionNode(card, false, bonds, defaultProps.materialInventory);
+        expect(hidden.title).toBe("Undiscovered companion");
+        expect(hidden.bonuses).toEqual([]);
+        expect(hidden.cost).toBeNull();
+        expect(hidden.affordable).toBe(false);
+        expect(bonds).toEqual(original);
+      }
+    },
+  );
 
   it("shows Hide alone for Hunter's Lodge and Wishing Well's Gold benefit with matching artwork", async () => {
     render(
