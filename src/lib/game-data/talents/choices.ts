@@ -12,10 +12,13 @@ export function chunkIntoRows<T>(items: T[], sizes: readonly number[] | number):
   if ((typeof sizes === "number" ? [sizes] : sizes).some((size) => !Number.isSafeInteger(size) || size <= 0)) {
     throw new RangeError("Row sizes must be positive safe integers");
   }
-  const capacities = typeof sizes === "number" ? Array<number>(Math.ceil(items.length / sizes)).fill(sizes) : sizes;
   const rows: T[][] = [];
+  if (typeof sizes === "number") {
+    for (let index = 0; index < items.length; index += sizes) rows.push(items.slice(index, index + sizes));
+    return rows;
+  }
   let index = 0;
-  for (const size of capacities) {
+  for (const size of sizes) {
     rows.push(items.slice(index, index + size));
     index += size;
   }

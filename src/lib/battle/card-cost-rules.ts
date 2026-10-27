@@ -66,9 +66,9 @@ function getEncounterCostDiscount(
   const fleeting = card.consume && hasEncounterBenefit(state, "fleeting");
   const quickdraw =
     card.cost > 0 &&
-    cardHasKeyword(card, "archery") &&
     hasEncounterBenefit(state, "quickdraw") &&
-    !readCombatFlag(state, "encounterArcheryUsed");
+    !readCombatFlag(state, "encounterArcheryUsed") &&
+    cardHasKeyword(card, "archery");
   const discount =
     (fleeting ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0) +
     (quickdraw ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0);

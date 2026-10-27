@@ -15,10 +15,9 @@ export function pruneUnknownCompanions(companions: Record<CompanionId, number>):
   const removed = Object.keys(companions).filter((key) => !Object.hasOwn(defaultCompanionBondLevels, key));
   if (removed.length === 0) return companions;
   logError("Removed companions missing from catalog", "other", { removed });
-  return Object.fromEntries(Object.entries(companions).filter(([key]) => !removed.includes(key))) as Record<
-    CompanionId,
-    number
-  >;
+  return Object.fromEntries(
+    Object.entries(companions).filter(([key]) => Object.hasOwn(defaultCompanionBondLevels, key)),
+  ) as Record<CompanionId, number>;
 }
 
 function recomputeEffects(profile: PermanentProgressFields): void {
@@ -82,9 +81,10 @@ export function resetHomestead(profile: Draft<PermanentProgressFields>): boolean
   let refund = emptyInventory();
   for (const [items, levels] of groups) {
     for (const item of items) {
-      const tiers = item.tiers.slice(0, Math.max(0, levels[item.id] ?? 0));
-      purchased ||= tiers.length > 0;
-      for (const tier of tiers) refund = addInventory(refund, tier.cost);
+      const level = Math.max(0, levels[item.id] ?? 0);
+      const count = Math.min(item.tiers.length, Math.trunc(level) || 0);
+      purchased ||= count > 0;
+      for (let index = 0; index < count; index++) refund = addInventory(refund, item.tiers[index]!.cost);
     }
   }
   if (!purchased) return false;

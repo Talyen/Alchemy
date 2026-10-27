@@ -33,13 +33,14 @@ export function getReactionBonus(...amounts: readonly number[]): number {
   const divisor = PERCENT_DENOMINATOR / ELEMENTAL_REACTION_DAMAGE_PERCENT;
   let whole = 0;
   let remainder = 0;
+  let hasPositive = false;
   for (const amount of amounts) {
-    whole += (amount - (amount % divisor)) / divisor;
-    remainder += amount % divisor;
+    const portion = amount % divisor;
+    whole += (amount - portion) / divisor;
+    remainder += portion;
+    if (amount > 0) hasPositive = true;
   }
-  return amounts.some((amount) => amount > 0)
-    ? Math.max(ELEMENTAL_REACTION_MIN_DAMAGE, whole + Math.round(remainder / divisor))
-    : 0;
+  return hasPositive ? Math.max(ELEMENTAL_REACTION_MIN_DAMAGE, whole + Math.round(remainder / divisor)) : 0;
 }
 
 export function prepareCcReactions(state: BattleState, stat: "freeze" | "stun", healthDamage: number): BattleState {

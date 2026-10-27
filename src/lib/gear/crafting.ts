@@ -146,9 +146,10 @@ function prepareCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInsta
       };
     case "smiths-whetstone": {
       if (!item.affixes.length) return "This item has no affixes to upgrade.";
-      const indexes = item.affixes.flatMap((affix, index) =>
-        affix.value < affixMaxValue(affix, rarity ?? "basic") ? [index] : [],
-      );
+      const indexes: number[] = [];
+      item.affixes.forEach((affix, index) => {
+        if (affix.value < affixMaxValue(affix, rarity ?? "basic")) indexes.push(index);
+      });
       if (!indexes.length) return "All affixes are already at maximum.";
       return (rng) => {
         const index = pickRandom(indexes, rng)!;

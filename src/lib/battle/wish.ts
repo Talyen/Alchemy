@@ -126,13 +126,12 @@ export function applyEmergencyWishForEmptyDraw(state: BattleState, amount: numbe
 }
 
 export function chooseWishCard(state: BattleState, cardId: string) {
-  const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
-
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
   if (!chosenCard) {
     return state;
   }
 
+  const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
   const declinedCards = (state.wishOptions ?? []).filter((card) => card.id !== chosenCard.id);
   let nextState = addCardToHandOrQueue({ ...state, wishOptions: nextWishOptions, wishQueue }, chosenCard);
   const acquiredIds = [chosenCard.id];

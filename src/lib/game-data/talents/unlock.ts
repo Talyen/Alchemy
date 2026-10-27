@@ -23,17 +23,18 @@ export function hasUnspentTalentPoint(talentXP: TalentXP, unlockedTalents: Unloc
   });
 }
 
-export function canUnlockTalent(
+function canUnlockNormalizedTalent(
   keywordId: KeywordId,
   talentId: string,
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
+  normalized = false,
 ): UnlockTalentResult {
   const talent = getTalentById(talentId);
   if (!talent) return { ok: false, reason: "unknown-talent" };
   if (talent.keywordId !== keywordId) return { ok: false, reason: "keyword-mismatch" };
 
-  const unlockedIds = normalizeUnlockedTalents(unlockedTalents)[keywordId] ?? [];
+  const unlockedIds = (normalized ? unlockedTalents : normalizeUnlockedTalents(unlockedTalents))[keywordId] ?? [];
   if (unlockedIds.includes(talentId)) return { ok: false, reason: "already-unlocked" };
 
   const points = Math.min(computeTalentPoints(talentXP[keywordId] ?? 0), countImplementedTalents(keywordId));
@@ -46,6 +47,15 @@ export function canUnlockTalent(
   return { ok: true };
 }
 
+export function canUnlockTalent(
+  keywordId: KeywordId,
+  talentId: string,
+  talentXP: TalentXP,
+  unlockedTalents: UnlockedTalents,
+): UnlockTalentResult {
+  return canUnlockNormalizedTalent(keywordId, talentId, talentXP, unlockedTalents);
+}
+
 export function tryUnlockTalent(
   keywordId: KeywordId,
   talentId: string,
@@ -53,7 +63,7 @@ export function tryUnlockTalent(
   unlockedTalents: UnlockedTalents,
 ): { unlockedTalents: UnlockedTalents } | { unlockedTalents: null; reason: UnlockTalentFailureReason } {
   const normalized = normalizeUnlockedTalents(unlockedTalents);
-  const result = canUnlockTalent(keywordId, talentId, talentXP, normalized);
+  const result = canUnlockNormalizedTalent(keywordId, talentId, talentXP, normalized, true);
   if (!result.ok) return { unlockedTalents: null, reason: result.reason };
 
   return {

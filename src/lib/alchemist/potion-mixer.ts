@@ -25,7 +25,6 @@ function potionParts(card: BattleCard, effects = card.effects) {
 }
 
 function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | null {
-  const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
   // Folding must represent both executions. Costs, durations and derived
   // magnitudes are deliberately unchanged by potency, so keep those packets.
   const sameCard =
@@ -44,6 +43,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
     [cardA, cardB].some((card) => card.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success))
   )
     return null;
+  const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
   const parts = combinedEffects ? [potionParts(cardA, combinedEffects)] : [potionParts(cardA), potionParts(cardB)];
   if (combinedEffects) {
     const part = parts[0]!;
@@ -97,8 +97,12 @@ function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixe
   if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
     throw new Error("Invalid potion indices for mixing");
   }
-  const [first, second] = indexA < indexB ? [indexA, indexB] : [indexB, indexA];
-  return [...deck.slice(0, first), ...deck.slice(first + 1, second), ...deck.slice(second + 1), mixed];
+  const next: BattleCard[] = [];
+  for (let index = 0; index < deck.length; index++) {
+    if (index !== indexA && index !== indexB) next.push(deck[index]!);
+  }
+  next.push(mixed);
+  return next;
 }
 
 /** Prepare the complete replacement before either visit spends its service. */

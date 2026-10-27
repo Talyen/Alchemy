@@ -28,9 +28,9 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
     playTarget ??= effectTarget(effect);
     if (effect.kind === "damage") {
       if (effect.damageTypeIfTargetFrozen) damageTypes.add(effect.damageTypeIfTargetFrozen);
-      for (const type of effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType]) {
-        damageTypes.add(type);
-      }
+      if (effect.damageTypePool?.length) {
+        for (const type of effect.damageTypePool) damageTypes.add(type);
+      } else damageTypes.add(effect.damageType);
     } else if (effect.kind === "cleanse-player-status-to-damage") {
       damageTypes.add(effect.damageType);
     } else if (effect.kind === "random-damage") {

@@ -22,6 +22,7 @@ it("keeps overflow talents locked until the displayed fourth row is complete", (
     description: "",
   }));
   vi.spyOn(pools, "getTalentsForKeyword").mockReturnValue(talents);
+  vi.spyOn(pools.talentPoolByKeyword, "get").mockReturnValue(talents);
   const purchased = talents.slice(0, 9).map(({ id }) => id);
   expect(getTalentRows("physical").map((row) => row.length)).toEqual([1, 2, 3, 4, 2]);
   expect(getAllocatableTalentChoices("physical", purchased)).toEqual([talents[9]]);
@@ -35,6 +36,7 @@ it("offers the first incomplete row in order for every unlocked subset", () => {
     description: "",
   }));
   vi.spyOn(pools, "getTalentsForKeyword").mockReturnValue(talents);
+  vi.spyOn(pools.talentPoolByKeyword, "get").mockReturnValue(talents);
   const rows = chunkIntoRows(talents, [1, 2, 3, 4]);
   for (let mask = 0; mask < 1 << talents.length; mask++) {
     const unlocked = talents.filter((_, index) => mask & (1 << index)).map((talent) => talent.id);

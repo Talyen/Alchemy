@@ -309,7 +309,11 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
 
 function normalizeWishChoices(state: BattleSnapshot) {
   const wishOptions = state.wishOptions ? filterLiveCards(state.wishOptions) : null;
-  const wishQueue = state.wishQueue.map(filterLiveCards).filter((options) => options.length > 0);
+  const wishQueue: BattleCard[][] = [];
+  for (const choices of state.wishQueue) {
+    const options = filterLiveCards(choices);
+    if (options.length > 0) wishQueue.push(options);
+  }
   if (wishOptions?.length) return { wishOptions, wishQueue };
   const [nextWishOptions = null, ...remainingQueue] = wishQueue;
   return { wishOptions: nextWishOptions, wishQueue: remainingQueue };

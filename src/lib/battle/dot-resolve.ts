@@ -178,9 +178,10 @@ export function detonateEnemyStatuses(
   let reported = false;
   const reportDamage = () => {
     reported = true;
-    for (const [index, pulse] of pulses.entries()) {
+    let earlierDamage = 0;
+    for (const pulse of pulses) {
       if (pulse.finalDamage > 0) {
-        const healthLost = pulseHealthDamage(pulses, index, previousHealth);
+        const healthLost = Math.min(pulse.finalDamage, Math.max(0, previousHealth - earlierDamage));
         mergeCombatText(combatTexts, {
           target: "enemy",
           kind: "damage",
@@ -189,6 +190,7 @@ export function detonateEnemyStatuses(
           ...(healthLost !== pulse.finalDamage ? { healthLost } : {}),
         });
       }
+      earlierDamage += pulse.finalDamage;
     }
   };
   const result = applyEnemyDotDamage(state, pulses, combatTexts, (nextState) => {

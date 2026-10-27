@@ -17,13 +17,13 @@ export function getTrinketEffectValue<K extends keyof TrinketManifest>(
   trinketIds: readonly string[],
   key: K,
 ): TrinketManifest[K] {
-  let value = defaultTrinketEffects[key];
-  for (const id of trinketIds) {
+  for (let index = trinketIds.length - 1; index >= 0; index--) {
+    const id = trinketIds[index]!;
     if (!isTrinketId(id)) continue;
     const candidate = trinketById[id].effects[key];
-    if (candidate !== undefined) value = candidate;
+    if (candidate !== undefined) return candidate;
   }
-  return value;
+  return defaultTrinketEffects[key];
 }
 
 export function combineTrinketEffectIds(runBoons: readonly string[], equippedTrinketId: string | null): string[] {

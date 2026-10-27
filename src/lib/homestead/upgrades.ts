@@ -2,12 +2,20 @@ import type { MaterialInventory } from "./types";
 import type { TieredItem } from "./tiers";
 import { canAfford, subtractInventory } from "./inventory";
 
-export function getNextTierCost(
+function readNextTierCost(
   item: TieredItem<string, { cost: MaterialInventory }> | undefined,
   currentLevel: number,
 ): MaterialInventory | null {
   if (!item || currentLevel < 0 || currentLevel >= item.tiers.length) return null;
   const cost = item.tiers[currentLevel]?.cost;
+  return cost ?? null;
+}
+
+export function getNextTierCost(
+  item: TieredItem<string, { cost: MaterialInventory }> | undefined,
+  currentLevel: number,
+): MaterialInventory | null {
+  const cost = readNextTierCost(item, currentLevel);
   return cost ? { ...cost } : null;
 }
 
@@ -16,7 +24,7 @@ export function canUpgradeTierItem(
   currentLevel: number,
   inventory: MaterialInventory,
 ): boolean {
-  const cost = getNextTierCost(item, currentLevel);
+  const cost = readNextTierCost(item, currentLevel);
   return cost !== null && canAfford(inventory, cost);
 }
 
@@ -25,7 +33,7 @@ export function tryUpgradeTierItem(
   currentLevel: number,
   inventory: MaterialInventory,
 ): { ok: boolean; inventory: MaterialInventory; nextLevel: number } {
-  const cost = getNextTierCost(item, currentLevel);
+  const cost = readNextTierCost(item, currentLevel);
   if (!cost || !canAfford(inventory, cost)) {
     return { ok: false, inventory, nextLevel: currentLevel };
   }

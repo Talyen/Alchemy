@@ -4,6 +4,7 @@ import { gearDefinitionId, gearDefinitions } from "./definitions";
 import type { GearInstance } from "./types";
 import { uniqueItemList } from "./unique-catalog";
 
+const NO_OWNED_UNIQUES: ReadonlySet<string> = new Set();
 const ALL_BASE_ITEM_IDS = gearBaseItemList.map((base) => base.id);
 const ALL_BASE_ITEM_ID_SET = new Set(ALL_BASE_ITEM_IDS);
 
@@ -21,7 +22,7 @@ export function getOwnedUniqueDefinitionIds(inventories?: Record<string, GearIns
 }
 
 export function getGearLootAvailability(
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
+  ownedUniqueIds: ReadonlySet<string> = NO_OWNED_UNIQUES,
   baseItemIds: readonly string[] = ALL_BASE_ITEM_IDS,
 ): LootAvailability {
   const allowedBases = baseItemIds === ALL_BASE_ITEM_IDS ? ALL_BASE_ITEM_ID_SET : null;
@@ -42,7 +43,7 @@ export function getGearLootAvailability(
  * logic cannot drift between screens.
  */
 export function getRewardLootAvailability(
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
+  ownedUniqueIds: ReadonlySet<string> = NO_OWNED_UNIQUES,
   pools: {
     baseItemIds?: readonly string[];
     cards?: boolean;

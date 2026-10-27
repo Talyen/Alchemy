@@ -16,6 +16,8 @@ export {
 } from "./instances";
 export { getGearLootAvailability, getOwnedUniqueDefinitionIds, getRewardLootAvailability } from "./loot-availability";
 
+const NO_OWNED_UNIQUES: ReadonlySet<string> = new Set();
+
 interface GenerateGearOfferingsOptions {
   count: number;
   rng: () => number;
@@ -30,7 +32,7 @@ function generateGearOfferings({
   count,
   rng,
   rollTier,
-  ownedUniqueIds = new Set(),
+  ownedUniqueIds = NO_OWNED_UNIQUES,
   fillCount = false,
   baseItemIds,
   createId = createInstanceId,
@@ -109,7 +111,7 @@ export function generateLootGearChoices(
   count: number,
   rng: () => number,
   weights: LootWeights,
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
+  ownedUniqueIds: ReadonlySet<string> = NO_OWNED_UNIQUES,
   baseItemIds?: readonly string[],
   fillCount = false,
   createId: () => string = createInstanceId,
@@ -129,7 +131,7 @@ export function generateGearRewardChoicesForRarity(
   count: number,
   rarity: GearRarity,
   rng: () => number,
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
+  ownedUniqueIds: ReadonlySet<string> = NO_OWNED_UNIQUES,
   baseItemIds?: readonly string[],
   fillCount = false,
   createId: () => string = createInstanceId,

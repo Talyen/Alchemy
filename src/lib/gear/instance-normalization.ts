@@ -20,13 +20,15 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
   }
 
   const seen = new Set<string>();
-  const affixes = normalizeAffixRolls(Array.isArray(raw.affixes) ? raw.affixes : undefined, definition.rarity)
-    .filter((roll) => {
-      if (seen.has(roll.id) || gearAffixCatalog[roll.id].uniqueOnly) return false;
-      seen.add(roll.id);
-      return true;
-    })
-    .slice(0, GEAR_AFFIX_COUNT[definition.rarity].max);
+  const affixes = normalizeAffixRolls(Array.isArray(raw.affixes) ? raw.affixes : undefined, definition.rarity);
+  let kept = 0;
+  for (const roll of affixes) {
+    if (seen.has(roll.id) || gearAffixCatalog[roll.id].uniqueOnly) continue;
+    seen.add(roll.id);
+    affixes[kept++] = roll;
+    if (kept === GEAR_AFFIX_COUNT[definition.rarity].max) break;
+  }
+  affixes.length = kept;
   return {
     instanceId,
     definitionId,
