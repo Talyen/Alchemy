@@ -20,7 +20,7 @@ import { appendUniqueMany } from "@/lib/utils";
 export function upgradeWishCard(card: BattleCard): BattleCard {
   // Widen upper bounds before raising lower bounds: intermediate cards must
   // remain valid even when an authored random range starts with equal bounds.
-  const targets = getEditableCorruptionTargets(card).toSorted(
+  const targets = getEditableCorruptionTargets(card).sort(
     (a, b) => Number(b.field === "maxAmount") - Number(a.field === "maxAmount"),
   );
   return targets.reduce((next, target) => {

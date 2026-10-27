@@ -18,6 +18,7 @@ export interface HandDrawSequenceDeps {
 export type DrawPresentationReveal = () => void;
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
+  if (oldHand.length === 0) return [...newHand];
   const oldUidSet = new Set<number>();
   let oldUndefinedRemaining = 0;
   for (const card of oldHand) {

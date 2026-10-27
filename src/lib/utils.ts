@@ -53,7 +53,10 @@ export function isValidDeckIndex(index: number, deckLength: number): boolean {
 export function appendUnique<T>(items: T[], item: T): T[];
 export function appendUnique<T>(items: readonly T[], item: T): readonly T[];
 export function appendUnique<T>(items: readonly T[], item: T): readonly T[] {
-  return appendUniqueMany(items, [item]);
+  if (items.includes(item)) return items;
+  const unique = new Set(items);
+  unique.add(item);
+  return [...unique];
 }
 
 let fallbackInstanceCounter = 0;

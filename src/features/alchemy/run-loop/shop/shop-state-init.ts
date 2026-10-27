@@ -35,7 +35,7 @@ import {
 } from "@/lib/gear";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { isLootEligible, resolveLootWeights, type LootProgress } from "@/lib/loot";
-import { sampleItemsExcluding } from "@/lib/rng";
+import { sampleItems, sampleItemsExcluding } from "@/lib/rng";
 import { createInstanceId } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
@@ -56,8 +56,6 @@ export function resampleCardShopOfferings(
   return [...novel, ...selectRewardCards(deck, pool, count - novel.length, novel, rng)];
 }
 
-const NO_CURRENT_TRINKETS: ReadonlySet<string> = new Set();
-
 // Initial visits sample unconditionally: shop rooms only generate once their
 // loot is eligible, while refreshes re-check depth in case it changed.
 function sampleUnownedTrinkets(
@@ -67,8 +65,9 @@ function sampleUnownedTrinkets(
 ): TrinketEntry[] {
   const owned = ownedIds.length ? new Set(ownedIds) : undefined;
   const available = owned ? trinketLibrary.filter((entry) => !owned.has(entry.id)) : trinketLibrary;
-  const current = currentIds.length ? new Set(currentIds) : NO_CURRENT_TRINKETS;
-  const novel = sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, current, (entry) => entry.id);
+  const novel = currentIds.length
+    ? sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, new Set(currentIds), (entry) => entry.id)
+    : sampleItems(available, TRINKET_SHOP_OFFERED, rng);
   if (novel.length >= TRINKET_SHOP_OFFERED) return novel;
   // Too few unseen offerings: top up from the same pool, keeping only the
   // already-sampled novel picks excluded (current shelf items may return).

@@ -292,6 +292,10 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
   }
   const unambiguousUid = (uid: number | null) => (uid !== null && counts.get(uid) === 1 ? uid : null);
   const overflow = repaired.hand.slice(MAX_HAND_SIZE);
+  const returningFlightUids = new Set<number>();
+  for (const uid of state.uniqueGear.returningFlightUids) {
+    if (unambiguousUid(uid) !== null) returningFlightUids.add(uid);
+  }
   return {
     deck: repaired.deck,
     discard: repaired.discard,
@@ -299,9 +303,7 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
     uniqueGear: {
       ...state.uniqueGear,
       lastArcheryUid: unambiguousUid(state.uniqueGear.lastArcheryUid),
-      returningFlightUids: [...new Set(state.uniqueGear.returningFlightUids)].filter(
-        (uid) => unambiguousUid(uid) !== null,
-      ),
+      returningFlightUids: [...returningFlightUids],
     },
     cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
     nextCardUid,

@@ -64,10 +64,10 @@ export function getEnemyTraitDamageMultiplier(state: Pick<BattleState, "currentE
       if (traits.has(rule.traitId))
         resolved.set(rule.damageType, (resolved.get(rule.damageType) ?? 1) * rule.multiplier);
     }
-    const wardedTypes = new Set<string>();
+    let wardedTypes: Set<string> | undefined;
     for (const rule of LABYRINTH_HALF_DAMAGE_WARDS) {
-      if (!traits.has(rule.traitId) || wardedTypes.has(rule.damageType)) continue;
-      wardedTypes.add(rule.damageType);
+      if (!traits.has(rule.traitId) || wardedTypes?.has(rule.damageType)) continue;
+      (wardedTypes ??= new Set()).add(rule.damageType);
       resolved.set(rule.damageType, (resolved.get(rule.damageType) ?? 1) * LABYRINTH_MODIFIER_CONFIG.half);
     }
     multipliers = resolved;

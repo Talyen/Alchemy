@@ -43,7 +43,9 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
     [cardA, cardB].some((card) => card.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success))
   )
     return null;
-  const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
+  const tagSet = new Set(cardA.tags);
+  for (const tag of cardB.tags ?? []) tagSet.add(tag);
+  const tags = [...tagSet];
   const parts = combinedEffects ? [potionParts(cardA, combinedEffects)] : [potionParts(cardA), potionParts(cardB)];
   if (combinedEffects) {
     const part = parts[0]!;

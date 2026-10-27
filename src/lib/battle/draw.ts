@@ -56,10 +56,10 @@ export function refillEmptyDrawPile(state: BattleState): BattleState {
 
 function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
   const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
-  return {
-    hand: [...hand, ...(slots >= queued.length ? queued : queued.slice(0, slots))],
-    pendingHandCards: queued.slice(slots),
-  };
+  const nextHand = [...hand];
+  const delivered = Math.min(slots, queued.length);
+  for (let index = 0; index < delivered; index++) nextHand.push(queued[index]!);
+  return { hand: nextHand, pendingHandCards: queued.slice(slots) };
 }
 
 export function deliverPendingHandCards(state: BattleState): BattleState {
@@ -69,11 +69,14 @@ export function deliverPendingHandCards(state: BattleState): BattleState {
 
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
   const received = { ...card, uid: state.nextCardUid };
-  return {
-    ...state,
-    ...distributeHandCards(state.hand, [...state.pendingHandCards, received]),
-    nextCardUid: state.nextCardUid + 1,
-  };
+  const slots = Math.max(0, MAX_HAND_SIZE - state.hand.length);
+  const hand = [...state.hand];
+  const pendingHandCards = state.pendingHandCards.slice(slots);
+  const delivered = Math.min(slots, state.pendingHandCards.length);
+  for (let index = 0; index < delivered; index++) hand.push(state.pendingHandCards[index]!);
+  if (slots > state.pendingHandCards.length) hand.push(received);
+  else pendingHandCards.push(received);
+  return { ...state, hand, pendingHandCards, nextCardUid: state.nextCardUid + 1 };
 }
 
 export function drawCards(
@@ -109,7 +112,8 @@ export function drawCards(
     uid += 1;
   }
 
-  const refilled = amount > 0 ? refillDeck(nextDeck, nextDiscard, rng) : null;
+  const refilled =
+    amount > 0 && nextDeck.length === 0 && nextDiscard.length > 0 ? refillDeck(nextDeck, nextDiscard, rng) : null;
   return {
     deck: refilled?.deck ?? nextDeck,
     discard: refilled?.discard ?? nextDiscard,

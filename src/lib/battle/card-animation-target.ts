@@ -15,7 +15,12 @@ function isCost(effect: BattleCardEffect): boolean {
   );
 }
 
+// Effect trees are immutable; the projection stays private and follows their lifetime.
+const costFreeEffects = new WeakMap<readonly BattleCardEffect[], BattleCardEffect[]>();
+
 function withoutCosts(effects: readonly BattleCardEffect[]): BattleCardEffect[] {
+  const cached = costFreeEffects.get(effects);
+  if (cached) return cached;
   const result: BattleCardEffect[] = [];
   for (const effect of effects) {
     if (isCost(effect)) continue;
@@ -30,6 +35,7 @@ function withoutCosts(effects: readonly BattleCardEffect[]): BattleCardEffect[] 
     else if (effect.kind === "repeat-over-turns") result.push({ ...effect, effects: withoutCosts(effect.effects) });
     else result.push(effect);
   }
+  costFreeEffects.set(effects, result);
   return result;
 }
 
@@ -103,15 +109,19 @@ function knownUtilityAmount(effect: BattleCardEffect, outcome: InspectedPackets 
 export function getBattleCardAnimationTarget(card: BattleCard, snapshot: BattleSnapshot): Target {
   const effects = withoutCosts(card.effects);
   const preferred = getBattleCardPlayTarget(effects.length ? { ...card, effects } : card);
-  const targets = new Set<Target>();
+  let playerTarget = false;
+  let enemyTarget = false;
   let uncertainBranch = false;
   visitBattleCardEffects(effects, (effect) => {
     if (effect.kind === "chance") uncertainBranch ||= effect.probability > 0 && effect.probability < 1;
-    else if (effect.kind !== "repeat-over-turns") targets.add(effectTarget(effect) ?? "enemy");
+    else if (effect.kind !== "repeat-over-turns") {
+      if (effectTarget(effect) === "player") playerTarget = true;
+      else enemyTarget = true;
+    }
   });
   // Most cards have one recipient. Unknown branches never consume live RNG to
   // choose a more attractive animation; retain the authored primary recipient.
-  if (targets.size <= 1 || uncertainBranch) return preferred;
+  if (!playerTarget || !enemyTarget || uncertainBranch) return preferred;
 
   const outcomes = inspectBattleCardOutcomes(card, snapshot);
   let target = preferred;

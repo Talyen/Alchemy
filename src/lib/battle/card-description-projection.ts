@@ -50,11 +50,13 @@ function rangeRuleClauses(
   effects: BattleCardEffect[],
   description: CardDescription,
 ): CardDescription {
-  const visit = (source: readonly BattleCardEffect[], prefix: number[] = []) => {
+  const visit = (source: readonly BattleCardEffect[], prefix: number[] = [], offset = 0) => {
     source.forEach((effect, index) => {
-      const path = [...prefix, index];
-      const address = { effectIndex: path[0]!, effectPath: path.slice(1) };
-      if (effect.kind === "damage" && getCardEffect(effects, address)?.kind === "random-damage") {
+      const path = [...prefix, index + offset];
+      if (
+        effect.kind === "damage" &&
+        getCardEffect(effects, { effectIndex: path[0]!, effectPath: path.slice(1) })?.kind === "random-damage"
+      ) {
         const clauses = createEffectDescription([effect]).filter(
           (line) => line.role === "effect" && line.parts.every((part) => typeof part === "string"),
         );
@@ -78,7 +80,10 @@ function rangeRuleClauses(
           });
         }
       }
-      if (effect.kind === "chance") visit([...effect.successEffects, ...effect.failureEffects], path);
+      if (effect.kind === "chance") {
+        visit(effect.successEffects, path);
+        visit(effect.failureEffects, path, effect.successEffects.length);
+      }
     });
   };
   visit(card.effects);
@@ -108,21 +113,24 @@ function lineFitsEffects(
     if (typeof part === "string") return true;
     // Empty references were already tolerated here; saved descriptions reject them.
     if (part.references.length && cardMagnitudeValue(after, part) === null) return false;
-    return part.references.every(
-      (reference) => shape(getCardEffect(before, reference)) === shape(getCardEffect(after, reference)),
-    );
+    return part.references.every((reference) => {
+      const original = getCardEffect(before, reference);
+      const projected = getCardEffect(after, reference);
+      return original === projected || shape(original) === shape(projected);
+    });
   });
 }
 
 /** Split compressed clauses only when their live values no longer share one literal. */
 export function projectCardDescription(card: BattleCard, effects: BattleCardEffect[], rebuild: boolean): BattleCard {
   const previous = getCardDescription(card);
-  const shapes = new Map<BattleCardEffect | undefined, string>();
+  let shapes: Map<BattleCardEffect | undefined, string> | undefined;
   const shape = (effect: BattleCardEffect | undefined) => {
-    let value = shapes.get(effect);
+    const cache = (shapes ??= new Map<BattleCardEffect | undefined, string>());
+    let value = cache.get(effect);
     if (value === undefined) {
       value = ruleShape(effect);
-      shapes.set(effect, value);
+      cache.set(effect, value);
     }
     return value;
   };

@@ -11,7 +11,7 @@ import {
 function keywordProfile(deck: readonly BattleCard[]): Map<KeywordId, number> {
   const profile = new Map<KeywordId, number>();
   for (const card of deck)
-    for (const keyword of getCardKeywords(card)) profile.set(keyword, (profile.get(keyword) ?? 0) + 1);
+    for (const keyword of getCardKeywordView(card)) profile.set(keyword, (profile.get(keyword) ?? 0) + 1);
   return profile;
 }
 

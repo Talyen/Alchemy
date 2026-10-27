@@ -5,7 +5,7 @@ import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import {
   DAMAGE_TYPES,
-  getCardKeywordView,
+  cardHasKeyword,
   visitBattleCardEffects,
   harmfulPlayerStatusIds,
   type BattleCard,
@@ -318,14 +318,11 @@ export function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapsh
   const mayRepeat =
     state.flags.playNextCardTwice ||
     (hasRepeatChance &&
-      getCardKeywordView(card).some((keyword) => {
-        if (keyword === "burn") return state.talentEffects.burnCardPlayTwiceChance > 0;
-        if (keyword === "freeze") return state.talentEffects.freezeCardPlayTwiceChance > 0;
-        if (keyword === "nature") return state.talentEffects.natureCardPlayTwiceChance > 0;
-        if (keyword === "poison") return state.talentEffects.poisonCardPlayTwiceChance > 0;
-        if (keyword === "stun") return state.talentEffects.stunCardPlayTwiceChance > 0;
-        if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
-        return false;
-      }));
+      ((talents.burnCardPlayTwiceChance > 0 && cardHasKeyword(card, "burn")) ||
+        (talents.freezeCardPlayTwiceChance > 0 && cardHasKeyword(card, "freeze")) ||
+        (talents.natureCardPlayTwiceChance > 0 && cardHasKeyword(card, "nature")) ||
+        (talents.poisonCardPlayTwiceChance > 0 && cardHasKeyword(card, "poison")) ||
+        (talents.stunCardPlayTwiceChance > 0 && cardHasKeyword(card, "stun")) ||
+        (talents.wishCardPlayTwiceChance > 0 && cardHasKeyword(card, "wish"))));
   return mayRepeat && selfCostOutcomes(card.effects, first, revivedHealth).some((outcome) => outcome.health <= 0);
 }

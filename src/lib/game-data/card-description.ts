@@ -16,16 +16,18 @@ export function getEffectiveCardDescriptionLines(
   if (summon) {
     // Catalog summon cards carry [companionLine, "Companion"]. Malformed saves
     // may not — preserve any trailing lines but always keep the tag.
-    const trailing = card.descriptionLines.slice(1).filter((line) => line !== "Companion");
-    return [
-      ...getCompanionDescriptionLines(
-        companionLibrary[summon.companionId],
-        context.companionBondLevels?.[summon.companionId] ?? 0,
-        context.companionDamageModifiers ?? 0,
-      ),
-      ...trailing,
-      "Companion",
-    ];
+    const lines = getCompanionDescriptionLines(
+      companionLibrary[summon.companionId],
+      context.companionBondLevels?.[summon.companionId] ?? 0,
+      context.companionDamageModifiers ?? 0,
+    );
+    for (let index = 1; index < card.descriptionLines.length; index++) {
+      if (index in card.descriptionLines && card.descriptionLines[index] !== "Companion") {
+        lines.push(card.descriptionLines[index]!);
+      }
+    }
+    lines.push("Companion");
+    return lines;
   }
   return [...card.descriptionLines];
 }

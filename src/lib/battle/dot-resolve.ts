@@ -168,10 +168,14 @@ export function detonateEnemyStatuses(
 ): BattleState {
   if (state.enemyHealth <= 0) return state;
   const pulses: EnemyDotPulse[] = [];
+  let poisonIndex = -1;
+  let bleedIndex = -1;
   for (const status of statuses) {
     const amount = state.enemyStatuses[status];
     if (amount <= 0) continue;
     const finalDamage = projectEnemyDotDamage(state, status, mode);
+    if (status === "poison" && poisonIndex < 0) poisonIndex = pulses.length;
+    if (status === "bleed" && bleedIndex < 0) bleedIndex = pulses.length;
     pulses.push({
       status,
       finalDamage,
@@ -201,13 +205,11 @@ export function detonateEnemyStatuses(
   };
   const result = applyEnemyDotDamage(state, pulses, combatTexts, (nextState) => {
     reportDamage();
-    const poisonIndex = pulses.findIndex((pulse) => pulse.status === "poison");
     if (poisonIndex >= 0 && applyPoisonRiders) {
       // Attribute overkill in pulse order so Poison cannot Leech Health already lost to Bleed.
       const healthDamage = pulseHealthDamage(pulses, poisonIndex, previousHealth);
       nextState = applyPoisonRiders(nextState, pulses[poisonIndex]!.finalDamage, combatTexts, healthDamage);
     }
-    const bleedIndex = pulses.findIndex((pulse) => pulse.status === "bleed");
     if (bleedIndex < 0) return nextState;
     return payPendingBleedLeech(
       previousHealth,

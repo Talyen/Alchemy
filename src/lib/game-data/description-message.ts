@@ -16,8 +16,9 @@ function descriptionMessageId(template: string): string {
   let first = 2166136261;
   let second = 5381;
   for (let index = 0; index < template.length; index++) {
-    first = Math.imul(first ^ template.charCodeAt(index), 16777619);
-    second = Math.imul(second, 33) ^ template.charCodeAt(index);
+    const code = template.charCodeAt(index);
+    first = Math.imul(first ^ code, 16777619);
+    second = Math.imul(second, 33) ^ code;
   }
   return `description.${(first >>> 0).toString(16)}${(second >>> 0).toString(16)}`;
 }
