@@ -90,7 +90,7 @@ export function inspectResolutionOutcomes(
   const outcomes: Outcome[] = [];
   let runs = 0;
   let steps = 0;
-  let hasExcludedBranches = false;
+  let excludedSources: Set<BattleCardEffect> | undefined;
   while (pending.length > 0) {
     const choices = pending.pop()!;
     const outcome: Outcome = {
@@ -133,9 +133,11 @@ export function inspectResolutionOutcomes(
         }
         const ineligible = excluded[success ? 1 : 0];
         if (ineligible.length) {
-          hasExcludedBranches = true;
           const excludedEffects = (outcome.ineligible ??= new Set());
-          for (const nested of ineligible) excludedEffects.add(nested);
+          for (const nested of ineligible) {
+            excludedEffects.add(nested);
+            (excludedSources ??= new Set()).add(nested);
+          }
         }
       },
       attack: (packet) => {
@@ -192,10 +194,11 @@ export function inspectResolutionOutcomes(
   }
 
   const inspected = new Map<BattleCardEffect, InspectedPackets>();
-  // Most cards have no excluded chance branches, so their outcomes are already
-  // the complete feedback set for every effect.
+  // Only effects in an excluded branch need their feedback filtered.
   for (const effect of sources) {
-    const feedback = hasExcludedBranches ? outcomes.filter((outcome) => !outcome.ineligible?.has(effect)) : outcomes;
+    const feedback = excludedSources?.has(effect)
+      ? outcomes.filter((outcome) => !outcome.ineligible?.has(effect))
+      : outcomes;
     const magnitudes = new Map<ObservedMagnitudeField, number>();
     const initialMagnitudes = feedback[0]?.magnitudes.get(effect);
     if (initialMagnitudes) {

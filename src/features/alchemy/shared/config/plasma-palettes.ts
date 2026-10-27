@@ -77,7 +77,7 @@ export function getPlasmaColorPair(keywordIds: readonly KeywordId[]): PlasmaColo
 }
 
 export function getPlasmaColorPairForCharacter(id: CharacterId): PlasmaColorPair | null {
-  return getPlasmaColorPair(getPlasmaKeywordsForCharacter(id));
+  return getPlasmaColorPair(characters[id]?.keywords ?? []);
 }
 
 export function getPlasmaColorPairForCard(card: BattleCard): PlasmaColorPair | null {

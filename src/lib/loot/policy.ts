@@ -12,6 +12,7 @@ type LootKind = keyof (typeof LOOT_SOURCE_WEIGHTS)[LootSource];
  */
 const LOOT_FALLBACK_ORDER: readonly LootKind[] = ["basic", "card", "astral", "unique", "boon", "trinket"];
 export type PremiumLootKind = keyof typeof LOOT_DEPTH_CURVES;
+const PREMIUM_LOOT_KINDS = Object.keys(LOOT_DEPTH_CURVES) as PremiumLootKind[];
 export type LootWeights = Record<LootKind, number>;
 export type LootAvailability = Partial<Record<LootKind, boolean>>;
 export type LootGroup = "card" | "gear" | "boon" | "trinket";
@@ -75,13 +76,15 @@ export function resolveLootWeights({
 }): LootWeights {
   const weights: LootWeights = { ...LOOT_SOURCE_WEIGHTS[source] };
   const accountMultiplier = lootAccountMultiplier(progress.highestCompletedDifficulty);
-  if (isLootEligible("astral", progress.depth) && available.astral !== false && available.basic !== false) {
+  const astralMultiplier = lootDepthMultiplier("astral", progress.depth);
+  if (astralMultiplier > 0 && available.astral !== false && available.basic !== false) {
     const transfer = weights.basic * clamp(astralChanceBonus, 0, 1);
     weights.basic -= transfer;
     weights.astral += transfer;
   }
-  for (const kind of Object.keys(LOOT_DEPTH_CURVES) as PremiumLootKind[]) {
-    weights[kind] *= lootDepthMultiplier(kind, progress.depth) * accountMultiplier;
+  for (const kind of PREMIUM_LOOT_KINDS) {
+    weights[kind] *=
+      (kind === "astral" ? astralMultiplier : lootDepthMultiplier(kind, progress.depth)) * accountMultiplier;
   }
   return normalizeLootWeights(weights, available);
 }

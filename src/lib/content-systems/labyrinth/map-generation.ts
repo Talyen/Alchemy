@@ -5,7 +5,7 @@ import { enemiesByType, enemyById, type BattleCard, type EnemyType } from "@/lib
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_SUPPORT_TYPES, labyrinthFloorId, labyrinthNodeId } from "./data";
 import { LABYRINTH_GRID, gridKey, labyrinthGridPositions, neighboringGridKeys } from "./grid";
-import { createRewardModifierPicker, getEnemyModifiersForNodeType } from "./modifiers";
+import { createEnemyModifierPicker, createRewardModifierPicker } from "./modifiers";
 import { canDescendFromLabyrinthNode, floorNodes } from "./map-state";
 
 export { canEnterLabyrinthNode } from "./map-state";
@@ -115,6 +115,7 @@ function makeNode(input: {
   enemyId?: string;
   lootDepth: number;
   pickRewardModifier: ReturnType<typeof createRewardModifierPicker>;
+  pickEnemyModifier: ReturnType<typeof createEnemyModifierPicker>;
 }): LabyrinthNode {
   const type = availableNodeType(input.type, input.lootDepth);
   const combatType = type === "combat" || type === "elite" || type === "boss" ? type : null;
@@ -124,7 +125,7 @@ function makeNode(input: {
     floor: input.floor,
     gridPosition: input.gridPosition,
     modifiers: combatType
-      ? getEnemyModifiersForNodeType(
+      ? input.pickEnemyModifier(
           combatType,
           input.rng,
           input.enemyId ? (enemyById[input.enemyId]?.traits.map((trait) => trait.id) ?? []) : [],
@@ -147,8 +148,11 @@ function generateFloorPositions(rng: () => number): LabyrinthGridPosition[] {
     row: LABYRINTH_GRID.rows - 1,
     col: pickRandom(eligibleColumns, rng) ?? 0,
   };
-  const endpoints = new Set([gridKey(entrance), gridKey(boss)]);
-  const middle = labyrinthGridPositions().filter((position) => !endpoints.has(gridKey(position)));
+  const middle = labyrinthGridPositions().filter(
+    (position) =>
+      !(position.row === entrance.row && position.col === entrance.col) &&
+      !(position.row === boss.row && position.col === boss.col),
+  );
   return [entrance, ...middle, boss];
 }
 
@@ -180,6 +184,7 @@ function generateFloor(
   }
   const used = new Set(usedEnemies);
   const pickRewardModifier = createRewardModifierPicker(deck);
+  const pickEnemyModifier = createEnemyModifierPicker();
   const nodes = types.map((type, index) => {
     const enemyType: EnemyType = type === "boss" ? "boss" : type === "elite" ? "elite" : "normal";
     const enemyId = COMBAT_NODE_TYPES.has(type) ? pickEnemyId(enemyType, used, rng) : undefined;
@@ -193,6 +198,7 @@ function generateFloor(
       lootDepth: lootDepthAt(gridPos),
       rng,
       pickRewardModifier,
+      pickEnemyModifier,
       ...(enemyId ? { enemyId } : {}),
     });
   });

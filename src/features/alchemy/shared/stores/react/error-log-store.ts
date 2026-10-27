@@ -122,13 +122,14 @@ export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
   },
 
   clearErrors: () => {
-    set({ errors: [] });
+    set((state) => (state.errors.length === 0 ? state : { errors: [] }));
   },
 
   markReviewed: (id: string) => {
-    set((s) => ({
-      errors: s.errors.map((e) => (e.id === id ? { ...e, reviewed: true } : e)),
-    }));
+    set((state) => {
+      if (!state.errors.some((entry) => entry.id === id && !entry.reviewed)) return state;
+      return { errors: state.errors.map((entry) => (entry.id === id ? { ...entry, reviewed: true } : entry)) };
+    });
   },
 }));
 

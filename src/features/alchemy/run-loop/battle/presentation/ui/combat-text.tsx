@@ -55,6 +55,12 @@ const animations = {
   setback: animationFor("setback", COMBAT_TEXT_LIFETIME_MS),
   announcement: animationFor("announcement", REACTION_TEXT_LIFETIME_MS),
 };
+const initialFrames = {
+  impact: combatTextFrame("impact", 0, COMBAT_TEXT_LIFETIME_MS),
+  benefit: combatTextFrame("benefit", 0, COMBAT_TEXT_LIFETIME_MS),
+  setback: combatTextFrame("setback", 0, COMBAT_TEXT_LIFETIME_MS),
+  announcement: combatTextFrame("announcement", 0, REACTION_TEXT_LIFETIME_MS),
+};
 
 export function CombatTextRail({
   bursts,
@@ -64,12 +70,14 @@ export function CombatTextRail({
   reactions?: ReactionAnnouncement[];
 }) {
   const staticMotion = useReducedMotionPreference();
-  const staticRows = new Map<CombatTextLane, number>();
+  let staticRows: Map<CombatTextLane, number> | undefined;
   const nextStaticRow = (lane: CombatTextLane, rows = 1) => {
+    if (!staticMotion) return 0;
+    staticRows ??= new Map();
     const key = lane === "announcement" ? "impact" : lane;
     const row = staticRows.get(key) ?? 0;
     staticRows.set(key, row + rows);
-    return staticMotion ? row : 0;
+    return row;
   };
   return (
     <div
@@ -143,17 +151,15 @@ function FeedbackFlight({
   children: ReactNode;
   statusFeedbackKey?: string | undefined;
 }) {
-  const firstFrame = combatTextFrame(
-    lane,
-    0,
-    lane === "announcement" ? REACTION_TEXT_LIFETIME_MS : COMBAT_TEXT_LIFETIME_MS,
-  );
-  const initial = {
-    scale: firstFrame.scale,
-    opacity: firstFrame.opacity,
-    "--combat-text-rise": firstFrame.y,
-    "--combat-text-fan": firstFrame.fan,
-  };
+  const firstFrame = initialFrames[lane];
+  const initial = staticMotion
+    ? false
+    : {
+        scale: firstFrame.scale,
+        opacity: firstFrame.opacity,
+        "--combat-text-rise": firstFrame.y,
+        "--combat-text-fan": firstFrame.fan,
+      };
   const quiet = lane === "benefit" || lane === "setback";
   // Percent translations measure the label itself, not the portrait. Reserve its
   // peak pop footprint so both narrow heroes and wide bosses sit at the corner.
@@ -190,7 +196,7 @@ function FeedbackFlight({
       <motion.div
         data-testid="combat-feedback-action"
         className="flex w-full items-center justify-center [line-height:1.15] font-bold tracking-wide [filter:drop-shadow(0_0_1px_rgb(0,0,0))_drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]"
-        initial={staticMotion ? false : initial}
+        initial={initial}
         style={{ translate: `${fan} calc(var(--combat-text-rise, 0) * 1px * var(--content-scale, 1))` }}
         animate={staticMotion ? { scale: 1, "--combat-text-rise": 0, opacity: 1 } : animations[lane]}
       >

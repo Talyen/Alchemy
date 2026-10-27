@@ -4,6 +4,7 @@ import { buildDescriptionMessage, type DescriptionMessageValue, type KeywordId }
 import { keywordDefinitions } from "../config/game-data-catalog";
 import { cn } from "@/lib/utils";
 import { parseRichText, type RichTextNode } from "@/lib/localization/rich-text";
+import { memoizeShortText } from "@/lib/memoize-short-text";
 
 export interface TokenizedTextOptions {
   renderKeyword?: (text: string, keywordId: KeywordId, key: number) => ReactNode;
@@ -12,13 +13,20 @@ export interface TokenizedTextOptions {
 }
 
 const EMPTY_MARKS: ReadonlyMap<string, { corrupted?: boolean; distilled?: boolean }> = new Map();
+const tokenizeDescription = memoizeShortText((text) => buildDescriptionMessage([{ text }]));
+// Parsed nodes are consumed only by this renderer. Include the allowed slots in
+// the key so a catalog update or a different message cannot reuse validation.
+const parseDescription = memoizeShortText((key) => {
+  const [translated, slots] = JSON.parse(key) as [string, string[]];
+  return parseRichText(translated, new Set(slots));
+});
 
 export function renderTokenizedDescription(text: string, options?: TokenizedTextOptions): ReactNode[] {
   return renderDescription(text, options);
 }
 
 function renderDescription(text: string, options?: TokenizedTextOptions): ReactNode[] {
-  return renderMessage(buildDescriptionMessage([{ text }]), options);
+  return renderMessage(tokenizeDescription(text), options);
 }
 
 export function renderMessage(
@@ -29,7 +37,7 @@ export function renderMessage(
   const translated = gameText(message.id, message.template, message.values);
   let nodes: RichTextNode[];
   try {
-    nodes = parseRichText(translated, new Set(Object.keys(message.slots)));
+    nodes = parseDescription(JSON.stringify([translated, Object.keys(message.slots)]));
   } catch {
     return [<Fragment key="legacy">{translated}</Fragment>];
   }

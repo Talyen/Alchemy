@@ -10,6 +10,7 @@ const smooth = (t: number) => {
 };
 const out = (t: number) => 1 - (1 - clamp(t)) ** 3;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const EXTRA_IMPACT_SIDES = [-1, 0, 1] as const;
 
 export function combatTextLane(event: CombatTextEvent): Exclude<CombatTextLane, "announcement"> {
   if (event.kind === "damage" && event.reactionId) return "impact";
@@ -68,7 +69,7 @@ export function combatTextRoute(lane: CombatTextLane, spread = 0) {
   const distance = Math.abs(spread);
   if (lane === "impact" && spread >= 10)
     return {
-      side: [-1, 0, 1][(spread - 10) % 3]!,
+      side: EXTRA_IMPACT_SIDES[(spread - 10) % 3]!,
       reach: 2,
       row: M.impactRowPx * 5 + Math.floor((spread - 10) / 3) * 16,
     };

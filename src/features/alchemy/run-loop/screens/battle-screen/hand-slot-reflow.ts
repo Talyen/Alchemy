@@ -34,8 +34,9 @@ export function playHandSlotReflows(reflows: readonly HandSlotReflow[], duration
   // One flush commits all inverted poses, including consecutive commits before
   // the next animation frame. Starting transitions earlier would skip that pose.
   moving[0]?.artwork.getBoundingClientRect();
+  const transition = moving.length ? `transform ${resolveGameDelay(durationMs)}ms var(--ease-out-expo)` : "";
   for (const { artwork } of moving) {
-    artwork.style.transition = `transform ${resolveGameDelay(durationMs)}ms var(--ease-out-expo)`;
+    artwork.style.transition = transition;
     artwork.style.transform = "";
   }
 }

@@ -49,16 +49,27 @@ export const useUiStore = create<UiStore>()((set, get) => ({
   setCardInspection: (cardInspection) =>
     set({ cardInspection, ...(cardInspection ? { enemyInspectionOpen: false } : {}) }),
   showClearSaveConfirm: false,
-  setShowClearSaveConfirm: (showClearSaveConfirm) => set({ showClearSaveConfirm }),
+  setShowClearSaveConfirm: (showClearSaveConfirm) =>
+    set((state) => (state.showClearSaveConfirm === showClearSaveConfirm ? state : { showClearSaveConfirm })),
   hoveredCardId: null,
   autoplayPreviewCardId: null,
   shimmerState: null,
   plasmaBaseline: null,
   plasmaInteraction: null,
 
-  setHoveredCardId: (id) => set((s) => ({ hoveredCardId: typeof id === "function" ? id(s.hoveredCardId) : id })),
-  setAutoplayPreviewCardId: (autoplayPreviewCardId) => set({ autoplayPreviewCardId }),
-  clearCardHover: () => set({ hoveredCardId: null, autoplayPreviewCardId: null }),
+  setHoveredCardId: (id) =>
+    set((state) => {
+      const hoveredCardId = typeof id === "function" ? id(state.hoveredCardId) : id;
+      return hoveredCardId === state.hoveredCardId ? state : { hoveredCardId };
+    }),
+  setAutoplayPreviewCardId: (autoplayPreviewCardId) =>
+    set((state) => (state.autoplayPreviewCardId === autoplayPreviewCardId ? state : { autoplayPreviewCardId })),
+  clearCardHover: () =>
+    set((state) =>
+      state.hoveredCardId === null && state.autoplayPreviewCardId === null
+        ? state
+        : { hoveredCardId: null, autoplayPreviewCardId: null },
+    ),
   maybeTriggerShimmer: (cardId) => {
     const previous = get().shimmerState;
     const next = nextShimmerState(previous, cardId, Date.now());

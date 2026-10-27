@@ -134,6 +134,35 @@ describe("useErrorLogStore", () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
     expect(write).toHaveBeenCalledTimes(2);
   });
+
+  it("does not publish or schedule persistence for unchanged error reviews", () => {
+    vi.useFakeTimers();
+    const write = vi.spyOn(Storage.prototype, "setItem");
+    const listener = vi.fn();
+    const unsubscribe = useErrorLogStore.subscribe(listener);
+    using _scopeCleanup = createCleanup(() => {
+      unsubscribe();
+      write.mockRestore();
+      vi.useRealTimers();
+    });
+
+    useErrorLogStore.getState().clearErrors();
+    useErrorLogStore.getState().markReviewed("missing");
+    expect(listener).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(500);
+    expect(write).not.toHaveBeenCalled();
+
+    useErrorLogStore.getState().pushError({ message: "first", source: "storage" });
+    const id = useErrorLogStore.getState().errors[0]!.id;
+    useErrorLogStore.getState().markReviewed(id);
+    vi.advanceTimersByTime(500);
+    listener.mockClear();
+    write.mockClear();
+    useErrorLogStore.getState().markReviewed(id);
+    vi.advanceTimersByTime(500);
+    expect(listener).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
+  });
 });
 
 it("boots and flushes safely when browser privacy settings deny access to the storage getter", async () => {
