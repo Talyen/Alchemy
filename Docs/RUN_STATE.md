@@ -402,7 +402,7 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 Destination offers use the `destinations` stream for sampling. They draw a boss from `world` only when the offer contains Boss Combat alone and has no saved boss ID. Ordinary offers and resuming a valid boss preview do not advance `world`.
 
-`Math.random()` may create a fresh run seed or presentation-only values that cannot affect gameplay or persisted state. [Armory crafting and dev spawning](./ARMORY.md#write-paths) are the intentional gameplay exception: they use injected profile-lifetime randomness, defaulting to `Math.random`, without consuming a run stream. Salvage instead derives its fixed reward seed from the item instance ID. Other run outcomes use the persisted streams above.
+`Math.random()` may create a fresh run seed or presentation-only values that cannot affect gameplay or persisted state. [Armory crafting and dev spawning](./ARMORY.md#write-paths) default to the session's run `rewards` stream; it is saved only while a run is active. Headless crafting can inject its separate seeded source. Salvage instead derives its fixed reward seed from the item instance ID. Run outcomes use the persisted streams above.
 
 Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/math`, and class-name/string/id helpers in `@/lib/utils`. Every draw stays in `[0, 1)`; unknown streams, out-of-range draws, empty ranges, and negative sample counts throw in every build. Counters hash as `counter + 1` and wrap to the hash's 32-bit range, so increments cannot stall and resume continues at the exact next draw. Snapshot-only placeholders always draw zero and must never reach live combat. Full battle RNG + arithmetic rules: [GAME_RULES](./GAME_RULES.md).
 

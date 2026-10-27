@@ -29,6 +29,8 @@ covers the edited state. Confirm the affected screen, compare matched renders an
 exercise the interaction. If player-facing text changed, prepare and review the
 localization packet after wording settles. For other screens, list the available
 scenarios with `npm run visual:scenario -- --list` and use the managed preview as needed.
+An unmatched screen path prints that fallback explicitly; it does not mean a
+seeded scenario for that screen exists or that a visual review has been performed.
 
 Find filenames before searching contents, then read relevant sections/symbols and
 consumers. Expand as the contract requires; reuse unchanged reads:

@@ -12,8 +12,8 @@ import { isAlchemyDevBuild } from "../../utils";
 
 // The action owns both the mutation and its save checkpoint. Adapters receive
 // only intent commands, never a draft callback or a caller-supplied flush.
-// Randomness always draws the persisted run stream so crafting replays with
-// the save; callers may pass an explicit rng only for seeded harnesses.
+// Default randomness draws the session's run stream, persisted during an active
+// run; callers may pass an explicit rng for seeded harnesses.
 function commitArmoryAction(
   mutate: (gear: GearDraftView, transaction: RunTransaction) => boolean,
   gameSession: GameSession,

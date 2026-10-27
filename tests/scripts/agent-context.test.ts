@@ -18,6 +18,7 @@ it("locates source and document owners and validates their canonical references"
   ]);
   expect(selectContext(["scripts/lib/playthrough/playthrough-runner.mjs"]).tasks).toContain("playthrough");
   expect(selectContext(["AGENTS.md"]).docs.map((doc) => doc.path)).toContain("Docs/AGENT_DISCOVERY.md");
+  expect(selectContext(["scripts/agent-worktree.mjs"]).entrypoints).toContain("scripts/agent-worktree.mjs");
   const command = selectContext(["src/features/alchemy/shared/stores/commands/battle-commands.ts"]);
   expect(command.tasks).toContain("battle");
   expect(command.entrypoints).toContain("tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts");
@@ -83,6 +84,18 @@ it("suggests visual scenarios only for recognized screen paths", () => {
   ]);
   expect(selection.visualScenarios).toEqual(["options", "homestead", "battle", "rewards"]);
   expect(selectContext(["src/features/alchemy/shared/stores/commands/gear-commands.ts"]).visualScenarios).toEqual([]);
+});
+
+it("explains the preview fallback for an unmatched screen without claiming a scenario", () => {
+  const output = execFileSync(
+    process.execPath,
+    ["scripts/agent-context.mjs", "src/features/alchemy/meta/screens/armory-screen.tsx"],
+    { encoding: "utf8" },
+  );
+  expect(output).toContain("No seeded scenario is suggested");
+  expect(output).toContain("npm run agent:browser");
+  expect(output).toContain("for changed player text prepare and review translations");
+  expect(output).not.toContain("Possible visual scenarios:");
 });
 
 it("rejects obsolete capabilities and ambiguous selections", () => {

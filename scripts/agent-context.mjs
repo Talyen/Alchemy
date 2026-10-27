@@ -50,10 +50,17 @@ export function main(argv = process.argv.slice(2)) {
     for (const doc of selection.docs)
       console.log(`Owner: ${doc.path}:${doc.start}-${doc.end}${doc.heading ? ` # ${doc.heading}` : ""}`);
     for (const entry of selection.entrypoints) console.log(`Entry: ${entry}`);
+    const screenPaths = paths.some((file) => file.startsWith("src/") && /\.(?:tsx|css)$/u.test(file));
     if (selection.visualScenarios.length) {
       console.log(
         `Possible visual scenarios: ${selection.visualScenarios.join(", ")} (confirm the affected screen; npm run visual:scenario -- --list).`,
       );
+    } else if (screenPaths) {
+      console.log(
+        "No seeded scenario is suggested for these paths; list scenarios or use npm run agent:browser for the affected state.",
+      );
+    }
+    if (screenPaths) {
       console.log(
         "For visible changes compare matched renders and interactions; for changed player text prepare and review translations after wording settles.",
       );
