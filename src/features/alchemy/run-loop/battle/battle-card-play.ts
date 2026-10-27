@@ -13,7 +13,7 @@ import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/gam
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
-import { playResolvedCardSound, presentCombatTexts } from "./controller-utils";
+import { playResolvedCombatSound, presentCombatTexts } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
@@ -173,7 +173,7 @@ export function createBattleCardPlay(
       getPresentation().telegraphCast("player");
     }
     animatePlayedCard(card, index, sourceRect, currentState.hand.length, animationTarget);
-    const focalSound = playResolvedCardSound(
+    const focalSound = playResolvedCombatSound(
       card.id,
       played.combatTexts,
       !currentState.deathsDoorActive && played.state.deathsDoorActive,

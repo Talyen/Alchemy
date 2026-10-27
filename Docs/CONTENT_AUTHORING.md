@@ -212,7 +212,7 @@ Summon cards omit `consume`; their summon effect routes them to the battle-remov
 - **3. Define companion in `companionLibrary` record** — `src/lib/game-data/companions.ts`
 - **4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`)** — `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry
 - **5. Give the summon card a stable, unique string ID** — `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness
-- **6. Register the summon-card sound and verify the battle Companion mapping** — `src/lib/audio/sound-registry.ts` and `COMPANION_SOUND_CARD_IDS` in `src/lib/game-constants/audio.ts`; both are required by the [audio contract](./AUDIO.md#runtime-contract).
+- **6. Register the summon-card sound** — add the Companion’s summon card to `src/lib/audio/sound-registry.ts` as required by the [audio contract](./AUDIO.md#runtime-contract).
 - **7. Update description lines** — `tests/lib/game-data/companions.test.ts` guards companion copy
 
 Run `npm run content:audit` before handing off (companion record checks, summon-card parity, typography).
