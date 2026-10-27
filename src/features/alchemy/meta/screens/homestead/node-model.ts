@@ -58,6 +58,9 @@ export function getCompanionNode(
   const companionId = getCompanionId(card);
   const level = companionId ? (bondedCompanions[companionId] ?? 0) : 0;
   const cost = discovered && companionId && level < COMPANION_MAX_TIER ? (COMPANION_BOND_TIERS[level] ?? null) : null;
+  // Unowned nodes preview their first purchase; owned nodes describe the current tier.
+  const descriptionBondLevels =
+    companionId && level === 0 ? { ...bondedCompanions, [companionId]: 1 } : bondedCompanions;
   return {
     id: card.id,
     title: discovered ? card.title : "Undiscovered companion",
@@ -69,8 +72,7 @@ export function getCompanionNode(
     action: "Bond",
     cost,
     affordable: cost !== null && canAfford(inventory, cost),
-    bonuses:
-      discovered && level > 0 ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions }) : [],
+    bonuses: discovered ? getEffectiveCardDescriptionLines(card, { companionBondLevels: descriptionBondLevels }) : [],
     production: [],
   };
 }
