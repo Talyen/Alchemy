@@ -5,7 +5,7 @@ import { enemiesByType, enemyById, type BattleCard, type EnemyType } from "@/lib
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_SUPPORT_TYPES, labyrinthFloorId, labyrinthNodeId } from "./data";
 import { LABYRINTH_GRID, gridKey, labyrinthGridPositions, neighboringGridKeys } from "./grid";
-import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
+import { createRewardModifierPicker, getEnemyModifiersForNodeType } from "./modifiers";
 import { canDescendFromLabyrinthNode, floorNodes } from "./map-state";
 
 export { canEnterLabyrinthNode } from "./map-state";
@@ -14,7 +14,7 @@ const COMBAT_NODE_TYPES = new Set<LabyrinthNodeType>(["combat", "elite", "boss"]
 
 function pickEnemyId(type: EnemyType, used: ReadonlySet<string>, rng: () => number): string | undefined {
   const pool = enemiesByType[type];
-  const preferred = pool.filter((enemy) => !used.has(enemy.id));
+  const preferred = used.size ? pool.filter((enemy) => !used.has(enemy.id)) : pool;
   const candidates = preferred.length > 0 ? preferred : pool;
   return pickRandom(candidates, rng)?.id;
 }
@@ -27,7 +27,7 @@ function plannedTypes(count: number, rng: () => number, lootDepth: number): Laby
   const eligibleSupports = LABYRINTH_SUPPORT_TYPES.filter(
     (type) => type !== "trinket-shop" || isLootEligible("trinket", lootDepth),
   );
-  const support = shuffle([...eligibleSupports], rng);
+  const support = shuffle(eligibleSupports, rng);
   const middle: LabyrinthNodeType[] = support.slice(0, Math.min(3, count - 2));
   const weighted: LabyrinthNodeType[] = [
     "combat",
@@ -111,7 +111,7 @@ function makeNode(input: {
   rng: () => number;
   enemyId?: string;
   lootDepth: number;
-  deck?: readonly BattleCard[];
+  pickRewardModifier: ReturnType<typeof createRewardModifierPicker>;
 }): LabyrinthNode {
   const type = availableNodeType(input.type, input.lootDepth);
   const combatType = type === "combat" || type === "elite" || type === "boss" ? type : null;
@@ -127,7 +127,7 @@ function makeNode(input: {
           input.enemyId ? (enemyById[input.enemyId]?.traits.map((trait) => trait.id) ?? []) : [],
         )
       : [],
-    rewardModifiers: getRewardModifiersForNodeType(input.rng, type, input.lootDepth, input.deck),
+    rewardModifiers: input.pickRewardModifier(input.rng, type, input.lootDepth),
     cleared: type === "entrance",
   };
   if (input.enemyId) node.enemyId = input.enemyId;
@@ -176,6 +176,7 @@ function generateFloor(
     else types[trinketShopIndex] = "equipment-shop";
   }
   const used = new Set(usedEnemies);
+  const pickRewardModifier = createRewardModifierPicker(deck);
   const nodes = types.map((type, index) => {
     const enemyType: EnemyType = type === "boss" ? "boss" : type === "elite" ? "elite" : "normal";
     const enemyId = COMBAT_NODE_TYPES.has(type) ? pickEnemyId(enemyType, used, rng) : undefined;
@@ -188,7 +189,7 @@ function generateFloor(
       gridPosition: gridPos,
       lootDepth: lootDepthAt(gridPos),
       rng,
-      ...(deck ? { deck } : {}),
+      pickRewardModifier,
       ...(enemyId ? { enemyId } : {}),
     });
   });

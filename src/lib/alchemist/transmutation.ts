@@ -302,6 +302,11 @@ export function getTransmutationVariants(
   }));
 }
 
+/** Check compatibility without building every preview; Leech still needs a line-count preview. */
+export function hasTransmutationVariant(card: BattleCard, keyword: KeywordId, hasCompanion: () => boolean): boolean {
+  return getPendingVariants(card, keyword, hasCompanion).length > 0;
+}
+
 export function createTransmutationOffers(
   deck: readonly BattleCard[],
   rng: () => number,

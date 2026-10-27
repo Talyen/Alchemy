@@ -11,7 +11,12 @@ import {
   isCompanionSummonCard,
   type KeywordId,
 } from "@/lib/game-data";
-import { createTransmutationOffers, canTransmuteCard, getTransmutationVariants } from "@/lib/alchemist/transmutation";
+import {
+  createTransmutationOffers,
+  canTransmuteCard,
+  getTransmutationVariants,
+  hasTransmutationVariant,
+} from "@/lib/alchemist/transmutation";
 import { TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES } from "@/lib/game-constants";
 import { createSeededRng } from "@/lib/rng";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
@@ -34,6 +39,19 @@ function numericFields(value: unknown, path = ""): Record<string, number> {
     ),
   );
 }
+
+it("checks eligibility against the same variants used to construct previews", () => {
+  for (const deck of [[], [cardById.slash!], [cardById.slash!, cardById["wolf-companion"]!]]) {
+    for (const card of cardLibrary) {
+      for (const keyword of TRANSMUTATION_KEYWORD_GROUPS.flat()) {
+        expect(
+          hasTransmutationVariant(card, keyword, () => deck.some(isCompanionSummonCard)),
+          `${card.id} ${keyword}`,
+        ).toBe(getTransmutationVariants(card, keyword, deck).length > 0);
+      }
+    }
+  }
+});
 
 it("Prismatic Crucible saves every compatible keyword and preserves a later selection through reload", () => {
   const deck = [cardById.slash!, cardById.heal!, { ...cardById.block!, corrupted: true }];

@@ -71,7 +71,7 @@ export function getEncounterEnemyAbility(card: EnemyAbilityCard, context: EnemyD
         scaleEnemyAbilityDamage(context, { ...original, damageType }).amount;
       if (original.damageTypePool?.length) {
         const amounts = original.damageTypePool.map(damage);
-        if (new Set(amounts).size > 1) {
+        if (amounts.some((amount) => amount !== amounts[0] && !(Number.isNaN(amount) && Number.isNaN(amounts[0])))) {
           // The structured damage line places its type label immediately after its magnitude.
           line.parts[index + 1] = " damage";
           return original.damageTypePool.map((type, i) => `${amounts[i]} ${capitalizeWord(type)}`).join(" or ");

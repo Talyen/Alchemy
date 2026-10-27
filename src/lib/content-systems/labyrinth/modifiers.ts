@@ -9,8 +9,8 @@ import {
   type EncounterTraitId,
 } from "../encounter-traits";
 import { LABYRINTH_TRAITS, transmutationModifierKeyword } from "./trait-catalog";
-import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
-import type { BattleCard } from "@/lib/game-data";
+import { hasTransmutationVariant } from "@/lib/alchemist/transmutation";
+import { isCompanionSummonCard, type BattleCard, type KeywordId } from "@/lib/game-data";
 
 const INCOMPATIBLE_TRAITS: ReadonlyArray<readonly string[]> = [
   ["plated", "unbreakable", "iron-fortress"],
@@ -72,16 +72,37 @@ export function getRewardModifiersForNodeType(
   lootDepth = 1,
   deck?: readonly BattleCard[],
 ): EncounterRewardTraitId[] {
-  const pool = eligibleEncounterTraitIds("labyrinth", "reward").filter(
-    (id) =>
-      isLabyrinthTraitEligible(id, type) &&
-      (!deck ||
-        !transmutationModifierKeyword(id) ||
-        deck.some((card) => getTransmutationVariants(card, transmutationModifierKeyword(id)!, deck).length > 0)) &&
-      ((id !== "masterwork" && id !== "astral-hoard") || isLootEligible("astral", lootDepth)) &&
-      (id !== "trinket-hoard" || isLootEligible("trinket", lootDepth)) &&
-      (id !== "unique-hoard" || isLootEligible("unique", lootDepth)),
-  );
-  const selected = pickRandom(pool, rng);
-  return selected ? [selected] : [];
+  return createRewardModifierPicker(deck)(rng, type, lootDepth);
+}
+
+/** A floor shares a deck, so compatibility and node-type pools can be reused within it. */
+export function createRewardModifierPicker(deck?: readonly BattleCard[]) {
+  const pools = new Map<LabyrinthNodeType, EncounterRewardTraitId[]>();
+  const compatibility = new Map<KeywordId, boolean>();
+  let companionPresent: boolean | undefined;
+  const hasCompanion = () => (companionPresent ??= deck?.some(isCompanionSummonCard) ?? false);
+  return (rng: () => number, type: LabyrinthNodeType, lootDepth: number): EncounterRewardTraitId[] => {
+    let candidates = pools.get(type);
+    if (!candidates) {
+      candidates = eligibleEncounterTraitIds("labyrinth", "reward").filter((id) => isLabyrinthTraitEligible(id, type));
+      pools.set(type, candidates);
+    }
+    const pool = candidates.filter((id) => {
+      const keyword = transmutationModifierKeyword(id);
+      let compatible = true;
+      if (deck && keyword) {
+        const cached = compatibility.get(keyword);
+        compatible = cached ?? deck.some((card) => hasTransmutationVariant(card, keyword, hasCompanion));
+        if (cached === undefined) compatibility.set(keyword, compatible);
+      }
+      return (
+        compatible &&
+        ((id !== "masterwork" && id !== "astral-hoard") || isLootEligible("astral", lootDepth)) &&
+        (id !== "trinket-hoard" || isLootEligible("trinket", lootDepth)) &&
+        (id !== "unique-hoard" || isLootEligible("unique", lootDepth))
+      );
+    });
+    const selected = pickRandom(pool, rng);
+    return selected ? [selected] : [];
+  };
 }

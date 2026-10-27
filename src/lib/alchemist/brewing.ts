@@ -21,11 +21,8 @@ const DEFENSIVE_POTION_IDS: ReadonlySet<string> = new Set(["health-potion", "sto
 export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
   const pool = shuffle(getStandardPotionPool(), rng);
   const defensiveIndex = pool.findIndex((card) => DEFENSIVE_POTION_IDS.has(card.id));
-  const ordered =
-    defensiveIndex < 0
-      ? pool
-      : [pool[defensiveIndex]!, ...pool.slice(0, defensiveIndex), ...pool.slice(defensiveIndex + 1)];
-  return ordered.slice(0, CAMPFIRE_POTION_OFFERS).map(cloneBattleCard);
+  if (defensiveIndex > 0) pool.unshift(...pool.splice(defensiveIndex, 1));
+  return pool.slice(0, CAMPFIRE_POTION_OFFERS).map(cloneBattleCard);
 }
 
 export function applyStrongSpiritsToPotions(

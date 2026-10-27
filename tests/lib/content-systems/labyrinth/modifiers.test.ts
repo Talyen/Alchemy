@@ -2,12 +2,27 @@ import { expect, it } from "vitest";
 import { ENCOUNTER_TRAITS, eligibleEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 import {
   areLabyrinthTraitsCompatible,
+  createRewardModifierPicker,
   getEnemyModifiersForNodeType,
   getRewardModifiersForNodeType,
   isLabyrinthTraitEligible,
 } from "@/lib/content-systems/labyrinth/modifiers";
 import { LABYRINTH_SUPPORT_TYPES } from "@/lib/content-systems/labyrinth/data";
 import { createSeededRng } from "@/lib/rng";
+import { cardById } from "@/lib/game-data";
+
+it("reuses floor eligibility without changing the selected modifiers or random stream", () => {
+  const deck = [cardById.slash!, cardById["wolf-companion"]!];
+  const cached = createRewardModifierPicker(deck);
+  const cachedRng = createSeededRng(832);
+  const referenceRng = createSeededRng(832);
+  for (const type of ["transmutation", "combat", "transmutation", "elite", "transmutation"] as const) {
+    for (const depth of [1, 30]) {
+      expect(cached(cachedRng, type, depth)).toEqual(getRewardModifiersForNodeType(referenceRng, type, depth, deck));
+    }
+  }
+  expect(cachedRng()).toBe(referenceRng());
+});
 
 it("fills encounter slots with distinct combat modifiers compatible with native traits and each other", () => {
   const native = ["starting-block", "banshee", "thornhide", "plated", "tempered", "vampire"];
