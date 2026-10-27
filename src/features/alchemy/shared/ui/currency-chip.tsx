@@ -1,6 +1,6 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
 import { Fragment, type ReactNode } from "react";
+import { parseRichText } from "@/lib/localization/rich-text";
 import { useChangeToken } from "./use-change-token";
 import { cn } from "@/lib/utils";
 import type { CraftingCurrencyDefinition } from "@/lib/gear";
@@ -9,14 +9,14 @@ import { TooltipBody, TooltipHeader } from "./tooltips/tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
 import { surfaceSelectedRingClass } from "../config";
 
-function renderBoldSegments(text: string): ReactNode {
-  return text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
-    index % 2 === 1 ? (
+function renderEffect(text: string): ReactNode {
+  return parseRichText(text, new Set(["em"])).map((part, index) =>
+    part.name === "em" ? (
       <strong key={index} className="font-semibold text-foreground">
-        {displayText(part)}
+        {part.children?.map((child) => child.text).join("")}
       </strong>
     ) : (
-      <Fragment key={index}>{displayText(part)}</Fragment>
+      <Fragment key={index}>{part.text}</Fragment>
     ),
   );
 }
@@ -77,7 +77,7 @@ export function CurrencyChip({
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
         <TooltipHeader>{i18n.displayText(currency.displayName)}</TooltipHeader>
         <TooltipBody>
-          <p>{i18n.displayText(i18n.read(() => renderBoldSegments(currency.tooltipEffect)))}</p>
+          <p>{renderEffect(i18n.displayText(currency.tooltipEffect))}</p>
           {showDescription ? <p className="mt-2">{i18n.displayText(currency.description)}</p> : null}
           {disabled && count > 0 ? (
             <p className="mt-2">{i18n.text("ui.currency-chip.1", "Crafting is unavailable.")}</p>

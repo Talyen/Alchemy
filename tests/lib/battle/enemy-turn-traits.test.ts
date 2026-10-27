@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import { processEnemyRegeneration, processEnemyTraits } from "@/lib/battle/enemy-turn-traits";
-import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
+import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_DAMAGE_RULES, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
+import { collectUncoveredEnemyTraitIds } from "@/lib/content-systems/enemy-trait-coverage";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("processEnemyRegeneration", () => {
@@ -64,5 +65,25 @@ describe("processEnemyTraits", () => {
       stat: "armor",
       amount: IRON_HIDE_ARMOR_PER_TURN,
     });
+  });
+
+  it("handles periodic damage in trait order on even turns and recognizes the same traits as covered", () => {
+    const traits = ["crimson-pulse", "radiant-judgment"].map((id) => ({ id, title: id, description: "" }));
+    const state = patchBattleState({
+      currentEnemy: { traits },
+      turn: 2,
+      playerHealth: 30,
+      appliesFightPacing: false,
+    });
+    const texts: Parameters<typeof processEnemyTraits>[1] = [];
+    const result = processEnemyTraits(state, texts);
+    expect(result.playerHealth).toBe(28);
+    expect(result.playerStatuses.bleed).toBe(1);
+    expect(
+      texts.filter((event) => event.target === "player" && event.kind === "damage").map((event) => event.stat),
+    ).toEqual(["bleed", "holy"]);
+    expect(processEnemyTraits({ ...state, turn: 1 }, []).playerHealth).toBe(30);
+    expect(collectUncoveredEnemyTraitIds([...traits.map((trait) => trait.id), "toString"])).toEqual(["toString"]);
+    expect(collectUncoveredEnemyTraitIds(TRAIT_DAMAGE_RULES.map((rule) => rule.traitId))).toEqual([]);
   });
 });

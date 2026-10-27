@@ -1,7 +1,11 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
-import { ENEMY_TURN_START_GAINS, isEnemyTraitTurnStartCovered } from "@/lib/content-systems/enemy-trait-coverage";
+import {
+  ENEMY_TURN_START_DAMAGE,
+  ENEMY_TURN_START_GAINS,
+  isEnemyTraitTurnStartCovered,
+} from "@/lib/content-systems/enemy-trait-coverage";
 import { logError } from "../error-logger";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
@@ -21,10 +25,11 @@ export function processEnemyTraits(state: BattleState, combatTexts: CombatTextEv
   let nextState = state;
   for (const trait of state.currentEnemy.traits) {
     if (getBattleOutcome(nextState) !== null) break;
-    if ((trait.id === "crimson-pulse" || trait.id === "radiant-judgment") && state.turn % 2 === 0) {
+    const damageType = Object.hasOwn(ENEMY_TURN_START_DAMAGE, trait.id) ? ENEMY_TURN_START_DAMAGE[trait.id] : undefined;
+    if (damageType && state.turn % 2 === 0) {
       nextState = resolveEnemyAttackHit(
         recordEnemyAbilityActivation(nextState, trait.id),
-        { kind: "damage", damageType: trait.id === "crimson-pulse" ? "bleed" : "holy", amount: 1 },
+        { kind: "damage", damageType, amount: 1 },
         combatTexts,
         { canDodge: false },
       ).state;
