@@ -60,10 +60,9 @@ export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: Arm
 export function reconcileOrder(currentIds: readonly string[], rows: readonly ArmoryOrderRow[]): string[] {
   const available = new Set(rows.map((row) => row.id));
   const surviving = currentIds.filter((id) => available.delete(id));
-  const newlyAvailable = rows
-    .filter((row) => available.has(row.id))
-    .sort((a, b) => compareOrderRows(a, b, "rarity"))
-    .flatMap((row) => (available.delete(row.id) ? [row.id] : []));
+  const sortedAvailable = rows.filter((row) => available.has(row.id)).sort((a, b) => compareOrderRows(a, b, "rarity"));
+  const newlyAvailable: string[] = [];
+  for (const row of sortedAvailable) if (available.delete(row.id)) newlyAvailable.push(row.id);
   return [...surviving, ...newlyAvailable];
 }
 

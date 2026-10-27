@@ -66,7 +66,11 @@ export async function runHandDrawSequence(
   try {
     deps.setTransferInProgress(true);
     markBattleStage("draw-start");
-    deps.setHiddenHandCardKeys((current) => new Set([...current, ...hiddenDrawKeys]));
+    deps.setHiddenHandCardKeys((current) => {
+      const keys = new Set(current);
+      for (const key of hiddenDrawKeys) keys.add(key);
+      return keys;
+    });
     onReveal();
     if (!(await deps.playback.waitForFrame(session)) || !deps.isSessionActive(session)) return false;
     if (!shouldReduceMotion()) {

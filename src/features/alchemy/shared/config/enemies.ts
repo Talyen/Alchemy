@@ -19,7 +19,9 @@ function resolveEnemyFallback(): BestiaryEntry {
 }
 
 function selectEnemy(pool: readonly BestiaryEntry[], encounteredEnemyIds: readonly string[], rng?: () => number) {
+  if (encounteredEnemyIds.length === 0) return (rng ? pickRandom(pool, rng) : pool[0]) ?? resolveEnemyFallback();
   const encountered = new Set(encounteredEnemyIds);
+  if (!rng) return pool.find((enemy) => !encountered.has(enemy.id)) ?? pool[0] ?? resolveEnemyFallback();
   const preferred = pool.filter((enemy) => !encountered.has(enemy.id));
   const candidates = preferred.length > 0 ? preferred : pool;
   return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? resolveEnemyFallback();

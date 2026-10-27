@@ -29,11 +29,13 @@ function buildAffinityPool(
     if (companionScoreBonus > 0 && isCompanionSummonCard(card)) score += companionScoreBonus;
     return score;
   };
-  const poolSize = Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, candidates.length);
+  const poolSize = Math.floor(Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, candidates.length));
   // Stable sorting preserves shuffled ties and the subsequent run RNG position.
   const scored = shuffledCandidates.map((card) => ({ card, score: scoreCard(card) }));
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, poolSize).map((s) => s.card);
+  const result: BattleCard[] = [];
+  for (let index = 0; index < poolSize; index++) result.push(scored[index]!.card);
+  return result;
 }
 
 function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number): BattleCard[] {
@@ -62,7 +64,8 @@ export function selectRewardCards(
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
   if (count <= 0) return [];
-  const excludedIds = exclude.length ? new Set(exclude.map((card) => card.id)) : null;
+  const excludedIds = exclude.length ? new Set<string>() : null;
+  if (excludedIds) for (const card of exclude) excludedIds.add(card.id);
   const pool = excludedIds ? allCards.filter((card) => !excludedIds.has(card.id)) : allCards;
   if (pool.length === 0) return [];
   const hasCompanion = deck.some(isCompanionSummonCard);
@@ -72,12 +75,11 @@ export function selectRewardCards(
   const effectiveCandidates = candidates.length > 0 ? candidates : pool;
   const boostCompanions = !hasCompanion;
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;
-  const randomPool = shuffle(
-    companionCopies > 1
-      ? [...effectiveCandidates, ...effectiveCandidates.filter(isCompanionSummonCard)]
-      : effectiveCandidates,
-    rng,
-  );
+  const weightedCandidates = companionCopies > 1 ? [...effectiveCandidates] : effectiveCandidates;
+  if (companionCopies > 1) {
+    for (const card of effectiveCandidates) if (isCompanionSummonCard(card)) weightedCandidates.push(card);
+  }
+  const randomPool = shuffle(weightedCandidates, rng);
   const selected: BattleCard[] = [];
   const selectedIds = new Set<string>();
   const freq = buildKeywordFrequency(deck, seedKeywords);
