@@ -1,5 +1,5 @@
 import { getCatalogArt } from "./assets";
-import type { BestiaryEntry, TrinketEntry } from "./types";
+import type { BestiaryEntry } from "./types";
 
 const ENEMY_SUBTITLES = { boss: "Boss", normal: "Normal", elite: "Elite" } as const;
 
@@ -21,14 +21,4 @@ export function defineEnemy<const T extends EnemyDefinition>(entry: T): Bestiary
     subtitle: ENEMY_SUBTITLES[entry.enemyType],
     descriptionLines: [],
   };
-}
-
-export function trinket<const Id extends string>(
-  id: Id,
-  title: string,
-  description: string,
-  art: string,
-  effects: TrinketEntry["effects"] = {},
-): TrinketEntry & { id: Id } {
-  return { id, title, descriptionLines: [description], art, effects };
 }
