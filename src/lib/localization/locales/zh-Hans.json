@@ -2078,7 +2078,7 @@
   "labels.lib.gear.base-items.1e7b6e579444": {"text":"戒指","sourceHash":"e09f8f9c4aba79a46905fcd50afbadaba219898cbffaf8f3d9487d5b5741e1a3","reviewed":true},
   "labels.lib.gear.base-items.e066f2b55708": {"text":"项链","sourceHash":"8da09573181624a3e16d068907f15ffecd0e77ba5cd0a3077b552237d1339004","reviewed":true},
   "labels.lib.gear.crafting.299004411a02": {"text":"没有空词缀槽或合适的词缀。","sourceHash":"aa8f70ca3b79de6370be6f909d20de51157910869960c0f54f67881ffba4da1e","reviewed":true},
-  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"无法制作独特物品。","sourceHash":"4da85b4799939737cbd1502e3f9495234bc56653e79b89103b205c497cb4dc37","reviewed":true},
+  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"独特物品无法使用制作材料改造。","sourceHash":"4da85b4799939737cbd1502e3f9495234bc56653e79b89103b205c497cb4dc37","reviewed":true},
   "labels.lib.gear.crafting.5d16098a3973": {"text":"此物品没有可升级的词缀。","sourceHash":"a28acec36ddf71f1e1cd30d2e2cf9ac6b7260c1b0e4266dfa4f4aec37c0d0db1","reviewed":true},
   "labels.lib.gear.crafting.c111ffa82fc4": {"text":"此物品没有可重随机的词缀。","sourceHash":"5af2a3cfba5f3307496f8a44f69acf44a4ce07effb78c6a7b9ebf5dbd32e130b","reviewed":true},
   "labels.lib.gear.crafting.d91936e23a1d": {"text":"此物品没有可移除的词缀。","sourceHash":"ec3ee50d8b083761b57d3a21f23e75363c3539b92a5cb02d901c91e0fa1cc4f6","reviewed":true},

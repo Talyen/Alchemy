@@ -2078,7 +2078,7 @@
   "labels.lib.gear.base-items.1e7b6e579444": {"text":"Anneau","sourceHash":"5d9348d9aa040703c0717376789da3e54e7b72a3cc35375517d004c8f5c3777d","reviewed":true},
   "labels.lib.gear.base-items.e066f2b55708": {"text":"Amulette","sourceHash":"7bbdedb8f4d3733621460b606c2a52dd05ad3d29f1c367d6b02ddffb927a2ba3","reviewed":true},
   "labels.lib.gear.crafting.299004411a02": {"text":"Aucun emplacement d'affixe ni affixe admissible disponible.","sourceHash":"ef59a1dafa468472d594fc457239484805ddf6b38bae2cb61f7746617540005b","reviewed":true},
-  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Les objets uniques ne peuvent pas être fabriqués.","sourceHash":"f29b9a753236492d70f524d34dbd2db7eb4315df817d5cfc6e4607078e08ebac","reviewed":true},
+  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Les objets uniques ne peuvent pas être modifiés avec des matériaux d'artisanat.","sourceHash":"f29b9a753236492d70f524d34dbd2db7eb4315df817d5cfc6e4607078e08ebac","reviewed":true},
   "labels.lib.gear.crafting.5d16098a3973": {"text":"Cet objet n'a aucun affixe à améliorer.","sourceHash":"31fd3f9a54f22af902d2da9bbc1c2c555a17a1f1ea65e5f4f02bdac8f4b4aa72","reviewed":true},
   "labels.lib.gear.crafting.c111ffa82fc4": {"text":"Cet objet n'a aucun affixe à relancer.","sourceHash":"d581ae205c17029f4200f6422cf5e5d12e2467d9c9079329068717e0e57c5a73","reviewed":true},
   "labels.lib.gear.crafting.d91936e23a1d": {"text":"Cet objet n'a aucun affixe à retirer.","sourceHash":"afbd7b4bb832296cc4407a05f53229938ae803af01a022e65c6dc2d7708e1b60","reviewed":true},

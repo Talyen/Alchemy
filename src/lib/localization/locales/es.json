@@ -2078,7 +2078,7 @@
   "labels.lib.gear.base-items.1e7b6e579444": {"text":"Anillo","sourceHash":"f91a209390b84fe6bdc875222bc4693c86351364109118629debf0e36f2ce820","reviewed":true},
   "labels.lib.gear.base-items.e066f2b55708": {"text":"Amuleto","sourceHash":"8b0f26a3f715ab9a23378d04f81f900cf6461b37b2f45c9c50fb4e62a23890d4","reviewed":true},
   "labels.lib.gear.crafting.299004411a02": {"text":"No hay ranuras de afijos ni afijos válidos disponibles.","sourceHash":"2edd5fcd70ee25b3b7fb38a6c1b53feab34ef545288f0f2465cb58fd9db2828b","reviewed":true},
-  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Los objetos únicos no se pueden fabricar.","sourceHash":"1a3046cb2cc1f45ae9b6ed93cc2b1ce1cf052bc2bc399e1f45d77187ac814de2","reviewed":true},
+  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Los objetos únicos no se pueden modificar con materiales de fabricación.","sourceHash":"1a3046cb2cc1f45ae9b6ed93cc2b1ce1cf052bc2bc399e1f45d77187ac814de2","reviewed":true},
   "labels.lib.gear.crafting.5d16098a3973": {"text":"Este objeto no tiene afijos que mejorar.","sourceHash":"0a1d0df6a1356a6a67ed5addf74af9bcd803ea16f44f553d22142f9132cd4568","reviewed":true},
   "labels.lib.gear.crafting.c111ffa82fc4": {"text":"Este objeto no tiene afijos que cambiar.","sourceHash":"a5317cf24a00b4cbfad5db1f0251bc611709798e3174c051e10e5971babf57e2","reviewed":true},
   "labels.lib.gear.crafting.d91936e23a1d": {"text":"Este objeto no tiene afijos que eliminar.","sourceHash":"47bc66e0c7f3fd5b5bf6ba3ac16b4982ac6478880a24707053ab97e7072304b3","reviewed":true},

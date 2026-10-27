@@ -2078,7 +2078,7 @@
   "labels.lib.gear.base-items.1e7b6e579444": {"text":"Anel","sourceHash":"5a69523104685ea24d39d32880f21d92dcacf69ac50e9f9b20de39f8ecc29a2e","reviewed":true},
   "labels.lib.gear.base-items.e066f2b55708": {"text":"Colar","sourceHash":"c4c500c10bdcabfd9f474d6d4980bdc297b49bc85f9d24f98aaae7c5de722418","reviewed":true},
   "labels.lib.gear.crafting.299004411a02": {"text":"Não há espaços de afixos nem afixos válidos disponíveis.","sourceHash":"22bf78bb355465a519aa3dfe10eea9f142e09f8d166e6f041ff93dbc3e8dfa98","reviewed":true},
-  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Itens únicos não podem ser fabricados.","sourceHash":"81279a1b53d3599a33dc5777b71321e023cffb87635e38d027e8dd5268be6ce5","reviewed":true},
+  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Itens únicos não podem ser modificados com materiais de criação.","sourceHash":"81279a1b53d3599a33dc5777b71321e023cffb87635e38d027e8dd5268be6ce5","reviewed":true},
   "labels.lib.gear.crafting.5d16098a3973": {"text":"Este item não tem afixos para aprimorar.","sourceHash":"f5a20c2b1a9d295e6e98da18e4dfa4f89b8809e1cea59b5c8fdd935335e039a0","reviewed":true},
   "labels.lib.gear.crafting.c111ffa82fc4": {"text":"Este item não tem afixos para refazer.","sourceHash":"f0812b648853d84e68fec2180a7369b6aac8902af6c66e3896dc91681a95412c","reviewed":true},
   "labels.lib.gear.crafting.d91936e23a1d": {"text":"Este item não tem afixos para remover.","sourceHash":"f458768a2a430e825897a26fa17585dc453b1d07d71521a916f69ed43b56b370","reviewed":true},

@@ -2078,7 +2078,7 @@
   "labels.lib.gear.base-items.1e7b6e579444": {"text":"Кольцо","sourceHash":"b026098532a0af898a159054d7e5f1725d4838bc5763fb3395f0607540d1281f","reviewed":true},
   "labels.lib.gear.base-items.e066f2b55708": {"text":"Амулет","sourceHash":"ac249bc81832485d5358c16e355fb00e768fa0ee0d634a3fbdffd05009a3e865","reviewed":true},
   "labels.lib.gear.crafting.299004411a02": {"text":"Нет свободных ячеек или подходящих аффиксов.","sourceHash":"5d0be0e6409f1463e1e580abfa78dde8a6b777ae360f5d2edc56dc4b18cb03f4","reviewed":true},
-  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Уникальные предметы нельзя создавать.","sourceHash":"39ae5a28bd51e927230cfc4a944a5039d51b5f73cfc0a40f15ff5386a61a2525","reviewed":true},
+  "labels.lib.gear.crafting.486c63f5b5f8": {"text":"Уникальные предметы нельзя изменять с помощью материалов для ремесла.","sourceHash":"39ae5a28bd51e927230cfc4a944a5039d51b5f73cfc0a40f15ff5386a61a2525","reviewed":true},
   "labels.lib.gear.crafting.5d16098a3973": {"text":"У этого предмета нет аффиксов для улучшения.","sourceHash":"a7794b177544331f93741b5d5b621d56c02b9f5f1beacd3a24d8a0121b5c847f","reviewed":true},
   "labels.lib.gear.crafting.c111ffa82fc4": {"text":"У этого предмета нет аффиксов для переброса.","sourceHash":"39392361f190680b199cf7b02f105e32c8aacdb9a6a5e175df0d14b343986d4e","reviewed":true},
   "labels.lib.gear.crafting.d91936e23a1d": {"text":"У этого предмета нет аффиксов для удаления.","sourceHash":"467b2c30662b3f756531909d3ba5da27a7820affdfa812347365a6b967764a7d","reviewed":true},
