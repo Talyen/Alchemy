@@ -97,7 +97,14 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
         route = combatTextRoute(old.presentation.lane, old.presentation.spread ?? 0);
         oldRoutes.set(old, route);
       }
-      previous.push(footprint(old, oldFrame, route));
+      const bounds = footprint(old, oldFrame, route);
+      previous.push({
+        left: bounds.x - bounds.width / 2,
+        right: bounds.x + bounds.width / 2,
+        top: bounds.y - bounds.height / 2,
+        bottom: bounds.y + bounds.height / 2,
+        area: bounds.width * bounds.height,
+      });
     }
     samples.push({ frame, previous });
   }
@@ -113,19 +120,17 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
       if (score >= bestScore) break;
       if (sample.previous.length === 0) continue;
       const next = footprint(item, sample.frame, routeGeometry);
+      const left = next.x - next.width / 2;
+      const right = next.x + next.width / 2;
+      const top = next.y - next.height / 2;
+      const bottom = next.y + next.height / 2;
+      const area = next.width * next.height;
       for (const previous of sample.previous) {
-        const width = Math.max(
-          0,
-          Math.min(next.x + next.width / 2, previous.x + previous.width / 2) -
-            Math.max(next.x - next.width / 2, previous.x - previous.width / 2),
-        );
-        const height = Math.max(
-          0,
-          Math.min(next.y + next.height / 2, previous.y + previous.height / 2) -
-            Math.max(next.y - next.height / 2, previous.y - previous.height / 2),
-        );
-        const covered = (width * height) / Math.min(next.width * next.height, previous.width * previous.height);
+        const width = Math.max(0, Math.min(right, previous.right) - Math.max(left, previous.left));
+        const height = Math.max(0, Math.min(bottom, previous.bottom) - Math.max(top, previous.top));
+        const covered = (width * height) / Math.min(area, previous.area);
         score += covered + (covered > 0.8 ? 1000 : 0);
+        if (score >= bestScore) break;
       }
     }
     if (score < bestScore) {

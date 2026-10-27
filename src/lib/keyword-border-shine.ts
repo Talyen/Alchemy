@@ -9,11 +9,10 @@ import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
  * a seamless 3-5 stop cycle with uniform visual tempo.
  */
 export function getKeywordBorderShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
-  const uniqueKeywordIds = [...new Set(keywordIds)];
-  if (uniqueKeywordIds.length === 0) return [];
+  if (keywordIds.length === 0) return [];
 
   const colors = new Set<string>();
-  for (const id of uniqueKeywordIds) {
+  for (const id of keywordIds) {
     const color = keywordDefinitions[id]?.shineColors[0];
     if (color !== undefined) colors.add(color);
   }
@@ -21,7 +20,7 @@ export function getKeywordBorderShineColors(keywordIds: readonly KeywordId[]): r
 
   if (primaryColors.length === 0) return [];
   if (primaryColors.length === 1) {
-    return [...(keywordDefinitions[uniqueKeywordIds[0]!]?.shineColors ?? [])];
+    return [...(keywordDefinitions[keywordIds[0]!]?.shineColors ?? [])];
   }
 
   return [...primaryColors, primaryColors[0]!];

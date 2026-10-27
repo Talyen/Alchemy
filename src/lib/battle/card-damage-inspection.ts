@@ -247,7 +247,11 @@ export function getBattleCardDescriptionInspection(
       const types = attack.damageTypePool;
       if (
         attack.damageType !== effect.damageType ||
-        (types !== effect.damageTypePool && JSON.stringify(types) !== JSON.stringify(effect.damageTypePool))
+        (types !== effect.damageTypePool &&
+          (types === undefined ||
+            effect.damageTypePool === undefined ||
+            types.length !== effect.damageTypePool.length ||
+            types.some((type, index) => type !== effect.damageTypePool![index])))
       )
         rebuild = true;
       const projected = { ...effect, amount: attack.amount, damageType: attack.damageType };

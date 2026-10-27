@@ -28,14 +28,13 @@ export function prepareCombatFeedback(
           id: `reaction-${actionId}-${event.target}-${event.reactionId}`,
           burstId: `combat-burst-${actionId}-${event.target}`,
           target: event.target,
-          reactionIds: [],
+          reactionIds: [event.reactionId],
           entries: [],
           firstShownAt: now,
           lifetimeMs: REACTION_TEXT_LIFETIME_MS,
         };
         reactions.push(announcement);
       }
-      if (!announcement.reactionIds.includes(event.reactionId)) announcement.reactionIds.push(event.reactionId);
       continue;
     }
     if (event.kind === "damage" && event.impact !== false && DAMAGE_TYPES.includes(event.stat as DamageType)) {

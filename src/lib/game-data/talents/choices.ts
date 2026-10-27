@@ -52,12 +52,12 @@ export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: s
   for (let row = 0; row <= TALENT_ROW_SIZES.length; row++) {
     const size = TALENT_ROW_SIZES[row] ?? talents.length;
     const end = Math.min(start + size, talents.length);
-    const missing: TalentDefinition[] = [];
+    let missing: TalentDefinition[] | undefined;
     for (let index = start; index < end; index++) {
       const talent = talents[index]!;
-      if (!unlocked.has(talent.id)) missing.push(talent);
+      if (!unlocked.has(talent.id)) (missing ??= []).push(talent);
     }
-    if (missing.length) return missing;
+    if (missing) return missing;
     start = end;
   }
   return [];

@@ -85,6 +85,7 @@ export function inspectResolutionOutcomes(
 ): ReadonlyMap<BattleCardEffect, InspectedPackets> {
   const sources = new Set<BattleCardEffect>();
   walk(card.effects, (effect) => sources.add(effect));
+  const excludedBranches = new Map<BattleCardEffect, [BattleCardEffect[], BattleCardEffect[]]>();
   const pending: number[][] = [[]];
   const outcomes: Outcome[] = [];
   let runs = 0;
@@ -122,7 +123,15 @@ export function inspectResolutionOutcomes(
       },
       branch: (effect, success) => {
         if (current !== effect) return;
-        walk(success ? effect.failureEffects : effect.successEffects, (nested) => outcome.ineligible.add(nested));
+        let excluded = excludedBranches.get(effect);
+        if (!excluded) {
+          const branches: [BattleCardEffect[], BattleCardEffect[]] = [[], []];
+          walk(effect.successEffects, (nested) => branches[0].push(nested));
+          walk(effect.failureEffects, (nested) => branches[1].push(nested));
+          excluded = branches;
+          excludedBranches.set(effect, excluded);
+        }
+        for (const nested of excluded[success ? 1 : 0]) outcome.ineligible.add(nested);
       },
       attack: (packet) => {
         if (!current) return;
@@ -181,9 +190,17 @@ export function inspectResolutionOutcomes(
   for (const effect of sources) {
     const feedback = outcomes.filter((outcome) => !outcome.ineligible.has(effect));
     const magnitudes = new Map<ObservedMagnitudeField, number>();
-    for (const [field, amount] of feedback[0]?.magnitudes.get(effect) ?? []) {
-      if (feedback.every((outcome) => outcome.magnitudes.get(effect)?.get(field) === amount))
-        magnitudes.set(field, amount);
+    const initialMagnitudes = feedback[0]?.magnitudes.get(effect);
+    if (initialMagnitudes) {
+      for (const [field, amount] of initialMagnitudes) {
+        if (!Number.isNaN(amount)) magnitudes.set(field, amount);
+      }
+      for (let index = 1; index < feedback.length && magnitudes.size; index++) {
+        const observed = feedback[index]!.magnitudes.get(effect);
+        for (const [field, amount] of magnitudes) {
+          if (observed?.get(field) !== amount) magnitudes.delete(field);
+        }
+      }
     }
     const direct = collectObserved(
       feedback,

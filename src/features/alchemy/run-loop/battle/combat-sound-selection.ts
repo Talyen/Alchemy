@@ -53,10 +53,11 @@ const STATUS_SOUNDS: Partial<Record<CombatTextEvent["stat"], BattleSound>> = {
 
 /** Resolved damage, restored Health and Block compete; Mana, Gold and preparation remain fallbacks. */
 export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: boolean): BattleSound | undefined {
-  const controls = new Set<BattleSound>();
-  const resources = new Set<BattleSound>();
-  const numeric = new Map<string, Candidate>();
+  let controls: Set<BattleSound> | undefined;
+  let resources: Set<BattleSound> | undefined;
+  let numeric: Map<string, Candidate> | undefined;
   function add(key: string, sound: BattleSound, amount: number, priority: number, critical = false) {
+    numeric ??= new Map();
     const existing = numeric.get(key);
     if (existing) {
       existing.amount = Math.min(Number.MAX_SAFE_INTEGER, existing.amount + amount);
@@ -68,24 +69,24 @@ export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: bool
   }
   for (const event of events) {
     if (event.kind === "notice") {
-      if (event.signal === "reaction" && event.reactionId === "shatter") controls.add("shatter");
-      else if (event.stat === "dodge") controls.add("dodge");
-      if (event.signal === "purge" || event.text === "Purged") resources.add("purge");
-      else if (event.signal === "cleanse") resources.add("cleanse");
+      if (event.signal === "reaction" && event.reactionId === "shatter") (controls ??= new Set()).add("shatter");
+      else if (event.stat === "dodge") (controls ??= new Set()).add("dodge");
+      if (event.signal === "purge" || event.text === "Purged") (resources ??= new Set()).add("purge");
+      else if (event.signal === "cleanse") (resources ??= new Set()).add("cleanse");
       else if (!event.signal) {
-        if (event.stat === "freeze") controls.add("freezeProc");
-        else if (event.stat === "stun") controls.add("stunProc");
-        else if (event.stat === "wish") resources.add("wishAppear");
+        if (event.stat === "freeze") (controls ??= new Set()).add("freezeProc");
+        else if (event.stat === "stun") (controls ??= new Set()).add("stunProc");
+        else if (event.stat === "wish") (resources ??= new Set()).add("wishAppear");
       }
       continue;
     }
     if (!Number.isFinite(event.amount) || event.amount <= 0) continue;
     if (event.stat === "armor") {
-      if (event.kind !== "damage") resources.add("armorGain");
+      if (event.kind !== "damage") (resources ??= new Set()).add("armorGain");
       continue;
     }
     if (event.stat === "mana") {
-      if (event.kind !== "damage") resources.add("manaChange");
+      if (event.kind !== "damage") (resources ??= new Set()).add("manaChange");
       continue;
     }
     if (event.kind === "damage" && event.impact !== false) {
@@ -111,14 +112,14 @@ export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: bool
       if (event.stat === "block" && event.kind === "status") add("block", "blockGain", event.amount, 2);
       else {
         const sound = STATUS_SOUNDS[event.stat];
-        if (sound) resources.add(sound);
+        if (sound) (resources ??= new Set()).add(sound);
       }
     }
   }
-  const control = CONTROL_PRIORITY.find((sound) => controls.has(sound));
+  const control = CONTROL_PRIORITY.find((sound) => controls?.has(sound));
   if (control) return control;
   let strongest: Candidate | undefined;
-  for (const candidate of numeric.values()) {
+  for (const candidate of numeric?.values() ?? []) {
     if (
       !strongest ||
       candidate.amount > strongest.amount ||
@@ -127,5 +128,5 @@ export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: bool
       strongest = candidate;
   }
   if (hasFocalSound) return strongest?.critical ? strongest.sound : undefined;
-  return strongest?.sound ?? RESOURCE_PRIORITY.find((sound) => resources.has(sound));
+  return strongest?.sound ?? RESOURCE_PRIORITY.find((sound) => resources?.has(sound));
 }

@@ -19,13 +19,13 @@ function buildAffinityPool(
   activeRng: () => number,
   companionScoreBonus: number,
 ): BattleCard[] {
-  const deckIds = new Set<string>();
-  for (const card of deck) deckIds.add(card.id);
+  const deckIds = deck.length ? new Set<string>() : undefined;
+  if (deckIds) for (const card of deck) deckIds.add(card.id);
   const shuffledCandidates = shuffle(candidates, activeRng);
   const scoreCard = (card: BattleCard): number => {
     let score = 0;
     for (const kw of getCardKeywords(card)) score += freq[kw] ?? 0;
-    if (!deckIds.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
+    if (!deckIds?.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
     if (companionScoreBonus > 0 && isCompanionSummonCard(card)) score += companionScoreBonus;
     return score;
   };
@@ -81,7 +81,6 @@ export function selectRewardCards(
   }
   const randomPool = shuffle(weightedCandidates, rng);
   const selected: BattleCard[] = [];
-  const selectedIds = new Set<string>();
   const freq = buildKeywordFrequency(deck, seedKeywords);
   const affinityPool = buildAffinityPool(
     effectiveCandidates,
@@ -97,13 +96,13 @@ export function selectRewardCards(
     const chosenCard = pickRandom(preferredPool.length > 0 ? preferredPool : randomPool, rng);
     if (!chosenCard) break;
     selected.push(chosenCard);
-    selectedIds.add(chosenCard.id);
     removeChosenCard(affinityPool, chosenCard.id);
     removeChosenCard(randomPool, chosenCard.id);
   }
 
   // Ownership changes preference, not the number of promised choices.
   if (selected.length < count) {
+    const selectedIds = new Set(selected.map((card) => card.id));
     for (const card of shuffle(
       pool.filter((candidate) => !selectedIds.has(candidate.id)),
       rng,

@@ -150,7 +150,7 @@ export function getCollectionPageItems({
     trinkets: discoveredTrinketIds,
     uniques: discoveredUniqueIds,
   };
-  const discoveredIds = new Set(discoveries[collectionTab]);
+  const discoveredIds = collectionTab === "heroes" ? undefined : new Set(discoveries[collectionTab]);
   const { page: safePage, pageSize: size } = getPagination(catalog.items.length, page, pageSize);
   const start = safePage * size;
   let orderedItems = catalog.items;
@@ -170,7 +170,7 @@ export function getCollectionPageItems({
         descriptionLines: discovered ? [] : [item.unlockRequirementText],
       };
     }
-    const discovered = discoveredIds.has(item.id);
+    const discovered = discoveredIds?.has(item.id) ?? false;
     const tile = {
       ...item,
       discovered,

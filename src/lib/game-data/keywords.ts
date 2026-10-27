@@ -17,6 +17,7 @@ function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly Ke
 export function getCardKeywords(card: BattleCard): KeywordId[] {
   const base = cachedEffectKeywords(card.effects);
   if (!card.consume && !card.tags?.length) return [...base];
+  if (card.consume && !card.tags?.length) return base.includes("consume") ? [...base] : [...base, "consume"];
   const keywords = new Set(base);
   if (card.consume) keywords.add("consume");
   for (const tag of card.tags ?? []) keywords.add(tag);

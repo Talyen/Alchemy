@@ -116,15 +116,16 @@ export function sampleDestinationChoices(
 ): SampleDestinationChoicesResult {
   const eligibleDestinations = [...new Set(destinations)];
   if (eligibleDestinations.length === 1 && eligibleDestinations[0] === DESTINATIONS.BOSS_COMBAT) {
+    const choices: Destination[] = [DESTINATIONS.BOSS_COMBAT];
     return {
-      choices: [DESTINATIONS.BOSS_COMBAT],
-      offerState: advanceDestinationOfferState(offerState, eligibleDestinations, [DESTINATIONS.BOSS_COMBAT]),
+      choices,
+      offerState: advanceDestinationOfferState(offerState, eligibleDestinations, choices),
     };
   }
 
   const pick = (pool: Destination[]) =>
     pickWeighted(pool, (destination) => computeDestinationWeight(destination, offerState), rng);
-  let remaining = [...eligibleDestinations];
+  let remaining = eligibleDestinations;
   const choices: Destination[] = [];
 
   if (!lastOfferedIncludesCombat(offerState.lastOfferedDestinations)) {
@@ -135,11 +136,13 @@ export function sampleDestinationChoices(
     }
   }
 
+  let hasShop = choices.some(isShopDestination);
   while (choices.length < DESTINATION_CHOICES && remaining.length > 0) {
-    const pool = choices.some(isShopDestination) ? remaining.filter((d) => !isShopDestination(d)) : remaining;
+    const pool = hasShop ? remaining.filter((d) => !isShopDestination(d)) : remaining;
     const picked = pick(pool);
     if (!picked) break;
     choices.push(picked);
+    hasShop ||= isShopDestination(picked);
     remaining = remaining.filter((destination) => destination !== picked);
   }
 

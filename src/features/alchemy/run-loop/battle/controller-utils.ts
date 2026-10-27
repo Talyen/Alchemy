@@ -72,10 +72,16 @@ export function presentCombatTexts(
 ) {
   if (combatTexts.length === 0) return;
   presenter.showCombatTexts(combatTexts);
-  if (combatTexts.some((ct) => ct.kind === "damage" && ct.amount > 0 && ct.impact !== false && ct.target === "enemy"))
-    presenter.shakeEnemy();
-  if (combatTexts.some((ct) => ct.kind === "damage" && ct.amount > 0 && ct.impact !== false && ct.target === "player"))
-    presenter.shakePlayer();
+  let enemyHit = false;
+  let playerHit = false;
+  for (const ct of combatTexts) {
+    if (ct.kind !== "damage" || !(ct.amount > 0) || ct.impact === false) continue;
+    if (ct.target === "enemy") enemyHit = true;
+    if (ct.target === "player") playerHit = true;
+    if (enemyHit && playerHit) break;
+  }
+  if (enemyHit) presenter.shakeEnemy();
+  if (playerHit) presenter.shakePlayer();
   playCombatTextSounds(combatTexts, focalSound);
 }
 
