@@ -1,11 +1,11 @@
-import { getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { getCardKeywordView, type BattleCard } from "@/lib/game-data";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { PlaythroughBattleSnapshot, PlaythroughDeckProfile, PlaythroughRunSnapshot } from "./types";
 
 function summarizeDeck(deck: readonly BattleCard[]): PlaythroughDeckProfile {
   const keywordCounts: PlaythroughDeckProfile["keywordCounts"] = {};
   for (const card of deck) {
-    for (const keyword of getCardKeywords(card)) keywordCounts[keyword] = (keywordCounts[keyword] ?? 0) + 1;
+    for (const keyword of getCardKeywordView(card)) keywordCounts[keyword] = (keywordCounts[keyword] ?? 0) + 1;
   }
   return { deckSize: deck.length, keywordCounts };
 }

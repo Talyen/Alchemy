@@ -1,6 +1,6 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { rollBattleChance } from "./chance-roll";
-import { getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { getCardKeywordView, type BattleCard } from "@/lib/game-data";
 import { addForgeToPlayer, applyArmorReward, applyBlockReward } from "./status-player";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -18,7 +18,7 @@ function drawCardPlayReward(state: BattleState, amount: number, combatTexts: Com
 
 function applyTalentDrawTriggers(
   state: BattleState,
-  keywords: string[],
+  keywords: readonly string[],
   archery: boolean,
   combatTexts: CombatTextEvent[],
   eligibility: BattleState,
@@ -45,7 +45,7 @@ function applyTalentDrawTriggers(
 
 function applyTalentStatusAndHitTriggers(
   state: BattleState,
-  keywords: string[],
+  keywords: readonly string[],
   combatTexts: CombatTextEvent[],
   eligibility: BattleState,
 ): BattleState {
@@ -88,7 +88,7 @@ export function prepareTalentCardPlay(
   combatTexts: CombatTextEvent[],
   options: { countsAsPlayedCard?: boolean; eligibility?: BattleState } = {},
 ): BattleState {
-  const keywords = getCardKeywords(card);
+  const keywords = getCardKeywordView(card);
   const physical = keywords.includes("physical");
   const archery = keywords.includes("archery");
   const talents = state.talentEffects;

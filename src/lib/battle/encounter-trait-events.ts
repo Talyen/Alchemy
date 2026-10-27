@@ -17,6 +17,21 @@ import { getBattleOutcome } from "./battle-outcome";
 import { setEnemyStatus } from "./status-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
+const ACTION_START_MITIGATION = [
+  ["tempered", "forge", 1],
+  ["plated", "armor", 1],
+  ["reinforced", "block", 2],
+] as const;
+
+const ACTION_DAMAGE_TRAITS = [
+  ["toxic", "poison", 1],
+  ["bloodletter", "bleed", 1],
+  ["combustible", "burn", 1],
+  ["chilling", "freeze", 1],
+  ["zealot", "holy", 2],
+  ["concussive", "stun", 1],
+] as const;
+
 export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.flags.legacyEnemyThornsReady) return state;
   const nextState = setEnemyStatus(
@@ -30,11 +45,7 @@ export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEve
 
 export function processEncounterTraitActionStart(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = hasEnemyTrait(state, "thorns") ? regrowEnemyThorns(state, combatTexts) : state;
-  for (const [trait, field, amount] of [
-    ["tempered", "forge", 1],
-    ["plated", "armor", 1],
-    ["reinforced", "block", 2],
-  ] as const) {
+  for (const [trait, field, amount] of ACTION_START_MITIGATION) {
     if (hasEnemyTrait(nextState, trait)) {
       nextState = addEnemyMitigationWithCombatText(
         recordEnemyAbilityActivation(nextState, trait),
@@ -109,14 +120,7 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
     );
   }
   // These riders share resolution, but their order and defeat boundary are gameplay rules.
-  for (const [trait, damageType, amount] of [
-    ["toxic", "poison", 1],
-    ["bloodletter", "bleed", 1],
-    ["combustible", "burn", 1],
-    ["chilling", "freeze", 1],
-    ["zealot", "holy", 2],
-    ["concussive", "stun", 1],
-  ] as const) {
+  for (const [trait, damageType, amount] of ACTION_DAMAGE_TRAITS) {
     if (getBattleOutcome(nextState) !== null) return nextState;
     if (hasEnemyTrait(nextState, trait))
       nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, trait), damageType, amount, combatTexts);
@@ -137,7 +141,7 @@ export function processEncounterTraitCardAction(
     nextState = recordEnemyAbilityActivation(nextState, "insatiable");
     nextState = { ...nextState, enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scale(1) };
   }
-  if (options.cardPlayed !== false && isNatureCard(card) && hasEnemyTrait(nextState, "rooted")) {
+  if (options.cardPlayed !== false && hasEnemyTrait(nextState, "rooted") && isNatureCard(card)) {
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
     nextState = addEnemyMitigationWithCombatText(nextState, "block", scale(1), combatTexts);
   }

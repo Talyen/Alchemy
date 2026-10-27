@@ -1,7 +1,7 @@
 import { UI_GOLD } from "@/lib/game-constants";
 import {
   characters,
-  getCompanionKeywords,
+  getCompanionKeywordView,
   getTrinketKeywords,
   keywordDefinitions,
   type BattleCard,
@@ -68,7 +68,7 @@ export function getCardInspectionShineColors(card: BattleCard): readonly string[
 }
 
 export function getCompanionShineColors(companion: CompanionDefinition): readonly string[] {
-  const colors = getKeywordBorderShineColors(getCompanionKeywords(companion));
+  const colors = getKeywordBorderShineColors(getCompanionKeywordView(companion));
   return colors.length > 0 ? colors : keywordDefinitions.companion.shineColors;
 }
 

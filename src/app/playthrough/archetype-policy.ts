@@ -1,5 +1,12 @@
 import { getImmediateDamage, getImmediateDefense } from "@/lib/battle";
-import { characters, getCardKeywords, type BattleCard, type CharacterId, type KeywordId } from "@/lib/game-data";
+import {
+  characters,
+  getCardKeywords,
+  getCardKeywordView,
+  type BattleCard,
+  type CharacterId,
+  type KeywordId,
+} from "@/lib/game-data";
 
 function keywordProfile(deck: readonly BattleCard[]): Map<KeywordId, number> {
   const profile = new Map<KeywordId, number>();
@@ -47,7 +54,7 @@ export function scoreStrategyCard(
   deck: readonly BattleCard[],
 ): number {
   if (policy === "archetype") return scoreArchetypeCard(hero, card, deck);
-  return heroAffinity(hero, getCardKeywords(card));
+  return heroAffinity(hero, getCardKeywordView(card));
 }
 
 export function scoreStrategyKeyword(

@@ -15,6 +15,11 @@ import { setEnemyStatus, setPlayerStatus } from "./status-state";
 import { mergeCombatText } from "./combat-text-events";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
 
+const NATIVE_STATUS_TRAITS = [
+  ["fire-imp", "burn"],
+  ["giant-spider", "poison"],
+] as const;
+
 export function applyNativeHitFollowups(
   state: BattleState,
   context: EnemyAbilityContext,
@@ -37,10 +42,7 @@ export function applyNativeHitFollowups(
     );
     nextState = result.state;
   }
-  for (const [traitId, status] of [
-    ["fire-imp", "burn"],
-    ["giant-spider", "poison"],
-  ] as const) {
+  for (const [traitId, status] of NATIVE_STATUS_TRAITS) {
     if (getBattleOutcome(nextState) !== null) return nextState;
     if (hasEnemyTrait(nextState, traitId)) {
       nextState = applyPlayerStatusFromAttack(

@@ -1,4 +1,4 @@
-import { getCardKeywords, type BattleCard, type BattleCardEffect, type KeywordId } from "@/lib/game-data";
+import { getCardKeywordView, type BattleCard, type BattleCardEffect, type KeywordId } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { CorruptionMutationGroup, Mutation } from "./mutation-types";
 import { CORRUPTION_BLOOD_RITE_BLEED_WEIGHT } from "@/lib/game-constants";
@@ -42,7 +42,7 @@ export function applyAltarModifiers(
 ): CorruptionMutationGroup[] {
   const steady = modifiers.includes("steady-sigil");
   const blood = modifiers.includes("blood-rite");
-  const keywords = modifiers.includes("echoing-altar") ? new Set<KeywordId>(getCardKeywords(card)) : null;
+  const keywords = modifiers.includes("echoing-altar") ? new Set<KeywordId>(getCardKeywordView(card)) : null;
   if (!steady && !blood && !keywords) return groups;
 
   const modified: CorruptionMutationGroup[] = [];

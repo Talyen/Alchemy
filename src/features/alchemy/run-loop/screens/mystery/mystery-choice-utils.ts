@@ -1,6 +1,6 @@
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
 
-import { getCardKeywords, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { getCardKeywordView, type BattleCard, type KeywordId } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { getPlasmaKeywordsForGear } from "@/features/alchemy/shared/config";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -48,7 +48,7 @@ export function getPlasmaKeywordsForMysteryReward({
     }
     const cardId = effect.kind === "addCard" ? effect.cardId : effect.kind === "chooseCard" ? chosenCardId : null;
     const card = cardId ? findCard(cardId) : undefined;
-    if (card) for (const keyword of getCardKeywords(card)) keywords.add(keyword);
+    if (card) for (const keyword of getCardKeywordView(card)) keywords.add(keyword);
     if (effect.kind === "gainTrinket") {
       for (const keyword of getTrinketKeywords(effect.trinketId)) keywords.add(keyword);
     }

@@ -4,7 +4,9 @@ import {
   cardHasKeyword,
   filterKeywordsForTalentXP,
   getCardKeywords,
+  getCardKeywordView,
   getCompanionKeywords,
+  getCompanionKeywordView,
 } from "@/lib/game-data/keywords";
 import { makeTestCard } from "../../fixtures/cards";
 
@@ -17,7 +19,9 @@ it("keeps card-specific keywords separate and refreshes them when effects are re
   const card = makeTestCard({ effects: [{ kind: "heal", amount: 3 }] });
   const variant = makeTestCard({ ...card, consume: true, tags: ["archery"] });
   expect(getCardKeywords(card)).toEqual(["health"]);
+  expect(getCardKeywordView(card)).toEqual(getCardKeywords(card));
   expect(getCardKeywords(variant)).toEqual(["health", "consume", "archery"]);
+  expect(getCardKeywordView(variant)).toEqual(getCardKeywords(variant));
   expect(cardHasKeyword(card, "health")).toBe(true);
   expect(cardHasKeyword(card, "consume")).toBe(false);
   expect(cardHasKeyword(variant, "consume")).toBe(true);
@@ -45,6 +49,7 @@ it("keeps returned keywords independent of shared card and Companion caches", ()
   expect(getCardKeywords(variant)).toEqual(["health"]);
   getCompanionKeywords(companion).push("gold");
   expect(getCompanionKeywords(companion)).toEqual(["health"]);
+  expect(getCompanionKeywordView(companion)).toEqual(["health"]);
   expect(getCardKeywords(card)).toEqual(["health"]);
 });
 

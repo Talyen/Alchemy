@@ -48,7 +48,13 @@ function footprint(
 }
 
 function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Spread {
-  if (ahead.length === 0) return 0;
+  if (
+    ahead.every(
+      (old) =>
+        endsAt(old.presentation) <= launchAt || old.presentation.launchAt >= launchAt + item.presentation.lifetimeMs,
+    )
+  )
+    return 0;
   let recentDamage = false;
   let recentHeal = false;
   if (item.presentation.lane === "impact") {

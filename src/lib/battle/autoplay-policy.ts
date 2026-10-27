@@ -5,7 +5,7 @@ import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import {
   DAMAGE_TYPES,
-  getCardKeywords,
+  getCardKeywordView,
   visitBattleCardEffects,
   harmfulPlayerStatusIds,
   type BattleCard,
@@ -318,7 +318,7 @@ export function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapsh
   const mayRepeat =
     state.flags.playNextCardTwice ||
     (hasRepeatChance &&
-      getCardKeywords(card).some((keyword) => {
+      getCardKeywordView(card).some((keyword) => {
         if (keyword === "burn") return state.talentEffects.burnCardPlayTwiceChance > 0;
         if (keyword === "freeze") return state.talentEffects.freezeCardPlayTwiceChance > 0;
         if (keyword === "nature") return state.talentEffects.natureCardPlayTwiceChance > 0;

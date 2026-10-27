@@ -2,7 +2,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import { type ReactNode, useMemo, useState } from "react";
 import { useUiStore } from "../../shared/stores/react/ui-store";
-import { getCardKeywords } from "@/lib/game-data";
+import { getCardKeywordView } from "@/lib/game-data";
 import { getGearInstanceTitle } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
@@ -134,7 +134,7 @@ function getRewardColorPair(reward: ResolvedRewardChoice | null) {
     case "trinket":
       return getPlasmaColorPair(getTrinketKeywords(reward.choice.id));
     case "card":
-      return getPlasmaColorPair(getCardKeywords(reward.choice));
+      return getPlasmaColorPair(getCardKeywordView(reward.choice));
   }
 }
 

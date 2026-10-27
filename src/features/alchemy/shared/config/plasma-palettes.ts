@@ -1,8 +1,8 @@
 import {
   characters,
-  getCardKeywords,
+  getCardKeywordView,
   getEnemyAbilities,
-  getCompanionKeywords,
+  getCompanionKeywordView,
   getTrinketKeywords,
   type BattleCard,
   type BestiaryEntry,
@@ -81,7 +81,7 @@ export function getPlasmaColorPairForCharacter(id: CharacterId): PlasmaColorPair
 }
 
 export function getPlasmaColorPairForCard(card: BattleCard): PlasmaColorPair | null {
-  return getPlasmaColorPair(getCardKeywords(card));
+  return getPlasmaColorPair(getCardKeywordView(card));
 }
 
 export function getPlasmaColorPairForTrinket(trinket: TrinketEntry | string): PlasmaColorPair | null {
@@ -100,14 +100,15 @@ export function getPlasmaColorPairForUnique(): PlasmaColorPair | null {
 
 export function getPlasmaColorPairForCompanion(companion: CompanionDefinition): PlasmaColorPair | null {
   return (
-    getPlasmaColorPair(getCompanionKeywords(companion)) ??
+    getPlasmaColorPair(getCompanionKeywordView(companion)) ??
     getPlasmaColorPairFromColors(getCompanionShineColors(companion))
   );
 }
 
 export function getPlasmaKeywordsForEnemy(entry: BestiaryEntry): KeywordId[] {
   const keywords = new Set(getEnemyTraitKeywordIds(entry));
-  for (const ability of getEnemyAbilities(entry)) for (const keyword of getCardKeywords(ability)) keywords.add(keyword);
+  for (const ability of getEnemyAbilities(entry))
+    for (const keyword of getCardKeywordView(ability)) keywords.add(keyword);
   return [...keywords];
 }
 

@@ -38,8 +38,13 @@ export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
   );
 }
 
+/** Read-only view for consumers that do not retain or mutate keywords. */
+export function getCompanionKeywordView(companion: CompanionDefinition): readonly KeywordId[] {
+  return cachedEffectKeywords(companion.turnStartEffects);
+}
+
 export function getCompanionKeywords(companion: CompanionDefinition): KeywordId[] {
-  return [...cachedEffectKeywords(companion.turnStartEffects)];
+  return [...getCompanionKeywordView(companion)];
 }
 
 export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
@@ -219,6 +224,6 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
 };
 
 /** Keywords that earn in-run Talent XP; tree-less keywords stay out of the XP and Health math. */
-export function filterKeywordsForTalentXP(keywords: KeywordId[]): KeywordId[] {
+export function filterKeywordsForTalentXP(keywords: readonly KeywordId[]): KeywordId[] {
   return keywords.filter((keyword) => TALENT_TREE_KEYWORD_IDS.has(keyword));
 }

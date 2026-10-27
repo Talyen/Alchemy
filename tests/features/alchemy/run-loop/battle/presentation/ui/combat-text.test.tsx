@@ -201,6 +201,27 @@ it("keeps the direct flight independent while pairing the reaction name and bonu
   );
 });
 
+it("uses the center route when scheduled flights do not overlap", () => {
+  const prepared = prepareCombatFeedback(
+    [
+      { target: "enemy", kind: "damage", stat: "burn", amount: 8 },
+      { target: "enemy", kind: "heal", stat: "health", amount: 3 },
+    ],
+    7,
+    0,
+    100,
+  );
+  const entries = prepared.bursts[0]!.entries;
+  entries[0]!.presentation = { lane: "impact", launchAt: 100, lifetimeMs: 10, phase: "waiting", spread: 0 };
+  entries[1]!.presentation = { lane: "impact", launchAt: 110, lifetimeMs: 100, phase: "waiting" };
+  const scheduled = scheduleCombatFeedback(prepared.bursts, [], 0, 100, false);
+  expect(scheduled.floatingCombatBursts[0]!.entries[1]!.presentation).toMatchObject({
+    launchAt: 110,
+    spread: 0,
+    phase: "waiting",
+  });
+});
+
 it("fans direct hits independently and gives simultaneous reactions separate stable routes", () => {
   const prepared = prepareCombatFeedback(
     [

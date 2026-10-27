@@ -1,7 +1,7 @@
 import type { RunObtainedItem } from "@/lib/active-run-session";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard, KeywordId } from "@/lib/game-data";
-import { addTalentXP, filterKeywordsForTalentXP, getCardKeywords } from "@/lib/game-data";
+import { addTalentXP, filterKeywordsForTalentXP, getCardKeywordView } from "@/lib/game-data";
 import { addCraftingCurrencies, EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory as ProfileMaterialInventory } from "@/lib/homestead/types";
@@ -52,7 +52,7 @@ export function resetRunXP(draft: GameplayDraft): void {
 }
 
 export function awardCardXP(draft: GameplayDraft, card: BattleCard): void {
-  const keywords = filterKeywordsForTalentXP(getCardKeywords(card));
+  const keywords = filterKeywordsForTalentXP(getCardKeywordView(card));
   if (keywords.length === 0) return;
   draft.run.activeRun.runTalentXP = addTalentXP(draft.run.activeRun.runTalentXP, keywords);
 }

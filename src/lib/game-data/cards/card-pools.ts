@@ -3,8 +3,10 @@ import type { BattleCard, BattleCardEffect } from "../types";
 import { visitBattleCardEffects } from "../effect-tree";
 import { cardLibrary } from "./library/cards";
 
+const MIXED_POTION_PREFIX = `${MIXED_POTION_CARD_ID}-`;
+
 export function isMixedPotionCard(card: Pick<BattleCard, "id">): boolean {
-  return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(`${MIXED_POTION_CARD_ID}-`);
+  return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(MIXED_POTION_PREFIX);
 }
 
 // Distillation ("Potions you Consume are 10% more potent") applies to exactly
