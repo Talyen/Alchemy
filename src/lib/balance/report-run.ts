@@ -182,13 +182,25 @@ export function mergeCoreMetrics(chunks: readonly CompactCoreRow[]): AnomalyMetr
   return [...maxima.values()].sort((left, right) => right.values.late - left.values.late);
 }
 
-export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
-  const core = withPhaseTiming("core scenarios", () => [...coreScenarios(options)].map((run) => run()));
-  const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
+type CoreSummary = Pick<BalanceReportModel, "enemies" | "classes" | "classMatchups">;
+type SweepSummary = Pick<
+  BalanceReportModel,
+  | "boons"
+  | "cardsIsolatedSkeleton"
+  | "cardsIsolatedElite"
+  | "cardsInClass"
+  | "talents"
+  | "companions"
+  | "gear"
+  | "affixes"
+>;
 
-  const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));
-  const rankedSweep = (label: string, run: () => PairedTierRow[]) =>
-    withPhaseTiming(label, () => run().sort((a, b) => a.deltas.late.delta - b.deltas.late.delta));
+export function composeBalanceReport(
+  options: ReportRunOptions,
+  core: CoreSummary,
+  sweeps: SweepSummary,
+  anomalySummary: { anomalies: AnomalyReportRow[]; metrics: AnomalyMetricRow[] },
+): BalanceReportModel {
   return {
     meta: {
       samplingMode: options.mode ?? "custom",
@@ -199,7 +211,21 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
       cardDeckSamples: options.cardDeckSamples,
       deckSeeds: options.deckSeeds,
     },
-    ...summary,
+    ...core,
+    ...sweeps,
+    anomalies: anomalySummary.anomalies,
+    anomalyMetrics: anomalySummary.metrics,
+  };
+}
+
+export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
+  const core = withPhaseTiming("core scenarios", () => [...coreScenarios(options)].map((run) => run()));
+  const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
+
+  const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));
+  const rankedSweep = (label: string, run: () => PairedTierRow[]) =>
+    withPhaseTiming(label, () => run().sort((a, b) => a.deltas.late.delta - b.deltas.late.delta));
+  const sweeps = {
     boons: rankedSweep("boon sweep", () => runTrinketSweep(options)),
     cardsIsolatedSkeleton: rankedSweep("card isolated (skeleton)", () => runCardSweepIsolated(options, "skeleton")),
     cardsIsolatedElite: rankedSweep("card isolated (elite)", () => runCardSweepIsolated(options, "mimic")),
@@ -208,7 +234,6 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
     companions: rankedSweep("companion sweep", () => runCompanionSweep(options)),
     gear: rankedSweep("gear sweep", () => runGearSweep(options)),
     affixes: rankedSweep("affix sweep", () => runAffixSweep(options)),
-    anomalies,
-    anomalyMetrics: metrics,
   };
+  return composeBalanceReport(options, summary, sweeps, { anomalies, metrics });
 }

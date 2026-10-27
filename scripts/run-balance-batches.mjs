@@ -135,28 +135,15 @@ await withReportServer(async (server) => {
   const core = coreChunks.map((chunk) => chunk.row);
   const { anomalies } = api.collectAnomalies(core);
   const metrics = api.mergeCoreMetrics(coreChunks);
-  const model = {
-    meta: {
-      samplingMode: options.mode ?? "custom",
-      policy: options.policy,
-      loadoutMode: options.loadoutMode,
-      iterations: options.iterations,
-      pairedIterations: options.pairedIterations,
-      cardDeckSamples: options.cardDeckSamples,
-      deckSeeds: options.deckSeeds,
-    },
-    ...summarizeCoreRates(core),
-    ...Object.fromEntries(
-      phases
-        .slice(1)
-        .map(([name]) => [
-          name,
-          summarizePairedGroups(read(name)).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-        ]),
-    ),
-    anomalies,
-    anomalyMetrics: metrics,
-  };
+  const sweeps = Object.fromEntries(
+    phases
+      .slice(1)
+      .map(([name]) => [
+        name,
+        summarizePairedGroups(read(name)).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
+      ]),
+  );
+  const model = api.composeBalanceReport(options, summarizeCoreRates(core), sweeps, { anomalies, metrics });
   const findings = api.evaluateBalanceFindings(model, options);
   if (sourceHash() !== identity.sourceHash) throw new Error("Source changed before report generation");
   const reportDir = resolve(checkpoint, "report");
