@@ -9,12 +9,11 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyStatus } from "./status-state";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./player-rewards";
-import { resolveStunTrigger } from "./status-stun-resolve";
+import { resolveStunTrigger, applyScaledLeechHealing, computeLeechHeal } from "./stun-leech-resolution";
 import { applyPoisonDamageArmorRider } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { BLEED_STATUS_MULTIPLIER, BURN_BLEED_MIRROR_CHANCE_PERCENT, HALF_DIVISOR } from "../game-constants";
 import { applyGearCcPhysicalDamage } from "./scaled-damage";
-import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
 

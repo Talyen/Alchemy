@@ -7,7 +7,6 @@ import {
   stingerSounds,
   screenAmbienceSounds,
 } from "@/lib/audio/sound-registry";
-import { COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 
 const tables: Record<string, Record<string, string | readonly string[] | null>> = {
   battleEventSounds,
@@ -23,7 +22,7 @@ it("installs every approved cue, preserves current choices, and represents selec
     const id = choice.mappingId;
     let actual: readonly string[];
     if (id.startsWith("card:")) actual = cardSounds[id.slice(5)] ?? [];
-    else if (id.startsWith("companion:")) actual = cardSounds[COMPANION_SOUND_CARD_IDS[id.slice(10)]!] ?? [];
+    else if (id.startsWith("companion:")) actual = cardSounds[`${id.slice(10)}-companion`] ?? [];
     else if (bindings[id]) {
       const [table, key] = bindings[id]!.split(".");
       const sound = tables[table!]?.[key!];

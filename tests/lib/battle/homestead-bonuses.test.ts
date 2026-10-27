@@ -5,7 +5,7 @@ import { createEmptyTalentEffectManifest } from "@/lib/game-data";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
-import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { applyCardEffects } from "@/lib/battle/effect-handlers/registry";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import type { CombatTextEvent } from "@/lib/battle/types";

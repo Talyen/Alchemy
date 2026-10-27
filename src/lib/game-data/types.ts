@@ -25,9 +25,8 @@ export type KeywordId =
   | "dodge"
   | "thorns";
 
-export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
-
 export const DAMAGE_TYPES = ["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"] as const;
+export type DamageType = (typeof DAMAGE_TYPES)[number];
 
 export type PlayerStatusId =
   | "block"
@@ -42,18 +41,28 @@ export type PlayerStatusId =
   | "freeze"
   | "stun";
 
-export type EnemyStatusId =
-  | "burn"
-  | "poison"
-  | "bleed"
-  | "freeze"
-  | "stun"
-  | "burnBonus"
-  | "freezeBonus"
-  | "thorns"
-  | "onAttackBleed";
-
-export type EnemyStatusDamageId = Exclude<EnemyStatusId, "burnBonus" | "freezeBonus" | "onAttackBleed">;
+// These lists also define which saved card effects accept each status.
+export const ENEMY_STATUS_IDS = [
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "stun",
+  "burnBonus",
+  "freezeBonus",
+  "thorns",
+  "onAttackBleed",
+] as const;
+export type EnemyStatusId = (typeof ENEMY_STATUS_IDS)[number];
+export const ENEMY_STATUS_DAMAGE_IDS = [
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "stun",
+  "thorns",
+] as const satisfies readonly EnemyStatusId[];
+export type EnemyStatusDamageId = (typeof ENEMY_STATUS_DAMAGE_IDS)[number];
 
 export type CompanionId =
   | "wolf"

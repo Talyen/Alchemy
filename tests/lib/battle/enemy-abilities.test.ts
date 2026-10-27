@@ -12,7 +12,7 @@ import { applyEnemyAbility, processEnemyAbility } from "@/lib/battle/enemy-turn-
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { getEnemyAbilityPressure, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";

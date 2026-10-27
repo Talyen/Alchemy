@@ -1,7 +1,6 @@
 export declare const TRANSIENT_ARTIFACT_DIRS: readonly string[];
 export declare const DEFAULT_ARTIFACT_DIRS: readonly string[];
 export declare const BUILD_ARTIFACT_DIRS: readonly string[];
-export declare const TOOL_CACHE_DIRS: readonly string[];
 
 export declare function listArtifactDirsToRemove(
   rootDir: string,

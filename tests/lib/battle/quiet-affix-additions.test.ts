@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { inspectedAttackAmounts } from "../../fixtures/inspection";
+import { getBattleCardDescriptionInspection } from "@/lib/battle/card-damage-inspection";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { projectEnemyDotDamage } from "@/lib/battle/dot-resolve";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
@@ -44,7 +44,10 @@ describe("affixes that modify existing combat events", () => {
     const state = battle({ gearEffects: { attackBonusVsFullHealth: 5 } });
     const result = play(state, double);
     expect(result.state.enemyHealth).toBe(89);
-    expect(inspectedAttackAmounts(double, state)).toEqual([8, 3]);
+    expect(getBattleCardDescriptionInspection(double, state).descriptionLines).toEqual([
+      "Deal 8 Physical damage",
+      "Deal 3 Physical damage",
+    ]);
     expect(textKinds(result.combatTexts)).toEqual(textKinds(play(battle(), double).combatTexts));
     const wounded = { ...state, enemyHealth: 99 };
     expect(play(wounded, attack()).state.enemyHealth).toBe(96);

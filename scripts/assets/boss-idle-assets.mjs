@@ -18,7 +18,7 @@ export const bossIdleMasters = [
 ];
 
 // Largest first: one native-resolution interpolation supplies the filtered smaller variants.
-export const bossIdleWidths = [1920, 1280, 640];
+const bossIdleWidths = [1920, 1280, 640];
 export const bossIdleAssets = bossIdleMasters.flatMap((asset) =>
   bossIdleWidths.map((width) => ({
     ...asset,

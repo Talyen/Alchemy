@@ -3,12 +3,12 @@ export const BUDGETS = {
   // after the mana dock and battle presentation additions.
   // Localization adds i18next, React bindings and explicit UI message calls.
   // Reserve 160 KiB for that runtime; catalogs are emitted as local JSON assets.
-  // CI run 40023645804 measured 2,105,789 bytes in both desktop editions
-  // after the brewing services, room trail and distinct trait icons. Allow
-  // another 25 KiB for those additions; retain the eager total-size gate.
-  totalJsMaxBytes: 2075 * 1024,
+  // CI run 40413215543 measured 2,138,541 bytes in both desktop editions
+  // after combat feedback, enemy traits, and inspection changes. Keep a
+  // small margin above that measured eager total.
+  totalJsMaxBytes: 2105 * 1024,
   // Soft warning at 95% so growth is visible before the gate goes red.
-  totalJsWarnBytes: Math.floor(2075 * 1024 * 0.95),
+  totalJsWarnBytes: Math.floor(2105 * 1024 * 0.95),
 };
 
 export const CHUNK_SIZE_WARNING_KB = 640;

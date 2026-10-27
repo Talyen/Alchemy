@@ -47,7 +47,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await seedRandom(page, 42);
     // Observe before boot/input: protocol assertions can miss a whole transfer.
     await page.addInitScript(() => {
-      const state = window as TransferWindow;
+      const state = window as unknown as TransferWindow;
       const review = (state.transferReview = {
         phase: "opening",
         openingCounts: [],
@@ -129,7 +129,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await test.step("opening deal starts empty and blocks pile inspection until ready", async () => {
       await waitForOpeningDeal(page);
       await expect(icon).toHaveAttribute("aria-disabled", "false");
-      const opening = await page.evaluate(() => (window as TransferWindow).transferReview);
+      const opening = await page.evaluate(() => (window as unknown as TransferWindow).transferReview);
       expect(opening.openingCounts[0]).toBe(0);
       expect(opening.openingCounts).toContain(4);
       expect(opening.openingFlight).toBe(true);
@@ -144,15 +144,17 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     });
 
     await test.step("playing a card temporarily gates inspection", async () => {
-      await page.evaluate(() => ((window as TransferWindow).transferReview.phase = "play"));
+      await page.evaluate(() => ((window as unknown as TransferWindow).transferReview.phase = "play"));
       await battle.playFirstCard();
-      await expect.poll(() => page.evaluate(() => (window as TransferWindow).transferReview.playBlocked)).toBe(true);
+      await expect
+        .poll(() => page.evaluate(() => (window as unknown as TransferWindow).transferReview.playBlocked))
+        .toBe(true);
       await expect(icon).toHaveAttribute("aria-disabled", "false");
     });
 
     await test.step("discard flips sequentially onto its pile and the next deal stays colored", async () => {
       const before = await page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-end", "mark").length);
-      await page.evaluate(() => ((window as TransferWindow).transferReview.phase = "turn"));
+      await page.evaluate(() => ((window as unknown as TransferWindow).transferReview.phase = "turn"));
       await battle.endTurn();
       await expect
         .poll(() => page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-end", "mark").length))
@@ -160,11 +162,11 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       await expect(battle.hand).toHaveCount(4);
       await expect(icon).toHaveAttribute("aria-disabled", "false");
       await expect
-        .poll(() => page.evaluate(() => (window as TransferWindow).transferReview.discard?.pile))
+        .poll(() => page.evaluate(() => (window as unknown as TransferWindow).transferReview.discard?.pile))
         .toBeTruthy();
       const review = await page.evaluate(() => {
-        (window as TransferWindow).stopTransferReview();
-        return (window as TransferWindow).transferReview;
+        (window as unknown as TransferWindow).stopTransferReview();
+        return (window as unknown as TransferWindow).transferReview;
       });
       expect(review.discardColored).toBe(true);
       expect(review.grayscale).toEqual([]);

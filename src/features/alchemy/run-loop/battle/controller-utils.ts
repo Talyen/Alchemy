@@ -33,7 +33,7 @@ const OUTCOME_CARDS = new Set([
   "bellows-blast",
 ]);
 
-export function playResolvedCardSound(cardId: string | undefined, events: CombatTextEvent[], deathsDoor = false) {
+export function playResolvedCombatSound(cardId: string | undefined, events: CombatTextEvent[], deathsDoor = false) {
   if (deathsDoor) return playBattleEvent("deathsDoor");
   let sound = selectCombatSound(events, !!cardId && !OUTCOME_CARDS.has(cardId));
   if (sound === "hitCritical" && cardId === "slash") sound = "slashCritical";
@@ -56,10 +56,6 @@ export function playResolvedCardSound(cardId: string | undefined, events: Combat
   )
     sound = "thornsGain";
   return sound ? playBattleEvent(sound) : cardId ? playCardSound(cardId) : undefined;
-}
-
-export function playCompanionSound(_companionId: string, events: CombatTextEvent[], deathsDoor = false) {
-  return playResolvedCardSound(undefined, events, deathsDoor);
 }
 
 export interface CombatTextPresenter {

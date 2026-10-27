@@ -2531,7 +2531,7 @@
       "currentState": "playing",
       "note": "",
       "priority": "P1",
-      "evidence": ["src/features/alchemy/meta/screens/armory/armory-screen-actions.ts"]
+      "evidence": ["src/features/alchemy/meta/screens/armory-screen.tsx"]
     },
     {
       "id": "reward-claim",

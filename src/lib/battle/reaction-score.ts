@@ -2,7 +2,6 @@ import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
   PLAYER_STATUS_DISPLAY_ORDER,
-  getModifiedCompanionEffects,
   harmfulPlayerStatusIds,
   type BattleCard,
   type BattleCardEffect,
@@ -15,7 +14,7 @@ import { prepareAttackPacket } from "./damage";
 import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolveSecondaryAction } from "./action-context";
-import { getBattleCompanionDamageModifiers } from "./companion-scaling";
+import { createCompanionActionCard } from "./companion-scaling";
 import { applyShatter, canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
 import { projectEnemyDotDamage } from "./dot-resolve";
 import { addPlayerStatus, setEnemyStatus } from "./status-state";
@@ -166,7 +165,7 @@ const utilityHandlers = createCardUtilityHandlers({
     return playerResources.checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, []);
   },
   crystalLoss: (state) => state,
-  status: playerResources.applyPlayerStatusEffect,
+  status: (state, effect, texts) => playerResources.applyPlayerStatusEffect(state, effect, texts),
   chooseStatus: () => {
     throw new Error("Scoring must branch before utility resolution");
   },
@@ -316,19 +315,7 @@ function projectEffects(
         if (effect.kind === "heal")
           return [{ ...path, state: utilityHandlers.heal(path.state, card, effect, 1, [], { manaAtStart }) }];
         if (effect.kind === "companion-action" && path.state.activeCompanion) {
-          const companion = path.state.activeCompanion;
-          const companionCard: BattleCard = {
-            id: `companion-${companion.id}`,
-            title: companion.title,
-            art: companion.art,
-            cost: 0,
-            descriptionLines: [],
-            effects: getModifiedCompanionEffects(
-              companion,
-              path.state.talentEffects.companionBondLevels?.[companion.id] ?? 0,
-              getBattleCompanionDamageModifiers(path.state),
-            ),
-          };
+          const companionCard = createCompanionActionCard(path.state, path.state.activeCompanion);
           let next = [path];
           for (let i = 0; i < effect.amount; i++) {
             next = mergeProjections(

@@ -16,6 +16,8 @@ test(
     const battle = new BattlePage(page);
     await expect(battle.hand).toHaveCount(4);
     await expect(page.getByTestId("turn-badge-player")).toHaveAttribute("data-active", "true");
+    // The cards can be visible before the opening draw releases playback.
+    await expect(battle.endTurnBtn).toBeEnabled();
     await battle.playCardNamed("Slash");
     await expect(battle.hand).toHaveCount(3);
     expect(await battle.enemyHealth()).toBeGreaterThan(0);

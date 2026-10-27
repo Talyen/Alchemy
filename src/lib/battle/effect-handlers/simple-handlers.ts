@@ -15,6 +15,8 @@ export function rangeBoundsError(kind: string): Error {
 export const SIMPLE_HANDLERS = {
   "random-draw": (state, _card, effect, potionMult, combatTexts, context) => {
     if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
+    state.observer?.descriptionMagnitude?.("minAmount", applyPotionMultiplier(effect.minAmount, potionMult));
+    state.observer?.descriptionMagnitude?.("maxAmount", applyPotionMultiplier(effect.maxAmount, potionMult));
     const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
     const scaledAmount = applyPotionMultiplier(amount, potionMult);
     const next = applyDrawResult(state, drawFromState(state, scaledAmount), combatTexts, context?.feedback);
@@ -23,6 +25,7 @@ export const SIMPLE_HANDLERS = {
   wish: (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.companionIfAbsent && state.activeCompanion) return state;
     const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
+    state.observer?.descriptionMagnitude?.("amount", adjustedWish);
     if (adjustedWish > 0)
       mergeCombatText(combatTexts, {
         target: "player",
@@ -45,6 +48,7 @@ export const SIMPLE_HANDLERS = {
   },
   "draw-cards": (state, _card, effect, potionMult, combatTexts, context) => {
     const amount = applyPotionMultiplier(effect.amount, potionMult);
+    state.observer?.descriptionMagnitude?.("amount", amount);
     const next = applyDrawResult(state, drawFromState(state, amount), combatTexts, context?.feedback);
     return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
   },

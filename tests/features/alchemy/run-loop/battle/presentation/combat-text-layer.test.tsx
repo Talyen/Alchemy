@@ -162,6 +162,56 @@ describe("CombatTextLayer geometry", () => {
     expect(feedback.style.visibility).toBe("");
   });
 
+  it.each([
+    { stat: "stun", chip: "stunned", target: "enemy", other: "player", text: "Stunned" },
+    { stat: "freeze", chip: "frozen", target: "player", other: "enemy", text: "Frozen" },
+  ] as const)(
+    "deduplicates secondary $chip only against its recipient's visible active chip",
+    ({ stat, chip, target, other, text }) => {
+      const buildup = statusRow(target, [stat]);
+      battlePresentation.getState().clearFloatingCombatTexts();
+      battlePresentation.getState().showCombatTexts([
+        { target, kind: "notice", stat, text, feedback: "secondary" },
+        { target: other, kind: "notice", stat, text, feedback: "secondary" },
+        { target, kind: "damage", stat, amount: 60, feedback: "primary" },
+      ]);
+      const { container } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
+      const own = container.querySelector<HTMLElement>(`[data-secondary-status-feedback="${target}:${chip}"]`)!;
+      const otherNotice = container.querySelector<HTMLElement>(`[data-secondary-status-feedback="${other}:${chip}"]`)!;
+      expect(own.style.visibility).toBe("");
+      const row = statusRow(target, [chip]);
+      nextFrame();
+      expect(own.style.visibility).toBe("hidden");
+      expect(otherNotice.style.visibility).toBe("");
+      expect(container.querySelector('[data-kind="damage"][data-intent="primary"]')?.getAttribute("style")).toBeNull();
+      expect(
+        secondaryStatusFeedbackKey({ target, kind: "notice", stat, text, feedback: "primary" }, "impact"),
+      ).toBeUndefined();
+      expect(secondaryStatusFeedbackKey({ target, kind: "notice", stat, text }, "setback")).toBeUndefined();
+      expect(
+        secondaryStatusFeedbackKey(
+          { target, kind: "notice", stat, text, signal: "cleanse", feedback: "secondary" },
+          "benefit",
+        ),
+      ).toBeUndefined();
+      row.hidden = true;
+      nextFrame();
+      expect(own.style.visibility).toBe("");
+      row.hidden = false;
+      row.style.overflow = "hidden";
+      vi.spyOn(row, "getBoundingClientRect").mockReturnValue(new DOMRect(130, 410, 35, 50));
+      nextFrame();
+      expect(own.style.visibility).toBe("");
+      row.style.overflow = "visible";
+      nextFrame();
+      expect(own.style.visibility).toBe("hidden");
+      row.remove();
+      nextFrame();
+      expect(own.style.visibility).toBe("");
+      buildup.remove();
+    },
+  );
+
   it("keeps both overlays pinned through movement and portrait replacement using one scene read per frame", () => {
     const { container } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
     const layers = container.querySelectorAll<HTMLDivElement>('[data-testid="combat-text-layer"]');

@@ -14,7 +14,7 @@ import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyDamageStatuses, applyPoisonTalentRiders, tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { addEnemyStatus } from "@/lib/battle/status-state";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { reduceDamageByMana } from "@/lib/battle/status-helpers";
@@ -121,7 +121,7 @@ it("Burn bonuses against Bleeding enemies apply to card damage and ticks", () =>
   });
   expect(computeCardDamageToEnemy(state, effect, makeTestCard({ effects: [effect] })).modifiedDamage).toBe(15);
   const texts: CombatTextEvent[] = [];
-  expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(77);
+  expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(73);
   expect(texts).toContainEqual(
     expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true }),
   );

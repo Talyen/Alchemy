@@ -5,7 +5,7 @@ import catalogs from "@/lib/localization/locales/runtime.json";
 import { installCatalogs, localization } from "@/lib/localization/runtime";
 
 import { StatusIcon } from "@/features/alchemy/run-loop/battle/presentation/ui/status-icons";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { cardById, computeTalentEffects } from "@/lib/game-data";

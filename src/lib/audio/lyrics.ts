@@ -5,7 +5,7 @@ import frostwarden from "./lyrics/frostwarden.json";
 import ironBear from "./lyrics/iron-bear.json";
 import seraph from "./lyrics/seraph.json";
 import stoneTitan from "./lyrics/stone-titan.json";
-import { MUSIC_KEYS } from "../game-constants";
+import { MUSIC_CATALOG } from "./music-catalog";
 
 export interface LyricWord {
   readonly text: string;
@@ -16,13 +16,13 @@ export interface LyricWord {
 // Store phrase text once and interleave start/end times to keep eager timing data compact.
 const tracks = new Map<string, ReadonlyArray<readonly LyricWord[]>>(
   Object.entries({
-    [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: blightTreant,
-    [MUSIC_KEYS.BOSS_BLOOD_COUNTESS]: bloodCountess,
-    [MUSIC_KEYS.BOSS_FORGE_GOLEM]: forgeGolem,
-    [MUSIC_KEYS.BOSS_FROSTWARDEN]: frostwarden,
-    [MUSIC_KEYS.BOSS_IRON_BEAR]: ironBear,
-    [MUSIC_KEYS.BOSS_SERAPH]: seraph,
-    [MUSIC_KEYS.BOSS_STONE_TITAN]: stoneTitan,
+    "blight-treant": blightTreant,
+    "blood-countess": bloodCountess,
+    "forge-golem": forgeGolem,
+    frostwarden: frostwarden,
+    "iron-bear": ironBear,
+    seraph: seraph,
+    "stone-titan": stoneTitan,
   }).map(([key, { lines }]) => [
     key,
     lines.map(({ text, timings }) =>
@@ -34,7 +34,8 @@ const tracks = new Map<string, ReadonlyArray<readonly LyricWord[]>>(
 );
 
 export function getMusicLyrics(key: string): ReadonlyArray<readonly LyricWord[]> | undefined {
-  return tracks.get(key);
+  const bossId = Object.hasOwn(MUSIC_CATALOG, key) ? MUSIC_CATALOG[key]?.bossId : undefined;
+  return bossId ? tracks.get(bossId) : undefined;
 }
 
 export interface LyricFrame {

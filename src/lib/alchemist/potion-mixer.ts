@@ -1,34 +1,21 @@
-import { capitalizeWord, isValidDeckIndex } from "@/lib/utils";
-import {
-  CONSUME_DESCRIPTION_LINE,
-  MIXED_POTION_CARD_ID,
-  MIXED_POTION_COST,
-  MIXED_POTION_TITLE,
-} from "../game-constants";
-import type { BattleCard, CardDescription } from "../game-data";
+import { isValidDeckIndex } from "@/lib/utils";
+import { MIXED_POTION_CARD_ID, MIXED_POTION_COST, MIXED_POTION_TITLE } from "../game-constants";
+import type { BattleCard } from "../game-data";
 import {
   BattleCardEffectSchema,
   areBattleCardEffectsEqual,
   cloneBattleCard,
+  appendCardDescriptionTrailer,
   createEffectDescription,
   carryCardDescriptionMarks,
   getCardDescription,
   mapCardDescriptionReferences,
   withCardDescription,
   mixedPotion,
+  isPotionCard,
   visitBattleCardEffects,
 } from "../game-data";
 import { doublePotionEffect, isNonFoldingEffect } from "./potion-scaling";
-
-/** Shared keyword/consume trailer so mixed, doubled, and distilled potions read alike. */
-export function appendPotionTrailer(
-  description: CardDescription,
-  tags: readonly string[] | undefined,
-  consume: boolean,
-): void {
-  for (const tag of tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
-  if (consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
-}
 
 function potionParts(card: BattleCard, effects = card.effects) {
   return {
@@ -77,7 +64,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
     );
   });
   const effects = parts.flatMap((part) => part.effects);
-  appendPotionTrailer(description, tags, true);
+  appendCardDescriptionTrailer(description, tags, true);
   return cloneBattleCard(
     withCardDescription(
       {
@@ -106,7 +93,7 @@ export function tryCreateMixedPotion(cardA: BattleCard | undefined, cardB: Battl
   return prepareMixedPotion(cardA, cardB);
 }
 
-export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
+function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
   if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
     throw new Error("Invalid potion indices for mixing");
   }
@@ -114,16 +101,13 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
   return [...deck.slice(0, first), ...deck.slice(first + 1, second), ...deck.slice(second + 1), mixed];
 }
 
-export function doublePotionPotency(card: BattleCard): BattleCard {
-  const { effects, description } = potionParts(card, card.effects.map(doublePotionEffect));
-  appendPotionTrailer(description, card.tags, card.consume === true);
-  return cloneBattleCard(
-    withCardDescription(
-      {
-        ...card,
-        effects,
-      },
-      description,
-    ),
-  );
+/** Prepare the complete replacement before either visit spends its service. */
+export function tryMixPotionDeck(deck: BattleCard[], indexA: number, indexB: number) {
+  if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length))
+    return null;
+  const cardA = deck[indexA];
+  const cardB = deck[indexB];
+  if (!cardA || !cardB || !isPotionCard(cardA) || !isPotionCard(cardB)) return null;
+  const potion = tryCreateMixedPotion(cardA, cardB);
+  return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
 }

@@ -2,6 +2,7 @@ import { isDeepStrictEqual } from "node:util";
 import "../helpers/mock-audio";
 import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../helpers/visit-initialization";
 import { createRunRngState } from "@/lib/rng";
+import { createAlchemistBrewOffers } from "@/lib/alchemist/brewing";
 import { cardById } from "@/lib/game-data";
 import {
   brewAtCampfire,
@@ -49,7 +50,7 @@ defineSequenceFamily("visits", (seed) => {
         kind: "alchemist",
         data: {
           potions: [],
-          brewOffers: [],
+          brewOffers: createAlchemistBrewOffers(() => 0.5),
           brewUsed: false,
           distillUsed: false,
           mixUsed: false,

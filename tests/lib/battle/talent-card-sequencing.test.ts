@@ -1,6 +1,6 @@
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { companionLibrary } from "@/lib/game-data";
 import { describe, expect, it, vi } from "vitest";
 import { makeTestCard } from "../../fixtures/cards";

@@ -16,20 +16,12 @@ export const LABYRINTH_TYPE_TO_DESTINATION: Record<LabyrinthNodeType, Destinatio
   "equipment-shop": DESTINATIONS.GEAR_SHOP,
 };
 
-export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
-  entrance: "Entrance",
-  combat: destinationLabel(DESTINATIONS.NORMAL_COMBAT),
-  elite: DESTINATIONS.ELITE_COMBAT,
-  rest: DESTINATIONS.CAMPFIRE,
-  mystery: DESTINATIONS.MYSTERY,
-  corruption: DESTINATIONS.CORRUPTION,
-  transmutation: DESTINATIONS.TRANSMUTATION,
-  shop: DESTINATIONS.CARD_SHOP,
-  alchemist: DESTINATIONS.ALCHEMIST_SHOP,
-  "trinket-shop": DESTINATIONS.TRINKET_SHOP,
-  "equipment-shop": DESTINATIONS.GEAR_SHOP,
-  boss: destinationLabel(DESTINATIONS.BOSS_COMBAT),
-};
+export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = Object.fromEntries(
+  Object.entries(LABYRINTH_TYPE_TO_DESTINATION).map(([type, destination]) => [
+    type,
+    type === "entrance" ? "Entrance" : destinationLabel(destination),
+  ]),
+) as Record<LabyrinthNodeType, string>;
 
 export const LABYRINTH_SUPPORT_TYPES: Array<Exclude<LabyrinthNodeType, "entrance" | "combat" | "elite" | "boss">> = [
   "rest",

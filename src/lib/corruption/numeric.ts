@@ -2,17 +2,21 @@ import { CORRUPTION_MIN_VALUE } from "@/lib/game-constants";
 import {
   BattleCardEffectSchema,
   getCardDescription,
+  getCardEffect,
   mapEffectChildren,
   withCardDescription,
   type BattleCard,
   type BattleCardEffect,
+  type CardEffectAddress,
 } from "@/lib/game-data";
-import { effectAddressKey, getCorruptionTargetEffect } from "./effect-address";
 import type { CorruptionTarget } from "./numeric-targets";
 
-export { getCorruptionTargetEffect } from "./effect-address";
 export { getEditableCorruptionTargets } from "./numeric-targets";
 export type { CorruptionTarget } from "./numeric-targets";
+
+function effectAddressKey(address: CardEffectAddress): string {
+  return [address.effectIndex, ...(address.effectPath ?? [])].join("/");
+}
 
 export function updateCardNumericValue(card: BattleCard, target: CorruptionTarget, nextValue: number): BattleCard {
   if (!Number.isFinite(nextValue) || !target.edits.length) return card;
@@ -43,7 +47,7 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
   // the whole edit. Nothing depends on the wording or rendered character offset.
   const editsByAddress = new Map<string, Array<(typeof target.edits)[number]>>();
   for (const edit of target.edits) {
-    const effect = getCorruptionTargetEffect(card, edit);
+    const effect = getCardEffect(card.effects, edit);
     if (!effect || effect.kind !== edit.kind || (effect as Record<string, unknown>)[edit.field] !== edit.expectedValue)
       return card;
     const key = effectAddressKey(edit);
@@ -67,7 +71,7 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
 
 export function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delta: number): BattleCard {
   let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta);
-  const source = getCorruptionTargetEffect(card, target);
+  const source = getCardEffect(card.effects, target);
   if (source?.kind === "companion-action") nextValue = Math.max(1, nextValue);
   if (
     source?.kind === "random-damage" &&

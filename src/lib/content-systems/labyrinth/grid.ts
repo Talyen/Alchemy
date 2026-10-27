@@ -11,6 +11,10 @@ export function gridKey(position: LabyrinthGridPosition): string {
   return `${position.row},${position.col}`;
 }
 
+export function neighboringGridKeys({ row, col }: LabyrinthGridPosition): string[] {
+  return [`${row + 1},${col}`, `${row - 1},${col}`, `${row},${col + 1}`, `${row},${col - 1}`];
+}
+
 export function isInLabyrinthGrid(position: LabyrinthGridPosition): boolean {
   const inset = position.row > 0 && position.row < LABYRINTH_GRID.rows - 1 ? LABYRINTH_GRID.sideColumns : 0;
   return (

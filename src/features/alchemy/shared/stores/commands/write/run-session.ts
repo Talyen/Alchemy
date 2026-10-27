@@ -17,6 +17,7 @@ import { createInitialSessionFields, type RunSessionFields } from "../../session
 import type { FieldUpdate } from "../../session/transaction-internal";
 import { defineDraftSetter } from "../../session/transaction-internal";
 import { setCompletedDestinations, setDestinationIndexInAct, setDestinationOfferState } from "./run-progress";
+import { selectHasAnyOwnedGear } from "../../session/gear-store";
 
 // ── Session ──────────────────────────────────────────────────────────────────
 
@@ -68,10 +69,7 @@ export function setAlchemyVisit(
 export function setScreen(draft: GameplayDraft, action: Screen | ((previous: Screen) => Screen)): void {
   const screen = typeof action === "function" ? action(draft.run.navigation.screen) : action;
   draft.run.navigation.screen = screen;
-  if (
-    screen === "armory" &&
-    (draft.gear.ownedTrinketIds.length > 0 || Object.values(draft.gear.inventories).some((items) => items.length > 0))
-  ) {
+  if (screen === "armory" && selectHasAnyOwnedGear(draft.gear)) {
     draft.profile.hasSeenArmory = true;
   }
 }

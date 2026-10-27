@@ -37,6 +37,20 @@ not templates to duplicate.
 Use the linked tests to understand existing protection. Select checks under
 [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
+The [generated save/resume pilot](../tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts)
+checks Labyrinth map progress, pending card rewards, Health and RNG after the save
+candidate parser and session restore. These are controlled fixtures, not complete
+player journeys. The default unit tier uses 16 fixed seeds; nightly uses 64 other
+fixed seeds and 64 derived from the UTC date. A failing test names its seed. Replay
+one case with `ALCHEMY_SAVE_PROPERTY_SEED=<seed> npm run test:unit -- tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts`;
+local execution follows the focused-test policy in Contributing. The pilot does not
+shrink inputs, so preserve a failing seed as a focused regression when useful.
+The [generated Gear rejection test](../tests/features/alchemy/shared/stores/commands/gear-rejection-generated.test.ts)
+shuffles and repeats rejected equipment and crafting actions against an active run.
+It checks that the complete gameplay revision, including ownership and RNG, remains
+unchanged and no commit is published. Its test names include the seed; the default
+unit tier uses 16 fixed seeds and nightly uses 128. These are controlled fixtures.
+
 Shop purchase/refresh recipes and `runShopTransaction` live together in
 `shop-commands-core.ts`; payment, acquisition, rollback and post-commit feedback
 remain under one transaction. Merchant removal and Alchemist mixing use that
@@ -239,7 +253,10 @@ route adapters do not own that cleanup.
 ### Committed battle playback
 
 Battle reads expose serializable `BattleSnapshot` values. Opening draws and card
-plays commit before presentation. The opening result carries turn-start feedback independently of Companion actions, so presentation receives Purge feedback even when no Companion acts. `commitEndTurn` resolves the turn and its
+plays commit before presentation. The opening result carries setup, Companion,
+and opening-draw feedback in resolution order, including Emergency Wish rewards.
+The simulator starts optional combat metrics before setup effects can trigger enemy
+traits. `commitEndTurn` resolves the turn and its
 Companion follow-up with the engine-owned `resolveBattleAction` end-turn request,
 awards Dodge XP only after acceptance, and publishes the result atomically before
 discard or enemy animation.

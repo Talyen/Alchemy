@@ -65,10 +65,9 @@ export class BattlePage {
   }
 
   async playCardNamed(name: string) {
-    await this.page
-      .getByRole("button", { name: `Play ${name}` })
-      .first()
-      .click();
+    const card = this.page.getByRole("button", { name: `Play ${name}` }).first();
+    await expect.poll(() => card.evaluate((element) => !element.closest("[inert]"))).toBe(true);
+    await card.click();
   }
 
   async endTurn() {

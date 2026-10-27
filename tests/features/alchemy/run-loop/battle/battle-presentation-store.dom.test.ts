@@ -291,7 +291,7 @@ describe("battle-presentation-store", () => {
     ]);
   });
 
-  it("keeps every incoming type when a partial merge would evict its recipient", () => {
+  it("keeps every incoming type and its existing recipient", () => {
     const show = activateBattle();
     for (const stat of ["physical", "burn", "poison"] as const) {
       show([{ target: "enemy", kind: "damage", stat, amount: 3 }]);
@@ -302,24 +302,22 @@ describe("battle-presentation-store", () => {
       { target: "enemy", kind: "damage", stat: "holy", amount: 2 },
     ]);
     const bursts = battlePresentation.getState().floatingCombatBursts;
-    expect(bursts).toHaveLength(3);
-    expect(bursts.some((burst) => burst.id === original)).toBe(false);
-    expect(bursts.at(-1)!.entries.map((entry) => [entry.stat, entry.displayText])).toEqual([
-      ["physical", "-4"],
-      ["holy", "-2"],
-    ]);
+    expect(bursts).toHaveLength(4);
+    expect(bursts.find((burst) => burst.id === original)?.entries[0]?.displayText).toBe("-7");
+    expect(bursts.at(-1)!.entries.map((entry) => [entry.stat, entry.displayText])).toEqual([["holy", "-2"]]);
   });
 
-  it("does not resurrect an evicted entry or merge after the original window closes", async () => {
+  it("retains earlier entries and stops merging after the original window closes", async () => {
     const show = activateBattle();
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 1 }]);
     const first = battlePresentation.getState().floatingCombatBursts[0]!.id;
     for (const stat of ["burn", "poison", "holy"] as const)
       show([{ target: "enemy", kind: "damage", stat, amount: 1 }]);
-    expect(battlePresentation.getState().floatingCombatBursts.some((burst) => burst.id === first)).toBe(false);
+    expect(battlePresentation.getState().floatingCombatBursts.some((burst) => burst.id === first)).toBe(true);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 2 }]);
-    const newest = battlePresentation.getState().floatingCombatBursts.at(-1)!;
-    expect(newest.entries[0]!.displayText).toBe("-2");
+    expect(
+      battlePresentation.getState().floatingCombatBursts.find((burst) => burst.id === first)?.entries[0]?.displayText,
+    ).toBe("-3");
     await vi.advanceTimersByTimeAsync(200);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 3 }]);
     await vi.advanceTimersByTimeAsync(51);
@@ -335,7 +333,7 @@ describe("battle-presentation-store", () => {
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 8 }]);
     const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts).toHaveLength(2);
-    expect(bursts[0]).toBe(first);
+    expect(bursts[0]).toEqual(first);
     expect(bursts[1]!.id).not.toBe(first.id);
     expect(bursts.map((burst) => burst.entries[0]!.displayText)).toEqual(["-5", "-8"]);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - 300);
@@ -344,7 +342,7 @@ describe("battle-presentation-store", () => {
     expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
   });
 
-  it("caps bursts per target without dropping types from a dense new action", async () => {
+  it("retains bursts per target and every type in a dense new action", async () => {
     const show = activateBattle();
     show([{ target: "player", kind: "heal", stat: "health", amount: 2 }]);
     for (const amount of [1, 2, 3]) {
@@ -360,8 +358,8 @@ describe("battle-presentation-store", () => {
     const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts.filter((burst) => burst.target === "player")).toHaveLength(1);
     const enemy = bursts.filter((burst) => burst.target === "enemy");
-    expect(enemy.map((burst) => burst.entries[0]!.displayText)).toEqual(["-2", "-3", "-4"]);
-    expect(enemy[2]!.entries).toHaveLength(4);
+    expect(enemy.map((burst) => burst.entries[0]!.displayText)).toEqual(["-1", "-2", "-3", "-4"]);
+    expect(enemy[3]!.entries).toHaveLength(4);
   });
 
   it("selects one strongest Health impact per target, ahead of Block and rewards", async () => {

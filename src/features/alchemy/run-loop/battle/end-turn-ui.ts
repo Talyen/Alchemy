@@ -7,7 +7,7 @@ import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { createBattleSession } from "./battle-session";
 import { markBattleStage } from "@/lib/performance/marks";
 import { isBattlePlaybackBlocked } from "./playback-gate";
-import { logBattleError, playCompanionSound, playResolvedCardSound, presentCombatTexts } from "./controller-utils";
+import { logBattleError, playResolvedCombatSound, presentCombatTexts } from "./controller-utils";
 import type { createBattleTransferDeps } from "./battle-transfers";
 import type { BattleControllerContext } from "./battle-context";
 import { commitEndTurn } from "./battle-session";
@@ -22,7 +22,7 @@ export interface PlayTurnFramesOptions {
 function presentTurnResolution(frame: BattleTurnFrame, presentation: BattlePresentationPort) {
   const { before, turn } = frame;
   const texts = turn.kind === "haste" ? turn.combatTexts : turn.enemyResolutionCombatTexts;
-  const sound = playResolvedCardSound(
+  const sound = playResolvedCombatSound(
     turn.kind === "haste"
       ? "haste"
       : turn.enemyPerformedAbility
@@ -37,8 +37,8 @@ function presentTurnResolution(frame: BattleTurnFrame, presentation: BattlePrese
 function presentCompanionResolution(frame: BattleTurnFrame, presentation: BattlePresentationPort, animate = false) {
   const { turn, companion } = frame;
   if (!companion) return;
-  const sound = playCompanionSound(
-    companion.id,
+  const sound = playResolvedCombatSound(
+    undefined,
     companion.texts,
     !turn.state.deathsDoorActive && companion.state.deathsDoorActive,
   );

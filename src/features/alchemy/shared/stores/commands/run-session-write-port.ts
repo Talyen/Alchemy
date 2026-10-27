@@ -123,7 +123,6 @@ export const clearRunMaterialsEarned = transactionOperation(progress.clearRunMat
 export type { CombatMeta } from "./write/live-meta";
 export { cloneRunObtainedItem } from "./write/run-progress";
 export const createDraftRunRandomSource = transactionOperation(progress.createDraftRunRandomSource);
-export const nextRunRandom = transactionOperation(progress.nextRunRandom);
 export const recordRunObtainedItem = transactionOperation(progress.recordRunObtainedItem);
 export const resetRunXP = transactionOperation(progress.resetRunXP);
 export const setCompletedDestinations = transactionOperation(progress.setCompletedDestinations);

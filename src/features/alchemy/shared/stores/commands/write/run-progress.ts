@@ -5,7 +5,7 @@ import { addTalentXP, filterKeywordsForTalentXP, getCardKeywords } from "@/lib/g
 import { addCraftingCurrencies, EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory as ProfileMaterialInventory } from "@/lib/homestead/types";
-import { createRunStateRng, stepRunRng, type Rng, type RunRngStream } from "@/lib/rng";
+import { createRunStateRng, type Rng, type RunRngStream } from "@/lib/rng";
 import { bindDraftCapability, type GameplayDraft } from "../../session/gameplay-command";
 import type { ActiveRunProgressFields } from "../../session/run-state-init";
 import { defineDraftSetter } from "../../session/transaction-internal";
@@ -111,10 +111,6 @@ export function recordRunObtainedItem(draft: GameplayDraft, item: RunObtainedIte
 }
 
 // ── Seeded run RNG ───────────────────────────────────────────────────────────
-
-export function nextRunRandom(draft: GameplayDraft, stream: RunRngStream): number {
-  return stepRunRng(draft.run.activeRun.rng, stream);
-}
 
 export function createDraftRunRandomSource(draft: GameplayDraft, stream: RunRngStream): Rng {
   return bindDraftCapability(draft, createRunStateRng(draft.run.activeRun.rng, stream));

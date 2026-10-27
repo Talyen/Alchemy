@@ -5,7 +5,7 @@ import { addEnemyStatus } from "../status-state";
 import { mergeCombatText } from "../combat-text-events";
 import { UTILITY_HANDLERS } from "./utility-handlers";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
-import { resolveStunTrigger } from "../status-stun-resolve";
+import { resolveStunTrigger } from "../stun-leech-resolution";
 import { dealDamageToEnemy } from "../damage";
 import type { EnemyStatusId } from "@/lib/game-data";
 

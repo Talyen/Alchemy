@@ -1,6 +1,6 @@
 import { visitBattleCardEffects, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { getBattleCardPlayTarget } from "./card-classification";
-import { inspectBattleCardDamage } from "./card-damage-inspection";
+import { inspectBattleCardOutcomes } from "./card-damage-inspection";
 import type { InspectedPackets } from "./inspection-outcomes";
 import type { BattleSnapshot } from "./types";
 
@@ -108,7 +108,7 @@ export function getBattleCardAnimationTarget(card: BattleCard, snapshot: BattleS
   // choose a more attractive animation; retain the authored primary recipient.
   if (targets.size <= 1 || uncertainBranch) return preferred;
 
-  const inspected = inspectBattleCardDamage(card, snapshot);
+  const outcomes = inspectBattleCardOutcomes(card, snapshot);
   let target = preferred;
   let largest = 0;
   let unknown = false;
@@ -122,7 +122,7 @@ export function getBattleCardAnimationTarget(card: BattleCard, snapshot: BattleS
     }
     const kind = numericKind(effect);
     if (!kind) return;
-    const outcome = inspected.get(path.join("."));
+    const outcome = outcomes.get(path.join("."));
     const amount = kind === "attack" ? knownAttackAmount(outcome) : knownUtilityAmount(effect, outcome);
     if (amount === undefined) {
       unknown = true;

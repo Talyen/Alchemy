@@ -14,7 +14,7 @@ for every action or change the intentional silent-content registrations below.
 
 ## Change checklist
 
-1. Register new card or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
+1. Register new card or companion sounds in the owning sound registry or audio module (`sound-registry.ts`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
 2. Add or replace source audio through [the asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-sound) and regenerate committed outputs.
 3. Keep host visibility, volume, cache, and failure behavior in the [runtime audio owners](#runtime-contract).
 4. Relevant coverage lives in `tests/lib/audio/` and affected lifecycle tests;
@@ -28,7 +28,7 @@ for every action or change the intentional silent-content registrations below.
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Playback host, cache, music, and SFX | `src/lib/audio/index.ts` (facade) + `host.ts`, `sfx.ts`, `music.ts`, `music-player.ts`, `state.ts`, `preload.ts`, `volume.ts`, `url.ts`, `element.ts`, `reset.ts`                     |
 | Player volume values and bounds      | Defaults in `src/lib/game-constants/settings.ts`, ranges in `src/lib/settings-values.ts`, live pct in `settings-store.ts`, runtime fraction in `src/lib/audio/state.ts`               |
-| Sound-to-content registration        | `src/lib/audio/sound-registry.ts` + `COMPANION_SOUND_CARD_IDS` in `src/lib/game-constants/audio.ts`                                                                                   |
+| Sound-to-content registration        | `src/lib/audio/sound-registry.ts`                                                                                                                                                     |
 | Screen ambience loops                | `src/lib/audio/ambience.ts`, screen mappings in `sound-registry.ts`, lifecycle in `useAppAudioEffects`                                                                                |
 | Single music catalog and boss map    | `src/lib/audio/music-catalog.ts` (`MUSIC_CATALOG`, boss lookup, volume curve)                                                                                                         |
 | Bestiary boss preview                | `src/lib/audio/music.ts` (`previewBossMusic`/`endBossPreview`), called by `collection-screen.tsx`                                                                                     |

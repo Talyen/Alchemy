@@ -1,4 +1,4 @@
-import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { applyCleanseHeals } from "@/lib/battle/status-player";

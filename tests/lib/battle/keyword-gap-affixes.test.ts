@@ -3,7 +3,7 @@ import { applyCardEffects, createBattleState, defaultTalentEffects } from "@/lib
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
-import { applyScaledLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyScaledLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { defaultGearEffects } from "@/lib/gear";

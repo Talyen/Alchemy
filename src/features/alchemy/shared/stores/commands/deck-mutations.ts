@@ -23,6 +23,5 @@ export function grantGearToRunWithRecord(draft: RunTransaction, instance: GearIn
 export function grantTrinketToRunWithRecord(draft: RunTransaction, trinketId: string): void {
   const added = acquireTrinketDuringRun(draft, trinketId);
   if (!added) return;
-  discoverTrinketIds(draft, [trinketId]);
   recordRunObtainedItem(draft, { kind: "trinket", trinketId });
 }

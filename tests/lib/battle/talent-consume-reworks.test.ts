@@ -4,7 +4,7 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveCardEffectChain } from "@/lib/battle/card-play-effects";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { applyBlockReward } from "@/lib/battle/player-rewards";
-import { applyLeechHitHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHitHealing } from "@/lib/battle/stun-leech-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";

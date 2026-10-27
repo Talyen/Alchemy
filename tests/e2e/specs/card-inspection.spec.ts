@@ -4,6 +4,14 @@ import { expectUnfocused } from "../focus-input";
 import { critical } from "../../playwright-tags";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
+import type { Page } from "@playwright/test";
+
+async function expectAuthoredBlockDamage(page: Page) {
+  const tooltip = page.locator(".hover-popup-panel[data-visible]");
+  await expect(tooltip).toContainText("Gain 4 Block");
+  await expect(tooltip).toContainText("Gain 8 Block");
+  await expect(tooltip).toContainText("Deal Physical damage equal to your Block");
+}
 
 test("inspects each battle pile without advancing combat", critical, async ({ page, fastBattle }) => {
   void fastBattle;
@@ -34,7 +42,7 @@ test("inspects each battle pile without advancing combat", critical, async ({ pa
   const battle = new BattlePage(page);
   const health = await battle.enemyHealth();
   await battle.hand.first().hover();
-  await expect(page.locator(".hover-popup-panel[data-visible]")).toContainText("Deal 4–8 Physical damage");
+  await expectAuthoredBlockDamage(page);
   const boonsOpener = page.getByRole("button", { name: "Inspect Boons", exact: true });
   await boonsOpener.click();
   const boonsOverlay = page.getByTestId("battle-boon-inspect-overlay");
@@ -53,7 +61,7 @@ test("inspects each battle pile without advancing combat", critical, async ({ pa
     await expect(dialog.getByRole("img", { name: image, exact: true })).toBeVisible();
     if (pile === "draw") {
       await dialog.getByRole("img", { name: image, exact: true }).hover();
-      await expect(page.locator(".hover-popup-panel[data-visible]")).toContainText("Deal 4–8 Physical damage");
+      await expectAuthoredBlockDamage(page);
     }
     await expect(dialog.getByRole("button", { name: / · \d+ cards$/ })).toHaveCount(0);
     await page.keyboard.press("Escape");

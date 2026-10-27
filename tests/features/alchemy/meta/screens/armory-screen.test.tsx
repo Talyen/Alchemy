@@ -292,6 +292,56 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: /Apply Voidstone/ })).toBeNull());
   });
 
+  it("reports blocked and rejected crafts without spending or disarming the currency", async () => {
+    const user = userEvent.setup();
+    const onApplyCurrency = vi.fn(() => false);
+    const { rerender, props } = renderArmoryScreen({
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
+      onApplyCurrency,
+    });
+    await user.click(screen.getByLabelText(/^Use Voidstone,/));
+    await user.click(screen.getByRole("button", { name: "Longsword" }));
+    expect(onApplyCurrency).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toBe("This item has no affixes to remove.");
+    expect(playUISound).toHaveBeenCalledWith("error");
+    expect(screen.getByLabelText(/^Use Voidstone,/).getAttribute("aria-pressed")).toBe("true");
+
+    const sword = {
+      instanceId: "gear-sword",
+      definitionId: "longsword-basic",
+      affixes: [{ id: "flat-physical" as const, value: 1 }],
+    };
+    rerender(<ArmoryScreen {...props} inventories={createArmoryInventories([sword])} />);
+    await user.click(screen.getByRole("button", { name: /Apply Voidstone/ }));
+    expect(onApplyCurrency).toHaveBeenCalledWith("voidstone", "gear-sword");
+    expect(screen.getByText("Crafting could not be completed. No currency was spent.")).toBeTruthy();
+    expect(screen.getByLabelText(/^Use Voidstone,/).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("disarms a successful craft before saving without clearing a later selection", async () => {
+    const user = userEvent.setup();
+    const pending: Array<() => void> = [];
+    const sword = {
+      instanceId: "gear-sword",
+      definitionId: "longsword-basic",
+      affixes: [{ id: "flat-physical" as const, value: 1 }],
+    };
+    renderArmoryScreen({
+      inventories: createArmoryInventories([sword]),
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
+      onApplyCurrency: () => true,
+      afterProgressSaved: (run) => pending.push(run),
+    });
+    await user.click(screen.getByLabelText(/^Use Voidstone,/));
+    await user.click(screen.getByRole("button", { name: /Apply Voidstone/ }));
+    expect(screen.getByLabelText(/^Use Voidstone,/).getAttribute("aria-pressed")).toBe("false");
+    expect(playUISound).not.toHaveBeenCalledWith("craft");
+    await user.click(screen.getByLabelText("Salvage"));
+    act(() => pending.shift()!());
+    expect(playUISound).toHaveBeenCalledWith("craft");
+    expect(screen.getByTestId("armory-salvage-toggle").getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("salvages an item after confirmation and exits on Escape", async () => {
     const user = userEvent.setup();
     const onSalvage = vi.fn(() => true);

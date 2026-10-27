@@ -5,7 +5,7 @@ import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/b
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 
 describe("applyEnemyAbility: reactions", () => {
-  it("applies the Fire Imp follow-up once after a multi-hit ability", () => {
+  it("applies the Fire Imp follow-up to each landed hit", () => {
     const state = patchBattleState({
       currentEnemy: enemyById["fire-imp"],
       playerHealth: 30,
@@ -24,7 +24,7 @@ describe("applyEnemyAbility: reactions", () => {
     );
 
     expect(result.playerHealth).toBeLessThan(state.playerHealth - 2);
-    expect(result.playerStatuses.burn).toBe(1);
+    expect(result.playerStatuses.burn).toBe(2);
   });
 
   it.each([1, 10])("settles Banshee Purge retaliation before queued Bleed (Health: %s)", (playerHealth) => {

@@ -2,7 +2,7 @@ import { rollBattleChance } from "./chance-roll";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import type { BattleState, CombatTextEvent } from "./types";
-import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
+import { applyScaledLeechHealing, computeLeechHeal } from "./stun-leech-resolution";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -10,9 +10,9 @@ import { addForgeToPlayer } from "./player-rewards";
 import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR } from "../game-constants";
 import { damageOnlyEffects } from "./card-classification";
-import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
-import { getBattleCompanionDamageModifiers } from "./companion-scaling";
+import { createCompanionActionCard } from "./companion-scaling";
 
 // The effect interpreter stays injected to avoid importing the registry that calls this owner.
 export function resolveCompanionTurnStart(
@@ -28,18 +28,7 @@ export function resolveCompanionTurnStart(
 ) {
   if (!state.activeCompanion || getBattleOutcome(state) !== null) return state;
 
-  const companionCard: BattleCard = {
-    id: `companion-${state.activeCompanion.id}`,
-    title: state.activeCompanion.title,
-    descriptionLines: [],
-    art: state.activeCompanion.art,
-    cost: 0,
-    effects: getModifiedCompanionEffects(
-      state.activeCompanion,
-      state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
-      getBattleCompanionDamageModifiers(state),
-    ),
-  };
+  const companionCard = createCompanionActionCard(state, state.activeCompanion);
 
   if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 

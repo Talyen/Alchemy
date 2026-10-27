@@ -34,9 +34,9 @@ describe("enemy inspection presentation", () => {
     const trait = container.querySelector('[data-enemy-trait="vampire"]')!;
     expect(container.querySelectorAll("[data-enemy-trait]")).toHaveLength(4);
     expect(trait.textContent).not.toContain("Receives");
-    const curse = container.querySelector('[data-enemy-trait="vampiric-curse"]')!;
-    expect(curse.textContent).toContain("Vampiric Curse");
-    expect(curse.textContent).toContain("Receives 30% more Holy and Burn damage");
+    const curse = container.querySelector('[data-enemy-trait="holy-vulnerability"]')!;
+    expect(curse.textContent).toContain("Profane");
+    expect(curse.textContent).toContain("Receives 30% more Holy damage");
     expect(screen.getByText("Scorching")).toBeTruthy();
     expect(screen.getByText("Desperation")).toBeTruthy();
   });
@@ -56,11 +56,11 @@ describe("enemy inspection presentation", () => {
     expect(screen.queryByText("Special Modifiers")).toBeNull();
     expect(
       [...container.querySelectorAll("[data-enemy-trait]")].map((node) => node.getAttribute("data-enemy-trait")),
-    ).toEqual(["bandit", "constructor", "tempered"]);
+    ).toEqual(["bandit", "cowardly", "constructor", "tempered"]);
   });
 
   it("shows scaled native and encounter traits in the portrait tooltip", async () => {
-    const entry = enemyById.goblin;
+    const entry = enemyById["living-armor"];
     const triggerRef = createRef<HTMLButtonElement>();
     render(
       <>
@@ -76,7 +76,7 @@ describe("enemy inspection presentation", () => {
     );
     await waitFor(() => {
       const tooltip = document.querySelector(".hover-popup-panel[data-visible]");
-      expect(tooltip?.textContent).toContain("Starts with 5 Block");
+      expect(tooltip?.textContent).toContain("Starts combat with 5 Armor");
       expect(tooltip?.textContent).toContain("gains 3 Block each turn");
     });
   });
@@ -95,7 +95,7 @@ describe("enemy inspection presentation", () => {
     );
     await waitForArtwork();
     const dialog = screen.getByRole("dialog", { name: "Goblin" });
-    expect(dialog.querySelector('[data-trait="starting-block"]')?.textContent).toContain("Starts with 5 Block");
+    expect(dialog.querySelector('[data-trait="pilfer"]')?.textContent).toContain("Steals 1 Block");
     expect(dialog.querySelector('[data-trait="reinforced"]')?.textContent).toContain("gains 3 Block each turn");
     const ability = within(dialog).getByRole("button", { name: "Block" });
     fireEvent.mouseEnter(ability.parentElement!);
@@ -104,7 +104,7 @@ describe("enemy inspection presentation", () => {
     );
     fireEvent.mouseLeave(ability.parentElement!);
     rerender(<EnemyInspectionOverlay open entry={entry} onClose={() => {}} />);
-    expect(dialog.querySelector('[data-trait="starting-block"]')?.textContent).toContain("Starts with 4 Block");
+    expect(dialog.querySelector('[data-trait="pilfer"]')?.textContent).toContain("Steals 1 Block");
     fireEvent.mouseEnter(ability.parentElement!);
     await waitFor(() =>
       expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain("Gain 5 Block"),
