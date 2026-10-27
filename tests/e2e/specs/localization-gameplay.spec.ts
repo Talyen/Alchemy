@@ -352,8 +352,14 @@ for (const locale of acceptanceLocales) {
           await localizedCheckpoint(page, locale, async (fresh) => {
             await fresh.getByRole("button", { name: label("Brew Potion"), exact: true }).click();
             const choices = fresh.locator("[data-potion-choice] button");
-            await choices.nth(0).click();
-            await choices.nth(1).click();
+            await fresh
+              .getByRole("button", { name: label("Choose Potion for slot {{slot}}").replace("{{slot}}", "1") })
+              .click();
+            await choices.first().click();
+            await fresh
+              .getByRole("button", { name: label("Choose Potion for slot {{slot}}").replace("{{slot}}", "2") })
+              .click();
+            await choices.first().click();
             await reviewLayout(fresh, `${locale} mix preview`);
             await fresh.getByRole("button", { name: label("Mix"), exact: true }).click();
             await expect.poll(async () => (await readSavedGame(fresh)).activeRun?.runDeck.length).toBe(1);
