@@ -27,6 +27,7 @@
     "assets:check": "node scripts/assets.mjs --check",
     "audio:review": "node scripts/audio-review.mjs",
     "agent:browser": "node scripts/agent-browser.mjs",
+    "lyrics:tool": "python3 scripts/lyrics-trial/managed-env.py",
     "predev": "node scripts/dev.mjs prepare",
     "predev:local": "node scripts/prune-transient-artifacts.mjs && node scripts/stop-dev-server.mjs && npm run assets:check:outputs",
     "predev:desktop": "npm run predev:local && node scripts/sync-steam-appid.mjs && npm run steam:build-native",

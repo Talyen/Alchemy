@@ -8,13 +8,12 @@ before replacing a runtime snapshot.
 
 ## Set up and compare
 
-From the repository root, using Python 3.11:
+From the repository root, using Python 3.11, the managed launcher creates and
+updates its own environment on first use and automatically owns it while running:
 
 ```sh
-python3.11 -m venv .cache/lyrics/venv
-.cache/lyrics/venv/bin/pip install -r scripts/lyrics-trial/requirements.txt
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/align.py
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/assess.py reports/boss-lyrics/alignment-mix.json
+npm run lyrics:tool -- align.py
+npm run lyrics:tool -- assess.py reports/boss-lyrics/alignment-mix.json
 cp scripts/lyrics-trial/preview.html reports/boss-lyrics/index.html
 python3.11 -m http.server 8768 --bind 127.0.0.1
 ```
@@ -22,9 +21,10 @@ python3.11 -m http.server 8768 --bind 127.0.0.1
 Open [the preview](http://127.0.0.1:8768/reports/boss-lyrics/). It plays the original
 recording through a blob so seeking works without HTTP range support. The selectors
 compare songs and alignment inputs; seeking backward clears later words.
-Tool environments live in `.cache/lyrics/venv`, separate from retained evidence in
-`reports/boss-lyrics/`. Existing environments may stay in place until inactive; do
-not move a live virtual environment. Models/dependencies download on first use and cache locally. No audio or lyrics
+The managed environment lives in `.cache/alchemy-lyrics-venv`, separate from retained
+evidence in `reports/boss-lyrics/`. It expires after 30 days without use when no
+managed tool holds its inherited OS lock. Existing `.cache/lyrics/venv` environments
+remain supported but are not automatically removed. Models/dependencies download on first use and cache locally. No audio or lyrics
 are sent to a service. Environments, models, stems and evidence remain ignored;
 requirements pin core packages, including matching Torch/Torchaudio, without a
 complete transitive lockfile.
@@ -41,9 +41,9 @@ complete transitive lockfile.
   It permits repeats/omissions rather than stretching supplied lines over instrumental gaps.
 
 ```sh
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/separate.py
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/align.py --audio reports/boss-lyrics/vocals.wav --output reports/boss-lyrics/alignment-vocals.json
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/phrase-align.py
+npm run lyrics:tool -- separate.py
+npm run lyrics:tool -- align.py --audio reports/boss-lyrics/vocals.wav --output reports/boss-lyrics/alignment-vocals.json
+npm run lyrics:tool -- phrase-align.py
 .cache/lyrics/venv/bin/python -m unittest discover -s scripts/lyrics-trial -p 'test_*.py'
 ```
 
@@ -71,8 +71,8 @@ The preview's **Boss song** selector opens the imported snapshot directly.
 Use distinct evidence directories for Forge Golem, Frostwarden and Iron Bear:
 
 ```sh
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/phrase-align.py --audio 'public/Music/The Forge Golem.mp3' --lyrics scripts/lyrics-trial/forge-golem.txt --output-dir reports/boss-lyrics/forge-golem --snapshot reports/boss-lyrics/forge-golem/candidate.json
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/assess.py reports/boss-lyrics/forge-golem/alignment-phrases.json --audio 'public/Music/The Forge Golem.mp3'
+npm run lyrics:tool -- phrase-align.py --audio 'public/Music/The Forge Golem.mp3' --lyrics scripts/lyrics-trial/forge-golem.txt --output-dir reports/boss-lyrics/forge-golem --snapshot reports/boss-lyrics/forge-golem/candidate.json
+npm run lyrics:tool -- assess.py reports/boss-lyrics/forge-golem/alignment-phrases.json --audio 'public/Music/The Forge Golem.mp3'
 ```
 
 Substitute each song's supplied sheet and original recording. Section/singer labels
@@ -99,8 +99,8 @@ already represented by the media clock and must not receive a second offset.
 source lines, not word timestamps. Generate a full-length stem with its hash sidecar:
 
 ```sh
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/separate.py --audio 'public/Music/The Iron Bear.mp3' --output reports/boss-lyrics/iron-vocals.wav --device mps
-.cache/lyrics/venv/bin/python scripts/lyrics-trial/recover.py --boss iron-bear --vocals reports/boss-lyrics/iron-vocals.wav --output reports/boss-lyrics/iron-recovered.json --evidence reports/boss-lyrics/iron-recovery-evidence.json
+npm run lyrics:tool -- separate.py --audio 'public/Music/The Iron Bear.mp3' --output reports/boss-lyrics/iron-vocals.wav --device mps
+npm run lyrics:tool -- recover.py --boss iron-bear --vocals reports/boss-lyrics/iron-vocals.wav --output reports/boss-lyrics/iron-recovered.json --evidence reports/boss-lyrics/iron-recovery-evidence.json
 ```
 
 Use `--device cpu` without Apple GPU support; Frostwarden uses its own inputs/output.

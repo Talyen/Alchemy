@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /** Remove stale local test, diagnostic, and report artifacts without touching source. */
 import fs from "node:fs";
+import { spawnSync } from "node:child_process";
 import { reportRetentionPlan, writeRetentionReview } from "./lib/report-retention.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
+import { formatBytes, measurePath, removePath } from "./lib/clean-dev-artifacts.mjs";
 import { withArtifactGuard } from "./lib/artifact-guard.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
@@ -72,6 +73,27 @@ export function pruneExpiredArtifacts({
   const cutoff = now - days * 86_400_000;
   const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
+  // Only the managed lyric environment participates. Its inherited OS lock
+  // remains held by the tool process even if its launcher terminates.
+  if (transientDirs === TRANSIENT_DIRS) {
+    const helper = path.join(ROOT, "scripts/lyrics-trial/managed-env.py");
+    const target = path.join(rootDir, ".cache/alchemy-lyrics-venv");
+    const attempt = (preview) => {
+      const result = spawnSync("python3", [helper, "--prune", "--root", rootDir, ...(preview ? ["--dry-run"] : [])], {
+        encoding: "utf8",
+        timeout: 30_000,
+      });
+      try {
+        return result.status === 0 && JSON.parse(result.stdout).removed === true;
+      } catch {
+        return false;
+      }
+    };
+    if (attempt(true)) {
+      const { bytes } = measurePath(target);
+      if (dryRun || attempt(false)) removed.push({ path: ".cache/alchemy-lyrics-venv", bytes });
+    }
+  }
   // Only newly created, explicitly expiring run receipts are eligible. Historical
   // evidence is never silently reclassified. An incomplete inventory fails closed.
   if (!review.incomplete && review.expiringCandidates.length && transientDirs === TRANSIENT_DIRS) {

@@ -575,23 +575,43 @@ async function runMain(argv, tracker) {
           // A malformed old report must not prevent safe cleanup of an integrated checkout.
         }
         try {
-          const browsers = path.join(taskPath, "scripts/lib/agent-browser-session.mjs");
-          if (fs.existsSync(browsers)) {
-            const { closeTaskBrowsers } = await import(pathToFileURL(browsers).href);
-            await closeTaskBrowsers(taskPath);
+          const helper = path.join(path.dirname(currentFile), "lyrics-trial/managed-env.py");
+          const managed = path.join(taskPath, ".cache/alchemy-lyrics-venv");
+          if (!fs.existsSync(helper) && fs.existsSync(managed))
+            throw new Error("Managed environment ownership cannot be checked; checkout preserved");
+          let releaseManaged = async () => {};
+          if (fs.existsSync(helper) && process.platform !== "win32") {
+            try {
+              releaseManaged = await (
+                await import("./lib/managed-tool-lock.mjs")
+              ).holdManagedToolLock(helper, taskPath);
+            } catch (error) {
+              if (error.code !== "ENOENT" || fs.existsSync(managed)) throw error;
+            }
+          } else if (fs.existsSync(managed)) {
+            throw new Error("Managed environment ownership cannot be checked; checkout preserved");
           }
-          const evidence = removeIntegratedWorktree(root, taskPath, `agent/${task}`, head);
-          saveState({
-            task,
-            commit: head,
-            integration: "passed",
-            cleanup: "passed",
-            evidence,
-            ...(previous?.commit === head && previous.metrics ? { metrics: previous.metrics } : {}),
-            ...(previous?.commit === head && previous.reviewBase ? { reviewBase: previous.reviewBase } : {}),
-          });
-          console.log(`Task finished. State: ${stateFile}`);
-          await showTaskStatus(task);
+          try {
+            const browsers = path.join(taskPath, "scripts/lib/agent-browser-session.mjs");
+            if (fs.existsSync(browsers)) {
+              const { closeTaskBrowsers } = await import(pathToFileURL(browsers).href);
+              await closeTaskBrowsers(taskPath);
+            }
+            const evidence = removeIntegratedWorktree(root, taskPath, `agent/${task}`, head);
+            saveState({
+              task,
+              commit: head,
+              integration: "passed",
+              cleanup: "passed",
+              evidence,
+              ...(previous?.commit === head && previous.metrics ? { metrics: previous.metrics } : {}),
+              ...(previous?.commit === head && previous.reviewBase ? { reviewBase: previous.reviewBase } : {}),
+            });
+            console.log(`Task finished. State: ${stateFile}`);
+            await showTaskStatus(task);
+          } finally {
+            await releaseManaged();
+          }
         } catch (error) {
           saveState({
             task,
