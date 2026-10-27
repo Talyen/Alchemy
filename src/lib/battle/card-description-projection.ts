@@ -277,3 +277,63 @@ export function describeKnownConditionalDamage(
     ? withCardDescription({ ...card, effects: [...card.effects, { kind: "damage", damageType, amount }] }, description)
     : card;
 }
+
+/** Bind a known paid hit without replacing the authored resource-spending rule. */
+export function describeKnownBlockSpendDamage(
+  card: BattleCard,
+  known: ReadonlyMap<
+    string,
+    { amount: number; damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"] }
+  >,
+): BattleCard {
+  if (!known.size) return card;
+  const clauses = new Map<
+    string,
+    Array<{ amount: number; damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"] } | undefined>
+  >();
+  const visit = (effects: readonly BattleCardEffect[], prefix: number[] = [], offset = 0) => {
+    effects.forEach((effect, index) => {
+      const path = [...prefix, index + offset];
+      if (effect.kind === "damage" && effect.equalToBlock && effect.spendBlock) {
+        const clause = createEffectDescription([effect])[0]?.parts[0];
+        if (typeof clause === "string") {
+          const queue = clauses.get(clause) ?? [];
+          queue.push(known.get(path.join(".")));
+          clauses.set(clause, queue);
+        }
+      }
+      if (effect.kind === "chance") {
+        visit(effect.successEffects, path);
+        visit(effect.failureEffects, path, effect.successEffects.length);
+      } else if (effect.kind === "repeat-over-turns") visit(effect.effects, path);
+    });
+  };
+  visit(card.effects);
+  const effects = [...card.effects];
+  const description = getCardDescription(card).map((line) => {
+    let parts = line.parts;
+    for (const [clause, queue] of clauses) {
+      parts = parts.flatMap((part) => {
+        if (typeof part !== "string" || !part.includes(clause)) return [part];
+        const pieces = part.split(clause);
+        const replacement: typeof parts = [pieces[0]!];
+        for (const piece of pieces.slice(1)) {
+          const hit = queue.shift();
+          if (hit) {
+            const effectIndex = effects.length;
+            effects.push({ kind: "damage", damageType: hit.damageType, amount: hit.amount });
+            replacement.push(
+              clause.slice(0, clause.indexOf("to deal ") + "to deal ".length),
+              cardMagnitude({ effectIndex, kind: "damage", field: "amount" }, { editable: false }),
+              ` ${capitalizeWord(hit.damageType)} damage`,
+            );
+          } else replacement.push(clause);
+          replacement.push(piece);
+        }
+        return replacement;
+      });
+    }
+    return { ...line, parts };
+  });
+  return effects.length === card.effects.length ? card : withCardDescription({ ...card, effects }, description);
+}

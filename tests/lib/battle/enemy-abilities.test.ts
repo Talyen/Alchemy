@@ -280,7 +280,7 @@ describe("enemy card effects", () => {
     const result = useAbility(state, "shield-bash");
     expect(result.playerHealth).toBe(99);
     expect(result.playerStatuses.stun).toBe(1);
-    expect(result.enemyMitigation.block).toBe(2);
+    expect(result.enemyMitigation.block).toBe(1);
     expect(result.playerStatuses.block).toBe(0);
     expect(result.mana).toBe(state.mana);
     expect(result.gold).toBe(state.gold);

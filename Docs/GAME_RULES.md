@@ -228,9 +228,11 @@ rules supplement those definitions:
 - Feint prepares one Dodge charge; repeated plays do not stack charges. It uses
   ordinary discard, draw and repeat rules. Damage over time and undodgeable
   reactions remain unaffected.
-- Shield Bash grants Block before calculating its live-Block damage. Mana payment
-  and retaliation settle first; rejected plays spend nothing. Existing Block is
-  not spent by the hit.
+- Shield Bash grants its modified Block first, then spends half the resulting
+  Block (rounded with `Math.round`) as the base of an ordinary Stun hit. It keeps
+  the remainder; Forge and other damage modifiers apply once after this conversion.
+  Mana payment and retaliation settle first; rejected plays spend nothing. Dodge,
+  resistance and critical hits do not change the amount of Block spent.
 - Random damage pools select the type before the hit for heroes, Companions and
   enemies. Forge, mitigation, buildup and reactions use that type. Recorded repeat
   packets retain their resolved amount/type; replaying effects draws a fresh type.

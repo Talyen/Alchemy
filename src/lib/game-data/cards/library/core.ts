@@ -134,7 +134,7 @@ export const coreCards: BattleCard[] = [
     id: "shield-bash",
     effects: [
       { kind: "player-status", status: "block", amount: 2 },
-      { kind: "damage", damageType: "stun", amount: 0, equalToBlock: true, equalToBlockPercent: 50 },
+      { kind: "damage", damageType: "stun", amount: 0, equalToBlock: true, equalToBlockPercent: 50, spendBlock: true },
     ],
   }),
   cardBuilders.effectsCard({

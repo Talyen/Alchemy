@@ -32,6 +32,7 @@ import { damageEnemyHealth } from "./health-state";
 import { applyHitEpilogue } from "./player-rewards";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareEnemyDamage } from "./enemy-damage-mitigation";
+import { addEnemyMitigation } from "./enemy-mitigation-state";
 
 /** Scratch facts shared by the ordered effects and follow-ups of one ability. */
 export interface EnemyAbilityContext {
@@ -173,6 +174,20 @@ export function applyAbilityDamage(
     effect,
     context.brawlerPenalty,
   );
+  if (effect.spendBlock && effect.equalToBlock) {
+    const block = state.enemyMitigation.block;
+    const spent = Math.min(block, Math.max(0, scalePercent(block, effect.equalToBlockPercent ?? 100)));
+    state = addEnemyMitigation(state, "block", -spent);
+    if (spent > 0)
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat: "block",
+        amount: spent,
+        impact: false,
+        feedback: "secondary",
+      });
+  }
   if (state.observer)
     observeAttackPower(
       state,
