@@ -1,5 +1,5 @@
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeVisualState } from "../types";
-import { gridKey } from "./grid";
+import { gridKey, neighboringGridKeys } from "./grid";
 
 export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
   const floor = map.floors.find((entry) => entry.depth === depth);
@@ -19,12 +19,7 @@ export function labyrinthFloorVisualStates(map: LabyrinthMap): Map<string, Labyr
       states.set(node.id, "cleared");
       continue;
     }
-    const { row, col } = node.gridPosition;
-    const reachable =
-      cleared.has(`${row + 1},${col}`) ||
-      cleared.has(`${row - 1},${col}`) ||
-      cleared.has(`${row},${col + 1}`) ||
-      cleared.has(`${row},${col - 1}`);
+    const reachable = neighboringGridKeys(node.gridPosition).some((key) => cleared.has(key));
     states.set(node.id, reachable ? "reachable" : node.type === "boss" ? "locked" : "undiscovered");
   }
   return states;

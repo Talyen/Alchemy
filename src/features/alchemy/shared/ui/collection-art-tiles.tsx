@@ -11,7 +11,6 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 import { extractKeywordIds } from "@/lib/keyword-text";
-import { getTrinketKeywords } from "../config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import {
@@ -50,7 +49,6 @@ export interface TrinketTileProps {
 
   imageClassName?: string | undefined;
   shine?: boolean | undefined;
-  hoverKeywordShine?: boolean | undefined;
   temporary?: boolean | undefined;
   children?: ReactNode | undefined;
 
@@ -72,7 +70,6 @@ export function TrinketTile({
   className,
   imageClassName,
   shine = true,
-  hoverKeywordShine = false,
   temporary = false,
   children,
   onHoverChange,
@@ -88,13 +85,7 @@ export function TrinketTile({
       className={cn(trinketArtTileClass, className)}
       imageClassName={cn(trinketArtFillClass, trinketArtImageClass, imageClassName)}
       shineOnHover
-      shineColor={
-        shine
-          ? hoverKeywordShine
-            ? getInspectionKeywordShineColors(getTrinketKeywords(trinket.id))
-            : getTrinketShineColors(trinket.id)
-          : undefined
-      }
+      shineColor={shine ? getTrinketShineColors(trinket.id) : undefined}
       as={as}
       selected={selected}
       disabled={disabled}

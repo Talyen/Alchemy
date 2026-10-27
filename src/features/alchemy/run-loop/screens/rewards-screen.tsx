@@ -96,7 +96,6 @@ function RewardChoiceItems({
               as="button"
               ariaDisabled={disabled}
               selected={selectedId === choiceId}
-              hoverKeywordShine
               temporary={rewardState.rewardType === "boon"}
               onClick={() => claim(choiceId)}
               ariaLabel={i18n.text("ui.rewards-screen.2", "Select {{value0}}", {
