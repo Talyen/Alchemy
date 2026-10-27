@@ -237,20 +237,24 @@ export function scheduleCombatFeedback(
       ahead.push({ ...item, presentation });
     }
   }
-  const nextBursts = bursts.flatMap((burst) => {
-    const entries = burst.entries.flatMap((entry) => {
+  const nextBursts: CombatTextBurst[] = [];
+  for (const burst of bursts) {
+    const entries: CombatTextBurst["entries"] = [];
+    for (const entry of burst.entries) {
       const presentation = plans.get(entry.id);
-      return presentation ? [presentation === entry.presentation ? entry : { ...entry, presentation }] : [];
-    });
-    if (!entries.length) return [];
+      if (presentation) entries.push(presentation === entry.presentation ? entry : { ...entry, presentation });
+    }
+    if (!entries.length) continue;
     let end = -Infinity;
     for (const entry of entries) end = Math.max(end, endsAt(entry.presentation!));
-    return [{ ...burst, entries, lifetimeMs: end - burst.firstShownAt }];
-  });
-  const nextReactions = reactions.flatMap((reaction) => {
+    nextBursts.push({ ...burst, entries, lifetimeMs: end - burst.firstShownAt });
+  }
+  const nextReactions: ReactionAnnouncement[] = [];
+  for (const reaction of reactions) {
     const presentation = plans.get(reaction.id);
-    return presentation ? [presentation === reaction.presentation ? reaction : { ...reaction, presentation }] : [];
-  });
+    if (presentation)
+      nextReactions.push(presentation === reaction.presentation ? reaction : { ...reaction, presentation });
+  }
   return { floatingCombatBursts: nextBursts, reactionAnnouncements: nextReactions };
 }
 
@@ -261,21 +265,25 @@ export function advanceCombatFeedback(bursts: CombatTextBurst[], reactions: Reac
       ? { ...presentation, phase: "visible" as const }
       : presentation;
   };
-  return {
-    floatingCombatBursts: bursts.flatMap((burst) => {
-      const entries = burst.entries.flatMap((entry) => {
-        if (entry.presentation && endsAt(entry.presentation) <= now) return [];
-        const presentation = advance(entry.presentation);
-        return [!presentation || presentation === entry.presentation ? entry : { ...entry, presentation }];
-      });
-      return entries.length ? [{ ...burst, entries }] : [];
-    }),
-    reactionAnnouncements: reactions.flatMap((reaction) => {
-      if (reaction.presentation && endsAt(reaction.presentation) <= now) return [];
-      const presentation = advance(reaction.presentation);
-      return [!presentation || presentation === reaction.presentation ? reaction : { ...reaction, presentation }];
-    }),
-  };
+  const floatingCombatBursts: CombatTextBurst[] = [];
+  for (const burst of bursts) {
+    const entries: CombatTextBurst["entries"] = [];
+    for (const entry of burst.entries) {
+      if (entry.presentation && endsAt(entry.presentation) <= now) continue;
+      const presentation = advance(entry.presentation);
+      entries.push(!presentation || presentation === entry.presentation ? entry : { ...entry, presentation });
+    }
+    if (entries.length) floatingCombatBursts.push({ ...burst, entries });
+  }
+  const reactionAnnouncements: ReactionAnnouncement[] = [];
+  for (const reaction of reactions) {
+    if (reaction.presentation && endsAt(reaction.presentation) <= now) continue;
+    const presentation = advance(reaction.presentation);
+    reactionAnnouncements.push(
+      !presentation || presentation === reaction.presentation ? reaction : { ...reaction, presentation },
+    );
+  }
+  return { floatingCombatBursts, reactionAnnouncements };
 }
 
 export function nextCombatFeedbackDeadline(bursts: CombatTextBurst[], reactions: ReactionAnnouncement[]) {

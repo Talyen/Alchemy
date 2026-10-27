@@ -58,7 +58,8 @@ function rangeRuleClauses(
         const clauses = createEffectDescription([effect]).filter(
           (line) => line.role === "effect" && line.parts.every((part) => typeof part === "string"),
         );
-        if (clauses.length)
+        if (clauses.length) {
+          let inlineClauses: CardDescription[number]["parts"] | undefined;
           description = description.flatMap((line) => {
             const positions = magnitudePositions(line, path);
             if (!positions.length) return [line];
@@ -69,12 +70,13 @@ function rangeRuleClauses(
                 ...line,
                 parts: [
                   ...line.parts.slice(0, end),
-                  ...clauses.flatMap((clause) => ["; ", ...clause.parts]),
+                  ...(inlineClauses ??= clauses.flatMap((clause) => ["; ", ...clause.parts])),
                   ...line.parts.slice(end),
                 ],
               },
             ];
           });
+        }
       }
       if (effect.kind === "chance") visit([...effect.successEffects, ...effect.failureEffects], path);
     });

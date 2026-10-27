@@ -60,6 +60,7 @@ export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: Arm
 export function reconcileOrder(currentIds: readonly string[], rows: readonly ArmoryOrderRow[]): string[] {
   const available = new Set(rows.map((row) => row.id));
   const surviving = currentIds.filter((id) => available.delete(id));
+  if (available.size === 0) return surviving;
   const sortedAvailable = rows.filter((row) => available.has(row.id)).sort((a, b) => compareOrderRows(a, b, "rarity"));
   const newlyAvailable: string[] = [];
   for (const row of sortedAvailable) if (available.delete(row.id)) newlyAvailable.push(row.id);
@@ -115,5 +116,6 @@ export function placeUnequip(
   const visible = visibleIds === currentIds ? filtered : visibleIds.filter((id) => id !== unequippedId);
   const anchor = visible[Math.max(0, page) * pageSize];
   const insertIndex = anchor === undefined ? 0 : Math.max(0, filtered.indexOf(anchor));
-  return [...filtered.slice(0, insertIndex), unequippedId, ...filtered.slice(insertIndex)];
+  filtered.splice(insertIndex, 0, unequippedId);
+  return filtered;
 }

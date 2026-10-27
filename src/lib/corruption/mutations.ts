@@ -55,9 +55,10 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
 }
 
 function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengthen: boolean): Mutation[] {
-  return targets.flatMap((target) => {
+  const mutations: Mutation[] = [];
+  for (const target of targets) {
     const effect = getCardEffect(card.effects, target);
-    if (!effect) return [];
+    if (!effect) continue;
     const harmful = ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind);
     const direction = strengthen !== harmful ? 1 : -1;
     const scalable =
@@ -68,8 +69,9 @@ function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengt
       ? Math.max(1, Math.round(target.value * (strengthen ? CORRUPTION_STRENGTHEN_RATIO : CORRUPTION_WEAKEN_RATIO)))
       : 1;
     const next = applyNumericCorruption(card, target, direction * amount);
-    return next === card ? [] : [{ card: next, delta: strengthen ? 1 : -1 }];
-  });
+    if (next !== card) mutations.push({ card: next, delta: strengthen ? 1 : -1 });
+  }
+  return mutations;
 }
 
 function plainTarget(card: BattleCard, targets: CorruptionTarget[]): CorruptionTarget | undefined {
@@ -84,7 +86,9 @@ function conversionMutations(card: BattleCard, target: CorruptionTarget | undefi
   const effect = card.effects[0];
   if (!target || effect?.kind !== "damage") return [];
   const originalDescription = getCardDescription(card);
-  return CORRUPTION_DAMAGE_TYPES.filter((type) => type !== effect.damageType).map((damageType) => {
+  const cards: BattleCard[] = [];
+  for (const damageType of CORRUPTION_DAMAGE_TYPES) {
+    if (damageType === effect.damageType) continue;
     const amount = Math.max(
       1,
       Math.round(
@@ -98,15 +102,18 @@ function conversionMutations(card: BattleCard, target: CorruptionTarget | undefi
       ...line,
       parts: line.parts.map((part) => (typeof part === "string" ? part : { ...part, corrupted: true })),
     };
-    return withCardDescription(
-      {
-        ...card,
-        corrupted: true,
-        effects: [converted],
-      },
-      description,
+    cards.push(
+      withCardDescription(
+        {
+          ...card,
+          corrupted: true,
+          effects: [converted],
+        },
+        description,
+      ),
     );
-  });
+  }
+  return cards;
 }
 
 function canRemoveConsume(card: BattleCard): boolean {
@@ -170,12 +177,11 @@ export function getCorruptionMutationGroups(
       existingEffects.add(secondaryEffectKey(effect));
       return false;
     });
-    add(
-      "secondary",
-      secondary
-        .filter((effect) => !existingEffects.has(secondaryEffectKey(effect)))
-        .map((effect) => addCorruptionEffect(card, effect)),
-    );
+    const secondaryCards: BattleCard[] = [];
+    for (const effect of secondary) {
+      if (!existingEffects.has(secondaryEffectKey(effect))) secondaryCards.push(addCorruptionEffect(card, effect));
+    }
+    add("secondary", secondaryCards);
   }
   if (target && !card.consume) {
     if (roomForLine) {
@@ -208,10 +214,10 @@ export function getCorruptionMutationGroups(
     validEffects.set(effect, valid);
     return valid;
   };
-  return applyAltarModifiers(groups, card, modifiers)
-    .map((group) => ({
-      ...group,
-      mutations: group.mutations.filter(({ card: next }) => next.effects.every(isValidEffect)),
-    }))
-    .filter((group) => group.mutations.length > 0);
+  const validGroups: CorruptionMutationGroup[] = [];
+  for (const group of applyAltarModifiers(groups, card, modifiers)) {
+    const mutations = group.mutations.filter(({ card: next }) => next.effects.every(isValidEffect));
+    if (mutations.length > 0) validGroups.push({ ...group, mutations });
+  }
+  return validGroups;
 }

@@ -198,10 +198,12 @@ function buildPendingEnemyChips(state: BattleSnapshot): StatusChip[] {
       incomingByType.set(effect.damageType, (incomingByType.get(effect.damageType) ?? 0) + effect.amount);
     }
   }
-  return DAMAGE_TYPES.flatMap((damageType): StatusChip[] => {
+  const chips: StatusChip[] = [];
+  for (const damageType of DAMAGE_TYPES) {
     const amount = incomingByType.get(damageType);
-    return amount ? [{ id: `pending-${damageType}`, value: amount }] : [];
-  });
+    if (amount) chips.push({ id: `pending-${damageType}`, value: amount });
+  }
+  return chips;
 }
 
 export function getPlayerStatusChips(state: BattleSnapshot | null | undefined): StatusChip[] {

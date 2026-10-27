@@ -333,13 +333,18 @@ export function createTransmutationOffers(
   deck.forEach((source, sourceIndex) => {
     if (!isTransmutableCard(source)) return;
     // Roll against this card so unrelated cards cannot crowd out useful choices.
-    const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
-      group.flatMap((keyword) => {
+    const available: Array<{ keyword: KeywordId; alterations: PendingVariant[] }> = [];
+    const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) => {
+      const pool: typeof available = [];
+      for (const keyword of group) {
         const alterations = getPendingVariants(source, keyword, hasCompanion);
-        return alterations.length ? [{ keyword, alterations }] : [];
-      }),
-    );
-    const available = pools.flat();
+        if (!alterations.length) continue;
+        const offer = { keyword, alterations };
+        pool.push(offer);
+        available.push(offer);
+      }
+      return pool;
+    });
     const selected = prismatic ? [...available] : [];
     const guaranteedOffer =
       prismatic || guaranteed === undefined ? undefined : available.find((offer) => offer.keyword === guaranteed);
@@ -398,10 +403,12 @@ export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
   const { source, sourceIndex } = selection;
   if (!source || sourceIndex == null) return [];
   const key = cardSnapshotKey(source);
-  return selection.choices.flatMap((choice) => {
+  const offers: BattleCard[] = [];
+  for (const choice of selection.choices) {
     const alteration = matchingAlteration(choice, key, sourceIndex, source.id);
-    return alteration ? [alteration.result] : [];
-  });
+    if (alteration) offers.push(alteration.result);
+  }
+  return offers;
 }
 
 export function canTransmuteCard(
