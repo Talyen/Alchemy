@@ -182,8 +182,14 @@ function performDrawAndResetPhase(
     pendingHandCards,
   );
   // Enemy-phase deliveries and overflow queues have not had a playable turn yet.
-  const eligibleUids = new Set([...state.hand, ...state.pendingHandCards].map((card) => card.uid));
-  const returningFlightUids = state.uniqueGear.returningFlightUids.filter((uid) => eligibleUids.has(uid));
+  const returningFlightUids: number[] = [];
+  if (state.uniqueGear.returningFlightUids.length > 0) {
+    const eligibleUids = new Set(state.hand.map((card) => card.uid));
+    for (const card of state.pendingHandCards) eligibleUids.add(card.uid);
+    for (const uid of state.uniqueGear.returningFlightUids) {
+      if (eligibleUids.has(uid)) returningFlightUids.push(uid);
+    }
+  }
   if (returningFlightUid !== null) returningFlightUids.push(returningFlightUid);
   const nextState = resetPlayerTurnState(state, options);
   const hadUnspentMana = (options?.manaAtTurnEnd ?? state.mana) > 0;

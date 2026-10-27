@@ -9,7 +9,9 @@ import {
 } from "@/lib/game-data";
 
 export function countCorruptionEffectLines(card: BattleCard): number {
-  return getCardDescription(card).filter((line) => line.role === "effect").length;
+  let count = 0;
+  for (const line of getCardDescription(card)) if (line.role === "effect") count++;
+  return count;
 }
 
 function insertDescription(

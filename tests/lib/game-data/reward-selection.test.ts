@@ -38,6 +38,7 @@ describe("selectRewardCards", () => {
       }),
     );
     const rng = createSeededRng(37);
+    Object.freeze(pool);
     expect(selectRewardCards([pool[0]!], pool, count, [], rng, ["physical"]).map((entry) => entry.id)).toEqual(ids);
     expect(rng()).toBe(nextRandom);
   });

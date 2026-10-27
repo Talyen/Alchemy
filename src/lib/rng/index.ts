@@ -185,7 +185,8 @@ export function pickWeighted<T>(items: readonly T[], weightOf: (item: T) => numb
   const weights = items.map(weightOf);
   let total = 0;
   let lastPositiveIndex = -1;
-  for (const [index, weight] of weights.entries()) {
+  for (let index = 0; index < weights.length; index++) {
+    const weight = weights[index]!;
     if (!Number.isFinite(weight) || weight < 0) throw new Error("pickWeighted requires finite non-negative weights");
     total += weight;
     if (weight > 0) lastPositiveIndex = index;
@@ -194,7 +195,8 @@ export function pickWeighted<T>(items: readonly T[], weightOf: (item: T) => numb
   if (lastPositiveIndex < 0) return undefined;
 
   let remaining = assertDraw(rng()) * total;
-  for (const [index, weight] of weights.entries()) {
+  for (let index = 0; index < weights.length; index++) {
+    const weight = weights[index]!;
     if (weight === 0) continue;
     remaining -= weight;
     if (remaining < 0) return items[index];

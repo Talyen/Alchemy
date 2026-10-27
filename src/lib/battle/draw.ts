@@ -12,7 +12,11 @@ interface CardUidChange {
 
 /** Draw IDs change for presentation; turn-long card benefits follow the same instance. */
 function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidChange[]) {
-  if (changes.length === 0) return state.uniqueGear;
+  if (
+    changes.length === 0 ||
+    (state.uniqueGear.returningFlightUids.length === 0 && state.uniqueGear.lastArcheryUid === null)
+  )
+    return state.uniqueGear;
   // Echoed archery cards need no remap: echoes replay by reference, not by uid.
   const remapUid = (uid: number | null) => {
     if (uid === null) return null;
