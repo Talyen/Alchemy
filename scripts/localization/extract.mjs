@@ -254,10 +254,50 @@ export async function extractMessages() {
     }
 
     const model = await server.ssrLoadModule("/src/lib/game-data/card-description-model.ts");
+    // Finite state alternatives can yield a single-type range even when the
+    // authored effect was fixed damage. These are native presentation forms.
+    for (const damageType of data.DAMAGE_TYPES) {
+      const effects = [{ kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: [damageType] }];
+      for (const line of model.renderCardDescription(effects, data.createEffectDescription(effects)).localizedLines)
+        addDescription(line, "Battle card known-modifier preview");
+    }
     for (const card of data.cardLibrary) {
       if (!card.description) continue;
       for (const line of model.renderCardDescription(card.effects, card.description).localizedLines) {
         addDescription(line, "Card effect description");
+      }
+    }
+    // Runtime inspection can split shared literals or show finite ranges. Extract
+    // those native templates too, including all existing cards as Mixed Potions.
+    const previews = await server.ssrLoadModule("/src/lib/battle/card-damage-inspection.ts");
+    const battleDefaults = await server.ssrLoadModule("/src/lib/battle/battle-setup-defaults.ts");
+    const mixer = await server.ssrLoadModule("/src/lib/alchemist/potion-mixer.ts");
+    const previewState = battleDefaults.defaultBattleState();
+    Object.assign(previewState, {
+      playerHealth: 40,
+      playerMaxHealth: 100,
+      enemyHealth: 10000,
+      enemyMaxHealth: 10000,
+      mana: 20,
+      maxMana: 50,
+      activeCompanion: data.companionLibrary.wolf,
+    });
+    Object.assign(previewState.playerStatuses, { forge: 4, block: 3, armor: 2 });
+    Object.assign(previewState.enemyStatuses, { bleed: 3 });
+    Object.assign(previewState.talentEffects, { potionPotency: 3, forgeBlockPercent: 25 });
+    Object.assign(previewState.gearEffects, {
+      flatPhysicalDamage: 2,
+      flatBleedDamage: 1,
+      flatFreezeDamage: 1,
+      flatBlockGained: 2,
+      flatArmorGained: 1,
+      goldGainPercent: 50,
+    });
+    for (const source of data.cardLibrary) {
+      for (const card of [source, mixer.createMixedPotion(source, data.cardById["mana-potion"])]) {
+        const inspected = previews.getBattleCardDescriptionInspection(card, { ...previewState, hand: [card] });
+        for (const line of model.renderCardDescription(inspected.effects, inspected.description).localizedLines)
+          addDescription(line, "Battle card known-modifier preview");
       }
     }
     const materialTypes = await server.ssrLoadModule("/src/lib/homestead/types.ts");

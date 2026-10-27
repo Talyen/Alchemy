@@ -1,6 +1,11 @@
 import { areBattleCardEffectsEqual, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import type { RandomDecision, Rng } from "@/lib/rng";
-import type { BattleResolutionObserver, ObservedAttack, ObservedDirectAmount } from "./resolution-observer";
+import type {
+  BattleResolutionObserver,
+  ObservedAttack,
+  ObservedDirectAmount,
+  ObservedMagnitudeField,
+} from "./resolution-observer";
 
 type InspectedAttacks =
   | { kind: "exact"; packets: readonly ObservedAttack[] }
@@ -8,6 +13,7 @@ type InspectedAttacks =
   | { kind: "unknown" };
 
 export type InspectedPackets = InspectedAttacks & {
+  magnitudes: ReadonlyMap<ObservedMagnitudeField, number>;
   directAmounts:
     | { kind: "exact"; amounts: readonly ObservedDirectAmount[] }
     | { kind: "alternatives"; outcomes: ReadonlyArray<readonly ObservedDirectAmount[]> }
@@ -38,8 +44,31 @@ function walk(effects: readonly BattleCardEffect[], visit: (effect: BattleCardEf
 interface Outcome {
   packets: Map<BattleCardEffect, ObservedAttack[]>;
   directAmounts: Map<BattleCardEffect, readonly ObservedDirectAmount[]>;
+  magnitudes: Map<BattleCardEffect, Map<ObservedMagnitudeField, number>>;
   eligible: Set<BattleCardEffect>;
   complete: boolean;
+}
+
+type Collected<T> =
+  | { kind: "exact"; values: readonly T[] }
+  | { kind: "alternatives"; outcomes: ReadonlyArray<readonly T[]> }
+  | { kind: "unknown" };
+
+/** An interrupted world is usable only when it already observed this effect. */
+function collectObserved<T>(
+  feedback: readonly Outcome[],
+  read: (outcome: Outcome) => ReadonlyMap<BattleCardEffect, readonly T[]>,
+  effect: BattleCardEffect,
+  equal: (a: T, b: T) => boolean,
+): Collected<T> {
+  if (!feedback.length || feedback.some((outcome) => !outcome.complete && !read(outcome).has(effect)))
+    return { kind: "unknown" };
+  const outcomes = feedback.map((outcome) => read(outcome).get(effect) ?? []);
+  const first = outcomes[0]!;
+  const exact = outcomes.every(
+    (candidate) => candidate.length === first.length && candidate.every((entry, index) => equal(entry, first[index]!)),
+  );
+  return exact ? { kind: "exact", values: first } : { kind: "alternatives", outcomes };
 }
 
 /** Replay whole correlated worlds. Missing alternatives never become concrete starting values. */
@@ -58,6 +87,7 @@ export function inspectResolutionOutcomes(
     const outcome: Outcome = {
       packets: new Map(),
       directAmounts: new Map(),
+      magnitudes: new Map(),
       eligible: new Set(sources),
       complete: false,
     };
@@ -96,6 +126,12 @@ export function inspectResolutionOutcomes(
       directFeedback: (amounts) => {
         if (current) outcome.directAmounts.set(current, amounts);
       },
+      descriptionMagnitude: (field, amount, source = current) => {
+        if (!source || !sources.has(source)) return;
+        const magnitudes = outcome.magnitudes.get(source) ?? new Map<ObservedMagnitudeField, number>();
+        magnitudes.set(field, amount);
+        outcome.magnitudes.set(source, magnitudes);
+      },
     };
     const decide = (decision: RandomDecision): number => {
       // Offensive inspection has always excluded random critical strikes and Dodge.
@@ -131,52 +167,29 @@ export function inspectResolutionOutcomes(
   const inspected = new Map<BattleCardEffect, InspectedPackets>();
   for (const effect of sources) {
     const feedback = outcomes.filter((outcome) => outcome.eligible.has(effect));
-    const amounts = feedback[0]?.directAmounts.get(effect) ?? [];
-    const feedbackKnown =
-      feedback.length > 0 && feedback.every((outcome) => outcome.complete || outcome.directAmounts.has(effect));
-    const feedbackExact = feedback.every((outcome) => {
-      const candidate = outcome.directAmounts.get(effect) ?? [];
-      return (
-        candidate.length === amounts.length &&
-        candidate.every((entry, index) => {
-          const first = amounts[index]!;
-          return (
-            entry.target === first.target &&
-            entry.kind === first.kind &&
-            entry.stat === first.stat &&
-            entry.amount === first.amount
-          );
-        })
-      );
-    });
-    const directAmounts: InspectedPackets["directAmounts"] = !feedbackKnown
-      ? { kind: "unknown" }
-      : feedbackExact
-        ? { kind: "exact", amounts }
-        : { kind: "alternatives", outcomes: feedback.map((outcome) => outcome.directAmounts.get(effect) ?? []) };
-    // Scheduling resolves now, but future-turn packets remain authored values.
-    if (
-      effect.kind === "repeat-over-turns" ||
-      feedback.length === 0 ||
-      feedback.some((outcome) => !outcome.complete && !outcome.packets.has(effect))
-    ) {
-      inspected.set(effect, { kind: "unknown", directAmounts });
-      continue;
+    const magnitudes = new Map<ObservedMagnitudeField, number>();
+    for (const [field, amount] of feedback[0]?.magnitudes.get(effect) ?? []) {
+      if (feedback.every((outcome) => outcome.magnitudes.get(effect)?.get(field) === amount))
+        magnitudes.set(field, amount);
     }
-    const packets = feedback.map((outcome) => outcome.packets.get(effect) ?? []);
-    const first = packets[0]!;
-    const exact = packets.every(
-      (candidate) =>
-        candidate === first ||
-        (candidate.length === first.length &&
-          candidate.every((packet, index) => areBattleCardEffectsEqual(packet, first[index]!))),
-    );
-    inspected.set(
+    const direct = collectObserved(
+      feedback,
+      (outcome) => outcome.directAmounts,
       effect,
-      exact
-        ? { kind: "exact", packets: first, directAmounts }
-        : { kind: "alternatives", outcomes: packets, directAmounts },
+      (a, b) => a.target === b.target && a.kind === b.kind && a.stat === b.stat && a.amount === b.amount,
     );
+    const directAmounts: InspectedPackets["directAmounts"] =
+      direct.kind === "exact" ? { kind: "exact", amounts: direct.values } : direct;
+    // Scheduling resolves now, but future-turn packets remain authored values.
+    const attacks =
+      effect.kind === "repeat-over-turns"
+        ? { kind: "unknown" as const }
+        : collectObserved<ObservedAttack>(feedback, (outcome) => outcome.packets, effect, areBattleCardEffectsEqual);
+    inspected.set(effect, {
+      ...(attacks.kind === "exact" ? { kind: "exact", packets: attacks.values } : attacks),
+      directAmounts,
+      magnitudes,
+    });
   }
   return inspected;
 }

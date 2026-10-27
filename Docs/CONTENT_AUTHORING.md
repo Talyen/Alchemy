@@ -19,7 +19,7 @@ Use “Deal N [type] damage”, “Gain N Mana”, “Gain/Lose N Mana Crystals�
 
 ## Add a new status effect
 
-1. Extend `PlayerStatusId` or `EnemyStatusId` in `src/lib/game-data/types.ts`. Classify the status in the applicable harmful/beneficial lists and display order there.
+1. Extend `PlayerStatusId` or the enemy status list in `src/lib/game-data/types.ts`. Add eligible enemy damage statuses to `ENEMY_STATUS_DAMAGE_IDS`. Classify the status in the applicable harmful/beneficial lists and display order there.
 2. Add its initial value to `defaultBattleState()` in `src/lib/battle/battle-setup-defaults.ts`. Saved status records normalize against these defaults in `normalize-persisted-battle-state.ts`; an undeclared key is dropped during load.
 3. If cards can apply, remove, or multiply the status, update the relevant allowlists in `src/lib/game-data/effects/shared-schemas.ts` and `status-schemas.ts`, plus description metadata in `effect-metadata.ts`. Extending the status union alone does not make it a valid card effect. Keep each operation limited to the statuses it supports.
 4. Route status assignment through `src/lib/battle/status-state.ts`. Add player-side grant/reaction logic in `status-player.ts` when applicable, and damage riders in `damage-status-riders.ts` only when damage applies the status.
@@ -194,8 +194,8 @@ before handing off.
 
 One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both reveal one Collection entry; Boons occupy no slot. `combineTrinketEffectIds` deduplicates matching forms.
 
-1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`. Use `defineTrinket` with its effects and a description formatter. Interpolate numeric amounts from the formatter's typed effects; do not repeat balance values in prose.
-2. Reuse existing effects when they express the new Trinket. Only for a new effect, add its default to `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts` and wire its battle/run consumers; check Boon exclusions. `TrinketManifest` and content validation derive effect field types from these defaults and requires at least one active effect.
+1. Add data/art in `game-data/compendium/trinket-definitions.ts` and `game-data/assets.ts`. Use `defineTrinket` with its effects and a description formatter. Interpolate numeric amounts from the formatter's typed effects; do not repeat balance values in prose.
+2. Reuse existing effects when they express the new Trinket. For a new effect, wire its battle/run consumers and check Boon exclusions. `TrinketManifest`, neutral defaults, and content validation derive effect fields from the catalog; each Trinket requires at least one active effect.
 3. Content validation uses that same description definition to check the complete trigger and outcome, required effect keys, and boolean mechanics. No separate parity rule is needed. Keep meaningful regressions in `tests/lib/content-validation/trinket-validation.test.ts`; run `npm run content:audit` before handing off.
 4. Verify Gear-aggregate ownership/equip plus permanent and ephemeral UI/discovery.
 
@@ -212,7 +212,7 @@ Summon cards omit `consume`; their summon effect routes them to the battle-remov
 - **3. Define companion in `companionLibrary` record** — `src/lib/game-data/companions.ts`
 - **4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`)** — `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry
 - **5. Give the summon card a stable, unique string ID** — `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness
-- **6. Register the summon-card sound and verify the battle Companion mapping** — `src/lib/audio/sound-registry.ts` and `COMPANION_SOUND_CARD_IDS` in `src/lib/game-constants/audio.ts`; both are required by the [audio contract](./AUDIO.md#runtime-contract).
+- **6. Register the summon-card sound** — add the Companion’s summon card to `src/lib/audio/sound-registry.ts` as required by the [audio contract](./AUDIO.md#runtime-contract).
 - **7. Update description lines** — `tests/lib/game-data/companions.test.ts` guards companion copy
 
 Run `npm run content:audit` before handing off (companion record checks, summon-card parity, typography).

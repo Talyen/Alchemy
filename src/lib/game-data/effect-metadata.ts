@@ -1,4 +1,5 @@
 import { capitalizeWord } from "@/lib/utils";
+import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { visitBattleCardEffects } from "./effect-tree";
 import { createEffectDescription } from "./effect-description";
 import { renderCardDescription, type CardDescription } from "./card-description-model";
@@ -61,13 +62,24 @@ export function describeCardEffects(effects: readonly BattleCardEffect[]): strin
   return renderCardDescription(effects, createEffectDescription(effects)).descriptionLines;
 }
 
+/** Build the shared keyword and Consume trailer in its authored order. */
+export function appendCardDescriptionTrailer(
+  description: CardDescription,
+  tags: readonly string[] | undefined,
+  consume: boolean,
+): void {
+  for (const tag of tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
+  if (consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+}
+
 export function getCardDescription(card: BattleCard): CardDescription {
   if (card.description) return card.description;
   const description = createEffectDescription(card.effects);
-  if (card.tags)
-    description.push(...card.tags.map((tag) => ({ parts: [capitalizeWord(tag)], role: "keyword" as const })));
-  if (card.consume && !card.effects.some((effect) => effect.kind === "summon-companion"))
-    description.push({ parts: ["Consume"], role: "consume" });
+  appendCardDescriptionTrailer(
+    description,
+    card.tags,
+    !!card.consume && !card.effects.some((effect) => effect.kind === "summon-companion"),
+  );
   return description;
 }
 

@@ -16,9 +16,14 @@ export { defaultTrinketEffects } from "./trinket-manifest";
 export type { TrinketManifest } from "./trinket-manifest";
 export * from "./types";
 
-export { areBattleCardEffectsEqual, effectChildren, mapEffectChildren, visitBattleCardEffects } from "./effect-tree";
+export { areBattleCardEffectsEqual, mapEffectChildren, visitBattleCardEffects } from "./effect-tree";
 
-export { createEffectDescription, describeCardEffects, getCardDescription } from "./effect-metadata";
+export {
+  appendCardDescriptionTrailer,
+  createEffectDescription,
+  describeCardEffects,
+  getCardDescription,
+} from "./effect-metadata";
 export * from "./card-description-model";
 
 export { buildDescriptionMessage, type DescriptionMessageValue } from "./description-message";

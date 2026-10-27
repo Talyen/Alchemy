@@ -6,7 +6,7 @@ import {
   canShatter,
 } from "./elemental-reactions";
 import { readCombatFlag, resolveSecondaryAction } from "./action-context";
-import { scalePercent } from "./amount-helpers";
+import { applyPotionMultiplier, scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { addGoldWithCombatText } from "./player-rewards";
@@ -191,6 +191,43 @@ export function dealDamageToEnemy(
         ? damageState.enemyMitigation.armor * (context?.damageMultiplier ?? 1)
         : 0;
     observeAttackPower(state, packet, power + armorBonus);
+    const description = context?.descriptionDamage;
+    const authored = description?.effect;
+    const rulePower = (ruleState: BattleState, rulePacket: DamageEffect) =>
+      computeCardAttackPower(ruleState, rulePacket, card, { ...context, baseDamageBonus }, false).damage + armorBonus;
+    // A conditional operand is evaluated at this effect's actual ordered state.
+    // Only its condition changes; prior hits, costs, preparations and rewards stay.
+    if (authored?.damageTypeIfTargetFrozen === authored?.damageType && authored?.amountIfTargetFrozen !== undefined) {
+      const ordinary = { ...damageState, enemyCC: { ...damageState.enemyCC, freezeSkipTurns: 0 } };
+      const frozen = {
+        ...damageState,
+        enemyCC: {
+          ...damageState.enemyCC,
+          stunSkipTurns: 0,
+          freezeSkipTurns: Math.max(1, damageState.enemyCC.freezeSkipTurns),
+        },
+      };
+      state.observer.descriptionMagnitude?.(
+        "amount",
+        rulePower(ordinary, {
+          ...packet,
+          amount: applyPotionMultiplier(authored.amount, description!.potionMultiplier),
+        }),
+      );
+      state.observer.descriptionMagnitude?.(
+        "amountIfTargetFrozen",
+        rulePower(frozen, {
+          ...packet,
+          amount: applyPotionMultiplier(authored.amountIfTargetFrozen, description!.potionMultiplier),
+        }),
+      );
+    } else if (packet.doubleIfEnemyBleeding || packet.tripleIfEnemyNotBurning) {
+      state.observer.descriptionMagnitude?.(
+        "amount",
+        rulePower(damageState, { ...packet, doubleIfEnemyBleeding: false, tripleIfEnemyNotBurning: false }),
+      );
+      state.observer.descriptionMagnitude?.("conditionalAmount", power + armorBonus);
+    }
     if (packet.damageType !== "physical" && consumed.physicalBonus > 0 && power + armorBonus > 0) {
       resolveSecondaryAction(damageState, "reward", (secondary) => {
         const followUp = { kind: "damage" as const, damageType: "physical" as const, amount: consumed.physicalBonus };

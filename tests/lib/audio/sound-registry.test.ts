@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, companionLibrary } from "@/lib/game-data";
-import { COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 import { cardSounds, getCardSounds } from "@/lib/audio/sound-registry";
 
 describe("complete focal sound coverage", () => {
@@ -11,8 +10,7 @@ describe("complete focal sound coverage", () => {
 
   it("maps every companion to its summoning cue", () => {
     for (const id of Object.keys(companionLibrary)) {
-      expect(COMPANION_SOUND_CARD_IDS[id]).toBe(`${id}-companion`);
-      expect(cardSounds[COMPANION_SOUND_CARD_IDS[id]!]?.length).toBeGreaterThan(0);
+      expect(cardSounds[`${id}-companion`]?.length).toBeGreaterThan(0);
     }
   });
 });

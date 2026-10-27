@@ -32,7 +32,11 @@ it.each([
   }
   const lines = getMusicLyrics(key)!;
   expect(lines.length).toBeGreaterThan(0);
-  expect(lines).toHaveLength(snapshot.lines.length);
+  expect(lines).toEqual(
+    snapshot.lines.map(({ text, timings }) =>
+      text.split(" ").map((word, index) => ({ text: word, start: timings[index * 2], end: timings[index * 2 + 1] })),
+    ),
+  );
   let end = 0;
   for (const [index, line] of lines.entries()) {
     expect(snapshot.lines[index]!.timings).toHaveLength(line.length * 2);
@@ -72,4 +76,10 @@ it("keeps Frostwarden's restored call separate from the following response", () 
   }
   expect(visibleAt(218.5)).toBe("What burns");
   expect(visibleAt(220.5)).toBe("Melts");
+});
+
+it("returns no lyrics for non-boss and unknown music keys", () => {
+  for (const key of [MUSIC_KEYS.MENU, MUSIC_KEYS.BATTLE, "missing", "constructor", "__proto__"]) {
+    expect(getMusicLyrics(key)).toBeUndefined();
+  }
 });

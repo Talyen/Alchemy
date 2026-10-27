@@ -119,6 +119,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
   ): BattleState {
     if (amount <= 0) return state;
     const granted = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
+    if (options?.feedback === "primary") state.observer?.descriptionMagnitude?.("amount", granted);
     const nextState = gainMana(state, granted, options?.allowOverflow);
     const gained = nextState.mana - state.mana;
     if (gained > 0 && combatTexts) {

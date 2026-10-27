@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { getBattleDamageInspectionCard } from "@/lib/battle/card-damage-inspection";
+import { getBattleCardDescriptionInspection } from "@/lib/battle/card-damage-inspection";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { projectEnemyDotDamage, detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
@@ -251,7 +251,7 @@ describe("Trinket affix additions", () => {
     expect(secondary.flags.nextStunAttackBonus).toBe(4);
     expect(secondary.enemyHealth).toBe(next.enemyHealth - 3);
     const double = makeTestCard({ cost: 0, effects: [attack("stun").effects[0]!, attack("stun").effects[0]!] });
-    expect(getBattleDamageInspectionCard(double, next).descriptionLines).toEqual([
+    expect(getBattleCardDescriptionInspection(double, next).descriptionLines).toEqual([
       "Deal 7 Stun damage",
       "Deal 3 Stun damage",
     ]);

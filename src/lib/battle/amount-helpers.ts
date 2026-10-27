@@ -1,5 +1,15 @@
 import { HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import type { BattleState } from "./types";
+import { isMixedPotionCard, isPotionCard, type BattleCard } from "@/lib/game-data";
+
+export function cardPotionMultiplier(
+  state: Pick<BattleState, "talentEffects"> & Partial<Pick<BattleState, "action">>,
+  card: BattleCard,
+): number {
+  return isPotionCard(card) && card.consume && !state.action?.repeatActive
+    ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)
+    : 1;
+}
 
 export function scaleByRoomMultiplier(state: Pick<BattleState, "roomScalingMultiplier">, value: number): number {
   return Math.round(value * state.roomScalingMultiplier);

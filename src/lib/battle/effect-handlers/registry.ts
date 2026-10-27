@@ -1,12 +1,11 @@
 import { resolveBattleSequence } from "../battle-sequence";
-import { applyPotionMultiplier } from "../amount-helpers";
+import { applyPotionMultiplier, cardPotionMultiplier } from "../amount-helpers";
 import { mergeCombatText } from "../combat-text-events";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
 import { hasEncounterBenefit } from "../encounter-trait-state";
 import { isPlayerDefeated } from "../battle-outcome";
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
-import { isMixedPotionCard, isPotionCard } from "@/lib/game-data";
 import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "../types";
 import { getBattleRng, rollChance } from "@/lib/rng";
@@ -28,7 +27,9 @@ export const EFFECT_APPLY_BY_KIND: EffectHandlers = {
   ...SIMPLE_HANDLERS,
   "companion-action": (state, _card, effect, potionMult, combatTexts, context) => {
     let nextState = state;
-    for (let action = 0; action < applyPotionMultiplier(effect.amount, potionMult); action += 1) {
+    const actions = applyPotionMultiplier(effect.amount, potionMult);
+    state.observer?.descriptionMagnitude?.("amount", actions);
+    for (let action = 0; action < actions; action += 1) {
       nextState = resolveCompanionTurnStart(nextState, combatTexts, (current, card, texts, companionContext) =>
         applyCardEffects(current, card, texts, {
           ...companionContext,
@@ -222,10 +223,7 @@ export function applyCardEffects(
       (context.origin === "played-card" ? "primary" : context.origin || state.action ? "secondary" : undefined),
   };
   const effectTexts: CombatTextEvent[] = [];
-  const potionMult =
-    isPotionCard(card) && card.consume && !state.action?.repeatActive
-      ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)
-      : 1;
+  const potionMult = cardPotionMultiplier(state, card);
   const result = resolveBattleSequence(
     state,
     card.effects,

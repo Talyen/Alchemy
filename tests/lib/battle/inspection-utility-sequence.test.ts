@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { getBattleDamageInspectionCard } from "@/lib/battle/card-damage-inspection";
+import { getBattleCardDescriptionInspection, inspectBattleCardOutcomes } from "@/lib/battle/card-damage-inspection";
+import { inspectedDamage } from "../../fixtures/inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 import { cardById, type BattleCardEffect } from "@/lib/game-data";
@@ -23,12 +24,16 @@ function compare(
     rng,
   });
   const before = JSON.stringify(initial);
-  const preview = getBattleDamageInspectionCard(card, initial);
+  const outcomes = inspectBattleCardOutcomes(card, initial);
   expect(rng).not.toHaveBeenCalled();
   expect(JSON.stringify(initial)).toBe(before);
   const actual = playBattleCardResolved(initial, card.id, 0);
   expect(actual.state.enemyHealth).toBe(100 - healthDamage);
-  expect(preview.effects.flatMap((effect) => (effect.kind === "damage" ? [effect.amount] : []))).toEqual(expected);
+  expect(
+    card.effects.flatMap((effect, index) =>
+      effect.kind === "damage" ? [inspectedDamage(outcomes.get(String(index)))] : [],
+    ),
+  ).toEqual(expected);
 }
 
 describe("damage inspection follows utility effect execution", () => {
@@ -157,10 +162,7 @@ describe("damage inspection follows utility effect execution", () => {
       playerStatuses: { phoenixFeather: 1 },
     });
     expect(playBattleCardResolved(phoenixState, exorcism.id, 0).state.enemyHealth).toBe(99);
-    expect(getBattleDamageInspectionCard(exorcism, phoenixState).effects[2]).toMatchObject({
-      kind: "damage",
-      amount: 1,
-    });
+    expect(inspectedDamage(inspectBattleCardOutcomes(exorcism, phoenixState).get("1"))).toBe(1);
 
     const guardState = patchBattleState({
       hand: [exorcism],
@@ -172,10 +174,7 @@ describe("damage inspection follows utility effect execution", () => {
       talentEffects: { armorBreakBlock: 3, blockHolyDamagePercent: 10 },
     });
     expect(playBattleCardResolved(guardState, exorcism.id, 0).state.enemyHealth).toBe(98);
-    expect(getBattleDamageInspectionCard(exorcism, guardState).effects[2]).toMatchObject({
-      kind: "damage",
-      amount: 2,
-    });
+    expect(inspectedDamage(inspectBattleCardOutcomes(exorcism, guardState).get("1"))).toBe(2);
 
     const bargainSlash = getCorruptionMutationGroups(cardById.slash!).find((group) => group.kind === "bargain")!
       .mutations[0]!.card;
@@ -186,20 +185,19 @@ describe("damage inspection follows utility effect execution", () => {
       deathsDoorUsed: true,
     });
     expect(playBattleCardResolved(fatalState, bargainSlash.id, 0).state.enemyHealth).toBe(fatalState.enemyHealth);
-    expect(getBattleDamageInspectionCard(bargainSlash, fatalState).effects[1]).toMatchObject({
-      kind: "damage",
-      amount: 0,
-    });
+    expect(inspectedDamage(inspectBattleCardOutcomes(bargainSlash, fatalState).get("1"))).toBe(0);
 
     const strengthenedTithe = getCorruptionMutationGroups(cardById.tithe!)
       .find((group) => group.kind === "strengthen")!
       .mutations.find(({ card }) =>
         card.effects.some((effect) => effect.kind === "gain-gold" && effect.amount > 1),
       )!.card;
-    const tithePreview = getBattleDamageInspectionCard(
+    const tithePreview = getBattleCardDescriptionInspection(
       strengthenedTithe,
       patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }),
     );
-    expect(tithePreview.description![2]!.parts).toContainEqual(expect.objectContaining({ corrupted: true }));
+    expect(tithePreview.description!.flatMap((line) => line.parts)).toContainEqual(
+      expect.objectContaining({ corrupted: true, references: [expect.objectContaining({ kind: "gain-gold" })] }),
+    );
   });
 });

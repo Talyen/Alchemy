@@ -12,7 +12,7 @@ import {
 } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { type AlchemistState } from "@/lib/active-run-session/shop-session-types";
 import { readActivityData } from "@/lib/active-run-session";
-import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
+import { tryMixPotionDeck } from "@/lib/alchemist";
 import { strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import {
@@ -89,16 +89,7 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
   }
 
   function mixPotions(indexA: number, indexB: number): BattleCard | null {
-    return preparePotion("mixUsed", (deck) => {
-      if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
-        return null;
-      }
-      const cardA = deck[indexA];
-      const cardB = deck[indexB];
-      if (!cardA || !cardB || !isPotionCard(cardA) || !isPotionCard(cardB)) return null;
-      const potion = tryCreateMixedPotion(cardA, cardB);
-      return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
-    });
+    return preparePotion("mixUsed", (deck) => tryMixPotionDeck(deck, indexA, indexB));
   }
 
   function strengthenPotion(index: number): BattleCard | null {

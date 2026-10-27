@@ -1,9 +1,10 @@
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect, CardMagnitudeReference } from "@/lib/game-data";
 import type { BattleState } from "./types/state-types";
 import type { NumericCombatTextEvent } from "./types/state-types";
 
 export type ObservedAttack = Extract<BattleCardEffect, { kind: "damage" }>;
 export type ObservedDirectAmount = Pick<NumericCombatTextEvent, "target" | "kind" | "stat" | "amount">;
+export type ObservedMagnitudeField = CardMagnitudeReference["field"] | "conditionalAmount";
 
 /** Execution-only observations. No observer or projection belongs in a saved battle. */
 export interface BattleResolutionObserver {
@@ -12,6 +13,8 @@ export interface BattleResolutionObserver {
   branch: (effect: Extract<BattleCardEffect, { kind: "chance" }>, success: boolean) => void;
   attack: (packet: ObservedAttack) => void;
   directFeedback?: (amounts: readonly ObservedDirectAmount[]) => void;
+  /** Nominal authored counts before caps, draws or other unknown dependent work. */
+  descriptionMagnitude?: (field: ObservedMagnitudeField, amount: number, source?: BattleCardEffect) => void;
   unknownDraw: () => never;
 }
 

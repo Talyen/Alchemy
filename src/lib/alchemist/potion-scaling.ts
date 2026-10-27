@@ -1,5 +1,20 @@
 import { POTION_DISTILL_BONUS } from "../game-constants";
-import { mapEffectChildren, type BattleCardEffect } from "../game-data";
+import {
+  BattleCardEffectSchema,
+  areBattleCardEffectsEqual,
+  appendCardDescriptionTrailer,
+  carryCardDescriptionMarks,
+  cloneBattleCard,
+  createEffectDescription,
+  getCardDescription,
+  getCardEffect,
+  isPotionCard,
+  mapEffectChildren,
+  withCardDescription,
+  type BattleCard,
+  type BattleCardEffect,
+  type CardDescription,
+} from "../game-data";
 
 /** Scaling changes rewards, never ingredient costs, status durations, or derived base amounts. */
 function isUnscalableEffect(effect: BattleCardEffect): boolean {
@@ -73,4 +88,58 @@ export function doublePotionEffect(effect: BattleCardEffect): BattleCardEffect {
 
 export function distillPotionEffect(effect: BattleCardEffect): BattleCardEffect {
   return scalePotionEffect(effect, POTION_DISTILL_BONUS);
+}
+
+/** A distilled magnitude references a field whose value grew; mark exactly those. */
+function markDistilledMagnitudes(
+  description: CardDescription,
+  before: readonly BattleCardEffect[],
+  after: readonly BattleCardEffect[],
+): CardDescription {
+  return description.map((line) => ({
+    ...line,
+    parts: line.parts.map((part) => {
+      if (typeof part === "string") return part;
+      const increased = part.references.some((reference) => {
+        const beforeValue = (getCardEffect(before, reference) as Record<string, unknown> | undefined)?.[
+          reference.field
+        ];
+        const afterValue = (getCardEffect(after, reference) as Record<string, unknown> | undefined)?.[reference.field];
+        return (
+          typeof afterValue === "number" &&
+          (beforeValue === undefined || (typeof beforeValue === "number" && afterValue > beforeValue))
+        );
+      });
+      return increased ? { ...part, distilled: true } : part;
+    }),
+  }));
+}
+
+function rebuildScaledPotion(card: BattleCard, effects: BattleCardEffect[], distilled: boolean): BattleCard {
+  let description = carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects));
+  if (distilled) description = markDistilledMagnitudes(description, card.effects, effects);
+  appendCardDescriptionTrailer(description, card.tags, card.consume === true);
+  return cloneBattleCard(withCardDescription({ ...card, effects }, description));
+}
+
+export function doublePotionPotency(card: BattleCard): BattleCard {
+  return rebuildScaledPotion(card, card.effects.map(doublePotionEffect), false);
+}
+
+export function strengthenPotion(card: BattleCard): BattleCard | null {
+  if (!isPotionCard(card)) return null;
+  const effects = card.effects.map(distillPotionEffect);
+  if (
+    effects.some((effect) => effect.kind === "remove-harmful-status" && effect.removeAll) &&
+    !effects.some((effect) => effect.kind === "heal")
+  ) {
+    effects.push({ kind: "heal", amount: POTION_DISTILL_BONUS });
+  }
+  if (effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)) return null;
+  if (
+    effects.length === card.effects.length &&
+    effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))
+  )
+    return null;
+  return rebuildScaledPotion(card, effects, true);
 }

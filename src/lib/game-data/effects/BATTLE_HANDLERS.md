@@ -92,8 +92,9 @@ choice source; it does not assemble another utility or attack recipe.
 
 ## Battle inspection ownership
 
-[`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) adapts
-production observations into presentation-only card descriptions. Player payment,
+[`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) resolves
+production observations once per inspection. Inline descriptions and card-flight
+targeting read those outcomes directly. Player payment,
 pre-triggers, ordered effects, and follow-ups resolve through `card-play.ts`;
 enemy abilities resolve through `enemy-turn-attack.ts`. Admission alone is
 hypothetical, so cards outside the hand or above the current Mana remain inspectable.
@@ -130,13 +131,42 @@ compete. Ties, uncertain mixed-target branches and unresolved numeric outcomes
 retain the first non-cost authored recipient. The choice affects only the card
 travel ghost, never combat targeting, resolution, state or live RNG.
 
-The rule-preserving card-description adapter also uses exact direct observations
+The rule-preserving card-description adapter also uses direct observations
 to replace fixed player status, healing, Mana and Gold literals inline. Match the
 authored effect's recipient, numeric kind and resource; do not combine proc rewards,
-overheal conversions or existing totals with its amount. Healing observations are
-adjusted power before the Health cap. Resource formulas, random status pools,
-durations, charges and uncertain or missing observations retain their authored
-rules. Shared magnitude bindings still require agreement across every reference.
+overheal conversions or existing totals with its amount. Healing and Mana use
+adjusted power before their resource caps. Known modifiers remain in a guaranteed
+status grant even when a random extra grant is unresolved. A random status pool
+reports each known branch quantity without selecting its outcome.
+
+`descriptionMagnitude` records nominal capacities at their production owners,
+before a draw can stop dependent projection. Wish, draw, Companion-action, Cleanse
+and fixed Armor-removal counts retain actual Potion potency. The shared
+`cardPotionMultiplier` also keeps state-independent count and Gold modifiers
+available after unknown draws; it never predicts drawn identities or dependent
+Health, status or damage changes. These observations are separate from the
+card-flight targeting observations.
+
+Conditional damage operands are observed at the actual ordered hit state through
+the production attack calculator. Same-type Frozen alternatives switch only their control
+condition, respecting mutually exclusive Stun/Frozen states and known Frozen
+bonuses. Doubled/tripled conditions preserve their rule and state an active
+replacement total, because their bonus adds to other damage multipliers.
+No alternate gameplay state is committed. The description projection splits
+inconsistent shared literals, preserves custom wording and magnitude marks, and
+may append read-only display bindings. Never execute or persist a projected card.
+
+Resource proportions, per-Mana coefficients, explicit Forge-scaling operands,
+durations, charges and status-multiplication factors retain their authored rules;
+a current result cannot replace an operand without changing that formula. Delayed
+and unresolved state-dependent values likewise remain authored. Typed self-damage
+uses the existing resistance calculation, not a second cost recipe. Catalog-driven
+baseline/bonus/control fixtures compare these presentation copies with production
+resolution and verify source-state and live-RNG purity.
+Synthetic distinct-type Frozen alternatives and combined double/triple flags are
+not current catalog forms and retain their authored rules rather than inventing
+an adjusted branch. Single-type ranges retain the source hit's Armor/Block and
+detonation clauses; a prepared conversion also updates its displayed keyword.
 
 Effect occurrence addresses, including both Chance branches, own observation and
 Corruption-mark mapping. Repeated references to one authored effect object still
@@ -168,8 +198,9 @@ and tick callers. These owners call the production operations directly, so
 inspection carries earned resources between damage packets using the same rules.
 Rendering owns only summaries and presentation copies.
 
-Wish reward ordering lives in `wish-rewards.ts`; Companion action scope, Bond
-scaling and captured hit facts live in `companion-effects.ts`. The Companion effect
+Wish reward ordering lives in `wish-rewards.ts`; Companion action scope and
+captured hit facts live in `companion-effects.ts`. `companion-scaling.ts` constructs
+the same Bond-scaled action for combat and autoplay scoring. The Companion effect
 interpreter callback avoids an import cycle with the registry. Card cloning and
 Companion scaling use `mapEffectChildren`; reward selection uses
 `isCompanionSummonCard`. Chance effects may have an empty branch, including

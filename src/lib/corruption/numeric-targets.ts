@@ -3,12 +3,12 @@ import {
   renderCardDescription,
   type BattleCard,
   type CardMagnitudeReference,
+  type CardEffectAddress,
 } from "@/lib/game-data";
-import type { NumericEffectAddress } from "./effect-address";
 
 type NumericEffectEdit = CardMagnitudeReference & { expectedValue: number; multiplier: 1 | 2 };
 
-export interface CorruptionTarget extends NumericEffectAddress {
+export interface CorruptionTarget extends CardEffectAddress {
   id: string;
   lineIndex: number;
   value: number;

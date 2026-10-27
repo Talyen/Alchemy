@@ -1,5 +1,6 @@
 import {
   cloneBattleCard,
+  appendCardDescriptionTrailer,
   createEffectDescription,
   carryCardDescriptionMarks,
   cardHasKeyword,
@@ -29,7 +30,6 @@ import type {
 } from "@/lib/active-run-session/alchemy-visits";
 import { pickRandom, takeRandomItem } from "@/lib/rng";
 import { stableJson } from "@/lib/utils";
-import { appendPotionTrailer } from "./potion-mixer";
 import { transmutationModifierKeyword } from "@/lib/content-systems/labyrinth/trait-catalog";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 
@@ -189,7 +189,7 @@ function finishAlteration(
       }) as CardMagnitudeReference,
   );
   const description = carryCardDescriptionMarks(previous, createEffectDescription(effects));
-  appendPotionTrailer(description, result.tags, result.consume === true);
+  appendCardDescriptionTrailer(description, result.tags, result.consume === true);
   return cloneBattleCard(withCardDescription(result, description));
 }
 
