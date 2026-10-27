@@ -50,13 +50,12 @@ function summarize(packets: readonly DamageEffect[]): BattleCardEffect {
   };
 }
 
-/** Resolve production rules against detached alternatives, then adapt observations to description lines. */
-export function inspectBattleCardDamage(
+/** Resolve production rules against detached alternatives, retaining each effect's authored address. */
+export function inspectCardEffectOutcomes(
   card: BattleCard,
   snapshot: BattleSnapshot,
   side: "player" | "enemy" = "player",
-): BattleDamageInspection {
-  const presentation = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
+): ReadonlyMap<string, InspectedPackets> {
   const sourceAddresses = new Map<BattleCardEffect, string>();
   function copyEffect(effect: BattleCardEffect, path: number[]): BattleCardEffect {
     // One identity per occurrence, even if authored arrays share effect objects.
@@ -81,14 +80,25 @@ export function inspectBattleCardDamage(
   });
   const outcomes = new Map<string, InspectedPackets>();
   for (const [effect, result] of resolved) outcomes.set(sourceAddresses.get(effect)!, result);
-  function project(effect: BattleCardEffect): BattleCardEffect[] {
+  return outcomes;
+}
+
+/** Resolve production rules against detached alternatives, then adapt observations to description lines. */
+export function inspectBattleCardDamage(
+  card: BattleCard,
+  snapshot: BattleSnapshot,
+  side: "player" | "enemy" = "player",
+): BattleDamageInspection {
+  const presentation = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
+  const outcomes = inspectCardEffectOutcomes(card, snapshot, side);
+  function project(effect: BattleCardEffect, path: number[]): BattleCardEffect[] {
     if (
       effect.kind !== "damage" &&
       effect.kind !== "random-damage" &&
       effect.kind !== "cleanse-player-status-to-damage"
     )
       return [effect];
-    const inspected = resolved.get(effect);
+    const inspected = outcomes.get(path.join("."));
     if (!inspected || inspected.kind === "unknown") return [effect];
     const alternatives = inspected.kind === "exact" ? [inspected.packets] : inspected.outcomes;
     const zero: DamageEffect = {
@@ -138,14 +148,14 @@ export function inspectBattleCardDamage(
         results.push({ ...view, successEffects, failureEffects });
         return;
       }
-      const projected = project(effect);
+      const projected = project(effect, sourcePath);
       if (effect.kind === "cleanse-player-status-to-damage" && projected.length > 1)
         projectedAddresses.set(sourcePath.join("."), address([...targetPath.slice(0, -1), targetPath.at(-1)! + 1]));
       results.push(...(projected.length === 1 && projected[0] === effect ? [view] : projected));
     });
     return results;
   };
-  const effects = projectTree(resolutionCard.effects, presentation.effects);
+  const effects = projectTree(card.effects, presentation.effects);
   // No offensive packets: preserve custom utility and summon descriptions verbatim.
   if (!effects.some((effect) => ["damage", "random-damage", "chance"].includes(effect.kind)))
     return { card: presentation, outcomes };
@@ -238,7 +248,7 @@ export function getBattleCardDescriptionInspection(
   side: "player" | "enemy" = "player",
 ): BattleCard {
   const rules = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
-  const inspected = inspectBattleCardDamage(card, snapshot, side);
+  const outcomes = inspectCardEffectOutcomes(card, snapshot, side);
   function inlineKnownAmount(
     effect: BattleCardEffect,
     path: number[],
@@ -247,7 +257,7 @@ export function getBattleCardDescriptionInspection(
     const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index], skipPaths));
     const key = path.join(".");
     if (skipPaths?.has(key)) return view;
-    const outcome = inspected.outcomes.get(key);
+    const outcome = outcomes.get(key);
     const utility = withKnownUtilityAmount(effect, outcome);
     if (utility) return utility;
     if (
