@@ -810,7 +810,7 @@
   "catalog.cardLibrary.crystal-bulwark.line0": {"text":"Gain 1 Block per Mana Crystal","context":"Game catalog: cardLibrary.crystal-bulwark description","aliasOf":"description.b9408218ba835430","values":{"value0":1},"terms":["Block","Mana"]},
   "catalog.cardLibrary.crystal-bulwark.line1": {"text":"Gain 1 Armor","context":"Game catalog: cardLibrary.crystal-bulwark description","aliasOf":"description.f67c52545b3a933","values":{"value0":1},"terms":["Armor"]},
   "catalog.cardLibrary.crystal-bulwark.title": {"text":"Crystal Bulwark","context":"Game catalog: cardLibrary.crystal-bulwark.title","terms":[]},
-  "catalog.cardLibrary.dark-pact.line0": {"text":"Deal 2 Burn damage","context":"Game catalog: cardLibrary.dark-pact description","aliasOf":"description.4bf7638d4bccd71d","values":{"value0":2},"terms":["Burn"]},
+  "catalog.cardLibrary.dark-pact.line0": {"text":"Deal 3 Burn damage","context":"Game catalog: cardLibrary.dark-pact description","aliasOf":"description.4bf7638d4bccd71d","values":{"value0":3},"terms":["Burn"]},
   "catalog.cardLibrary.dark-pact.line1": {"text":"Lose 1 Health","context":"Game catalog: cardLibrary.dark-pact description","aliasOf":"description.32916c10202b1318","values":{"value0":1},"terms":["Health"]},
   "catalog.cardLibrary.dark-pact.line2": {"text":"Wish 1","context":"Game catalog: cardLibrary.dark-pact description","aliasOf":"description.b6b1a842bc1e8274","values":{"value0":1},"terms":["Wish"]},
   "catalog.cardLibrary.dark-pact.title": {"text":"Dark Pact","context":"Game catalog: cardLibrary.dark-pact.title","terms":[]},

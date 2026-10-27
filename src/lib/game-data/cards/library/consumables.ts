@@ -105,7 +105,7 @@ export const consumableCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "dark-pact",
     effects: [
-      { kind: "damage", damageType: "burn", amount: 2 },
+      { kind: "damage", damageType: "burn", amount: 3 },
       { kind: "lose-health", amount: 1 },
       { kind: "wish", amount: 1 },
     ],
