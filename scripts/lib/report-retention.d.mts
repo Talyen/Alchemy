@@ -19,6 +19,7 @@ export interface RetentionPlan {
   protected: number;
   candidates: RetentionCandidate[];
   expiringCandidates: RetentionCandidate[];
+  legacyToolEnvironments: Array<{ path: string; reason: string }>;
   permanentDeletionApproved: boolean;
   note: string;
   incomplete?: string;

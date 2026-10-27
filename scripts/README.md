@@ -166,9 +166,11 @@ successful runs expire after 30 days and failed runs after 90 days. The latest
 success and failure per command, current run, referenced baselines, pinned or
 owned runs, legacy runs, and unknown evidence stay protected. Other performance,
 visual, integration and experimental evidence is not automatically expired.
-The automatically managed lyric-tool environment is also removed after 30 days
-without use, but only while its inherited process lock can be acquired. Legacy or
-unknown environments, shared dependencies and all trailer environments stay untouched.
+Automatically managed lyric and font tool environments are also removed after 30
+days without use, but only while their inherited process locks can be acquired.
+Known legacy environments are listed in `reports/retention-review.json` and remain
+untouched. Unknown environments, shared dependencies and all trailer environments
+also stay untouched.
 At producer completion it also writes a bounded
 `reports/retention-review.json`: a 1 GiB review threshold, latest success/failure per
 command retained, pins/owners and referenced baselines protected, and at most 64
@@ -185,6 +187,21 @@ deletion share an OS-released loopback mutex keyed by the checkout's real path.
 Separate checkouts do not share a fixed port; a collision fails without deleting
 artifacts. Abandoned guards are recovered only after confirming the owner is dead;
 unreadable ownership stays protected. Raw tools require manual ownership inspection.
+
+Build and packaging commands record local attempt outcomes in
+`.cache/build-retention/`; build, packaging, package verification and Steam upload
+participate in the artifact guard. On idle pruning, a failed local packaging output
+is eligible after 24 hours only if it was produced in an isolated attempt directory,
+the recorded tree still matches, and no `.keep`, symlink, newer success, upload
+attempt or unresolved owner protects it. A dry run reports the same candidates
+without deletion. Release-mode attempts, successful builds, pre-existing or changed
+outputs and unknown receipts remain protected. Steam upload attempts protect their
+package even if the remote outcome is uncertain. On non-Windows local packaging,
+when the canonical output does not exist, the attempt uses isolated staging and
+promotes a successful output to the canonical path. Other packaging keeps its
+existing layout and is never automatically removed. The fixed output paths do not
+identify historical builds or prove that a legacy package was undistributed, so
+this policy does not automatically remove those outputs or any release artifacts.
 No cleanup command authorizes terminating foreign work.
 
 Build outputs, production sources, retained release packages, saves and scratch/output
@@ -310,8 +327,8 @@ closes only task browsers, preserves the complete `reports/` directory and other
 non-build ignored files in a unique evidence bundle, then removes only that
 registered checkout. The task branch remains. A failure prints a finish retry
 command and leaves integration complete; inspect the state file and reported
-recovery path before retrying. Finishing also holds the managed lyric environment
-lock for the whole removal, and refuses to proceed while that tool is active.
+recovery path before retrying. Finishing also holds the managed lyric and font
+environment locks for the whole removal, and refuses to proceed while either tool is active.
 
 Cleanup rejects changed/locked registrations, unfinished work, submodules,
 symlinks in evidence and links escaping the task. It stages the checkout under
