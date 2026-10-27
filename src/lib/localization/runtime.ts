@@ -2,6 +2,7 @@ import { unpackCatalogs } from "./catalog-format.mjs";
 import { pseudolocalize } from "./pseudolocalize";
 export { pseudolocalize } from "./pseudolocalize";
 import { buildDescriptionMessage } from "@/lib/game-data";
+import { memoizeShortText } from "@/lib/memoize-short-text";
 import i18next from "i18next";
 import extraMessages from "./extra-messages.json";
 import type languages from "./locales/languages.json";
@@ -9,6 +10,8 @@ export const localization = i18next.createInstance();
 let source: Record<string, string> = {};
 let sourceIds = new Map<string, string>();
 const englishDefaults: Record<string, string> = {};
+// Cache only the locale-independent parsing; catalogs and translations remain live.
+const displayMessage = memoizeShortText((value) => buildDescriptionMessage([{ text: value }]));
 for (const [id, message] of Object.entries(
   extraMessages as Record<string, { text: string; forms?: Record<string, string> }>,
 )) {
@@ -67,7 +70,7 @@ function translateDisplayText<T>(value: T, locale: string, translate: typeof loc
   if (typeof value !== "string" || locale === "en") return value;
   const id = sourceIds.get(value);
   if (id) return translateMessage(id, value, {}, locale, translate) as T;
-  const message = buildDescriptionMessage([{ text: value }]);
+  const message = displayMessage(value);
   if (Object.hasOwn(source, message.id))
     return translateMessage(message.id, message.template, message.values, locale, translate).replace(
       /<[^>]+>/g,

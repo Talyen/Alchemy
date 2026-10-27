@@ -114,18 +114,22 @@ export function projectCardDescription(card: BattleCard, effects: BattleCardEffe
     effects,
     createEffectDescription(effects).filter((line) => line.role === "effect"),
   );
-  const originals = new Map(previous.filter((line) => signature(line)).map((line) => [signature(line), line]));
-  const originalCanonical = new Set(createEffectDescription(card.effects).map((line) => JSON.stringify(line.parts)));
+  const originals = new Map<string, CardDescription[number]>();
+  const unboundEffects: CardDescription = [];
+  for (const line of previous) {
+    const key = signature(line);
+    if (key) originals.set(key, line);
+    else if (line.role === "effect") unboundEffects.push(line);
+  }
   const description = canonical.map((line) => {
     const original = originals.get(signature(line));
     return original && fits(original) ? original : line;
   });
   // Saved custom prose and ingredient trailers are not replaced by the generic formatter.
-  description.push(
-    ...previous.filter(
-      (line) => line.role === "effect" && !signature(line) && !originalCanonical.has(JSON.stringify(line.parts)),
-    ),
-  );
+  if (unboundEffects.length) {
+    const originalCanonical = new Set(createEffectDescription(card.effects).map((line) => JSON.stringify(line.parts)));
+    description.push(...unboundEffects.filter((line) => !originalCanonical.has(JSON.stringify(line.parts))));
+  }
   description.push(...previous.filter((line) => line.role !== "effect"));
   const marks = previous.map((line) => ({
     ...line,

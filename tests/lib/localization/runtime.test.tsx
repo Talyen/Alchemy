@@ -31,6 +31,18 @@ afterEach(async () => {
 });
 
 describe("localized game presentation", () => {
+  it("keeps repeated generated descriptions responsive to language and catalog changes", async () => {
+    const value = "Deal 17 Bleed damage";
+    await localization.changeLanguage("de");
+    expect(displayText(value)).toBe("Füge 17 Schaden vom Typ Blutung zu");
+    expect(displayText(value)).toBe("Füge 17 Schaden vom Typ Blutung zu");
+    await localization.changeLanguage("es");
+    expect(displayText(value)).toBe("Inflige 17 de daño de Sangrado");
+    localization.addResource("es", "translation", "description.19857ce27100fb3c", "Cambio {{value0}}");
+    expect(displayText(value)).toBe("Cambio 17");
+    installCatalogs(catalogs);
+  });
+
   it("refreshes every resource display in place when the game language changes", async () => {
     const gold = 123456.7;
     const inventory = Object.freeze({ wood: 12, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 });
