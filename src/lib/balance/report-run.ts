@@ -150,6 +150,38 @@ export function collectAnomalies(rows: readonly CoreRow[]): {
   return { anomalies: Object.values(byField).sort((a, b) => b.maxValue - a.maxValue), metrics };
 }
 
+export interface CompactCoreRow {
+  row: CoreRow;
+  metrics: AnomalyMetricRow[];
+}
+
+export function compactCoreRow(row: CoreRow): CompactCoreRow {
+  const { metrics } = collectAnomalies([row]);
+  const threshold = getAnomalyThreshold(row.tier);
+  return {
+    row: {
+      ...row,
+      results: row.results.filter((result) => ANOMALY_METRICS.some(({ key }) => result.anomalies[key] > threshold)),
+    },
+    metrics,
+  };
+}
+
+export function mergeCoreMetrics(chunks: readonly CompactCoreRow[]): AnomalyMetricRow[] {
+  const maxima = new Map(
+    ANOMALY_METRICS.map(({ label }) => [label, { field: label, values: { early: 0, mid: 0, late: 0 } }]),
+  );
+  for (const chunk of chunks) {
+    for (const metric of chunk.metrics) {
+      const entry = maxima.get(metric.field);
+      if (!entry) throw new Error(`Unknown anomaly metric: ${metric.field}`);
+      for (const tier of ["early", "mid", "late"] as const)
+        entry.values[tier] = Math.max(entry.values[tier], metric.values[tier]);
+    }
+  }
+  return [...maxima.values()].sort((left, right) => right.values.late - left.values.late);
+}
+
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
   const core = withPhaseTiming("core scenarios", () => [...coreScenarios(options)].map((run) => run()));
   const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));

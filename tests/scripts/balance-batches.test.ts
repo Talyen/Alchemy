@@ -32,6 +32,9 @@ it("resumes completed groups and rejects incompatible or concurrent checkpoints"
     const mismatch = run({ ALCHEMY_BALANCE_ITERATIONS: "2" });
     expect(mismatch.status).not.toBe(0);
     expect(mismatch.stderr).toContain("Checkpoint source or options differ");
+    const invalidBudget = run({ ALCHEMY_BALANCE_BATCH_GROUPS: "1e2" });
+    expect(invalidBudget.status).not.toBe(0);
+    expect(invalidBudget.stderr).toContain("ALCHEMY_BALANCE_BATCH_GROUPS must be a positive integer");
     writeFileSync(join(checkpoint, ".lock"), JSON.stringify({ pid: process.pid }));
     const locked = run();
     expect(locked.status).not.toBe(0);

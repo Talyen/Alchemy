@@ -17,8 +17,9 @@ import { withReportServer } from "./lib/vite-report-server.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const checkpoint = resolve(root, process.env.ALCHEMY_BALANCE_CHECKPOINT ?? "reports/balance-batches");
-const budget = Number(process.env.ALCHEMY_BALANCE_BATCH_GROUPS ?? 10);
-if (!Number.isSafeInteger(budget) || budget <= 0)
+const rawBudget = process.env.ALCHEMY_BALANCE_BATCH_GROUPS ?? "10";
+const budget = Number(rawBudget);
+if (!/^[1-9]\d*$/.test(rawBudget) || !Number.isSafeInteger(budget))
   throw new Error("ALCHEMY_BALANCE_BATCH_GROUPS must be a positive integer");
 
 function sourceHash() {
@@ -90,7 +91,7 @@ await withReportServer(async (server) => {
   } else writeAtomic(manifest, identity);
 
   const phases = [
-    ["core", () => api.coreScenarios(options), (run) => run()],
+    ["core", () => api.coreScenarios(options), (run) => api.compactCoreRow(run())],
     ["boons", () => api.trinketGroups(options), (group) => runPairedGroup(options, group)],
     [
       "cardsIsolatedSkeleton",
@@ -130,8 +131,10 @@ await withReportServer(async (server) => {
     }
   }
   const read = (name) => paths[name].map((path) => JSON.parse(readFileSync(path, "utf8")));
-  const core = read("core");
-  const { anomalies, metrics } = api.collectAnomalies(core);
+  const coreChunks = read("core");
+  const core = coreChunks.map((chunk) => chunk.row);
+  const { anomalies } = api.collectAnomalies(core);
+  const metrics = api.mergeCoreMetrics(coreChunks);
   const model = {
     meta: {
       samplingMode: options.mode ?? "custom",

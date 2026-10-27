@@ -22,6 +22,7 @@ ordinary verification workflow and permissions. This reference lists other opera
 | Inspect test reservations   | `npm run test:status`              | Shows managed active and waiting commands; add `--json`                                           |
 | Run a browser journey       | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
 | Simulate isolated battles   | `npm run balance:sim`              | [Battle simulation](./SIMULATION.md#balance-simulation)                                           |
+| Resume a battle sweep       | `npm run balance:sim:batch`        | [Bounded battle simulation](./SIMULATION.md#balance-simulation)                                   |
 | Simulate careers            | `npm run balance:playthrough`      | [Headless careers](./SIMULATION.md#headless-careers)                                              |
 | Compare loot offers         | `npm run balance:loot`             | [Loot report](./ARMORY.md#loot-progression-report)                                                |
 | Profile frames and hitches  | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
