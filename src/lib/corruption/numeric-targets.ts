@@ -29,13 +29,15 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     // These are fixed rules even when their renderer spells out the quantity.
     if (value === 1 && (magnitude.format === "cleanse" || magnitude.format === "turns")) continue;
     seen.add(id);
-    const edits = magnitude.references.map(
-      (entry): NumericEffectEdit => ({
+    let affectsCost = false;
+    const edits = magnitude.references.map((entry): NumericEffectEdit => {
+      affectsCost ||= COST_EFFECT_KINDS.has(entry.kind);
+      return {
         ...entry,
         expectedValue: value * (entry.multiplier ?? 1),
         multiplier: entry.multiplier ?? 1,
-      }),
-    );
+      };
+    });
     targets.push({
       id,
       lineIndex,
@@ -44,7 +46,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
       ...(reference.effectPath ? { effectPath: reference.effectPath } : {}),
       field: reference.field,
       edits,
-      affectsCost: edits.some((edit) => COST_EFFECT_KINDS.has(edit.kind)),
+      affectsCost,
     });
   }
   return targets;

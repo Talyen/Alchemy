@@ -49,7 +49,6 @@ export function buildWishOptions(
     }
   }
   candidates.length = candidateCount;
-
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const battleRng = getBattleRng(state);
   let undiscovered: BattleCard[] = [];

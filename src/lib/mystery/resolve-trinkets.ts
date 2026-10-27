@@ -11,13 +11,6 @@ function mysteryTrinketFallbackEffect(seed: string): Extract<MysteryEffect, { ki
   return { kind: "gainGeneratedGear", baseItemId: baseItem.id, astral: true };
 }
 
-function resolveMysteryTrinketEffect(effect: MysteryEffect, owned: Set<string>, fallbackSeed: string): MysteryEffect {
-  if (effect.kind !== "gainTrinket") return effect;
-  if (owned.has(effect.trinketId)) return mysteryTrinketFallbackEffect(fallbackSeed);
-  owned.add(effect.trinketId);
-  return effect;
-}
-
 export function resolveMysteryEventTrinkets(event: MysteryEvent, ownedTrinketIds: readonly string[]): MysteryEvent {
   return {
     ...event,
@@ -32,7 +25,10 @@ export function resolveMysteryEventTrinkets(event: MysteryEvent, ownedTrinketIds
         effects: choice.effects.map((effect, effectIndex) => {
           if (effect.kind !== "gainTrinket") return effect;
           choiceOwned ??= new Set(ownedTrinketIds);
-          return resolveMysteryTrinketEffect(effect, choiceOwned, `${event.id}:${choiceIndex}:${effectIndex}`);
+          if (choiceOwned.has(effect.trinketId))
+            return mysteryTrinketFallbackEffect(`${event.id}:${choiceIndex}:${effectIndex}`);
+          choiceOwned.add(effect.trinketId);
+          return effect;
         }),
       };
     }),

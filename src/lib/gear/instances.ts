@@ -49,7 +49,6 @@ export function createRolledGearInstance(
   createId: () => string = createInstanceId,
 ): GearInstance {
   const affixCount = rollAffixCount(definition.rarity, rng);
-
   const affixes = rollAffixes(definition, affixCount, rng);
   return {
     instanceId: createId(),
