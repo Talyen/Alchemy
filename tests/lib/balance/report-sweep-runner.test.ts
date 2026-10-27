@@ -6,6 +6,7 @@ vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
 import {
   runPairedGroup,
+  runPairedGroupResumable,
   runPairedSweep,
   summarizePairedGroups,
   type BalanceScenarioConfig,
@@ -94,6 +95,29 @@ describe("runPairedSweep", () => {
     const uninterrupted = runPairedSweep(options, groups);
     const saved = groups.map((group) => JSON.parse(JSON.stringify(runPairedGroup(options, group))));
     expect(summarizePairedGroups(saved)).toEqual(uninterrupted);
+  });
+
+  it("resumes partial comparisons without changing the paired result", () => {
+    const group = {
+      reference,
+      variants: [
+        { id: "first", scenario: { ...reference, trinketIds: ["test"] } },
+        { id: "second", scenario: { ...reference, trinketIds: ["test"] }, referenceSide: "treatment" as const },
+      ],
+    };
+    const expected = runPairedGroup(options, group);
+    simulateWinSeries.mockClear();
+    const saved = new Map<number, (typeof expected.entries)[number]>();
+    const checkpoint = {
+      read: (index: number) => saved.get(index),
+      write: (index: number, entry: (typeof expected.entries)[number]) => saved.set(index, entry),
+      shouldContinue: () => saved.size < 1,
+    };
+    expect(runPairedGroupResumable(options, group, checkpoint)).toBeUndefined();
+    expect(saved.size).toBe(1);
+    const resumed = runPairedGroupResumable(options, group, { ...checkpoint, shouldContinue: () => true });
+    expect(resumed).toEqual(expected);
+    expect(simulateWinSeries).toHaveBeenCalledTimes(4);
   });
 
   it.each<Partial<BalanceScenarioConfig>>([
