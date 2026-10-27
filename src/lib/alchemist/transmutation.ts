@@ -206,6 +206,14 @@ export function getTransmutationVariants(
   keyword: KeywordId,
   deck: readonly BattleCard[],
 ): Array<{ sourceKeyword: KeywordId | null; result: BattleCard }> {
+  return transmutationVariants(card, keyword, () => deck.some(isCompanionSummonCard));
+}
+
+function transmutationVariants(
+  card: BattleCard,
+  keyword: KeywordId,
+  hasCompanion: () => boolean,
+): Array<{ sourceKeyword: KeywordId | null; result: BattleCard }> {
   if (!isTransmutableCard(card) || cardHasKeyword(card, keyword)) return [];
   // Companion-only Wishes are omitted from affinity metadata but still grant Wish.
   if (keyword === "wish" && visitBattleCardEffects(card.effects, (effect) => effect.kind === "wish")) return [];
@@ -273,11 +281,7 @@ export function getTransmutationVariants(
   if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES)) return [];
   if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
   else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
-  else if (
-    keyword === "companion" &&
-    deck.some((entry) => visitBattleCardEffects(entry.effects, (effect) => effect.kind === "summon-companion"))
-  )
-    effects.push({ kind: "companion-action", amount: 1 });
+  else if (keyword === "companion" && hasCompanion()) effects.push({ kind: "companion-action", amount: 1 });
   else return [];
   return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects) }];
 }
@@ -288,13 +292,19 @@ export function createTransmutationOffers(
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): TransmutationChoice[] {
   const prismatic = modifiers.includes("prismatic-crucible");
-  const guaranteed = modifiers.map(transmutationModifierKeyword).find((keyword) => keyword !== undefined);
+  let guaranteed: KeywordId | undefined;
+  for (const modifier of modifiers) {
+    guaranteed = transmutationModifierKeyword(modifier);
+    if (guaranteed !== undefined) break;
+  }
   const choices = new Map<KeywordId, TransmutationChoice>();
+  let companionPresent: boolean | undefined;
+  const hasCompanion = () => (companionPresent ??= deck.some(isCompanionSummonCard));
   deck.forEach((source, sourceIndex) => {
     // Roll against this card so unrelated cards cannot crowd out useful choices.
     const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
       group.flatMap((keyword) => {
-        const alterations = getTransmutationVariants(source, keyword, deck);
+        const alterations = transmutationVariants(source, keyword, hasCompanion);
         return alterations.length ? [{ keyword, alterations }] : [];
       }),
     );
@@ -307,9 +317,11 @@ export function createTransmutationOffers(
       const offer = pickRandom(pool, rng);
       if (offer) selected.push(offer);
     }
-    const remaining = available.filter((offer) => !selected.includes(offer));
-    while (selected.length < 3 && remaining.length) {
-      selected.push(takeRandomItem(remaining, rng)!);
+    if (selected.length < 3) {
+      const remaining = available.filter((offer) => !selected.includes(offer));
+      while (selected.length < 3 && remaining.length) {
+        selected.push(takeRandomItem(remaining, rng)!);
+      }
     }
     for (const { keyword, alterations } of selected) {
       const alteration = pickRandom(alterations, rng)!;

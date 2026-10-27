@@ -175,9 +175,10 @@ function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
       });
   }
 
-  const echoCount = state.pendingTurnStartEffects.filter((pulse) =>
-    pulse.effects.some((effect) => effect.kind !== "damage"),
-  ).length;
+  let echoCount = 0;
+  for (const pulse of state.pendingTurnStartEffects) {
+    if (pulse.effects.some((effect) => effect.kind !== "damage")) echoCount++;
+  }
   if (echoCount > 0) chips.push({ id: "echo", value: echoCount });
 
   chips.push(...buildActiveCcChips(state.playerCC));

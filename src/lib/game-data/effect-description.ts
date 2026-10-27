@@ -300,6 +300,7 @@ function shareLine(line: CardDescriptionPart[], address: CardEffectAddress): Car
 function describeEffects(
   effects: readonly BattleCardEffect[],
   addressFor: (index: number) => CardEffectAddress,
+  keywordCount?: { value: number },
 ): EffectDescription {
   const lines: EffectDescription = [];
   for (let index = 0; index < effects.length; index++) {
@@ -394,8 +395,16 @@ function describeEffects(
     }
     lines.push(...(effect.kind === "damage" ? damageLines(effect, address) : [createEffectLine(effect, address)]));
   }
-  if (effects.some((effect) => "lifesteal" in effect && effect.lifesteal)) lines.push(["Leech"]);
-  if (effects.some((effect) => effect.kind === "summon-companion")) lines.push(["Companion"]);
+  let leech = false;
+  let companion = false;
+  for (const effect of effects) {
+    if ("lifesteal" in effect && effect.lifesteal) leech = true;
+    companion ||= effect.kind === "summon-companion";
+    if (leech && companion) break;
+  }
+  if (leech) lines.push(["Leech"]);
+  if (companion) lines.push(["Companion"]);
+  if (keywordCount) keywordCount.value = Number(leech) + Number(companion);
   return lines;
 }
 
@@ -403,9 +412,10 @@ function describeEffects(
 export function createEffectDescription(
   effects: readonly BattleCardEffect[],
 ): import("./card-description-model").CardDescription {
-  const lines = describeEffects(effects, (effectIndex) => ({ effectIndex }));
-  const keywordCount =
-    Number(effects.some((effect) => "lifesteal" in effect && effect.lifesteal)) +
-    Number(effects.some((effect) => effect.kind === "summon-companion"));
-  return lines.map((parts, index) => ({ parts, role: index >= lines.length - keywordCount ? "keyword" : "effect" }));
+  const keywordCount = { value: 0 };
+  const lines = describeEffects(effects, (effectIndex) => ({ effectIndex }), keywordCount);
+  return lines.map((parts, index) => ({
+    parts,
+    role: index >= lines.length - keywordCount.value ? "keyword" : "effect",
+  }));
 }

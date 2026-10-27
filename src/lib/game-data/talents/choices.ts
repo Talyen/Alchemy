@@ -25,8 +25,12 @@ export function chunkIntoRows<T>(items: T[], sizes: readonly number[] | number):
   return rows;
 }
 
+const TALENT_TREE_KEYWORDS = (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) =>
+  TALENT_TREE_KEYWORD_IDS.has(kw),
+);
+
 export function getTalentTreeKeywordIds(): KeywordId[] {
-  return (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => TALENT_TREE_KEYWORD_IDS.has(kw));
+  return [...TALENT_TREE_KEYWORDS];
 }
 
 export function countImplementedTalents(keywordId: KeywordId): number {

@@ -30,7 +30,11 @@ const MYSTERY_REWARDS = [
 ] as const;
 
 export function labyrinthCardShopPool(pool: BattleCard[], modifiers: readonly EncounterRewardTraitId[]): BattleCard[] {
-  const theme = modifiers.map((id) => MARKET_THEMES[id]).find((value) => value !== undefined);
+  let theme: KeywordId | undefined;
+  for (const id of modifiers) {
+    theme = MARKET_THEMES[id];
+    if (theme !== undefined) break;
+  }
   return theme ? pool.filter((card) => cardHasKeyword(card, theme)) : pool;
 }
 
@@ -52,7 +56,10 @@ export function applyLabyrinthMysteryModifiers(
   maxHealth: number,
 ): MysteryEvent {
   if (modifiers.length === 0) return event;
-  const boostedKinds = MYSTERY_REWARDS.filter(([id]) => modifiers.includes(id)).map(([, kind]) => kind);
+  const boostedKinds: Array<(typeof MYSTERY_REWARDS)[number][1]> = [];
+  for (const [id, kind] of MYSTERY_REWARDS) {
+    if (modifiers.includes(id)) boostedKinds.push(kind);
+  }
   const healing =
     modifiers.includes("restful-discovery") && maxHealth > 0
       ? Math.max(1, Math.round(maxHealth * LABYRINTH_MODIFIER_CONFIG.restfulDiscoveryHealing))
