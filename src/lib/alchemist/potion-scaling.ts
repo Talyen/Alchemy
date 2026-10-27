@@ -86,7 +86,7 @@ export function doublePotionEffect(effect: BattleCardEffect): BattleCardEffect {
   return scalePotionEffect(effect, "double");
 }
 
-export function distillPotionEffect(effect: BattleCardEffect): BattleCardEffect {
+function distillPotionEffect(effect: BattleCardEffect): BattleCardEffect {
   return scalePotionEffect(effect, POTION_DISTILL_BONUS);
 }
 

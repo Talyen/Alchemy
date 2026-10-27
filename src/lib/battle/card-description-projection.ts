@@ -183,7 +183,11 @@ export function describeKnownStatusOptions(
     parts.push(
       cardMagnitude(
         { effectIndex, kind: "player-status", field: "amount" },
-        { editable: false, corrupted: source?.corrupted, distilled: source?.distilled },
+        {
+          editable: false,
+          ...(source?.corrupted !== undefined && { corrupted: source.corrupted }),
+          ...(source?.distilled !== undefined && { distilled: source.distilled }),
+        },
       ),
       ` ${capitalizeWord(status)}`,
     );
@@ -213,7 +217,11 @@ export function describeKnownConditionalDamage(
     condition === "bleeding" ? "If the enemy was already Bleeding, deal " : "If the enemy was not Burning, deal ",
     cardMagnitude(
       { effectIndex, kind: "damage", field: "amount" },
-      { editable: false, corrupted: source?.corrupted, distilled: source?.distilled },
+      {
+        editable: false,
+        ...(source?.corrupted !== undefined && { corrupted: source.corrupted }),
+        ...(source?.distilled !== undefined && { distilled: source.distilled }),
+      },
     ),
     ` ${capitalizeWord(damageType)} damage instead (base damage ${condition === "bleeding" ? "doubled" : "tripled"})`,
   ];
