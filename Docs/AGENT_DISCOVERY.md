@@ -76,7 +76,7 @@ checkouts; omit paths to review the whole dirty set. Review commands do not acce
 
 ## Verification
 
-Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) directly for ordinary task checks. Owner lookup locates documentation; it does not select tests.
+Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) directly for ordinary task checks. Owner lookup locates documentation and representative regression entry points; it does not select or run tests.
 
 [`runs:show`](../scripts/VERIFICATION.md#failure-first-triage) includes primary evidence paths
 so a failed run's digest can be opened directly. Compact failure summaries

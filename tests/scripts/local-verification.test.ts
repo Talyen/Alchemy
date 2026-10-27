@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { runCheck } from "../../scripts/check.mjs";
 import { filterPlanCommands } from "../../scripts/verify-changed.mjs";
+import { resolveCheckPlan } from "../../scripts/lib/verification/check-plan.mjs";
 import { resolveRoutePlan } from "../../scripts/lib/verification/change-routes.mjs";
 import { normalizeRunId } from "../../scripts/lib/verification/current-run.mjs";
 
@@ -36,6 +39,19 @@ it("defers tests and compilation to CI while keeping lightweight task checks", a
     "selected-file format",
     "selected-file lint",
   ]);
+  const receipt = JSON.parse(readFileSync(`reports/runs/${runId}/check/coverage.json`, "utf8"));
+  expect(receipt.selectedPaths).toEqual(expect.arrayContaining(["src/App.tsx", "package.json"]));
+  expect(receipt.steps).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        label: "source and test types",
+        status: "skipped",
+        reason: "CI-only in the default local gate",
+      }),
+      expect.objectContaining({ label: "selected-file lint", status: "passed" }),
+    ]),
+  );
+  expect(receipt.limitations[0]).toContain("deferred to CI");
   expect(JSON.parse(readFileSync("reports/current-run.json", "utf8")).summary).toBe(
     "Local verification complete; CI and platform acceptance are separate.",
   );
@@ -131,5 +147,22 @@ it("checks localization inputs but skips tooling-only and test-only edits", asyn
       }),
     ).toBe(0);
     expect(calls.includes("localization freshness and contracts")).toBe(localized);
+  }
+});
+
+it("reports large formatting and lint selections as deferred", () => {
+  const root = mkdtempSync(join(tmpdir(), "alchemy-check-plan-"));
+  try {
+    const files = Array.from({ length: 51 }, (_, index) => `file-${index}.ts`);
+    for (const file of files) writeFileSync(join(root, file), "export {};\n");
+    const plan = resolveCheckPlan(files, { rootDir: root });
+    for (const key of ["local-format", "local-lint"]) {
+      expect(plan.steps.find((step) => step.key === key)).toMatchObject({
+        enabled: false,
+        reason: expect.stringContaining("deferred to CI"),
+      });
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });

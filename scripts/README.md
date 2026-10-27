@@ -203,6 +203,7 @@ The ordinary sequence, from the original workspace, is:
 
 ```sh
 node scripts/agent-worktree.mjs create --task <slug>
+node scripts/agent-worktree.mjs status --task <slug> # inspect or resume
 # Implement, check and commit in .worktrees/<slug>.
 node scripts/agent-worktree.mjs integrate --task <slug>
 # Review the integrated result, then preserve evidence and close the task.
@@ -215,11 +216,8 @@ against the latest shared ancestor with main. Existing branches resume their
 current commit. Use a new slug for new work, or incorporate main when deliberately
 resuming old work. `--base` selects a different starting point for a new branch;
 `--detached` creates a verification-only checkout. `integration` is reserved.
-Add `--code-only` at creation to avoid checking out `assets/sources/`; all committed
-prepared assets and static imports remain available for ordinary development and
-builds. Sparse settings apply only to that worktree. Run `git sparse-checkout disable`
-in it before editing masters, preparing assets or running source freshness checks.
-Other checkouts and committed masters are preserved. For a new independent clone,
+The asset checkout defaults and restoration commands are described under
+[Dedicated integration checkout](#dedicated-integration-checkout). For a new independent clone,
 `git clone --filter=blob:none <repository-url>` avoids downloading historical file
 contents until needed; it does not shrink an existing clone or rewrite history.
 Commands locate the original workspace from the shared Git directory, including
@@ -266,6 +264,11 @@ checkout's branch. The dedicated checkout is for integration; implement in task
 worktrees. Until adoption, integration supports the old clean-main layout.
 
 ### Integration and finish phases
+
+`status --task <slug>` reports the task checkout, original base, changes, recorded
+integration and the next action. It is a read-only snapshot; it cannot infer whether
+review or checks were completed. Successful integration records attempts and elapsed
+verification and integration time in its state file; older records lack these metrics.
 
 Integration holds a per-task lock. Under the shared repository lock it snapshots
 main and merges it into the clean task, releases the shared lock to verify the

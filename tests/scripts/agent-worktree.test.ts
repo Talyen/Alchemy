@@ -320,6 +320,30 @@ process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
 }
 
 describe("serialized local integration", () => {
+  it("reports safe next steps for dirty, integrated and cleaned task states", () => {
+    const { root, script, taskPath, archive } = integrationFixture();
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+    const run = (...args: string[]) =>
+      spawnSync(process.execPath, [script, ...args], {
+        env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+        encoding: "utf8",
+      });
+    writeFileSync(join(taskPath, "unfinished.txt"), "preserve");
+    const dirty = run("status", "--task", "task");
+    expect(dirty.status, dirty.stderr).toBe(0);
+    expect(dirty.stdout).toContain("unfinished.txt");
+    expect(dirty.stdout).toContain("run npm run check");
+    expect(readFileSync(join(taskPath, "unfinished.txt"), "utf8")).toBe("preserve");
+    rmSync(join(taskPath, "unfinished.txt"));
+    const integrated = run("integrate", "--task", "task");
+    expect(integrated.status, integrated.stderr).toBe(0);
+    expect(run("status", "--task", "task").stdout).toContain("review integration");
+    const finish = run("finish", "--task", "task");
+    expect(finish.status, finish.stderr).toBe(0);
+    expect(run("status", "--task", "task").stdout).toContain("Checkout absent");
+    expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).metrics.attempts).toBe(1);
+  }, 20000);
+
   it("moves main to a dedicated checkout without changing dirty workspace files or index", () => {
     const { root, script, taskPath, git, integrate } = integrationFixture();
     using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
@@ -680,6 +704,9 @@ export async function closeTaskBrowsers() {
         expect(new Set(observed).size).toBe(phase === "verification" ? 2 : 1);
         if (phase === "verification") {
           expect(output).toContain("Main advanced during verification");
+          expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).metrics.attempts).toBe(
+            2,
+          );
           expect(readFileSync(checks + ".launcher", "utf8")).toBe("updated");
         }
       } finally {

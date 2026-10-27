@@ -18,6 +18,9 @@ it("locates source and document owners and validates their canonical references"
   ]);
   expect(selectContext(["scripts/lib/playthrough/playthrough-runner.mjs"]).tasks).toContain("playthrough");
   expect(selectContext(["AGENTS.md"]).docs.map((doc) => doc.path)).toContain("Docs/AGENT_DISCOVERY.md");
+  const command = selectContext(["src/features/alchemy/shared/stores/commands/battle-commands.ts"]);
+  expect(command.tasks).toContain("battle");
+  expect(command.entrypoints).toContain("tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts");
   const verification = selectContext(["scripts/check.mjs"]);
   expect(verification.docs).toEqual([
     { path: "CONTRIBUTING.md", heading: "What to run when you change…" },

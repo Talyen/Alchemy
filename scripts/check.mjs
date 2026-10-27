@@ -185,6 +185,9 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const exposures = [];
   let failed = null;
 
+  console.log(
+    `Selected paths: ${paths.length} — ${paths.slice(0, 20).join(", ")}${paths.length > 20 ? ` (and ${paths.length - 20} more)` : ""}`,
+  );
   if (argv.includes("--plan")) {
     for (const definition of definitions) {
       console.log(
@@ -271,6 +274,36 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const passed = steps.filter((step) => step.status === "passed").length;
   const failedCount = steps.filter((step) => step.status === "failed").length;
   const skipped = steps.filter((step) => step.status === "skipped").length;
+  const coverageFile = path.join(ROOT, "reports", "runs", runId, "check", "coverage.json");
+  fs.mkdirSync(path.dirname(coverageFile), { recursive: true });
+  fs.writeFileSync(
+    coverageFile,
+    JSON.stringify(
+      {
+        runId,
+        sourceDigest: before.hash,
+        selectedPaths: paths,
+        profile: full ? "full" : "local",
+        steps,
+        limitations: full
+          ? []
+          : [
+              "Unit suites, compilation, broad static checks, builds and browser/Electron acceptance are deferred to CI.",
+            ],
+        nestedVerification: artifacts.find((artifact) => artifact.path.endsWith("verify/summary.json"))?.path ?? null,
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  artifacts.push({ path: coverageFile, role: "primary" });
+  console.log(`Coverage receipt: ${coverageFile}`);
+  for (const step of steps)
+    console.log(`Coverage ${step.status}: ${step.label}${step.reason ? ` — ${step.reason}` : ""}`);
+  if (!full)
+    console.log(
+      "Deferred: unit suites, compilation, broad static checks, builds and browser/Electron acceptance to CI.",
+    );
   writeCurrentRun({
     rootDir: ROOT,
     runId,

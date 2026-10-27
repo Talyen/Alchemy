@@ -181,6 +181,7 @@ export function removeIntegratedWorktree(main, task, branch, head) {
 function usage() {
   console.log(`Usage:
   node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached] [--full-assets]
+  node scripts/agent-worktree.mjs status --task <slug>
   node scripts/agent-worktree.mjs integrate --task <slug> [--keep-worktree]
   node scripts/agent-worktree.mjs finish --task <slug>
   node scripts/agent-worktree.mjs setup-integration
@@ -223,12 +224,24 @@ export function linkDependencies(mainRoot, targetWorktree) {
   return false;
 }
 
+async function showTaskStatus(task) {
+  try {
+    await main(["status", "--task", task]);
+  } catch (error) {
+    console.error(`Status unavailable: ${error.message}. Retry: node scripts/agent-worktree.mjs status --task ${task}`);
+  }
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
-  if (["create", "integrate", "finish", "setup-integration", "remove", "list", "prune"].includes(cmd)) {
+  if (["create", "status", "integrate", "finish", "setup-integration", "remove", "list", "prune"].includes(cmd)) {
     const valueOptions =
-      cmd === "create" ? ["--task", "--base"] : ["remove", "integrate", "finish"].includes(cmd) ? ["--task"] : [];
+      cmd === "create"
+        ? ["--task", "--base"]
+        : ["remove", "status", "integrate", "finish"].includes(cmd)
+          ? ["--task"]
+          : [];
     const flagOptions =
       cmd === "create"
         ? ["--detached", "--code-only", "--full-assets"]
@@ -290,6 +303,61 @@ export async function main(argv = process.argv.slice(2)) {
       if (delegated.status !== 0) process.exitCode = delegated.status ?? 1;
       return;
     }
+  }
+
+  if (cmd === "status") {
+    const task = slugify(getArg("--task") ?? "");
+    if (!task || task === "integration") throw new Error("missing, reserved or invalid --task slug");
+    const taskPath = path.join(WORKTREE_ROOT, task);
+    const stateFile = path.join(root, "reports", "integrations", `${task}.json`);
+    const state = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, "utf8")) : null;
+    const git = (...args) => {
+      const result = runGit(args);
+      if (result.status !== 0) throw new Error(result.stderr?.trim() || `git ${args[0]} failed`);
+      return result.stdout.trim();
+    };
+    console.log(`Task: ${task}\nWorkspace: ${root}\nCheckout: ${taskPath}\nMain: ${git("rev-parse", "main")}`);
+    if (!fs.existsSync(taskPath)) {
+      console.log(`Checkout absent. Recorded state: ${state ? `${state.integration}/${state.cleanup}` : "none"}.`);
+      if (state?.integration === "passed" && state.cleanup === "passed")
+        console.log("Task finished; the branch and recorded evidence are retained.");
+      else console.log("Inspect the retained branch and recorded state before creating or recovering work.");
+      return;
+    }
+    const branch = git("-C", taskPath, "branch", "--show-current");
+    const head = git("-C", taskPath, "rev-parse", "HEAD");
+    const baseResult = runGit(["config", "--get", `branch.agent/${task}.alchemyTaskBase`]);
+    if (baseResult.status !== 0 && baseResult.status !== 1) throw new Error("Cannot read task base");
+    const base = baseResult.stdout.trim() || "not recorded";
+    const dirty = git("-C", taskPath, "status", "--short", "--untracked-files=all");
+    const changes = git("-C", taskPath, "diff", "--name-only", "main...HEAD");
+    const markers = UNFINISHED_GIT_STATES.filter((marker) => {
+      const location = git("-C", taskPath, "rev-parse", "--path-format=absolute", "--git-path", marker);
+      return fs.existsSync(location);
+    });
+    console.log(`Branch: ${branch || "detached"}\nHead: ${head}\nOriginal base: ${base}`);
+    console.log(`Committed task paths since shared main ancestor:\n${changes || "  none"}`);
+    console.log(`Working paths:\n${dirty || "  none"}`);
+    console.log(`Recorded integration: ${state ? `${state.integration}/${state.cleanup} at ${state.commit}` : "none"}`);
+    if (markers.length)
+      console.log(`Blocked by unfinished Git operation: ${markers.join(", ")}; resolve it before continuing.`);
+    else if (branch !== `agent/${task}`)
+      console.log("Blocked: checkout is not on the expected task branch; inspect it.");
+    else if (dirty) console.log("Next: review task-owned changes, run npm run check, and commit them.");
+    else if (state?.integration === "passed" && state.commit === head) {
+      const contained = runGit(["merge-base", "--is-ancestor", head, "main"]);
+      if (contained.status === 0)
+        console.log(`Next: review integration, then node scripts/agent-worktree.mjs finish --task ${task}`);
+      else if (contained.status === 1)
+        console.log("Recorded commit is no longer contained in main; inspect before continuing.");
+      else throw new Error("Cannot verify integration ancestry");
+    } else if (!changes) console.log("Next: implement the task; no committed task changes are visible.");
+    else
+      console.log(
+        `Next: review the task and its checks, then node scripts/agent-worktree.mjs integrate --task ${task}`,
+      );
+    console.log(`Status is a snapshot; checks and review are not inferred. State: ${stateFile}`);
+    return;
   }
 
   if (cmd === "list") {
@@ -398,6 +466,12 @@ export async function main(argv = process.argv.slice(2)) {
         clean(taskPath, `agent/${task}`);
         const head = git(taskPath, ["rev-parse", "HEAD"]);
         git(root, ["merge-base", "--is-ancestor", head, "main"]);
+        let previous = null;
+        try {
+          if (fs.existsSync(stateFile)) previous = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+        } catch {
+          // A malformed old report must not prevent safe cleanup of an integrated checkout.
+        }
         try {
           const browsers = path.join(taskPath, "scripts/lib/agent-browser-session.mjs");
           if (fs.existsSync(browsers)) {
@@ -405,10 +479,25 @@ export async function main(argv = process.argv.slice(2)) {
             await closeTaskBrowsers(taskPath);
           }
           const evidence = removeIntegratedWorktree(root, taskPath, `agent/${task}`, head);
-          saveState({ task, commit: head, integration: "passed", cleanup: "passed", evidence });
+          saveState({
+            task,
+            commit: head,
+            integration: "passed",
+            cleanup: "passed",
+            evidence,
+            ...(previous?.commit === head && previous.metrics ? { metrics: previous.metrics } : {}),
+          });
           console.log(`Task finished. State: ${stateFile}`);
+          await showTaskStatus(task);
         } catch (error) {
-          saveState({ task, commit: head, integration: "passed", cleanup: "blocked", error: error.message });
+          saveState({
+            task,
+            commit: head,
+            integration: "passed",
+            cleanup: "blocked",
+            error: error.message,
+            ...(previous?.commit === head && previous.metrics ? { metrics: previous.metrics } : {}),
+          });
           throw new Error(
             `Integration remains complete; cleanup blocked: ${error.message}. Retry: node scripts/agent-worktree.mjs finish --task ${task}`,
             { cause: error },
@@ -418,7 +507,11 @@ export async function main(argv = process.argv.slice(2)) {
       }
       console.log(`Integration phase: verify and advance main; retain task checkout and browsers.`);
       let taskHead;
+      const integrationStarted = Date.now();
+      let attempts = 0;
+      let verificationMs = 0;
       for (;;) {
+        attempts++;
         const snapshotLock = await acquireExclusivePort(port, { label: "Integration lock" });
         let mainHead;
         try {
@@ -443,10 +536,12 @@ export async function main(argv = process.argv.slice(2)) {
           const { commandInvocation } = await import(
             pathToFileURL(path.join(taskPath, "scripts/lib/command-invocation.mjs")).href + `?commit=${taskHead}`
           );
+          const verificationStarted = Date.now();
           const result = spawnSync(...commandInvocation("npm", ["run", "check", "--", ...paths]), {
             cwd: taskPath,
             stdio: "inherit",
           });
+          verificationMs += Date.now() - verificationStarted;
           if (result.status !== 0) throw new Error("Integration verification failed; task was not advanced into main.");
         }
         const advanceLock = await acquireExclusivePort(port, { label: "Integration lock" });
@@ -466,8 +561,18 @@ export async function main(argv = process.argv.slice(2)) {
         }
       }
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
-      saveState({ task, commit: taskHead, integration: "passed", cleanup: "pending", checkout: taskPath });
-      console.log(`State: ${stateFile}. Finish: node scripts/agent-worktree.mjs finish --task ${task}`);
+      saveState({
+        task,
+        commit: taskHead,
+        integration: "passed",
+        cleanup: "pending",
+        checkout: taskPath,
+        metrics: { attempts, verificationMs, elapsedMs: Date.now() - integrationStarted },
+      });
+      console.log(
+        `State: ${stateFile}. Review integration, then finish: node scripts/agent-worktree.mjs finish --task ${task}`,
+      );
+      await showTaskStatus(task);
     } finally {
       await taskLock.release();
     }
@@ -580,8 +685,10 @@ export async function main(argv = process.argv.slice(2)) {
       console.log("  npm ci  # install dependencies before verification");
     }
     console.log(`  cd "${root}"  # return before cleanup`);
+    console.log(`  node scripts/agent-worktree.mjs status --task ${task}  # resume task workflow`);
     console.log(`  node scripts/agent-worktree.mjs finish --task ${task}  # after reviewing integration`);
-    process.exit(0);
+    await showTaskStatus(task);
+    return;
   }
 
   if (cmd === "remove") {
@@ -643,8 +750,14 @@ export async function main(argv = process.argv.slice(2)) {
 }
 
 if (isMainEntry()) {
-  main().catch((error) => {
+  main().catch(async (error) => {
     console.error(error.message);
+    const args = process.argv.slice(2);
+    const index = args.indexOf("--task");
+    const rawTask = index >= 0 ? args[index + 1] : args.find((arg) => arg.startsWith("--task="))?.slice(7);
+    const task = slugify(rawTask ?? "");
+    if (["create", "integrate", "finish"].includes(args[0]) && task && task !== "integration")
+      await showTaskStatus(task);
     process.exitCode = 1;
   });
 }

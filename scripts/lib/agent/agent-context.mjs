@@ -6,9 +6,14 @@ import { readDocumentSection } from "./markdown-sections.mjs";
 const owner = (path, heading = null) => ({ path, heading });
 export const CONTEXT_TASKS = {
   battle: {
-    matches: /(?:\/battle\/|game-constants\/(?:combat-rules|enemy|battle))/,
+    matches: /(?:\/battle\/|\/battle-commands\.|game-constants\/(?:combat-rules|enemy|battle))/,
     docs: [owner("Docs/GAME_RULES.md", "Battle Implementation Rules"), owner("Docs/BATTLE_CONTROLLERS.md")],
-    entrypoints: ["src/lib/battle/card-play.ts", "src/features/alchemy/run-loop/battle/battle-session.ts"],
+    entrypoints: [
+      "src/features/alchemy/shared/stores/commands/battle-commands.ts",
+      "src/lib/battle/card-play.ts",
+      "src/features/alchemy/run-loop/battle/battle-session.ts",
+      "tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts",
+    ],
   },
   "run-state": {
     matches:
@@ -16,7 +21,9 @@ export const CONTEXT_TASKS = {
     docs: [owner("Docs/RUN_STATE.md"), owner("src/features/alchemy/shared/storage/MIGRATIONS.md")],
     entrypoints: [
       "src/features/alchemy/shared/stores/commands/run-session-command.ts",
+      "src/features/alchemy/shared/stores/persistence/run-profile-save-fields.ts",
       "src/features/alchemy/shared/stores/persistence/run-resume-codec.ts",
+      "tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts",
     ],
   },
   ui: {
@@ -51,7 +58,10 @@ export const CONTEXT_TASKS = {
       owner("Docs/GAME_RULES.md", "Shops"),
       owner("Docs/WORKFLOWS.md", "Change a shop"),
     ],
-    entrypoints: ["src/features/alchemy/run-loop/shop/shop-commands-core.ts"],
+    entrypoints: [
+      "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
+      "tests/features/alchemy/run-loop/shop/shop-actions.test.ts",
+    ],
   },
   progression: {
     matches:
