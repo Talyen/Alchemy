@@ -200,7 +200,11 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
   for (const [enemyId, rows] of byEnemy) {
     const enemyType = rows[0]?.enemyType ?? enemyTypeOf(enemyId);
     for (const { preset: tier } of REPORT_TIERS) {
-      const cells = rows.map((row) => ({ row, cell: row.rates[tier] })).filter((entry) => entry.cell.n > 0);
+      const cells: Array<{ row: ClassMatchupRow; cell: RateCell }> = [];
+      for (const row of rows) {
+        const cell = row.rates[tier];
+        if (cell.n > 0) cells.push({ row, cell });
+      }
       if (cells.length === 0) continue;
       const rates = cells.map((entry) => entry.cell.winRate);
       const med = median(rates);

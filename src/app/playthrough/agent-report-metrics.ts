@@ -66,13 +66,14 @@ export function selectorForDefeats(battles: Battle[], minRoom?: number): AgentEv
 }
 
 export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetric[] {
+  const milestoneEntries = careers.map((career) => Object.entries(career.telemetry.milestones));
   return MILESTONE_KINDS.map((kind) => {
     const firstRuns: number[] = [];
     const prefix = `${kind}:`;
-    for (const career of careers) {
+    for (const entries of milestoneEntries) {
       let first = Infinity;
       let reached = false;
-      for (const [key, run] of Object.entries(career.telemetry.milestones)) {
+      for (const [key, run] of entries) {
         if (!key.startsWith(prefix)) continue;
         reached = true;
         first = Math.min(first, run + 1);
@@ -90,9 +91,10 @@ export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetri
 }
 
 export function buildBattles(careers: CompletedCareer[]): { battles: Battle[]; metrics: AgentBattleMetrics } {
-  const battles = careers.flatMap((career) =>
-    career.telemetry.battles.map((battle) => ({ ...battle, seed: career.config.seed })),
-  );
+  const battles: Battle[] = [];
+  for (const career of careers) {
+    for (const battle of career.telemetry.battles) battles.push({ ...battle, seed: career.config.seed });
+  }
   const byEnemy = new Map<
     string,
     { enemy: string; boss: boolean; encounters: number; victories: number; defeats: number; turns: number }

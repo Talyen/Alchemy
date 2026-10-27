@@ -4,6 +4,12 @@ import type { AgentPlaythroughSummary } from "./agent-report";
 import { escapeHtml, renderReportPage } from "@/lib/balance/report-layout";
 import type { CareerResult } from "./types";
 
+function victoryCount(result: CareerResult): number {
+  let victories = 0;
+  for (const outcome of result.outcomes) if (outcome.outcome === "victory") victories++;
+  return victories;
+}
+
 function renderAgentBrief(summary: AgentPlaythroughSummary): string {
   const findings = summary.findings
     .map(
@@ -20,11 +26,12 @@ export function renderPlaythroughReport(
   workerFailures: string[] = [],
   agentSummary?: AgentPlaythroughSummary,
 ): string {
-  const completed = results.filter((result) => result.status === "completed").length;
+  let completed = 0;
+  for (const result of results) if (result.status === "completed") completed++;
   const rows = results
     .map(
       (result) =>
-        `<tr><td>${escapeHtml(result.cohort)}</td><td>${escapeHtml(`${result.config.hero}/${result.config.mode}/${result.config.policy}`)}</td><td>${result.config.seed}</td><td>${escapeHtml(result.status)}</td><td>${result.outcomes.filter((outcome) => outcome.outcome === "victory").length}/${result.outcomes.length}</td><td>${result.journal.length}</td><td>${Math.round(result.elapsedMs)}</td></tr>`,
+        `<tr><td>${escapeHtml(result.cohort)}</td><td>${escapeHtml(`${result.config.hero}/${result.config.mode}/${result.config.policy}`)}</td><td>${result.config.seed}</td><td>${escapeHtml(result.status)}</td><td>${victoryCount(result)}/${result.outcomes.length}</td><td>${result.journal.length}</td><td>${Math.round(result.elapsedMs)}</td></tr>`,
     )
     .join("");
   const details = results
@@ -88,8 +95,7 @@ export function comparePlaythroughReports(
     return summary;
   };
   const metrics = {
-    victoryFraction: (result: CareerResult) =>
-      result.outcomes.filter((outcome) => outcome.outcome === "victory").length / result.outcomes.length,
+    victoryFraction: (result: CareerResult) => victoryCount(result) / result.outcomes.length,
     rooms: (result: CareerResult) =>
       result.outcomes.reduce((sum, outcome) => sum + outcome.rooms, 0) / result.outcomes.length,
     combatTurns: (result: CareerResult) =>

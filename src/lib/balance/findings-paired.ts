@@ -16,7 +16,11 @@ export function collectPairedFindings(
 ): BalanceFinding[] {
   const findings: BalanceFinding[] = [];
   for (const { preset: tier } of REPORT_TIERS) {
-    const usable = rows.map((row) => ({ row, delta: row.deltas[tier] })).filter((entry) => entry.delta.n >= 2);
+    const usable: Array<{ row: PairedTierRow; delta: PairedTierRow["deltas"][typeof tier] }> = [];
+    for (const row of rows) {
+      const delta = row.deltas[tier];
+      if (delta.n >= 2) usable.push({ row, delta });
+    }
     if (usable.length === 0) continue;
     const med = median(usable.map((entry) => entry.delta.delta));
     const turnMed = median(usable.map((entry) => entry.delta.turnDelta));
