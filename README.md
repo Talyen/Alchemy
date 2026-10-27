@@ -12,8 +12,8 @@ Wildwood Draft is a drafted deck against an endless boss gauntlet.
 **Combat.** Spend Mana to play cards. Eight damage types — Physical, Stun, Holy,
 Burn, Poison, Bleed, Freeze, and Nature — meet enemy resists and
 vulnerabilities. Block and Armor absorb hits; Forge boosts Physical and Stun;
-Burn, Poison, and Bleed tick; Stun and Freeze skip turns. Companions fight at
-the start of your turn and cannot die.
+Burn, Poison, and Bleed tick; Stun and Freeze skip turns. Companions act at
+the start of playable turns and cannot die.
 
 **Between runs.** Keyword Talent XP unlocks talents. Materials fund Homestead
 upgrades. Gear and Trinkets live in the Armory. Characters, modes, and
@@ -127,9 +127,11 @@ owners unless the prose needs them to explain behavior.
 When behavior changes, update its owner instead of appending a dated correction
 or another exception elsewhere. Remove obsolete guidance and redundant
 forwarding sections; move useful rationale into its current owner and delete completed records. Keep
-checklists proportional to the task. `npm run docs:check` checks links, paths,
-commands, and discovery references; source review is still needed to establish
-that the instructions make sense. Documentation edits follow the same
+checklists proportional to the task. `npm run docs:check` checks explicit local
+links and anchors, documented npm script names, and discovery references; it
+reports reachability as an advisory. It does not validate bare paths or command
+arguments, so source review is still needed to establish that instructions work.
+Documentation edits follow the same
 [handoff gate](./CONTRIBUTING.md#what-to-run-when-you-change) as other work.
 
 ## License

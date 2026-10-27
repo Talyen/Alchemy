@@ -47,7 +47,8 @@ Follow [Armory](./ARMORY.md#data-model) for the data model and
    [fixed-affix contract](./UNIQUE_ITEMS.md#affix-contract).
 4. Check affected generation/acquisition, then run `npm run content:audit` and the
    [task gate](../CONTRIBUTING.md#what-to-run-when-you-change). Loot-weight/depth
-   changes also use `npm run balance:loot`.
+   changes can be evaluated with `npm run balance:loot` under the
+   [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 **If adding an affix:** append its stable ID, keyword, effects, ranges and slots in
 [affix rows](../src/lib/gear/affix-rows.ts). Follow [manifest/proc rules](./ARMORY.md#affix-rules),

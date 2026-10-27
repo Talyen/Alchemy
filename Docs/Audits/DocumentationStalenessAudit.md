@@ -38,8 +38,9 @@ and documentation disagree or a statement is accurate only historically.
 | Missing prerequisites/recovery, unreachable guidance | Walk the task from its documented entrypoint; check harmful omissions as well as false statements              |
 | Audit logs or dated completed trackers               | Remove under the [shared finish contract](README.md#finish)                                                    |
 
-`npm run docs:check` checks Markdown targets, heading anchors and documented npm
-names through `scripts/check-documentation-contract.mjs`; it does not establish
-semantic accuracy. Internal links resolve relative to their source. Verify edited
+`npm run docs:check` checks explicit local Markdown targets, heading anchors,
+documented npm script names and discovery references through
+`scripts/check-documentation-contract.mjs`; reachability is advisory. It does not
+validate bare paths, command arguments or semantic accuracy. Internal links resolve relative to their source. Verify edited
 claims and links at their owners. Check external URLs when changing that source
 and network is available; an unavailable endpoint alone does not fail the review.

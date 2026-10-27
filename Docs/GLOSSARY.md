@@ -20,12 +20,12 @@ Definitions of common terms used in the Alchemy codebase.
 - **Freeze** — Damage type whose buildup can make the target skip turns once its Health-based threshold is met. Threshold modifiers and [crowd-control immunity](./GAME_RULES.md#mitigation-and-crowd-control) apply.
 - **Consume** — Removes the played card for the remainder of the battle; the run Deck retains it.
 - **Leech** — Restores half the damage dealt as Health before applicable modifiers. Source-specific limits and reactions follow [Healing and Leech](./GAME_RULES.md#healing-and-leech).
-- **Bleed** — DoT status; deals damage once on hit, then deals the same amount next turn.
+- **Bleed** — Damage can also add Bleed buildup, which normally deals damage on the next status tick and then clears. Tick modifiers and mitigation can change the damage; [The Unclosing Wound](./UNIQUE_ITEMS.md#combat-semantics) changes enemy Bleed decay.
 - **Block** — Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.
 - **Burn** — DoT status; deals its stack as damage, then normally decays by half.
 - **Dodge** — 5% chance for either side to avoid an opposing attack damage packet before Block and Armor. See [Battle Implementation Rules](./GAME_RULES.md#battle-implementation-rules).
 - **Death's Door** — Prevents fatal damage once per battle, leaving the player at 1 HP with 2 grace turns (extendable). Healing does not end the window. While active, lethal hits floor at 1 HP (multi-hit and DoT ticks included). The enemy phase that spends the last grace still floors; damage becomes lethal on a later hit.
-- **Fight pacing** — Hidden combat scaler (not a player-facing rule). Live default on; `ALCHEMY_BALANCE_PACING=off` measures raw kit.
+- **Fight pacing** — Hidden combat scaler (not a player-facing rule). Live default on; `ALCHEMY_BALANCE_PACING=off` disables it for the [balance simulation](./SIMULATION.md#balance-simulation).
 - **Homestead** — Between-run hub; spend **Materials** on permanent upgrades.
 - **Mana** — Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring).
 - **Materials** — Meta currency for homestead upgrades.

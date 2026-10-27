@@ -10,8 +10,9 @@ in the handoff and Git history rather than a checkout archive.
 Plans require front matter with `status: active` (or `blocked`, which also
 requires `reason`) and an ISO date for `updated`. Use
 `npm run new:plan -- <PlanName>` to scaffold metadata. `npm run plans:check`
-warns about stale plans; `npm run docs:check` also checks links, paths, commands,
-anchors and document reachability.
+warns about stale plans; `npm run docs:check` also checks explicit local links,
+anchors, npm script names and discovery references, and advises on document
+reachability. Bare paths and command arguments still need source review.
 
 ## Task handoff
 
