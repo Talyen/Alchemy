@@ -16,6 +16,23 @@ import {
 import { capitalizeWord } from "@/lib/utils";
 
 const magnitudeFields = new Set<string>(CARD_MAGNITUDE_FIELDS);
+
+function referenceMatchesPath(reference: CardMagnitudeReference, path: readonly number[]): boolean {
+  return (
+    reference.effectIndex === path[0] &&
+    (reference.effectPath?.length ?? 0) === path.length - 1 &&
+    (reference.effectPath ?? []).every((index, position) => index === path[position + 1])
+  );
+}
+
+function referencesPath(magnitude: CardMagnitude, path: readonly number[]): boolean {
+  return magnitude.references.some((reference) => referenceMatchesPath(reference, path));
+}
+
+function magnitudePositions(line: CardDescription[number], path: readonly number[]): number[] {
+  return line.parts.flatMap((part, index) => (typeof part !== "string" && referencesPath(part, path) ? [index] : []));
+}
+
 function ruleShape(effect: BattleCardEffect | undefined): string {
   return JSON.stringify(
     Object.entries(effect ?? {})
@@ -39,14 +56,7 @@ function rangeRuleClauses(
         );
         if (clauses.length)
           description = description.flatMap((line) => {
-            const positions = line.parts.flatMap((part, at) =>
-              typeof part !== "string" &&
-              part.references.some(
-                (reference) => [reference.effectIndex, ...(reference.effectPath ?? [])].join(".") === path.join("."),
-              )
-                ? [at]
-                : [],
-            );
+            const positions = magnitudePositions(line, path);
             if (!positions.length) return [line];
             if (path.length === 1) return [line, ...clauses];
             const end = positions.at(-1)! + 2;
@@ -79,29 +89,26 @@ function signature(line: CardDescription[number]): string {
     .join("|");
 }
 
-export function descriptionFitsEffects(description: CardDescription, effects: readonly BattleCardEffect[]): boolean {
-  return description.every((line) =>
-    line.parts.every((part) => {
-      if (typeof part === "string") return true;
-      // Empty references were already tolerated here; saved descriptions reject them.
-      const value = cardMagnitudeValue(effects, part);
-      return part.references.length === 0 || (value !== null && Number.isFinite(value));
-    }),
-  );
+function lineFitsEffects(
+  line: CardDescription[number],
+  before: readonly BattleCardEffect[],
+  after: readonly BattleCardEffect[],
+): boolean {
+  return line.parts.every((part) => {
+    if (typeof part === "string") return true;
+    // Empty references were already tolerated here; saved descriptions reject them.
+    if (part.references.length && cardMagnitudeValue(after, part) === null) return false;
+    return part.references.every(
+      (reference) => ruleShape(getCardEffect(before, reference)) === ruleShape(getCardEffect(after, reference)),
+    );
+  });
 }
 
 /** Split compressed clauses only when their live values no longer share one literal. */
 export function projectCardDescription(card: BattleCard, effects: BattleCardEffect[], rebuild: boolean): BattleCard {
   const previous = getCardDescription(card);
-  const sameRules = (line: CardDescription[number]) =>
-    line.parts
-      .flatMap((part) => (typeof part === "string" ? [] : part.references))
-      .every(
-        (reference) =>
-          ruleShape(getCardEffect(card.effects, reference)) === ruleShape(getCardEffect(effects, reference)),
-      );
-  if (!rebuild && descriptionFitsEffects(previous, effects) && previous.every(sameRules))
-    return withCardDescription({ ...card, effects }, previous);
+  const fits = (line: CardDescription[number]) => lineFitsEffects(line, card.effects, effects);
+  if (!rebuild && previous.every(fits)) return withCardDescription({ ...card, effects }, previous);
   const canonical = rangeRuleClauses(
     card,
     effects,
@@ -111,7 +118,7 @@ export function projectCardDescription(card: BattleCard, effects: BattleCardEffe
   const originalCanonical = new Set(createEffectDescription(card.effects).map((line) => JSON.stringify(line.parts)));
   const description = canonical.map((line) => {
     const original = originals.get(signature(line));
-    return original && sameRules(original) && descriptionFitsEffects([original], effects) ? original : line;
+    return original && fits(original) ? original : line;
   });
   // Saved custom prose and ingredient trailers are not replaced by the generic formatter.
   description.push(
@@ -149,11 +156,7 @@ function sourceMagnitude(
     .find(
       (part): part is CardMagnitude =>
         typeof part !== "string" &&
-        part.references.some(
-          (reference) =>
-            [reference.effectIndex, ...(reference.effectPath ?? [])].join(".") === path.join(".") &&
-            reference.field === field,
-        ),
+        part.references.some((reference) => reference.field === field && referenceMatchesPath(reference, path)),
     );
 }
 
@@ -186,14 +189,7 @@ export function describeKnownStatusOptions(
     );
   });
   const description = getCardDescription(card).map((line) => {
-    const positions = line.parts.flatMap((part, index) =>
-      typeof part !== "string" &&
-      part.references.some(
-        (reference) => [reference.effectIndex, ...(reference.effectPath ?? [])].join(".") === path.join("."),
-      )
-        ? [index]
-        : [],
-    );
+    const positions = magnitudePositions(line, path);
     if (!positions.length) return line;
     const first = positions[0]!;
     const start = line.parts[first - 1] === "Gain " ? first - 1 : first;
@@ -226,10 +222,7 @@ export function describeKnownConditionalDamage(
   const description = getCardDescription(card).map((line) => ({
     ...line,
     parts: line.parts.flatMap((part) => {
-      if (typeof part !== "string")
-        matchingSource = part.references.some(
-          (reference) => [reference.effectIndex, ...(reference.effectPath ?? [])].join(".") === path.join("."),
-        );
+      if (typeof part !== "string") matchingSource = referencesPath(part, path);
       if (part !== clause || replaced || !matchingSource) return [part];
       replaced = true;
       return replacement;
