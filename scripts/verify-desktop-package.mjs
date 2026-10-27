@@ -1,11 +1,6 @@
 import { verifyDesktopPackage } from "./lib/release/release-checks.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 
-if (isMainModule(import.meta.url)) {
-  verifyDesktopPackage().catch((error) => {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
-  });
-}
+defineScript(import.meta.url, () => verifyDesktopPackage(), { artifacts: true });
 
 export { verifyDesktopPackage };

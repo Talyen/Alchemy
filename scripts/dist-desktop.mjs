@@ -11,6 +11,7 @@ import { verifyDesktopRenderer } from "./lib/release/release-checks.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 import { measureStorage } from "./lib/storage-footprint.mjs";
+import { beginBuildAttempt, finishBuildAttempt, promotePackageAttempt } from "./lib/build-retention.mjs";
 
 function main(argv = process.argv.slice(2)) {
   const { flags, rest } = parseKnownFlags(argv, { build: {}, dir: {}, help: { short: "h" } });
@@ -74,90 +75,109 @@ function main(argv = process.argv.slice(2)) {
     if (native.error) throw native.error;
     if (native.status !== 0) return native.status ?? 1;
   }
-  const builderConfig = {
-    ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
-    productName: selected.productName,
-    appId: selected.appId,
-    directories: { output: selected.packageDirectory },
-    files: ["desktop/**/*", "game-edition.mjs", `${selected.rendererDirectory}/**/*`, "!**/*.map", "package.json"],
-    extraMetadata: {
-      gameEdition: selected.edition,
-      steamAppId: steamAppId ?? 480,
-      steamDepotId: selected.steamDepotId ?? null,
-      fullGameSteamAppId: selected.fullGameSteamAppId ?? 480,
-    },
-  };
-  mkdirSync(join(root, "steam/build"), { recursive: true });
-  const builderConfigPath = join(root, "steam/build", `electron-${selected.edition}.json`);
-  writeFileSync(builderConfigPath, JSON.stringify(builderConfig));
-  const builderArgs = ["--publish", "never"];
-  builderArgs.push("--config", builderConfigPath);
-  for (const target of targets) {
-    builderArgs.push(targetToBuilderFlag(target));
-  }
-  if (packageDir) {
-    builderArgs.push("--dir");
-    // electron-builder's --dir bypasses target.arch and otherwise uses the host CPU.
-    if (targets.includes("win")) builderArgs.push("--x64");
-  }
-
-  if (process.env.CI_RELEASE === "true" && sentryDsn) {
-    builderArgs.push(
-      "-c.extraMetadata.sentryEnabled=true",
-      `-c.extraMetadata.sentryDsn=${sentryDsn}`,
-      `-c.extraMetadata.sentryRelease=${sentryRelease}`,
-    );
-  }
-
-  if (process.env.CI_RELEASE === "true") {
-    builderArgs.push(`-c.extraMetadata.steamAppId=${steamAppId}`);
-  }
-  if (azureFields.publisherName) {
-    for (const [key, value] of Object.entries(azureFields)) {
-      builderArgs.push(`-c.win.azureSignOptions.${key}=${value}`);
-    }
-  }
-  if (process.env.REQUIRE_CODE_SIGNING === "true") {
-    builderArgs.push("-c.forceCodeSigning=true");
-  }
-
-  const result = runStreamCommand("npx", ["electron-builder", ...builderArgs], {
-    cwd: root,
-    env: { ...process.env, NODE_OPTIONS: "--no-deprecation" },
+  const attempt = beginBuildAttempt(root, {
+    kind: "package",
+    target: selected.packageDirectory,
+    eligible: process.env.CI_RELEASE !== "true" && process.platform !== "win32",
   });
-
-  if (result.error) throw result.error;
-  if ((result.status ?? 1) !== 0) return result.status ?? 1;
-
-  for (const target of targets) {
-    const verifyResult = runStreamCommand(process.execPath, ["scripts/verify-desktop-package.mjs"], {
-      cwd: root,
-      env: { ...process.env, DESKTOP_TARGET: target },
-    });
-    if (verifyResult.error) throw verifyResult.error;
-    if ((verifyResult.status ?? 1) !== 0) return verifyResult.status ?? 1;
-  }
-  const footprint = measureStorage(join(root, selected.packageDirectory));
-  const reportDirectory = join(root, "reports/storage");
-  mkdirSync(reportDirectory, { recursive: true });
-  writeFileSync(
-    join(reportDirectory, `package-${selected.edition}.json`),
-    JSON.stringify(
-      {
-        version: 1,
-        edition: selected.edition,
-        targets,
-        measuredAt: new Date().toISOString(),
-        units: "logical bytes; symlinks excluded; output includes both installers and unpacked applications",
-        ...footprint,
+  let success = false;
+  try {
+    const builderConfig = {
+      ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
+      productName: selected.productName,
+      appId: selected.appId,
+      directories: { output: attempt.staging ?? selected.packageDirectory },
+      files: ["desktop/**/*", "game-edition.mjs", `${selected.rendererDirectory}/**/*`, "!**/*.map", "package.json"],
+      extraMetadata: {
+        gameEdition: selected.edition,
+        steamAppId: steamAppId ?? 480,
+        steamDepotId: selected.steamDepotId ?? null,
+        fullGameSteamAppId: selected.fullGameSteamAppId ?? 480,
       },
-      null,
-      2,
-    ) + "\n",
-  );
-  for (const [name, bytes] of Object.entries(footprint.children))
-    console.log(`[package-storage] ${name} ${bytes} bytes`);
-  return 0;
+    };
+    mkdirSync(join(root, "steam/build"), { recursive: true });
+    const builderConfigPath = join(root, "steam/build", `electron-${selected.edition}.json`);
+    writeFileSync(builderConfigPath, JSON.stringify(builderConfig));
+    const builderArgs = ["--publish", "never"];
+    builderArgs.push("--config", builderConfigPath);
+    for (const target of targets) {
+      builderArgs.push(targetToBuilderFlag(target));
+    }
+    if (packageDir) {
+      builderArgs.push("--dir");
+      // electron-builder's --dir bypasses target.arch and otherwise uses the host CPU.
+      if (targets.includes("win")) builderArgs.push("--x64");
+    }
+
+    if (process.env.CI_RELEASE === "true" && sentryDsn) {
+      builderArgs.push(
+        "-c.extraMetadata.sentryEnabled=true",
+        `-c.extraMetadata.sentryDsn=${sentryDsn}`,
+        `-c.extraMetadata.sentryRelease=${sentryRelease}`,
+      );
+    }
+
+    if (process.env.CI_RELEASE === "true") {
+      builderArgs.push(`-c.extraMetadata.steamAppId=${steamAppId}`);
+    }
+    if (azureFields.publisherName) {
+      for (const [key, value] of Object.entries(azureFields)) {
+        builderArgs.push(`-c.win.azureSignOptions.${key}=${value}`);
+      }
+    }
+    if (process.env.REQUIRE_CODE_SIGNING === "true") {
+      builderArgs.push("-c.forceCodeSigning=true");
+    }
+
+    const result = runStreamCommand("npx", ["electron-builder", ...builderArgs], {
+      cwd: root,
+      env: { ...process.env, NODE_OPTIONS: "--no-deprecation" },
+    });
+
+    if (result.error) throw result.error;
+    if ((result.status ?? 1) !== 0) return result.status ?? 1;
+
+    if (attempt.staging) {
+      // Reserve the canonical path exclusively; a concurrent or unknown output
+      // must never be replaced. Promotion leaves staged failures isolated.
+      promotePackageAttempt(root, attempt);
+    }
+
+    for (const target of targets) {
+      const verifyResult = runStreamCommand(process.execPath, ["scripts/verify-desktop-package.mjs"], {
+        cwd: root,
+        env: { ...process.env, DESKTOP_TARGET: target },
+      });
+      if (verifyResult.error) throw verifyResult.error;
+      if ((verifyResult.status ?? 1) !== 0) return verifyResult.status ?? 1;
+    }
+    const footprint = measureStorage(join(root, selected.packageDirectory));
+    const reportDirectory = join(root, "reports/storage");
+    mkdirSync(reportDirectory, { recursive: true });
+    writeFileSync(
+      join(reportDirectory, `package-${selected.edition}.json`),
+      JSON.stringify(
+        {
+          version: 1,
+          edition: selected.edition,
+          targets,
+          measuredAt: new Date().toISOString(),
+          units: "logical bytes; symlinks excluded; output includes both installers and unpacked applications",
+          ...footprint,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    for (const [name, bytes] of Object.entries(footprint.children))
+      console.log(`[package-storage] ${name} ${bytes} bytes`);
+    success = true;
+    return 0;
+  } finally {
+    finishBuildAttempt(root, attempt, success);
+  }
 }
 
-defineScript(import.meta.url, () => main());
+defineScript(import.meta.url, () => main(), {
+  artifacts: !process.argv.includes("--help") && !process.argv.includes("-h"),
+});
