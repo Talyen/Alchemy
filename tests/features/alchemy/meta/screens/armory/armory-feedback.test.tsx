@@ -42,7 +42,7 @@ describe("Armory feedback", () => {
   it("announces a rejected craft as a warning instead of success", () => {
     render(
       <ArmoryFeedback
-        notice="Unique items cannot be crafted."
+        notice="Unique items cannot be modified with crafting materials."
         result={null}
         after={undefined}
         onDismiss={vi.fn()}
@@ -50,7 +50,7 @@ describe("Armory feedback", () => {
       />,
     );
     const alert = screen.getByRole("alert");
-    expect(alert.textContent).toBe("Unique items cannot be crafted.");
+    expect(alert.textContent).toBe("Unique items cannot be modified with crafting materials.");
     expect(alert.className).toContain("text-warning");
     expect(alert.parentElement!.className).toContain("border-warning/50");
   });

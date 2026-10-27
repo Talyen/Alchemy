@@ -224,7 +224,7 @@ export const gearAffixRows = [
     "Thunderous",
     "stun",
     "physical",
-  )("physicalStunChance", rollRange(5, 10, 10, 15), "{value}% chance for Physical damage to Stun"),
+  )("physicalStunChance", rollRange(5, 10, 10, 15), "{value}% chance for Physical damage to also deal Stun damage"),
   offensiveAffix(
     "nature-leech",
     "Sylvan",

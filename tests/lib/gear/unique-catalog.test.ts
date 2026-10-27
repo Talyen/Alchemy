@@ -27,7 +27,9 @@ describe("unique item catalog", () => {
     const instance = generateUniqueGearInstance(unique);
     const rng = vi.fn(() => 0);
     for (const { id } of CRAFTING_CURRENCY_LIST) {
-      expect(craftingCurrencyBlockedReason(id, instance)).toBe("Unique items cannot be crafted.");
+      expect(craftingCurrencyBlockedReason(id, instance)).toBe(
+        "Unique items cannot be modified with crafting materials.",
+      );
       expect(canApplyCraftingCurrency(id, instance)).toBe(false);
       expect(applyCraftingCurrency(id, instance, rng)).toBe(instance);
     }

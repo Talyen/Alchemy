@@ -113,7 +113,7 @@ function prepareCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInsta
   if (!definition || !Object.hasOwn(CRAFTING_CURRENCIES_BY_ID, currencyId))
     return "No affix slots or eligible affixes available.";
   const rarity = definition.rarity;
-  if (rarity === "unique") return "Unique items cannot be crafted.";
+  if (rarity === "unique") return "Unique items cannot be modified with crafting materials.";
   switch (currencyId) {
     case "discordant-dice":
       if (!item.affixes.length) return "This item has no affixes to reroll.";

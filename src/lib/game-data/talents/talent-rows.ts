@@ -521,7 +521,7 @@ export const talentRows = [
   nature("nature-ecosystem", "Ecosystem")("Network", "Draw a Nature card at the start of combat", {
     drawNatureCardAtCombatStart: true,
   }),
-  nature("nature-entangle", "Entangle")("Link", "Nature damage has a 10% chance to also Stun", {
+  nature("nature-entangle", "Entangle")("Link", "Nature damage has a 10% chance to also deal Stun damage", {
     natureStunChance: 10,
   }),
   physical("physical-expert-blacksmith", "Expert Blacksmith")(
@@ -535,9 +535,13 @@ export const talentRows = [
   physical("physical-armored-fists", "Armored Fists")("HandFist", "Physical damage is increased by half your Armor", {
     armorPhysicalDamagePercent: 50,
   }),
-  physical("physical-heavy-blows", "Heavy Blows")("Hammer", "Physical damage has a 10% chance to also Stun", {
-    physicalStunChance: 10,
-  }),
+  physical("physical-heavy-blows", "Heavy Blows")(
+    "Hammer",
+    "Physical damage has a 10% chance to also deal Stun damage",
+    {
+      physicalStunChance: 10,
+    },
+  ),
   physical("physical-finish-him", "Finish Him")(
     "Skull",
     "Physical damage is doubled against enemies below 25% Health",
@@ -583,7 +587,7 @@ export const talentRows = [
   poison("poison-heal-reduce", "Necrosis")("Skull", "Poisoned enemies restore half as much Health", {
     poisonHalvesHealing: true,
   }),
-  poison("poison-stun-chance", "Paralytic Venom")("Lock", "Poison damage has a 10% chance to Stun", {
+  poison("poison-stun-chance", "Paralytic Venom")("Lock", "Poison damage has a 10% chance to also deal Stun damage", {
     poisonStunChance: 10,
   }),
   poison("poison-gain-chance", "Virulent")("TrendingUp", "Poison has a 10% chance to gain instead of lose a stack", {
