@@ -8,6 +8,7 @@ export interface RetentionCandidate {
   purpose: string;
   recovery: string;
   action: string;
+  expireAfter?: number;
 }
 export interface RetentionPlan {
   schema: number;
@@ -17,6 +18,7 @@ export interface RetentionPlan {
   allocatedFileBytes: number;
   protected: number;
   candidates: RetentionCandidate[];
+  expiringCandidates: RetentionCandidate[];
   permanentDeletionApproved: boolean;
   note: string;
   incomplete?: string;

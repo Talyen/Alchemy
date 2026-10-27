@@ -159,15 +159,19 @@ package outputs. `--processes` stops Alchemy-owned test listeners;
 `--all` combines all selectors, including evidence deletion. No command follows
 linked dependency ancestors into another checkout's shared caches.
 
-`npm run prune:transient` automatically expires only reproducible Git diff
-inventories in `reports/agent-diff/` after 24 hours of inactivity. It preserves
-verification, failure, performance, visual, integration and experimental evidence,
-including current-run pointers. At producer completion it also writes a bounded
+`npm run prune:transient` automatically expires reproducible Git diff inventories
+after 24 hours and known expired verification-cache receipts after 24 hours. New
+managed run receipts declare their retention policy: old unpinned, unreferenced
+successful runs expire after 30 days and failed runs after 90 days. The latest
+success and failure per command, current run, referenced baselines, pinned or
+owned runs, legacy runs, and unknown evidence stay protected. Other performance,
+visual, integration and experimental evidence is not automatically expired.
+At producer completion it also writes a bounded
 `reports/retention-review.json`: a 1 GiB review threshold, latest success/failure per
 command retained, pins/owners and referenced baselines protected, and at most 64
 exact historical run candidates. Dry runs return this plan without writing it.
-Candidates remain intact: unique diagnostics require explicit exact-batch approval;
-this threshold never authorizes irreversible age/size purges. Production footage,
+Legacy candidates remain intact; only runs created with the explicit expiry policy
+are eligible for automatic deletion. Production footage,
 portable trailer bundles and release artifacts are outside this reviewer. Tool environments belong under `.cache/`, not
 inside reports. Legacy `reports/boss-lyrics/venv` remains usable in place until its
 owner stops; worktree finishing excludes that known rebuildable environment.

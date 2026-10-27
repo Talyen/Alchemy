@@ -223,6 +223,7 @@ export function writeCurrentRun({
   const payload = {
     runId: normalizedRunId,
     generatedAt,
+    retention: "expiring-v1",
     ...state,
     status: status ?? "unknown",
     command: command ?? "unknown",

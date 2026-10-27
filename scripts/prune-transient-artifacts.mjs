@@ -72,6 +72,62 @@ export function pruneExpiredArtifacts({
   const cutoff = now - days * 86_400_000;
   const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
+  // Only newly created, explicitly expiring run receipts are eligible. Historical
+  // evidence is never silently reclassified. An incomplete inventory fails closed.
+  if (!review.incomplete && review.expiringCandidates.length && transientDirs === TRANSIENT_DIRS) {
+    const confirmation = reportRetentionPlan(rootDir, { now });
+    if (!confirmation.incomplete) {
+      for (const candidate of review.expiringCandidates) {
+        if (!candidate.expireAfter || candidate.expireAfter > now) continue;
+        if (!/^reports\/runs\/[a-z0-9-]+$/u.test(candidate.path)) continue;
+        const verified = confirmation.expiringCandidates.find((item) => item.path === candidate.path);
+        if (
+          !verified ||
+          verified.expireAfter !== candidate.expireAfter ||
+          verified.metadataFingerprint !== candidate.metadataFingerprint
+        )
+          continue;
+        removed.push({ path: candidate.path, bytes: candidate.logicalBytes });
+        if (!dryRun) removePath(path.join(rootDir, candidate.path));
+      }
+    }
+  }
+  // Verification receipts are unusable after one hour. Only known, regular
+  // receipts are removed, under the same guard as their managed producers.
+  if (transientDirs === TRANSIENT_DIRS) {
+    const reports = path.join(rootDir, "reports");
+    const cache = path.join(reports, "verification-cache");
+    const reportsStat = fs.lstatSync(reports, { throwIfNoEntry: false });
+    const cacheStat = fs.lstatSync(cache, { throwIfNoEntry: false });
+    if (
+      reportsStat?.isDirectory() &&
+      !reportsStat.isSymbolicLink() &&
+      cacheStat?.isDirectory() &&
+      !cacheStat.isSymbolicLink()
+    ) {
+      for (const name of fs.readdirSync(cache)) {
+        if (!/^[a-f0-9]{64}\.json$/u.test(name)) continue;
+        const file = path.join(cache, name);
+        try {
+          const stat = fs.lstatSync(file);
+          if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 256_000) continue;
+          const receipt = JSON.parse(fs.readFileSync(file, "utf8"));
+          if (
+            receipt.version !== 1 ||
+            receipt.status !== "passed" ||
+            !Number.isFinite(receipt.completedAt) ||
+            now - receipt.completedAt < 86_400_000 ||
+            now - stat.mtimeMs < 86_400_000
+          )
+            continue;
+          removed.push({ path: path.relative(rootDir, file), bytes: stat.size });
+          if (!dryRun) removePath(file);
+        } catch {
+          // Unknown or concurrently removed files are not ours to remove.
+        }
+      }
+    }
+  }
   const consider = (pathname) => {
     const info = bundleInfo(pathname);
     if (info.newest < cutoff) {

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { reportRetentionPlan, writeRetentionReview } from "../../scripts/lib/report-retention.mjs";
+import { pruneTransientArtifacts } from "../../scripts/prune-transient-artifacts.mjs";
 
 const day = 86_400_000,
   now = Date.now(),
@@ -61,4 +62,52 @@ it("respects exact age/size boundaries and preserves unknown destinations and sy
   fs.symlinkSync(path.join(root, "reports"), path.join(other, "reports"), "dir");
   expect(reportRetentionPlan(other, { now }).candidates).toEqual([]);
   expect(() => reportRetentionPlan(root, { budget: 0 })).toThrow();
+});
+
+it("expires only marked historical runs after the retention period, preserving references and legacy evidence", async () => {
+  const root = fixture();
+  const expired = run(root, "expired", "passed", 31 * day, { retention: "expiring-v1" });
+  const legacy = run(root, "legacy", "passed", 100 * day);
+  const referenced = run(root, "referenced", "passed", 40 * day, { retention: "expiring-v1" });
+  const failure = run(root, "failure", "failed", 89 * day, { retention: "expiring-v1" });
+  const pinned = run(root, "pinned", "passed", 60 * day, { retention: "expiring-v1" });
+  fs.writeFileSync(path.join(pinned, ".retention-keep"), "keep");
+  run(root, "latest", "passed", 0, {
+    retention: "expiring-v1",
+    artifacts: [{ path: "reports/runs/referenced/output.log" }],
+  });
+  run(root, "latest-failure", "failed", 0, { retention: "expiring-v1" });
+  const preview = await pruneTransientArtifacts({ rootDir: root, now, dryRun: true });
+  expect(preview.removed.map((item) => item.path)).toEqual(["reports/runs/expired"]);
+  expect(fs.existsSync(expired)).toBe(true);
+  await pruneTransientArtifacts({ rootDir: root, now });
+  expect(fs.existsSync(expired)).toBe(false);
+  for (const directory of [legacy, referenced, failure, pinned]) expect(fs.existsSync(directory)).toBe(true);
+});
+
+it("fails closed when the current run pointer is unreadable", async () => {
+  const root = fixture();
+  const expired = run(root, "expired", "passed", 40 * day, { retention: "expiring-v1" });
+  run(root, "latest", "passed", 0, { retention: "expiring-v1" });
+  fs.writeFileSync(path.join(root, "reports/current-run.json"), "invalid");
+  expect((await pruneTransientArtifacts({ rootDir: root, now })).removed).toEqual([]);
+  expect(fs.existsSync(expired)).toBe(true);
+});
+
+it("expires only old recognized verification receipts and leaves unknown files intact", async () => {
+  const root = fixture();
+  const cache = path.join(root, "reports/verification-cache");
+  fs.mkdirSync(cache, { recursive: true });
+  const old = path.join(cache, `${"a".repeat(64)}.json`);
+  const unknown = path.join(cache, `${"b".repeat(64)}.json`);
+  const fresh = path.join(cache, `${"c".repeat(64)}.json`);
+  fs.writeFileSync(old, JSON.stringify({ version: 1, status: "passed", completedAt: now - 2 * day }));
+  fs.writeFileSync(unknown, "not a receipt");
+  fs.writeFileSync(fresh, JSON.stringify({ version: 1, status: "passed", completedAt: now }));
+  for (const file of [old, unknown, fresh]) fs.utimesSync(file, new Date(now - 2 * day), new Date(now - 2 * day));
+  expect((await pruneTransientArtifacts({ rootDir: root, now })).removed.map((entry) => entry.path)).toEqual([
+    `reports/verification-cache/${"a".repeat(64)}.json`,
+  ]);
+  expect(fs.existsSync(unknown)).toBe(true);
+  expect(fs.existsSync(fresh)).toBe(true);
 });

@@ -35,11 +35,14 @@ them during installation. `.node-version` selects the Node 24 release line.
 ## Quick Start
 
 ```sh
-git clone https://github.com/Talyen/Alchemy.git
+git clone --filter=blob:none https://github.com/Talyen/Alchemy.git
 cd Alchemy
 npm ci
 npm run dev
 ```
+
+The partial clone downloads older file contents on demand, so inspecting old
+history may require network access. The current game and its assets are unchanged.
 
 `npm run dev` starts the Vite dev server and opens the browser automatically.
 Desktop local development is `npm run dev:desktop`. See

@@ -22,8 +22,9 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
     allocatedFileBytes: 0,
     protected: 0,
     candidates: [],
+    expiringCandidates: [],
     permanentDeletionApproved: false,
-    note: "Unique diagnostics require exact-batch approval; APFS file allocation is not unique physical space.",
+    note: "Legacy diagnostics require exact-batch approval; marked runs can expire by policy. APFS allocation is not unique physical space.",
   };
   const reportsRoot = fs.lstatSync(path.join(rootDir, "reports"), { throwIfNoEntry: false });
   if (!reportsRoot?.isDirectory() || reportsRoot.isSymbolicLink()) return plan;
@@ -72,6 +73,7 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
   for (const entry of fs.readdirSync(base, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.isSymbolicLink()) {
       plan.protected++;
+      plan.incomplete = "Unknown run ownership or references; evidence preserved";
       continue;
     }
     const directory = path.join(base, entry.name),
@@ -93,6 +95,7 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
         id: entry.name,
         family: receipt.command,
         status: receipt.status,
+        expiring: receipt.retention === "expiring-v1",
         finished: Date.parse(receipt.generatedAt),
         ...info,
       });
@@ -102,6 +105,7 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
       }
     } catch (error) {
       plan.protected++;
+      plan.incomplete = "Unknown run ownership or references; evidence preserved";
       if (visited > maxEntries) {
         plan.incomplete = error.message;
         break;
@@ -109,6 +113,23 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
     }
   }
   const latest = new Map();
+  const currentPath = path.join(rootDir, "reports/current-run.json");
+  if (fs.existsSync(currentPath)) {
+    try {
+      const pointer = fs.lstatSync(currentPath);
+      if (!pointer.isFile() || pointer.isSymbolicLink() || pointer.size > 256_000)
+        throw new Error("Unknown current run");
+      const current = JSON.parse(fs.readFileSync(currentPath, "utf8"));
+      if (typeof current.runId !== "string") throw new Error("Invalid current run");
+      references.add(current.runId);
+      for (const artifact of current.artifacts ?? []) {
+        const match = /^reports\/runs\/([^/]+)(?:\/|$)/u.exec(artifact.path ?? "");
+        if (match) references.add(match[1]);
+      }
+    } catch {
+      plan.incomplete = "Current run pointer cannot be read; evidence preserved";
+    }
+  }
   for (const record of records) {
     const key = JSON.stringify([record.family, record.status]);
     if (!latest.has(key) || latest.get(key).newest < record.newest) latest.set(key, record);
@@ -126,11 +147,7 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
     }
     const age = now - Math.max(record.newest, record.finished);
     if (age < (record.status === "passed" ? day : 3 * day) && !(age >= day && considered > budget)) continue;
-    if (plan.candidates.length === 64) {
-      plan.moreCandidates = true;
-      break;
-    }
-    plan.candidates.push({
+    const candidate = {
       path: record.path,
       logicalBytes: record.logicalBytes,
       allocatedFileBytes: record.allocatedBytes,
@@ -138,9 +155,18 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
       status: record.status,
       family: record.family,
       purpose: "Historical command diagnostics",
-      recovery: "Not verified restorable; explicit approval required",
-      action: "review-only",
-    });
+      recovery: record.expiring
+        ? "Not verified restorable; expires by policy"
+        : "Not verified restorable; explicit approval required",
+      action: record.expiring ? "expire by policy" : "review-only",
+      ...(record.expiring
+        ? { expireAfter: Math.max(record.newest, record.finished) + (record.status === "passed" ? 30 : 90) * day }
+        : {}),
+    };
+    if (record.expiring && candidate.expireAfter <= now && plan.expiringCandidates.length < 64)
+      plan.expiringCandidates.push(candidate);
+    if (plan.candidates.length < 64) plan.candidates.push(candidate);
+    else plan.moreCandidates = true;
     considered -= record.allocatedBytes;
   }
   plan.overBudget = plan.allocatedFileBytes > budget;
