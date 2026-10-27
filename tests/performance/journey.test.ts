@@ -147,6 +147,11 @@ it("journey segment measurement pools repeated visits to a segment without count
   expect(results[0]?.metrics.hitchesOver50ms).toBe(0);
   expect(results[1]?.metrics.hitchesOver50ms).toBe(1);
   expect(measureSegments(sample, [], [{ name: "combat", minActions: 1, minFrames: 20 }])[0]?.valid).toBe(false);
+  const shortSample = { ...sample, frameGaps: sample.frameGaps!.slice(0, 29) };
+  expect(measureSegments(shortSample, actions, [{ name: "combat", minActions: 1, minFrames: 20 }])[0]).toMatchObject({
+    valid: false,
+    invalidReason: "insufficient frames (19 < 20)",
+  });
 });
 
 it("varies legal combat decisions, prefers unseen actions, and replays card and Wish choices in order", () => {

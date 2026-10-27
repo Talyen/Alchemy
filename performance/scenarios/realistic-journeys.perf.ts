@@ -22,6 +22,10 @@ import { assertJourneyCase, type JourneyCase, type SegmentRequirement } from "..
 type Phase = (name: string) => Promise<void>;
 type RecordAction = (name: string) => Promise<void>;
 
+// A fixed window keeps slow CI renderers measurable without waiting until a
+// sample becomes valid, which would hide an indefinitely stalled renderer.
+const TRANSACTION_RESULT_OBSERVATION_MS = 3_000;
+
 function readCase(scenario: string): JourneyCase {
   const dir = process.env.PERF_CASE_DIR;
   if (!dir) throw new Error("PERF_CASE_DIR is missing");
@@ -314,7 +318,7 @@ async function campfireBrewingRoute(page: Page, phase: Phase, recordAction: Reco
     },
     recordAction,
   );
-  await delay(700);
+  await delay(TRANSACTION_RESULT_OBSERVATION_MS);
   await phase("destination");
   await record("leave-campfire", () => page.getByRole("button", { name: "Loot", exact: true }).click(), recordAction);
   await expect(page.getByRole("heading", { name: "Campfire", exact: true })).toBeHidden();
@@ -344,7 +348,7 @@ async function transmutationRoute(page: Page, phase: Phase, recordAction: Record
     },
     recordAction,
   );
-  await delay(700);
+  await delay(TRANSACTION_RESULT_OBSERVATION_MS);
   await phase("destination");
   await record(
     "leave-transmutation",
@@ -417,7 +421,7 @@ async function craftingRoute(
     },
     recordAction,
   );
-  await delay(700);
+  await delay(TRANSACTION_RESULT_OBSERVATION_MS);
   await page.getByRole("button", { name: "Dismiss result", exact: true }).click();
   await phase("salvage");
   await page.getByTestId("armory-salvage-toggle").click();
@@ -434,7 +438,7 @@ async function craftingRoute(
     },
     recordAction,
   );
-  await delay(700);
+  await delay(TRANSACTION_RESULT_OBSERVATION_MS);
 }
 
 const SEGMENTS: Record<string, SegmentRequirement[]> = {
