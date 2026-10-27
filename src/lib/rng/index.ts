@@ -161,6 +161,7 @@ function shuffleOwned<T>(items: T[], rng: Rng): T[] {
 }
 
 export function sampleItems<T>(items: readonly T[], count: number, rng: Rng): T[] {
+  if (count === 0) return [];
   return sampleOwned([...items], count, rng);
 }
 

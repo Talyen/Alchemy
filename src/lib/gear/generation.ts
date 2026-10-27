@@ -43,18 +43,35 @@ function generateGearOfferings({
   const sampledBases = sampleItems(basePool, count, rng);
   const reservedBases = new Map<string, "ordinary" | "unique">();
   const baseIds = new Set(basePool.map((base) => base.id));
-  const unownedUniques = uniqueItemList.filter(
+  const availableUniques = uniqueItemList.filter(
     (unique) => !ownedUniqueIds.has(unique.id) && baseIds.has(unique.baseItemId),
   );
   const choices: GearInstance[] = [];
+  let sampledIndex = 0;
+  const reserveBase = (baseId: string, rarity: "ordinary" | "unique") => {
+    const alreadyReserved = reservedBases.has(baseId);
+    reservedBases.set(baseId, rarity);
+    if (alreadyReserved) return;
+    // Remove all Uniques sharing this base while retaining catalog order.
+    let writeIndex = 0;
+    for (const unique of availableUniques) {
+      if (unique.baseItemId !== baseId) availableUniques[writeIndex++] = unique;
+    }
+    availableUniques.length = writeIndex;
+  };
 
   for (let index = 0; index < count; index += 1) {
-    const repeatableBases = basePool.filter((base) => reservedBases.get(base.id) !== "unique");
-    const unusedBases = repeatableBases.filter((base) => !reservedBases.has(base.id));
+    const repeatableBases: typeof basePool = [];
+    const unusedBases: typeof basePool = [];
+    for (const base of basePool) {
+      const reservation = reservedBases.get(base.id);
+      if (reservation === "unique") continue;
+      repeatableBases.push(base);
+      if (reservation === undefined) unusedBases.push(base);
+    }
     const eligibleBases = unusedBases.length > 0 ? unusedBases : fillCount ? repeatableBases : [];
     if (eligibleBases.length === 0) break;
 
-    const availableUniques = unownedUniques.filter((unique) => !reservedBases.has(unique.baseItemId));
     const availability: LootAvailability = {
       basic: true,
       astral: true,
@@ -66,7 +83,7 @@ function generateGearOfferings({
     if (rarity === "unique") {
       const unique = pickRandom(availableUniques, rng);
       if (unique) {
-        reservedBases.set(unique.baseItemId, "unique");
+        reserveBase(unique.baseItemId, "unique");
         choices.push(generateUniqueGearInstance(unique, createId));
         continue;
       }
@@ -75,9 +92,11 @@ function generateGearOfferings({
       break;
     }
 
-    const base = sampledBases.find((item) => !reservedBases.has(item.id)) ?? pickRandom(eligibleBases, rng);
+    // Reservations only grow, so a skipped sampled base can never become eligible.
+    while (sampledIndex < sampledBases.length && reservedBases.has(sampledBases[sampledIndex]!.id)) sampledIndex++;
+    const base = sampledBases[sampledIndex] ?? pickRandom(eligibleBases, rng);
     if (!base) break;
-    reservedBases.set(base.id, "ordinary");
+    reserveBase(base.id, "ordinary");
     const definition = gearDefinitions[gearDefinitionId(base.id, rarity)];
     if (!definition) break;
     choices.push(createRolledGearInstance(definition, rng, createId));

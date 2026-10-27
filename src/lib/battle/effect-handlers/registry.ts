@@ -245,10 +245,18 @@ export function applyCardEffects(
   // Direct emitters mark authored outcomes before any proc can merge into them.
   // Damage/healing take precedence; otherwise the first successful authored result
   // acknowledges the action. Costs and triggered rewards never win by magnitude.
-  const meaningful = (event: CombatTextEvent) => event.kind === "notice" || event.amount !== 0;
-  const direct = effectTexts.filter((event) => event.feedback === "primary");
-  const hasImpact = direct.some((event) => meaningful(event) && (event.kind === "damage" || event.kind === "heal"));
-  const first = direct.find(meaningful) ?? direct[0];
+  let firstDirect: CombatTextEvent | undefined;
+  let firstMeaningful: CombatTextEvent | undefined;
+  let hasImpact = false;
+  for (const event of effectTexts) {
+    if (event.feedback !== "primary") continue;
+    firstDirect ??= event;
+    if (event.kind === "notice" || event.amount !== 0) {
+      firstMeaningful ??= event;
+      if (event.kind === "damage" || event.kind === "heal") hasImpact = true;
+    }
+  }
+  const first = firstMeaningful ?? firstDirect;
   for (const event of effectTexts) {
     if (!context.feedback) {
       mergeCombatText(combatTexts, event);

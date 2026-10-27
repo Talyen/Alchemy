@@ -46,7 +46,8 @@ export function isMysteryLootEligible(
 ): boolean {
   if (isLootEligible("astral", progress.depth)) return true;
   const owned = new Set(ownedTrinketIds);
-  const available = trinketLibrary.filter((entry) => !owned.has(entry.id)).length;
+  let available = 0;
+  for (const entry of trinketLibrary) if (!owned.has(entry.id)) available++;
   return event.choices.every((choice) => {
     const seen = new Set<string>();
     let needed = 0;

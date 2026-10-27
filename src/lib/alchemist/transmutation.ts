@@ -62,6 +62,14 @@ const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
   forge: ["forgeBonusPercent"],
 };
 
+function hasEffectLines(card: BattleCard, minimum: number): boolean {
+  let count = 0;
+  for (const line of getCardDescription(card)) {
+    if (line.role === "effect" && ++count >= minimum) return true;
+  }
+  return false;
+}
+
 function isTransmutableCard(card: BattleCard): boolean {
   return !card.corrupted && !card.transmuted && !isMixedPotionCard(card);
 }
@@ -257,17 +265,12 @@ export function getTransmutationVariants(
       keyword === "archery" ? { tags: [...(card.tags ?? []), "archery"] } : {},
     );
     // Leech can expand combined damage lines; count the actual preview.
-    if (
-      keyword === "leech" &&
-      getCardDescription(result).filter((line) => line.role === "effect").length > CORRUPTION_MAX_EFFECT_LINES
-    )
-      return [];
+    if (keyword === "leech" && hasEffectLines(result, CORRUPTION_MAX_EFFECT_LINES + 1)) return [];
     return [{ sourceKeyword: null, result }];
   }
   if (keyword === "consume" && !isCompanionSummonCard(card))
     return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects, { consume: true }) }];
-  if (getCardDescription(card).filter((line) => line.role === "effect").length >= CORRUPTION_MAX_EFFECT_LINES)
-    return [];
+  if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES)) return [];
   if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
   else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
   else if (

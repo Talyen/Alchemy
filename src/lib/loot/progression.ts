@@ -31,7 +31,8 @@ export function labyrinthLootDepth(map: LabyrinthMap | null, pendingNodeId: stri
 export function highestCompletedLootDifficulty(
   completed: Readonly<Record<string, readonly DifficultyId[]>>,
 ): DifficultyId | null {
-  const clears = new Set(Object.values(completed).flat());
+  const clears = new Set<DifficultyId>();
+  for (const ids of Object.values(completed)) for (const id of ids) clears.add(id);
   return DIFFICULTY_ORDER.findLast((difficulty) => clears.has(difficulty)) ?? null;
 }
 
