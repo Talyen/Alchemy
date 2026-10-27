@@ -15,7 +15,7 @@ import {
 import { parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
 import { MaterialInventorySchema } from "./schema-enums";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
-import { deduplicatedStringArraySchema, recordNestedValidationWarnings } from "./validation-utils";
+import { deduplicatedStringArraySchema, parseValidEntries } from "./validation-utils";
 
 // Load-tolerant fallbacks: one corrupt scalar or collection repairs to battle
 // defaults instead of voiding the whole combat session. Only primitives are
@@ -100,20 +100,12 @@ const PersistedBattleStateWireSchema = z.looseObject({
     .catch([]),
   pendingTurnStartEffects: z
     .array(z.unknown())
-    .transform((entries) => {
-      const parsed: Array<z.infer<typeof pendingTurnStartEffectSchema>> = [];
-      entries.forEach((entry, index) => {
-        const result = pendingTurnStartEffectSchema.safeParse(entry);
-        if (result.success) {
-          parsed.push(result.data);
-          return;
-        }
-        recordNestedValidationWarnings([
-          { path: `pendingTurnStartEffects[${index}]`, message: "malformed scheduled effect was dropped" },
-        ]);
-      });
-      return parsed;
-    })
+    .transform((entries) =>
+      parseValidEntries(entries, pendingTurnStartEffectSchema, {
+        path: "pendingTurnStartEffects",
+        message: "malformed scheduled effect was dropped",
+      }),
+    )
     .catch([]),
   mana: z.number().catch(battleFallbacks.mana),
   maxMana: z.number().catch(battleFallbacks.maxMana),
@@ -138,14 +130,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
   appliesFightPacing: z.boolean().catch(battleFallbacks.appliesFightPacing),
   difficultyModifiers: z
     .array(z.unknown())
-    .transform((modifiers) => {
-      const parsed: Array<z.infer<typeof difficultyModifierSchema>> = [];
-      modifiers.forEach((modifier) => {
-        const result = difficultyModifierSchema.safeParse(modifier);
-        if (result.success) parsed.push(result.data);
-      });
-      return parsed;
-    })
+    .transform((modifiers) => parseValidEntries(modifiers, difficultyModifierSchema))
     .catch([]),
 });
 

@@ -24,7 +24,7 @@ import {
   MaterialIdSchema,
   MaterialInventorySchema,
 } from "./schema-enums";
-import { deduplicatedStringArraySchema, recordNestedValidationWarnings } from "./validation-utils";
+import { deduplicatedStringArraySchema, parseValidEntries } from "./validation-utils";
 
 const KnownKeywordSchema = z.custom<KeywordId>(
   (value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value),
@@ -50,20 +50,12 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
 
 const MysteryChoicePersistSchema = z.object({
   label: z.string(),
-  effects: z.array(z.unknown()).transform((effects) => {
-    const parsed: Array<z.infer<typeof MysteryEffectSchema>> = [];
-    effects.forEach((effect, index) => {
-      const result = MysteryEffectSchema.safeParse(effect);
-      if (result.success) {
-        parsed.push(result.data);
-        return;
-      }
-      recordNestedValidationWarnings([
-        { path: `mystery.effects[${index}]`, message: "malformed Mystery effect was dropped" },
-      ]);
-    });
-    return parsed;
-  }),
+  effects: z.array(z.unknown()).transform((effects) =>
+    parseValidEntries(effects, MysteryEffectSchema, {
+      path: "mystery.effects",
+      message: "malformed Mystery effect was dropped",
+    }),
+  ),
 });
 
 const MysteryEventPersistSchema = z.object({

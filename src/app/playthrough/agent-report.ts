@@ -19,7 +19,7 @@ import type {
   AgentSummaryOptions,
   CompletedCareer,
 } from "./agent-report-types";
-import { careerCohort } from "./progress-telemetry";
+import { groupCareersByCohort } from "./progress-telemetry";
 import type { CareerResult } from "./types";
 
 function buildCohortSummary(cohort: string, cohortResults: CareerResult[]): AgentCohortSummary {
@@ -117,13 +117,7 @@ export function buildAgentPlaythroughSummary(
   results: CareerResult[],
   options: AgentSummaryOptions = {},
 ): AgentPlaythroughSummary {
-  const groups = new Map<string, CareerResult[]>();
-  for (const result of results) {
-    const cohort = careerCohort(result);
-    const group = groups.get(cohort);
-    if (group) group.push(result);
-    else groups.set(cohort, [result]);
-  }
+  const groups = groupCareersByCohort(results);
   const cohorts = [...groups].map(([cohort, cohortResults]) => buildCohortSummary(cohort, cohortResults));
   const workerFailures = (options.workerFailures ?? []).filter(Boolean).slice(0, 3);
   const findings: AgentFinding[] = cohorts.flatMap((cohort) =>

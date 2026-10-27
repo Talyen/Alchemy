@@ -13,7 +13,7 @@ import type {
   CompletedCareer,
   MaybeNumber,
 } from "./agent-report-types";
-import { MILESTONE_KINDS } from "./agent-report-types";
+import { collectCareerBattles, firstMilestoneRuns, roomMortality } from "./progress-telemetry";
 
 export function round(value: number): number {
   return Number(value.toFixed(2));
@@ -66,20 +66,7 @@ export function selectorForDefeats(battles: Battle[], minRoom?: number): AgentEv
 }
 
 export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetric[] {
-  const milestoneEntries = careers.map((career) => Object.entries(career.telemetry.milestones));
-  return MILESTONE_KINDS.map((kind) => {
-    const firstRuns: number[] = [];
-    const prefix = `${kind}:`;
-    for (const entries of milestoneEntries) {
-      let first = Infinity;
-      let reached = false;
-      for (const [key, run] of entries) {
-        if (!key.startsWith(prefix)) continue;
-        reached = true;
-        first = Math.min(first, run + 1);
-      }
-      if (reached) firstRuns.push(first);
-    }
+  return firstMilestoneRuns(careers).map(({ kind, firstRuns }) => {
     return {
       kind,
       reached: firstRuns.length,
@@ -91,43 +78,8 @@ export function buildMilestones(careers: CompletedCareer[]): AgentMilestoneMetri
 }
 
 export function buildBattles(careers: CompletedCareer[]): { battles: Battle[]; metrics: AgentBattleMetrics } {
-  const battles: Battle[] = [];
-  for (const career of careers) {
-    for (const battle of career.telemetry.battles) battles.push({ ...battle, seed: career.config.seed });
-  }
-  const byEnemy = new Map<
-    string,
-    { enemy: string; boss: boolean; encounters: number; victories: number; defeats: number; turns: number }
-  >();
-  let victories = 0;
-  let defeats = 0;
-  let bossEncounters = 0;
-  let bossVictories = 0;
-  let bossDefeats = 0;
-  let turns = 0;
-  for (const battle of battles) {
-    victories += battle.outcome === "victory" ? 1 : 0;
-    defeats += battle.outcome === "defeat" ? 1 : 0;
-    turns += battle.turns;
-    if (battle.boss) {
-      bossEncounters++;
-      bossVictories += battle.outcome === "victory" ? 1 : 0;
-      bossDefeats += battle.outcome === "defeat" ? 1 : 0;
-    }
-    const current = byEnemy.get(battle.enemy) ?? {
-      enemy: battle.enemy,
-      boss: battle.boss,
-      encounters: 0,
-      victories: 0,
-      defeats: 0,
-      turns: 0,
-    };
-    current.encounters += 1;
-    current.victories += battle.outcome === "victory" ? 1 : 0;
-    current.defeats += battle.outcome === "defeat" ? 1 : 0;
-    current.turns += battle.turns;
-    byEnemy.set(battle.enemy, current);
-  }
+  const { battles, enemies, victories, defeats, turns, bossEncounters, bossVictories, bossDefeats } =
+    collectCareerBattles(careers);
   return {
     battles,
     metrics: {
@@ -142,8 +94,8 @@ export function buildBattles(careers: CompletedCareer[]): { battles: Battle[]; m
         defeats: bossDefeats,
         winRate: rate(bossVictories, bossEncounters),
       },
-      byEnemy: [...byEnemy.values()]
-        .map(({ turns, ...enemy }) => ({
+      byEnemy: [...enemies.values()]
+        .map(({ turns, reachedCareers: _reachedCareers, ...enemy }) => ({
           ...enemy,
           winRate: rate(enemy.victories, enemy.encounters),
           meanTurns: enemy.encounters ? round(turns / enemy.encounters) : null,
@@ -272,13 +224,5 @@ export function buildSurvival(runs: CareerRun[]): AgentCohortSummary["survivalBy
     maxRoom <= 128
       ? Array.from({ length: maxRoom + 1 }, (_, room) => room)
       : [...new Set([0, 1, 2, 4, 8, 16, 32, 64, maxRoom].filter((room) => room <= maxRoom))];
-  return rooms.map((room) => {
-    let reached = 0;
-    let defeats = 0;
-    for (const run of runs) {
-      if (run.rooms >= room) reached++;
-      if (run.rooms === room && run.outcome === "defeat") defeats++;
-    }
-    return { room, reached, defeats, denominator: runs.length, rate: rate(reached, runs.length) };
-  });
+  return roomMortality(runs, rooms).map((room) => ({ ...room, rate: rate(room.reached, room.denominator) }));
 }

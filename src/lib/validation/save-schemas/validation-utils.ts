@@ -16,6 +16,21 @@ export function recordNestedValidationWarnings(errors: ValidationError[]): void 
   activeWarningSink.push(...errors);
 }
 
+/** Keep valid entries in their original order and report each dropped position. */
+export function parseValidEntries<T>(
+  values: readonly unknown[],
+  schema: z.ZodType<T>,
+  warning?: { path: string; message: string },
+): T[] {
+  const parsed: T[] = [];
+  values.forEach((value, index) => {
+    const result = schema.safeParse(value);
+    if (result.success) parsed.push(result.data);
+    else if (warning) recordNestedValidationWarnings([{ path: `${warning.path}[${index}]`, message: warning.message }]);
+  });
+  return parsed;
+}
+
 export function safeParseWithErrors<T>(
   schema: z.ZodType<T>,
   data: unknown,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BattleCardEffectSchema, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { createUniqueGearBattleState } from "@/lib/battle";
-import { recordNestedValidationWarnings } from "./validation-utils";
+import { parseValidEntries } from "./validation-utils";
 
 const echoCardSchema = z
   .looseObject({
@@ -31,20 +31,12 @@ export const UniqueGearBattleStateSchema = z
     returningFlightUids: z.array(z.number().int().nonnegative()).catch([]),
     archeryEchoes: z
       .array(z.unknown())
-      .transform((entries) => {
-        const parsed: Array<z.infer<typeof echoCardSchema>> = [];
-        entries.forEach((entry, index) => {
-          const result = echoCardSchema.safeParse(entry);
-          if (result.success) {
-            parsed.push(result.data);
-            return;
-          }
-          recordNestedValidationWarnings([
-            { path: `uniqueGear.archeryEchoes[${index}]`, message: "malformed Archery echo was dropped" },
-          ]);
-        });
-        return parsed;
-      })
+      .transform((entries) =>
+        parseValidEntries(entries, echoCardSchema, {
+          path: "uniqueGear.archeryEchoes",
+          message: "malformed Archery echo was dropped",
+        }),
+      )
       .catch([]),
   })
   .catch(() => ({ ...createUniqueGearBattleState(), archeryEchoes: [] }));
