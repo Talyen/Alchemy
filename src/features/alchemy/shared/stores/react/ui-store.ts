@@ -44,10 +44,18 @@ interface UiStore {
 export const useUiStore = create<UiStore>()((set, get) => ({
   enemyInspectionOpen: false,
   setEnemyInspectionOpen: (enemyInspectionOpen) =>
-    set({ enemyInspectionOpen, ...(enemyInspectionOpen ? { cardInspection: null } : {}) }),
+    set((state) =>
+      state.enemyInspectionOpen === enemyInspectionOpen && (!enemyInspectionOpen || state.cardInspection === null)
+        ? state
+        : { enemyInspectionOpen, ...(enemyInspectionOpen ? { cardInspection: null } : {}) },
+    ),
   cardInspection: null,
   setCardInspection: (cardInspection) =>
-    set({ cardInspection, ...(cardInspection ? { enemyInspectionOpen: false } : {}) }),
+    set((state) =>
+      state.cardInspection === cardInspection && (!cardInspection || !state.enemyInspectionOpen)
+        ? state
+        : { cardInspection, ...(cardInspection ? { enemyInspectionOpen: false } : {}) },
+    ),
   showClearSaveConfirm: false,
   setShowClearSaveConfirm: (showClearSaveConfirm) =>
     set((state) => (state.showClearSaveConfirm === showClearSaveConfirm ? state : { showClearSaveConfirm })),

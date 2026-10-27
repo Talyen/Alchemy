@@ -4,8 +4,7 @@ import type { KeywordId } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { getKeywordTextShineColors, MAX_TEXT_SHINE_KEYWORDS } from "@/lib/keyword-text-shine";
-import { getGearInstanceAffixes, normalizeAffixRolls } from "./affixes";
-import { gearAffixCatalog } from "./affix-catalog";
+import { forEachNormalizedAffixRoll, getGearInstanceAffixes } from "./affixes";
 import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
 
@@ -19,20 +18,25 @@ function selectTextShineKeywordIds(
   const affinity = new Set(affinityKeywords);
   const preferred: KeywordId[] = [];
   const remaining: KeywordId[] = [];
-  for (const id of instanceKeywordIds) (affinity.has(id) ? preferred : remaining).push(id);
-  return [...preferred, ...remaining].slice(0, MAX_TEXT_SHINE_KEYWORDS);
+  for (const id of instanceKeywordIds) {
+    if (affinity.has(id)) {
+      preferred.push(id);
+      if (preferred.length === MAX_TEXT_SHINE_KEYWORDS) return preferred;
+    } else if (remaining.length < MAX_TEXT_SHINE_KEYWORDS) remaining.push(id);
+  }
+  return [...preferred, ...remaining.slice(0, MAX_TEXT_SHINE_KEYWORDS - preferred.length)];
 }
 
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   const keywordIds = new Set<KeywordId>();
 
-  for (const roll of normalizeAffixRolls(
+  forEachNormalizedAffixRoll(
     getGearInstanceAffixes(instance),
     gearDefinitions[instance.definitionId]?.rarity,
-  )) {
-    const affix = gearAffixCatalog[roll.id];
-    for (const keywordId of affix.visibleKeywordIds) keywordIds.add(keywordId);
-  }
+    (affix) => {
+      for (const keywordId of affix.visibleKeywordIds) keywordIds.add(keywordId);
+    },
+  );
 
   return [...keywordIds].sort();
 }

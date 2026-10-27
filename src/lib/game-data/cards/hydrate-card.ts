@@ -8,14 +8,15 @@ import { mapEffectChildren } from "../effect-tree";
 export type SavedCard = BattleCard;
 
 function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects"][number] {
-  const mapped = mapEffectChildren(effect, cloneEffect, false);
   if ((effect.kind === "damage" || effect.kind === "random-damage") && effect.damageTypePool) {
     return { ...effect, damageTypePool: [...effect.damageTypePool] };
   }
   if (effect.kind === "player-status" && effect.statusPool) {
     return { ...effect, statusPool: [...effect.statusPool] };
   }
-  return { ...mapped };
+  if (effect.kind === "chance" || effect.kind === "repeat-over-turns")
+    return mapEffectChildren(effect, cloneEffect, false);
+  return { ...effect };
 }
 
 function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {
@@ -56,9 +57,9 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
   const { consume: catalogConsume, description: _catalogDescription, ...catalogMetadata } = libraryCard;
   // Missing Consume meant reusable in complete saved content, even if the catalog now Consumes.
   const hiddenSummonConsume =
-    isCompanionSummonCard(content) &&
     !content.descriptionLines.includes(CONSUME_DESCRIPTION_LINE) &&
-    !content.description?.some((line) => line.role === "consume");
+    !content.description?.some((line) => line.role === "consume") &&
+    isCompanionSummonCard(content);
   const consume = hiddenSummonConsume
     ? undefined
     : (savedCard.consume ?? (keepSavedContent ? undefined : catalogConsume));

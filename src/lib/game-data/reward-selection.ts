@@ -1,13 +1,13 @@
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE_FRACTION } from "../game-constants";
 import { pickRandom, shuffle } from "@/lib/rng";
-import { getCardKeywords } from "./keywords";
+import { getCardKeywordView } from "./keywords";
 import { isCompanionSummonCard } from "./cards/card-pools";
 import type { BattleCard, KeywordId } from "./types";
 
 function buildKeywordFrequency(deck: BattleCard[], seedKeywords: KeywordId[]): Record<string, number> {
   const freq: Record<string, number> = {};
   for (const keyword of seedKeywords) freq[keyword] = (freq[keyword] ?? 0) + 1;
-  for (const card of deck) for (const kw of getCardKeywords(card)) freq[kw] = (freq[kw] ?? 0) + 1;
+  for (const card of deck) for (const kw of getCardKeywordView(card)) freq[kw] = (freq[kw] ?? 0) + 1;
   return freq;
 }
 
@@ -24,7 +24,7 @@ function buildAffinityPool(
   const shuffledCandidates = shuffle(candidates, activeRng);
   const scoreCard = (card: BattleCard): number => {
     let score = 0;
-    for (const kw of getCardKeywords(card)) score += freq[kw] ?? 0;
+    for (const kw of getCardKeywordView(card)) score += freq[kw] ?? 0;
     if (!deckIds?.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
     if (companionScoreBonus > 0 && isCompanionSummonCard(card)) score += companionScoreBonus;
     return score;

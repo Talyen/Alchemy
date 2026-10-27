@@ -89,8 +89,8 @@ export function resolveLootWeights({
   return normalizeLootWeights(weights, available);
 }
 
-function pickLootKind<T extends string>(weights: Record<T, number>, rng: () => number): T {
-  const selected = pickWeighted(Object.keys(weights) as T[], (kind) => weights[kind], rng);
+function pickLootKind<T extends string>(kinds: readonly T[], weights: Record<T, number>, rng: () => number): T {
+  const selected = pickWeighted(kinds, (kind) => weights[kind], rng);
   if (selected === undefined) throw new Error("Cannot select from an empty loot pool");
   return selected;
 }
@@ -104,8 +104,11 @@ function lootGroupWeights(weights: LootWeights): Record<LootGroup, number> {
   };
 }
 
+const LOOT_GROUPS: readonly LootGroup[] = ["card", "gear", "boon", "trinket"];
+const LOOT_GEAR_RARITIES: readonly LootGearRarity[] = ["basic", "astral", "unique"];
+
 export function rollLootGroup(weights: LootWeights, rng: () => number): LootGroup {
-  return pickLootKind(lootGroupWeights(weights), rng);
+  return pickLootKind(LOOT_GROUPS, lootGroupWeights(weights), rng);
 }
 
 export function rollLootGearRarity(
@@ -117,5 +120,9 @@ export function rollLootGearRarity(
     { ...weights, card: 0, boon: 0, trinket: 0 },
     { ...available, card: false, boon: false, trinket: false },
   );
-  return pickLootKind({ basic: eligible.basic, astral: eligible.astral, unique: eligible.unique }, rng);
+  return pickLootKind(
+    LOOT_GEAR_RARITIES,
+    { basic: eligible.basic, astral: eligible.astral, unique: eligible.unique },
+    rng,
+  );
 }

@@ -42,6 +42,8 @@ it("avoids publishing unchanged hover, preview, and confirmation state", () => {
     store.setAutoplayPreviewCardId(null);
     store.clearCardHover();
     store.setShowClearSaveConfirm(false);
+    store.setEnemyInspectionOpen(false);
+    store.setCardInspection(null);
     expect(updater).toHaveBeenCalledOnce();
     expect(listener).not.toHaveBeenCalled();
 

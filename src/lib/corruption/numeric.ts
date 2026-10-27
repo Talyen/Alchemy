@@ -73,9 +73,10 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta);
   const source = getCardEffect(card.effects, target);
   if (source?.kind === "companion-action") nextValue = Math.max(1, nextValue);
+  const targetAddress = source?.kind === "random-damage" ? effectAddressKey(target) : undefined;
   if (
     source?.kind === "random-damage" &&
-    !target.edits.some((edit) => effectAddressKey(edit) === effectAddressKey(target) && edit.field !== target.field)
+    !target.edits.some((edit) => effectAddressKey(edit) === targetAddress && edit.field !== target.field)
   ) {
     if (target.field === "minAmount") nextValue = Math.min(nextValue, source.maxAmount);
     if (target.field === "maxAmount") nextValue = Math.max(nextValue, source.minAmount);

@@ -106,7 +106,7 @@ function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean 
   if (effect.kind === "damage")
     return (
       effect.damageType === source ||
-      !!effect.damageTypePool?.some((type) => type === source) ||
+      !!effect.damageTypePool?.includes(source as DamageType) ||
       effect.damageTypeIfTargetFrozen === source
     );
   if (effect.kind === "random-damage")
@@ -115,7 +115,7 @@ function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean 
       (!effect.damageTypePool || effect.damageTypePool.includes(source as DamageType))
     );
   if (effect.kind === "player-status")
-    return effect.status === source || !!effect.statusPool?.some((status) => status === source);
+    return effect.status === source || !!(effect.statusPool as readonly string[] | undefined)?.includes(source);
   if (effect.kind === "heal") return source === "health";
   if (effect.kind === "restore-mana") return source === "mana";
   if (effect.kind === "gain-gold") return source === "gold";

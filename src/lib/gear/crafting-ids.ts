@@ -37,9 +37,9 @@ export function addCraftingCurrencies(
   added: Partial<Record<string, unknown>> | null | undefined,
 ): Record<CraftingCurrencyId, number> {
   const balances = normalizeCraftingCurrencies(base);
-  const payout = normalizeCraftingCurrencies(added);
+  if (!added || typeof added !== "object") return balances;
   for (const id of CRAFTING_CURRENCY_IDS) {
-    balances[id] = Math.min(Number.MAX_SAFE_INTEGER, balances[id] + payout[id]);
+    balances[id] = Math.min(Number.MAX_SAFE_INTEGER, balances[id] + sanitizeCurrencyValue(added[id]));
   }
   return balances;
 }
