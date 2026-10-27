@@ -4,7 +4,7 @@ import { enemiesByType, enemyById, type BattleCard, type EnemyType } from "@/lib
 
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_SUPPORT_TYPES, labyrinthFloorId, labyrinthNodeId } from "./data";
-import { LABYRINTH_GRID, gridKey, labyrinthGridPositions } from "./grid";
+import { LABYRINTH_GRID, gridKey, labyrinthGridPositions, neighboringGridKeys } from "./grid";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
 import { canDescendFromLabyrinthNode, floorNodes } from "./map-state";
 
@@ -66,12 +66,7 @@ export function orderTypesForPositions(
   const indexByKey = new Map(positions.map((position, index) => [gridKey(position), index]));
   const neighbors = positions.map((position) => {
     const list: number[] = [];
-    for (const key of [
-      `${position.row + 1},${position.col}`,
-      `${position.row - 1},${position.col}`,
-      `${position.row},${position.col + 1}`,
-      `${position.row},${position.col - 1}`,
-    ]) {
+    for (const key of neighboringGridKeys(position)) {
       const neighbor = indexByKey.get(key);
       if (neighbor !== undefined) list.push(neighbor);
     }
