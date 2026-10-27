@@ -112,7 +112,8 @@ export function drawCards(
     uid += 1;
   }
 
-  const refilled = amount > 0 ? refillDeck(nextDeck, nextDiscard, rng) : null;
+  const refilled =
+    amount > 0 && nextDeck.length === 0 && nextDiscard.length > 0 ? refillDeck(nextDeck, nextDiscard, rng) : null;
   return {
     deck: refilled?.deck ?? nextDeck,
     discard: refilled?.discard ?? nextDiscard,

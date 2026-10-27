@@ -21,14 +21,15 @@ export function secondaryStatusFeedbackKey(event: CombatTextEvent, lane: CombatT
   return;
 }
 
+const within = (start: number, end: number, lower: number, upper: number) => start >= lower - 0.5 && end <= upper + 0.5;
+const clips = (overflow: string) => /^(hidden|clip|scroll|auto)$/.test(overflow);
+
 function fullyVisible(element: HTMLElement, scene: HTMLElement): boolean {
   if (!element.isConnected || !scene.contains(element)) return false;
   const rect = element.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return false;
   const view = element.ownerDocument.defaultView;
   if (!view) return false;
-  const within = (start: number, end: number, lower: number, upper: number) =>
-    start >= lower - 0.5 && end <= upper + 0.5;
   if (!within(rect.left, rect.right, 0, view.innerWidth) || !within(rect.top, rect.bottom, 0, view.innerHeight))
     return false;
   for (let node: HTMLElement | null = element; node; node = node.parentElement) {
@@ -44,7 +45,6 @@ function fullyVisible(element: HTMLElement, scene: HTMLElement): boolean {
     )
       return false;
     if (node === element) continue;
-    const clips = (overflow: string) => /^(hidden|clip|scroll|auto)$/.test(overflow);
     const clipX = clips(style.overflowX) || clips(style.overflow);
     const clipY = clips(style.overflowY) || clips(style.overflow);
     if (clipX || clipY) {

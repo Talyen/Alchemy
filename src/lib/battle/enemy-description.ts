@@ -65,14 +65,15 @@ export function getEncounterEnemyAbility(card: EnemyAbilityCard, context: EnemyD
       if (!reference || reference.kind !== "damage" || reference.field !== "amount") return part;
       const original = getCardEffect(card.effects, reference);
       if (original?.kind !== "damage") return part;
-      const damage = (damageType: typeof original.damageType) =>
-        scaleEnemyAbilityDamage(context, { ...original, damageType }).amount;
-      if (original.damageTypePool?.length) {
-        const amounts = original.damageTypePool.map(damage);
+      if ((original.damageTypePool?.length ?? 0) > 1) {
+        const pool = original.damageTypePool!;
+        const damage = (damageType: typeof original.damageType) =>
+          scaleEnemyAbilityDamage(context, { ...original, damageType }).amount;
+        const amounts = pool.map(damage);
         if (amounts.some((amount) => amount !== amounts[0] && !(Number.isNaN(amount) && Number.isNaN(amounts[0])))) {
           // The structured damage line places its type label immediately after its magnitude.
           line.parts[index + 1] = " damage";
-          return original.damageTypePool.map((type, i) => `${amounts[i]} ${capitalizeWord(type)}`).join(" or ");
+          return pool.map((type, i) => `${amounts[i]} ${capitalizeWord(type)}`).join(" or ");
         }
       }
       return part;
@@ -132,12 +133,9 @@ const TRAIT_DESCRIPTION_SCALERS: Record<
 };
 
 export function getEncounterEnemyTrait(trait: EnemyTrait, context: EnemyDescriptionContext): EnemyTrait {
-  const room = (amount: number) => Math.round(amount * context.roomScalingMultiplier);
   const scaler = TRAIT_DESCRIPTION_SCALERS[trait.id];
-  const description = scaler
-    ? scaler(trait.description, room, context)
-    : ROOM_SCALED_TRAITS.has(trait.id)
-      ? scaleTraitNumbers(trait.description, room)
-      : trait.description;
+  if (!scaler && !ROOM_SCALED_TRAITS.has(trait.id)) return trait;
+  const room = (amount: number) => Math.round(amount * context.roomScalingMultiplier);
+  const description = scaler ? scaler(trait.description, room, context) : scaleTraitNumbers(trait.description, room);
   return description === trait.description ? trait : { ...trait, description };
 }

@@ -113,21 +113,24 @@ function lineFitsEffects(
     if (typeof part === "string") return true;
     // Empty references were already tolerated here; saved descriptions reject them.
     if (part.references.length && cardMagnitudeValue(after, part) === null) return false;
-    return part.references.every(
-      (reference) => shape(getCardEffect(before, reference)) === shape(getCardEffect(after, reference)),
-    );
+    return part.references.every((reference) => {
+      const original = getCardEffect(before, reference);
+      const projected = getCardEffect(after, reference);
+      return original === projected || shape(original) === shape(projected);
+    });
   });
 }
 
 /** Split compressed clauses only when their live values no longer share one literal. */
 export function projectCardDescription(card: BattleCard, effects: BattleCardEffect[], rebuild: boolean): BattleCard {
   const previous = getCardDescription(card);
-  const shapes = new Map<BattleCardEffect | undefined, string>();
+  let shapes: Map<BattleCardEffect | undefined, string> | undefined;
   const shape = (effect: BattleCardEffect | undefined) => {
-    let value = shapes.get(effect);
+    const cache = (shapes ??= new Map<BattleCardEffect | undefined, string>());
+    let value = cache.get(effect);
     if (value === undefined) {
       value = ruleShape(effect);
-      shapes.set(effect, value);
+      cache.set(effect, value);
     }
     return value;
   };

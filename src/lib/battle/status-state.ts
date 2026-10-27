@@ -85,9 +85,9 @@ export function addEnemyStatus(
   if (options.attackBuildup !== false && delta > 0 && benefit && hasEncounterBenefit(state, benefit))
     delta *= LABYRINTH_MODIFIER_CONFIG.double;
   const traitAdjustedDelta =
+    delta > 0 &&
     ((status === "stun" && hasEnemyTrait(state, "braced")) ||
-      (status === "freeze" && hasEnemyTrait(state, "winterborn"))) &&
-    delta > 0
+      (status === "freeze" && hasEnemyTrait(state, "winterborn")))
       ? halveRounded(delta)
       : delta;
   let nextState = setEnemyStatus(state, status, state.enemyStatuses[status] + traitAdjustedDelta);

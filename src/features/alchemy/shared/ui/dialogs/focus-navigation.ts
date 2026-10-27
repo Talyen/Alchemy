@@ -16,10 +16,12 @@ export function focusPreviousControl(): void {
 function activeFocusRoot(): ParentNode {
   const owned = activeDialogFocusRoot();
   if (owned) return owned;
-  const overlays = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [data-modal-content]')].filter(
-    isFocusAvailable,
-  );
-  return overlays.at(-1) ?? document.querySelector("[data-screen-content]:not([inert])") ?? document;
+  const overlays = document.querySelectorAll<HTMLElement>('[role="dialog"], [data-modal-content]');
+  for (let index = overlays.length - 1; index >= 0; index--) {
+    const overlay = overlays[index]!;
+    if (isFocusAvailable(overlay)) return overlay;
+  }
+  return document.querySelector("[data-screen-content]:not([inert])") ?? document;
 }
 
 export type FocusDirection = "left" | "right" | "up" | "down";

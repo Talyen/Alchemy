@@ -133,7 +133,10 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
 
 export function processEnemyAbility(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (getBattleOutcome(state) !== null) return state;
-  const candidates = state.currentEnemy.abilityIds.filter((id) => id !== state.lastEnemyAbilityId);
+  const candidates =
+    state.lastEnemyAbilityId === null
+      ? state.currentEnemy.abilityIds
+      : state.currentEnemy.abilityIds.filter((id) => id !== state.lastEnemyAbilityId);
   if (candidates.length === 0) throw new Error(`Enemy has no available ability: ${state.currentEnemy.id}`);
   const id = pickRandom(candidates, getBattleRng(state));
   if (!id) throw new Error(`Enemy has no available ability: ${state.currentEnemy.id}`);
