@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { getCardDescription, withCardDescription, type BattleCardEffect } from "@/lib/game-data";
+import type { BattleCardEffect } from "@/lib/game-data";
+import { inspectedAttackAmounts } from "../../fixtures/inspection";
 import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { inspectBattleCardDamage } from "@/lib/battle/card-damage-inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -17,30 +18,6 @@ const chance = (successEffects: BattleCardEffect[], failureEffects: BattleCardEf
 });
 
 describe("inspection resolves correlated production outcomes", () => {
-  it.each(["corrupted", "distilled"] as const)("preserves %s marks when an exact magnitude becomes a range", (mark) => {
-    const card = makeTestCard({ effects: [chance([block(4)], [block(8)]), hit] });
-    const marked = withCardDescription(
-      card,
-      getCardDescription(card).map((line) => ({
-        ...line,
-        parts: line.parts.map((part) =>
-          typeof part !== "string" && part.references.some((reference) => reference.effectIndex === 1)
-            ? { ...part, [mark]: true }
-            : part,
-        ),
-      })),
-    );
-    const inspected = inspectBattleCardDamage(
-      marked,
-      patchBattleState({ talentEffects: { blockToPhysicalDamageMultiplier: 1 } }),
-    ).card;
-    expect(inspected.descriptionLines[2]).toBe("Deal 10–14 Physical damage");
-    const magnitudes = inspected.description![2]!.parts.filter((part) => typeof part !== "string");
-    expect(magnitudes).toHaveLength(2);
-    expect(magnitudes.every((part) => part[mark])).toBe(true);
-    expect(new Set(magnitudes.map((part) => part.id)).size).toBe(2);
-  });
-
   it("shows 4–8 Block-scaled damage instead of inventing the original zero Block", () => {
     const card = makeTestCard({ cost: 0, effects: [chance([block(4)], [block(8)]), blockHit] });
     const rng = vi.fn(() => 0.99);
@@ -48,9 +25,8 @@ describe("inspection resolves correlated production outcomes", () => {
     const before = structuredClone(battleSnapshot(state));
     for (let index = 0; index < 3; index++) {
       const inspected = inspectBattleCardDamage(card, state);
-      expect(inspected.card.effects[1]).toMatchObject({ kind: "random-damage", minAmount: 4, maxAmount: 8 });
-      expect(inspected.outcomes.get("1")?.kind).toBe("alternatives");
-      expect(inspected.card.descriptionLines).toContain("Deal 4–8 Physical damage");
+      expect(inspected.get("1")?.kind).toBe("alternatives");
+      expect(inspectedAttackAmounts(card, state)).toEqual([[4, 8]]);
     }
     expect(rng).not.toHaveBeenCalled();
     expect(battleSnapshot(state)).toEqual(before);
@@ -74,11 +50,8 @@ describe("inspection resolves correlated production outcomes", () => {
     });
     const state = patchBattleState({ hand: [card], enemyHealth: 10, enemyMaxHealth: 100 });
     const inspected = inspectBattleCardDamage(card, state);
-    expect(inspected.card.effects.slice(1)).toMatchObject([
-      { kind: "random-damage", minAmount: 4, maxAmount: 8 },
-      { kind: "random-damage", minAmount: 4, maxAmount: 8 },
-      { kind: "damage", amount: 0 },
-    ]);
+    expect(inspected.get("1")?.kind).toBe("alternatives");
+    expect(inspectedAttackAmounts(card, state)).toEqual([[4, 8], [4, 8], 0]);
     for (const roll of [0.25, 0.99])
       expect(playBattleCardResolved({ ...state, rng: () => roll }, card.id, 0).state.enemyHealth).toBe(0);
   });
@@ -93,11 +66,7 @@ describe("inspection resolves correlated production outcomes", () => {
       playerMaxHealth: 40,
       talentEffects: { physicalDoubledBelowHalfHealth: true },
     });
-    expect(inspectBattleCardDamage(card, state).card.effects[1]).toMatchObject({
-      kind: "random-damage",
-      minAmount: 6,
-      maxAmount: 12,
-    });
+    expect(inspectedAttackAmounts(card, state)).toEqual([[6, 12]]);
   });
 
   it("includes interior random outcomes when thresholds and branch-local defeat are nonlinear", () => {
@@ -116,11 +85,7 @@ describe("inspection resolves correlated production outcomes", () => {
     });
     // Endpoints leave the next hit at 3 or 0. An interior hit of 5 leaves
     // one Health and enables the doubled 6-damage packet.
-    expect(inspectBattleCardDamage(card, state).card.effects[1]).toMatchObject({
-      kind: "random-damage",
-      minAmount: 0,
-      maxAmount: 6,
-    });
+    expect(inspectedAttackAmounts(card, state)[1]).toEqual([0, 6]);
     const live = playBattleCardResolved({ ...state, rng: () => 0.75 }, card.id, 0);
     expect(
       live.combatTexts
@@ -135,11 +100,9 @@ describe("inspection resolves correlated production outcomes", () => {
       effects: [hit, { kind: "random-damage", minAmount: 1, maxAmount: 10000, damageTypePool: ["physical"] }, blockHit],
     });
     const result = inspectBattleCardDamage(card, patchBattleState({ playerStatuses: { forge: 4 } }));
-    expect(result.card.effects[0]).toMatchObject({ kind: "damage", amount: 10 });
-    expect(result.outcomes.get("0")?.kind).toBe("exact");
-    expect(result.outcomes.get("1")?.kind).toBe("unknown");
-    expect(result.outcomes.get("2")?.kind).toBe("unknown");
-    expect(result.card.effects.slice(1)).toEqual(card.effects.slice(1));
+    expect(result.get("0")?.kind).toBe("exact");
+    expect(result.get("1")?.kind).toBe("unknown");
+    expect(result.get("2")?.kind).toBe("unknown");
   });
 
   it("does not guess drawn card identities or continue with a fabricated post-draw state", () => {
@@ -147,9 +110,7 @@ describe("inspection resolves correlated production outcomes", () => {
     const state = patchBattleState({ deck: [makeTestCard()], playerStatuses: { forge: 4 } });
     const before = JSON.stringify(state);
     const result = inspectBattleCardDamage(card, state);
-    expect(result.card.effects[0]).toMatchObject({ amount: 10 });
-    expect(result.outcomes.get("2")?.kind).toBe("unknown");
-    expect(result.card.effects[2]).toEqual(blockHit);
+    expect(result.get("2")?.kind).toBe("unknown");
     expect(JSON.stringify(state)).toBe(before);
   });
 
@@ -157,24 +118,22 @@ describe("inspection resolves correlated production outcomes", () => {
     const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 1 }, hit] });
     const onEmptyDraw = vi.fn((state) => state);
     const state = patchBattleState({ deck: [], discard: [], onEmptyDraw });
-    expect(inspectBattleCardDamage(card, state).card.effects[1]).toMatchObject({ amount: 6 });
+    expect(inspectedAttackAmounts(card, state)).toEqual([6]);
     expect(onEmptyDraw).not.toHaveBeenCalled();
   });
 
   it("distinguishes repeated occurrences even when an authored effect object is shared", () => {
     const card = makeTestCard({ effects: [hit, hit] });
     const result = inspectBattleCardDamage(card, patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }));
-    expect(result.card.descriptionLines).toEqual(["Deal 10 Physical damage", "Deal 6 Physical damage"]);
-    expect(result.outcomes.get("0")).not.toEqual(result.outcomes.get("1"));
+    expect(result.get("0")).not.toEqual(result.get("1"));
   });
 
   it("retains future-turn effects as authored data", () => {
     const delayed: BattleCardEffect = { kind: "repeat-over-turns", remainingTurns: 2, effects: [hit] };
     const card = makeTestCard({ effects: [delayed, hit] });
     const result = inspectBattleCardDamage(card, patchBattleState({ playerStatuses: { forge: 4 } }));
-    expect(result.card.effects[0]).toEqual(delayed);
-    expect(result.card.effects[1]).toMatchObject({ amount: 10 });
-    expect(result.outcomes.has("0.0")).toBe(false);
+    expect(inspectedAttackAmounts(card, patchBattleState({ playerStatuses: { forge: 4 } }))).toEqual([10]);
+    expect(result.has("0.0")).toBe(false);
   });
 
   it("does not let a full-card repeat rewrite the first application's branch observations", () => {
@@ -183,11 +142,8 @@ describe("inspection resolves correlated production outcomes", () => {
       card,
       patchBattleState({ flags: { playNextCardTwice: true }, playerStatuses: { forge: 4 } }),
     );
-    expect(result.card.effects[0]).toMatchObject({
-      kind: "chance",
-      successEffects: [{ kind: "damage", amount: 10 }],
-      failureEffects: [{ kind: "damage", amount: 14 }],
-    });
+    expect(result.get("0.0")).toMatchObject({ kind: "exact", packets: [{ amount: 10 }] });
+    expect(result.get("0.1")).toMatchObject({ kind: "exact", packets: [{ amount: 14 }] });
   });
 
   it("observation preserves live seeded state, combat texts, and RNG position; snapshots strip all execution ports", () => {

@@ -82,7 +82,7 @@ Consume and tags before ordinary dispatch.
 ## Card utility ownership
 
 [`battle/card-utility-resolution.ts`](../../battle/card-utility-resolution.ts)
-owns the typed utility-effect table shared by live handlers and damage inspection:
+owns the typed utility-effect table shared by live handlers and reaction scoring:
 Health, Mana, Mana Crystals, Gold, player statuses, cleansing, Armor removal,
 Companion summoning/buffs, and armed action flags. It owns amount calculations,
 Potion potency, conditional eligibility, resource limits, and effect feedback.

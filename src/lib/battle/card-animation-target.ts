@@ -122,7 +122,7 @@ export function getBattleCardAnimationTarget(card: BattleCard, snapshot: BattleS
     }
     const kind = numericKind(effect);
     if (!kind) return;
-    const outcome = inspected.outcomes.get(path.join("."));
+    const outcome = inspected.get(path.join("."));
     const amount = kind === "attack" ? knownAttackAmount(outcome) : knownUtilityAmount(effect, outcome);
     if (amount === undefined) {
       unknown = true;

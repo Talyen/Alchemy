@@ -57,7 +57,7 @@ describe("card flight follows the dominant direct result", () => {
       playerMaxHealth: 40,
       trinketEffects: { ironwoodBucklerThornsOnBlock: 30 },
     });
-    const observed = inspectBattleCardDamage(card, state).outcomes.get("0")?.directAmounts;
+    const observed = inspectBattleCardDamage(card, state).get("0")?.directAmounts;
     expect(observed).toEqual({
       kind: "exact",
       amounts: [{ target: "player", kind: "status", stat: "block", amount: 2 }],
