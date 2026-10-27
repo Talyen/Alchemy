@@ -121,7 +121,8 @@ function prepareCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInsta
     case "sprig-of-growth": {
       if (!rarity || item.affixes.length >= GEAR_AFFIX_COUNT[rarity].max)
         return "No affix slots or eligible affixes available.";
-      const presentIds = new Set(item.affixes.map((affix) => affix.id));
+      const presentIds = new Set<string>();
+      for (const affix of item.affixes) presentIds.add(affix.id);
       const available = buildEligibleAffixPool(definition, presentIds);
       if (!available.length) return "No affix slots or eligible affixes available.";
       return (rng) => {

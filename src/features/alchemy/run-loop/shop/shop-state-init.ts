@@ -56,6 +56,8 @@ export function resampleCardShopOfferings(
   return [...novel, ...selectRewardCards(deck, pool, count - novel.length, novel, rng)];
 }
 
+const NO_CURRENT_TRINKETS: ReadonlySet<string> = new Set();
+
 // Initial visits sample unconditionally: shop rooms only generate once their
 // loot is eligible, while refreshes re-check depth in case it changed.
 function sampleUnownedTrinkets(
@@ -63,13 +65,15 @@ function sampleUnownedTrinkets(
   ownedIds: readonly string[] = [],
   currentIds: readonly string[] = [],
 ): TrinketEntry[] {
-  const owned = new Set(ownedIds);
-  const available = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  const novel = sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, new Set(currentIds), (entry) => entry.id);
+  const owned = ownedIds.length ? new Set(ownedIds) : undefined;
+  const available = owned ? trinketLibrary.filter((entry) => !owned.has(entry.id)) : trinketLibrary;
+  const current = currentIds.length ? new Set(currentIds) : NO_CURRENT_TRINKETS;
+  const novel = sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, current, (entry) => entry.id);
   if (novel.length >= TRINKET_SHOP_OFFERED) return novel;
   // Too few unseen offerings: top up from the same pool, keeping only the
   // already-sampled novel picks excluded (current shelf items may return).
-  const novelIds = new Set(novel.map((entry) => entry.id));
+  const novelIds = new Set<string>();
+  for (const entry of novel) novelIds.add(entry.id);
   return [
     ...novel,
     ...sampleItemsExcluding(available, TRINKET_SHOP_OFFERED - novel.length, rng, novelIds, (entry) => entry.id),
@@ -127,7 +131,7 @@ export function resampleEquipmentShopOfferings(
   if (novel.length >= EQUIPMENT_SHOP_OFFERED) return novel;
   const selected = new Set<string | undefined>();
   for (const item of novel) selected.add(gearDefinitions[item.definitionId]?.baseItemId);
-  const fallbackBases = baseItems.filter((id) => !selected.has(id));
+  const fallbackBases = selected.size ? baseItems.filter((id) => !selected.has(id)) : baseItems;
   return [...novel, ...sample(EQUIPMENT_SHOP_OFFERED - novel.length, fallbackBases.length ? fallbackBases : baseItems)];
 }
 

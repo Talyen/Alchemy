@@ -49,7 +49,12 @@ export function createRolledGearInstance(
   createId: () => string = createInstanceId,
 ): GearInstance {
   const affixCount = rollAffixCount(definition.rarity, rng);
-  return createGearInstance(definition, rollAffixes(definition, affixCount, rng), createId);
+  const affixes = rollAffixes(definition, affixCount, rng);
+  return {
+    instanceId: createId(),
+    definitionId: definition.id,
+    affixes: definition.rarity === "unique" ? [] : affixes,
+  };
 }
 
 export function generateGearInstanceForBaseItem(

@@ -121,6 +121,8 @@ export function getCardDisplayTitle(card: TitleCard): string {
   return cardTitleMessage(card).replace(/<\/?(?:modifier|corruption)>/g, "");
 }
 
+const CARD_TITLE_TAGS: ReadonlySet<string> = new Set(["modifier", "corruption"]);
+
 export function CardTitle({ card, className }: { card: TitleCard; className?: string }) {
   const i18n = useGameTranslation();
   const title = i18n.read(() => cardTitleMessage(card));
@@ -143,7 +145,7 @@ export function CardTitle({ card, className }: { card: TitleCard; className?: st
   }
   let children: ReactNode = title;
   try {
-    children = render(i18n.read(() => parseRichText(title, new Set(["modifier", "corruption"]))));
+    children = render(i18n.read(() => parseRichText(title, CARD_TITLE_TAGS)));
   } catch {
     /* Keep unknown legacy titles readable. */
   }

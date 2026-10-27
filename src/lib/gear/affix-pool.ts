@@ -37,6 +37,7 @@ export function buildEligibleAffixPool(
 }
 
 export function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {
+  if (count === 0) return [];
   const remaining = createEligibleAffixPool(definition);
   const effectiveCount = Math.min(count, remaining.length);
   const selected: GearAffixRoll[] = [];

@@ -102,7 +102,8 @@ export function selectRewardCards(
 
   // Ownership changes preference, not the number of promised choices.
   if (selected.length < count) {
-    const selectedIds = new Set(selected.map((card) => card.id));
+    const selectedIds = new Set<string>();
+    for (const card of selected) selectedIds.add(card.id);
     for (const card of shuffle(
       pool.filter((candidate) => !selectedIds.has(candidate.id)),
       rng,

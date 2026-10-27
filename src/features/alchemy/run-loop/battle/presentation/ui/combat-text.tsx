@@ -48,6 +48,7 @@ function animationFor(lane: CombatTextLane, lifetimeMs: number) {
     transition: { duration: lifetimeMs / 1000, times: times.map((time) => time / lifetimeMs), ease: "linear" as const },
   };
 }
+const CORNER_GROWTH = (combatTextFrame("benefit", 50, COMBAT_TEXT_LIFETIME_MS).scale - 1) * 50;
 const animations = {
   impact: animationFor("impact", COMBAT_TEXT_LIFETIME_MS),
   benefit: animationFor("benefit", COMBAT_TEXT_LIFETIME_MS),
@@ -156,7 +157,7 @@ function FeedbackFlight({
   const quiet = lane === "benefit" || lane === "setback";
   // Percent translations measure the label itself, not the portrait. Reserve its
   // peak pop footprint so both narrow heroes and wide bosses sit at the corner.
-  const cornerGrowth = staticMotion ? 0 : (combatTextFrame("benefit", 50, COMBAT_TEXT_LIFETIME_MS).scale - 1) * 50;
+  const cornerGrowth = staticMotion ? 0 : CORNER_GROWTH;
   const cornerInset = "calc(6px * var(--content-scale, 1))";
   const route = combatTextRoute(lane, spread);
   const rowOffset = staticMotion ? 0 : route.row;
