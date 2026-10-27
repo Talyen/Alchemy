@@ -1,17 +1,9 @@
 const { isSteamCloudEnabled } = require("./steam-context.cjs");
+const { createSerialOperations } = require("./serial-operations.cjs");
 
 /** Cloud transport belongs to the process, which survives renderer replacement. */
 function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOwner, maxPayloadBytes }) {
-  let lane = Promise.resolve();
-  function enqueue(operation) {
-    const result = lane.then(operation);
-    // A failed request settles only its caller, preserving later operations.
-    lane = result.then(
-      () => undefined,
-      () => undefined,
-    );
-    return result;
-  }
+  const lane = createSerialOperations();
   async function read(slot) {
     const { name } = resolveSlot(slot);
     const client = getSteam();
@@ -51,9 +43,9 @@ function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOw
   }
 
   return {
-    read: (slot) => enqueue(() => read(slot)),
-    write: (data, slot) => enqueue(() => write(data, slot)),
-    remove: (slot) => enqueue(() => remove(slot)),
+    read: (slot) => lane.enqueue(() => read(slot)),
+    write: (data, slot) => lane.enqueue(() => write(data, slot)),
+    remove: (slot) => lane.enqueue(() => remove(slot)),
   };
 }
 

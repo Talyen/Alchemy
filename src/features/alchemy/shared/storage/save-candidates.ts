@@ -3,6 +3,7 @@ import { getBattleOutcome } from "@/lib/battle";
 import {
   SaveDataSchema,
   isCombatGoldOverride,
+  readRawCombatGold,
   safeParseWithErrors,
   getCandidateSavedAt,
   getSaveCompatibility,
@@ -68,12 +69,7 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
   const rawGold = raw.gold;
   // Live combat gold intentionally overrides the purse in SaveDataSchema;
   // that override is not a repair.
-  const rawActivity = recordActivity(rawActiveRun);
-  const rawCombatCandidate = rawActivity.kind === "battle" ? rawActivity.data : undefined;
-  const rawCombat = isRecord(rawCombatCandidate) ? rawCombatCandidate : undefined;
-  const rawBattleCandidate = rawCombat?.battleState;
-  const rawBattle = isRecord(rawBattleCandidate) ? rawBattleCandidate : undefined;
-  const rawCombatGold = rawBattle?.gold;
+  const rawCombatGold = readRawCombatGold(raw);
   if (rawGold !== undefined && rawGold !== normalized.gold && !isCombatGoldOverride(rawCombatGold, normalized.gold)) {
     warnings.push(`Field "gold" was repaired (raw ${JSON.stringify(rawGold)} -> ${normalized.gold})`);
   }

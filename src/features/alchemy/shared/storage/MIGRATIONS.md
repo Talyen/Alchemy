@@ -406,6 +406,10 @@ process interruption; submission of unfinished renderer work at shutdown is best
 Failure releases each lane; failed loads reject their caller without blocking later
 work. Writes cannot overtake deletion. Demo import, its local write and initialization
 receipt belong to one load operation; a following clear waits, then deletes the import.
+Native disk, Cloud and receipt lanes share `desktop/serial-operations.cjs` while
+remaining independent queues. `desktop/save-profile.cjs` owns the local ring paths:
+temporary files protect an established profile and are cleared, but are not read
+as save or demo-import candidates.
 Draining and backend replacement account for all queued operations, including loads,
 initialization writes, failure notifications and progress receipts from immediate
 saves with no awaiting caller. Loads and successful clears resume writes only when

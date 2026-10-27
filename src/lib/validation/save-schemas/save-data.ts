@@ -81,7 +81,7 @@ const EquippedTrinketsSchema = z
   .catch(createEmptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
 
-function readRawCombatGold(value: unknown): unknown {
+export function readRawCombatGold(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const save = value as Record<string, unknown>;
   const run = save.activeRun as { activity?: { kind?: unknown; data?: { battleState?: { gold?: unknown } } } } | null;
