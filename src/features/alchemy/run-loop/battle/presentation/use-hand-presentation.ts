@@ -26,10 +26,11 @@ export function useHandPresentation(store: BattlePresentationStore, battleState:
     })),
   );
   const playableHandCardKeys = useMemo(() => getPlayableHandCardKeys(battleState), [battleState]);
-  const interactiveHandCardKeys = useMemo(
-    () => new Set([...playableHandCardKeys].filter((key) => !presentation.hiddenHandCardKeys.includes(key))),
-    [presentation.hiddenHandCardKeys, playableHandCardKeys],
-  );
+  const interactiveHandCardKeys = useMemo(() => {
+    const interactive = new Set<string>();
+    for (const key of playableHandCardKeys) if (!presentation.hiddenHandCardKeys.includes(key)) interactive.add(key);
+    return interactive;
+  }, [presentation.hiddenHandCardKeys, playableHandCardKeys]);
   return { ...presentation, playableHandCardKeys, interactiveHandCardKeys };
 }
 

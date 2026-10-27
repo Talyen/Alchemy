@@ -42,17 +42,18 @@ export function buildDescriptionMessage(
   const source = parts
     .map((part) => {
       const words = part.text.replace(pattern, (word) => {
-        const resourceId = resources ? RESOURCE_IDS.get(word.toLowerCase()) : undefined;
+        const normalizedWord = word.toLowerCase();
+        const resourceId = resources ? RESOURCE_IDS.get(normalizedWord) : undefined;
         if (resourceId) {
           const name = `resource${resourceIndex++}`;
           slots[name] = { resourceId };
           return `<${name}>${word}</${name}>`;
         }
-        const keywordId = keywordAliasMap.get(word.toLowerCase());
+        const keywordId = keywordAliasMap.get(normalizedWord);
         if (!keywordId) return word;
         const name = `keyword${keywordIndex++}`;
         slots[name] = { keywordId };
-        return `<${name}>${CANONICAL_KEYWORDS.get(word.toLowerCase()) ?? word}</${name}>`;
+        return `<${name}>${CANONICAL_KEYWORDS.get(normalizedWord) ?? word}</${name}>`;
       });
       if (!part.magnitudeId) return words;
       const name = `magnitude${magnitudeIndex++}`;

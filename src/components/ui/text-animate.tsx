@@ -42,7 +42,7 @@ export function TextAnimate({
   // Split on whitespace runs but keep the separators so intentional spacing
   // and line breaks survive `whitespace-pre-wrap` instead of collapsing.
   const tokens = useMemo(() => children.split(/(\s+)/).filter((part) => part.length > 0), [children]);
-  const wordCount = useMemo(() => tokens.filter((part) => !/^\s+$/.test(part)).length, [tokens]);
+  const wordCount = useMemo(() => tokens.reduce((count, part) => count + Number(!/^\s+$/.test(part)), 0), [tokens]);
   const staggerChildren = wordCount > 0 ? duration / wordCount : 0.05;
   const containerVariants = useMemo<Variants>(
     () => ({

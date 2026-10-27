@@ -131,8 +131,11 @@ export function buildFindings(
     }
   }
 
-  const bossCandidates = battleMetrics.byEnemy.filter((enemy) => enemy.boss && enemy.encounters >= 5);
-  const weakestBoss = [...bossCandidates].sort((a, b) => a.winRate - b.winRate)[0];
+  let weakestBoss: (typeof battleMetrics.byEnemy)[number] | undefined;
+  for (const enemy of battleMetrics.byEnemy) {
+    if (enemy.boss && enemy.encounters >= 5 && (!weakestBoss || enemy.winRate < weakestBoss.winRate))
+      weakestBoss = enemy;
+  }
   if (weakestBoss && weakestBoss.winRate < 85) {
     findings.push({
       id: "boss-pressure",

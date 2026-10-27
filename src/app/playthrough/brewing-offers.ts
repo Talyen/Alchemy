@@ -49,8 +49,8 @@ export function offerBrewingChoices(
     const combinations = candidates.filter((c) => c.kind === "mix");
     const useful =
       kind === "new"
-        ? activity.data.offers.filter((card) => potionPurchaseScore(card, run.runDeck) > 0).length
-        : combinations.filter((c) => c.improvement > 0).length;
+        ? activity.data.offers.reduce((count, card) => count + Number(potionPurchaseScore(card, run.runDeck) > 0), 0)
+        : combinations.reduce((count, c) => count + Number(c.improvement > 0), 0);
     opportunities.push({
       kind: kind === "new" ? "campfire-new" : "campfire-mix",
       eligible: kind === "new" ? activity.data.offers.length : combinations.length,
@@ -90,7 +90,7 @@ export function offerBrewingChoices(
     kind: "brew",
     eligible: brewScores.length,
     affordable: !activity.data.brewUsed && profile.gold >= price ? brewScores.length : 0,
-    beneficial: brewScores.filter((score) => score > 0).length,
+    beneficial: brewScores.reduce((count, score) => count + Number(score > 0), 0),
     reason: !enabled
       ? "disabled"
       : activity.data.brewUsed
@@ -107,11 +107,12 @@ export function offerBrewingChoices(
   for (const kind of ["mix", "distill"] as const) {
     const serviceOpen = isServiceOpen(kind);
     const selected = candidates.filter((c) => c.kind === kind);
+    const beneficial = selected.reduce((count, c) => count + Number(c.improvement > 0), 0);
     opportunities.push({
       kind,
       eligible: selected.length,
       affordable: serviceOpen && profile.gold >= price ? selected.length : 0,
-      beneficial: selected.filter((c) => c.improvement > 0).length,
+      beneficial,
       reason: !enabled
         ? "disabled"
         : !serviceOpen
@@ -120,7 +121,7 @@ export function offerBrewingChoices(
             ? "ineligible"
             : profile.gold < price
               ? "insufficient-gold"
-              : selected.some((c) => c.improvement > 0)
+              : beneficial > 0
                 ? "available"
                 : "no-improvement",
     });
@@ -172,7 +173,11 @@ export function offerBrewingChoices(
     );
   // A refresh also needs enough remaining Gold to buy the cheapest visible Potion.
   // This uses visible prices only; it never peeks at future shop RNG.
-  const hasPotionRoom = run.runDeck.filter(isPotionCard).length < 4;
+  let potionCount = 0;
+  for (const card of run.runDeck) {
+    if (isPotionCard(card) && ++potionCount === 4) break;
+  }
+  const hasPotionRoom = potionCount < 4;
   const cheapest = Math.min(...activity.data.potions.map((card) => actions.getPotionBuyPrice(card)));
   const worthwhile =
     !usefulAvailable &&

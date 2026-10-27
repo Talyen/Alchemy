@@ -99,7 +99,10 @@ export function brewCandidates(deck: readonly BattleCard[]): BrewCandidate[] {
 }
 
 export function potionPurchaseScore(card: BattleCard, deck: readonly BattleCard[]): number {
-  const count = deck.filter(isPotionCard).length;
+  let count = 0;
+  for (const owned of deck) {
+    if (isPotionCard(owned) && ++count === 4) break;
+  }
   const value = potionUtility(card);
   const inferiorCopy = deck.some((owned) => owned.id === card.id && potionUtility(owned) > value);
   return count >= 4 || value <= 0 || inferiorCopy ? -1 : 1 + value / 10;

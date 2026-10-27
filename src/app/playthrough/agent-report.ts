@@ -77,12 +77,9 @@ function buildCohortSummary(cohort: string, cohortResults: CareerResult[]): Agen
         "Compare brewing on/off with matched starting saves and seeds, and inspect eligible/affordable visits before tuning cards.",
     });
   }
-  const outcomes = Object.fromEntries(
-    [...new Set(runs.map((run) => run.outcome))].map((outcome) => [
-      outcome,
-      runs.filter((run) => run.outcome === outcome).length,
-    ]),
-  );
+  const outcomeCounts = new Map<string, number>();
+  for (const run of runs) outcomeCounts.set(run.outcome, (outcomeCounts.get(run.outcome) ?? 0) + 1);
+  const outcomes = Object.fromEntries(outcomeCounts);
   return {
     cohort,
     planned: cohortResults.length,
@@ -118,7 +115,9 @@ export function buildAgentPlaythroughSummary(
   const groups = new Map<string, CareerResult[]>();
   for (const result of results) {
     const cohort = careerCohort(result);
-    groups.set(cohort, [...(groups.get(cohort) ?? []), result]);
+    const group = groups.get(cohort);
+    if (group) group.push(result);
+    else groups.set(cohort, [result]);
   }
   const cohorts = [...groups].map(([cohort, cohortResults]) => buildCohortSummary(cohort, cohortResults));
   const workerFailures = (options.workerFailures ?? []).filter(Boolean).slice(0, 3);
@@ -150,8 +149,12 @@ export function buildAgentPlaythroughSummary(
       const runs = cohort.runOutcomes.reduce((sum, run) => sum + run.runs, 0);
       return { hero, rate: rate(victories, runs), runs };
     });
-    const weakest = [...heroRates].sort((a, b) => a.rate - b.rate)[0]!;
-    const strongest = [...heroRates].sort((a, b) => b.rate - a.rate)[0]!;
+    let weakest = heroRates[0]!;
+    let strongest = weakest;
+    for (const entry of heroRates.slice(1)) {
+      if (entry.rate < weakest.rate) weakest = entry;
+      if (entry.rate > strongest.rate) strongest = entry;
+    }
     findings.unshift({
       id: "hero-variance",
       kind: "balance-signal",
@@ -179,11 +182,12 @@ export function buildAgentPlaythroughSummary(
         ),
     ),
   ];
+  const completed = results.reduce((count, result) => count + Number(result.status === "completed"), 0);
   return {
     version: 1,
     planned: options.planned ?? results.length,
-    completed: results.filter((result) => result.status === "completed").length,
-    incomplete: results.filter((result) => result.status !== "completed").length,
+    completed,
+    incomplete: results.length - completed,
     ...(options.codeIdentity ? { codeIdentity: options.codeIdentity } : {}),
     cohorts,
     findings,

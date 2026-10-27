@@ -72,7 +72,10 @@ export function useInitialLoadReady({
       };
     }
 
-    let loadState = createStartupLoadState(essentialGameArt.filter(Boolean).length, initialBootstrapReadyRef.current);
+    let loadState = createStartupLoadState(
+      essentialGameArt.reduce((count, src) => count + Number(Boolean(src)), 0),
+      initialBootstrapReadyRef.current,
+    );
     let rafId = 0;
     let published = -1;
 

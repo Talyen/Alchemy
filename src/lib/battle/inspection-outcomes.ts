@@ -138,9 +138,12 @@ export function inspectResolutionOutcomes(
       },
       descriptionMagnitude: (field, amount, source = current) => {
         if (!source || !sources.has(source)) return;
-        const magnitudes = outcome.magnitudes.get(source) ?? new Map<ObservedMagnitudeField, number>();
+        let magnitudes = outcome.magnitudes.get(source);
+        if (!magnitudes) {
+          magnitudes = new Map<ObservedMagnitudeField, number>();
+          outcome.magnitudes.set(source, magnitudes);
+        }
         magnitudes.set(field, amount);
-        outcome.magnitudes.set(source, magnitudes);
       },
     };
     const decide = (decision: RandomDecision): number => {

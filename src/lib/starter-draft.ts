@@ -5,10 +5,14 @@ import { getImmediateDamage, getImmediateDefense } from "./battle";
 export function createStarterDraftChoices(draftedCards: BattleCard[], rng: () => number): BattleCard[] {
   const pool = getOfferableCardPool();
   const selected: BattleCard[] = [];
-  for (const eligible of [
-    pool.filter((card) => !card.consume && getImmediateDamage(card) > 0),
-    pool.filter((card) => !card.consume && getImmediateDefense(card) > 0),
-  ]) {
+  const attacks: BattleCard[] = [];
+  const defenses: BattleCard[] = [];
+  for (const card of pool) {
+    if (card.consume) continue;
+    if (getImmediateDamage(card) > 0) attacks.push(card);
+    if (getImmediateDefense(card) > 0) defenses.push(card);
+  }
+  for (const eligible of [attacks, defenses]) {
     selected.push(...selectRewardCards(draftedCards, eligible, 1, [...draftedCards, ...selected], rng));
   }
   selected.push(

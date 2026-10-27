@@ -9,7 +9,7 @@ function keywordProfile(deck: readonly BattleCard[]): Map<KeywordId, number> {
 }
 
 function heroAffinity(hero: CharacterId, keywords: readonly KeywordId[]): number {
-  return keywords.filter((keyword) => characters[hero].keywords.includes(keyword)).length;
+  return keywords.reduce((count, keyword) => count + Number(characters[hero].keywords.includes(keyword)), 0);
 }
 
 function deckSynergy(profile: Map<KeywordId, number>, keywords: readonly KeywordId[]): number {

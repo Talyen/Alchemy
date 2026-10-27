@@ -7,7 +7,20 @@ import { makeTestCard } from "../../../../fixtures/battle";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { getImmediateDamage, getImmediateDefense } from "@/lib/battle";
 import { createSeededRng } from "@/lib/rng";
-import type { BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool, selectRewardCards, type BattleCard } from "@/lib/game-data";
+
+function referenceDraftChoices(deck: BattleCard[], rng: () => number): BattleCard[] {
+  const pool = getOfferableCardPool();
+  const selected: BattleCard[] = [];
+  for (const eligible of [
+    pool.filter((card) => !card.consume && getImmediateDamage(card) > 0),
+    pool.filter((card) => !card.consume && getImmediateDefense(card) > 0),
+  ]) {
+    selected.push(...selectRewardCards(deck, eligible, 1, [...deck, ...selected], rng));
+  }
+  selected.push(...selectRewardCards(deck, pool, DRAFT_CHOICES - selected.length, [...deck, ...selected], rng));
+  return selected;
+}
 
 const drafted = Array.from({ length: DRAFT_ROUNDS }, (_, index) => makeTestCard({ id: `card-${index}` }));
 
@@ -20,7 +33,7 @@ it.each([1, 7, 19, 42, 93, 142, 201, 300])(
     for (let round = 0; round < DRAFT_ROUNDS; round++) {
       const before = [...deck];
       const choices = createStarterDraftChoices(deck, rng);
-      expect(choices).toEqual(createStarterDraftChoices(deck, replayRng));
+      expect(choices).toEqual(referenceDraftChoices(deck, replayRng));
       expect(deck).toEqual(before);
       expect(choices).toHaveLength(DRAFT_CHOICES);
       expect(new Set(choices.map((card) => card.id)).size).toBe(DRAFT_CHOICES);
