@@ -25,6 +25,10 @@ afterEach(() => {
   resetEscapeStackForTests();
   vi.restoreAllMocks();
 });
+function pickMixPotion(title: string, slot: number) {
+  fireEvent.click(screen.getByRole("button", { name: `Choose Potion for slot ${slot}` }));
+  fireEvent.click(screen.getAllByRole("button", { name: `Select ${title}` })[0]!);
+}
 describe("Brew selection safety", () => {
   installDisabledAnimationsForTests();
   it.each(["keyboard", "pointer"])("confirms a single Potion through the Strengthen flow (%s)", (input) => {
@@ -62,8 +66,8 @@ describe("Brew selection safety", () => {
     const onConfirm = vi.fn(() => null);
     const onBack = vi.fn();
     const { rerender } = render(<BrewPotionPanel kind="combine" deck={deck} onConfirm={onConfirm} onBack={onBack} />);
-    fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
-    fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
+    pickMixPotion("Health Potion", 1);
+    pickMixPotion("Mana Potion", 2);
     expect((screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement).disabled).toBe(false);
     rerender(<BrewPotionPanel kind="combine" deck={[deck[1]!, deck[0]!]} onConfirm={onConfirm} onBack={onBack} />);
     expect(screen.queryByRole("button", { name: "Inspect brew result: Mixed Potion" })).toBeNull();
@@ -84,8 +88,7 @@ describe("Brew selection safety", () => {
         isProgressSavePending={() => true}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
-    fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
+    expect((screen.getByRole("button", { name: "Choose Potion for slot 1" }) as HTMLButtonElement).disabled).toBe(true);
     const button = screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     fireEvent.click(button);
@@ -97,8 +100,10 @@ describe("Brew selection safety", () => {
     const onConfirm = vi.fn(() => brewed);
     const p = { kind, deck, onConfirm, onBack: () => {}, price: 10, gold: 10 };
     const { rerender } = render(<BrewPotionPanel {...p} />);
-    fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
-    if (kind === "combine") fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
+    if (kind === "combine") {
+      pickMixPotion("Health Potion", 1);
+      pickMixPotion("Mana Potion", 2);
+    } else fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
     const action = kind === "strengthen" ? "Distill" : "Mix";
     fireEvent.click(screen.getByRole("button", { name: action }));
     rerender(<BrewPotionPanel {...p} deck={[brewed]} gold={0} isProgressSavePending={() => true} />);
@@ -110,10 +115,67 @@ describe("Brew selection safety", () => {
       expect(screen.queryByRole("button", { name: "Select Health Potion" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Choose Another Potion" })).toBeNull();
     }
-    expect((screen.getByRole("button", { name: action }) as HTMLButtonElement).disabled).toBe(true);
+    if (kind === "combine") {
+      expect(screen.queryByRole("button", { name: "Mix" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Change Potion in slot 1" })).toBeNull();
+      expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(true);
+    } else expect((screen.getByRole("button", { name: action }) as HTMLButtonElement).disabled).toBe(true);
     expect(onConfirm).toHaveBeenCalledExactlyOnceWith(
       kind === "strengthen" ? { kind, index: 0 } : { kind, indices: [0, 1] },
     );
+  });
+  it("changes or removes an ingredient without mixing twice or losing a cancelled recipe", () => {
+    const deck = [cardById["health-potion"]!, cardById["mana-potion"]!, cardById["stoneskin-potion"]!];
+    const brewed = tryCreateMixedPotion(deck[0], deck[2])!;
+    const onConfirm = vi.fn(() => brewed),
+      onBack = vi.fn(),
+      onContinue = vi.fn();
+    const props = { kind: "combine" as const, deck, onConfirm, onBack, price: 40, gold: 40 };
+    const { rerender } = render(<BrewPotionPanel {...props} />);
+    expect(screen.queryByRole("button", { name: "Select Health Potion" })).toBeNull();
+    pickMixPotion("Health Potion", 1);
+    fireEvent.click(screen.getByRole("button", { name: "Choose Potion for slot 2" }));
+    expect(screen.queryByRole("button", { name: "Select Health Potion" })).toBeNull();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByRole("button", { name: "Change Potion in slot 1" })).toBeTruthy();
+    expect(onBack).not.toHaveBeenCalled();
+    pickMixPotion("Mana Potion", 2);
+    fireEvent.click(screen.getByRole("button", { name: "Change Potion in slot 2" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select Stoneskin Potion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove Potion from slot 1" }));
+    expect((screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement).disabled).toBe(true);
+    pickMixPotion("Health Potion", 1);
+    const mix = screen.getByRole("button", { name: "Mix" });
+    fireEvent.click(mix);
+    fireEvent.click(mix);
+    expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 2] });
+    expect(screen.getByRole("button", { name: "Inspect brew result: Mixed Potion" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Change Potion in slot 2" })).toBeNull();
+    expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(true);
+    rerender(<BrewPotionPanel {...props} deck={[brewed]} gold={0} onContinue={onContinue} />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(onContinue).toHaveBeenCalledOnce();
+  });
+  it("allows separate copies of the same Potion but cannot spend insufficient Gold", () => {
+    const potion = cardById["health-potion"]!,
+      onConfirm = vi.fn(() => null);
+    render(
+      <BrewPotionPanel
+        kind="combine"
+        deck={[potion, potion]}
+        price={40}
+        gold={39}
+        onConfirm={onConfirm}
+        onBack={() => {}}
+      />,
+    );
+    pickMixPotion("Health Potion", 1);
+    pickMixPotion("Health Potion", 2);
+    expect(screen.getByRole("button", { name: "Inspect brew result: Mixed Potion" })).toBeTruthy();
+    const mix = screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement;
+    expect(mix.disabled).toBe(true);
+    fireEvent.click(mix);
+    expect(onConfirm).not.toHaveBeenCalled();
   });
   it("moves one mounted card, drops distinct ingredients, and cancels without selecting", () => {
     const onConfirm = vi.fn(() => null);
@@ -134,7 +196,7 @@ describe("Brew selection safety", () => {
       } as DOMRect);
     });
     const drag = (title: string, slot: number, cancel: boolean | "outside" = false) => {
-      const source = screen.getByRole("button", { name: `Select ${title}` });
+      const source = screen.getAllByRole("button", { name: `Select ${title}` })[0]!;
       const movable = source.closest<HTMLElement>("[data-potion-movable]")!;
       fireEvent.pointerDown(source, { pointerId: 1, button: 0, isPrimary: true, clientX: 20, clientY: 20 });
       fireEvent.pointerMove(source, { pointerId: 1, clientX: 150 + slot * 200, clientY: 150 });
@@ -152,12 +214,15 @@ describe("Brew selection safety", () => {
       expect(movable.style.transform).toBe("");
       fireEvent.click(source, { detail: 1 });
     };
+    fireEvent.click(screen.getByRole("button", { name: "Choose Potion for slot 1" }));
     drag("Stoneskin Potion", 0, true);
     drag("Stoneskin Potion", 0, "outside");
     expect(screen.queryByRole("button", { name: "Remove Potion from slot 1" })).toBeNull();
     drag("Health Potion", 1);
     expect((screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Choose Potion for slot 1" }));
     drag("Mana Potion", 0);
+    fireEvent.click(screen.getByRole("button", { name: "Change Potion in slot 2" }));
     drag("Health Potion", 0);
     fireEvent.click(screen.getByRole("button", { name: "Mix" }));
     expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 1] });

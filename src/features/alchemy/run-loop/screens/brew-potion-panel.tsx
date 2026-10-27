@@ -4,7 +4,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
 import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react";
-import { FlaskConical, Merge, MoveRight, Pipette, Plus } from "lucide-react";
+import { FlaskConical, Merge, MoveRight, Pipette, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
@@ -57,7 +57,13 @@ export function BrewPotionPanel({
   const [selected, setSelected] = useState<number[]>([]);
   const [page, setPage] = useState(0);
   const [recipeOpen, setRecipeOpen] = useState(false);
+  const [pickingSlot, setPickingSlot] = useState<number | null>(null);
+  const [acceptedPotion, setAcceptedPotion] = useState<BattleCard | null>(null);
   const recipeSlot = useRef<HTMLButtonElement>(null);
+  const mixSlotOne = useRef<HTMLButtonElement>(null);
+  const mixSlotTwo = useRef<HTMLButtonElement>(null);
+  const focusAfterChoice = useRef<number | null>(null);
+  const confirming = useRef(false);
   const priceId = useId();
   const recipeBrew = kind === "new" && variant === "alchemist";
   const preparationWidthClass =
@@ -80,6 +86,7 @@ export function BrewPotionPanel({
     setPage(0);
     setError("deck");
     setRecipeOpen(false);
+    setPickingSlot(null);
   }
   const sourceDeck = submitted ? selectionDeck : deck;
   const sourceCards = kind === "new" ? (submitted ? selectionOffers : offers) : sourceDeck;
@@ -88,17 +95,27 @@ export function BrewPotionPanel({
     if ((kind === "strengthen" || kind === "new") && selected.length === 1 && document.activeElement === document.body)
       focusControl(confirmRef.current);
   }, [kind, selected]);
+  useLayoutEffect(() => {
+    if (pickingSlot !== null || focusAfterChoice.current === null) return;
+    focusControl(focusAfterChoice.current === 0 ? mixSlotOne.current : mixSlotTwo.current);
+    focusAfterChoice.current = null;
+  }, [pickingSlot, selected]);
   function back() {
     if (recipeOpen) {
       setRecipeOpen(false);
       return;
     }
     if (drag.cancel()) return;
+    if (pickingSlot !== null) {
+      focusAfterChoice.current = pickingSlot;
+      setPickingSlot(null);
+      return;
+    }
     if (submitted) {
       onBack();
       return;
     }
-    if (!recipeBrew && selected.some((index) => index >= 0)) {
+    if (kind !== "combine" && !recipeBrew && selected.some((index) => index >= 0)) {
       setSelected([]);
       setError(null);
     } else onBack();
@@ -127,12 +144,31 @@ export function BrewPotionPanel({
           : null;
   const afford = gold >= price;
   function confirm(operation: BrewOperation) {
-    if (submitted || recipeOpen || isProgressSavePending()) return;
-    if (onConfirm(operation)) setSubmitted(true);
-    else setError(kind === "new" ? "potion" : "brew");
+    if (
+      submitted ||
+      confirming.current ||
+      recipeOpen ||
+      !afford ||
+      isProgressSavePending() ||
+      (kind === "combine" && (pickingSlot !== null || !result))
+    )
+      return;
+    confirming.current = true;
+    const accepted = onConfirm(operation);
+    if (accepted) {
+      setAcceptedPotion(accepted);
+      setSubmitted(true);
+    } else {
+      confirming.current = false;
+      setError(kind === "new" ? "potion" : "brew");
+    }
   }
   function choose(index: number) {
     if (submitted || isProgressSavePending()) return;
+    if (kind === "combine") {
+      if (pickingSlot !== null) place(index, pickingSlot);
+      return;
+    }
     playUISound(selectionSound);
     setError(null);
     if (kind === "new" && variant === "campfire") {
@@ -144,21 +180,7 @@ export function BrewPotionPanel({
       setRecipeOpen(false);
       return;
     }
-    setSelected((previous) => {
-      if (kind !== "combine") return previous.includes(index) ? [] : [index];
-      const next = [previous[0] ?? -1, previous[1] ?? -1];
-      const existing = next.indexOf(index);
-      if (existing >= 0) {
-        next[existing] = -1;
-        return next;
-      }
-      const empty = next.indexOf(-1);
-      if (empty >= 0) {
-        next[empty] = index;
-        return next;
-      }
-      return [next[1]!, index];
-    });
+    setSelected((previous) => (previous.includes(index) ? [] : [index]));
   }
   function place(index: number, slot: number) {
     if (submitted || isProgressSavePending() || !items.some((item) => item.index === index)) return;
@@ -172,8 +194,16 @@ export function BrewPotionPanel({
       next[slot] = index;
       return next;
     });
+    if (kind === "combine") {
+      focusAfterChoice.current = slot;
+      setPickingSlot(null);
+    }
   }
-  const pagination = getPagination(items.length, page, 4);
+  const visibleItems =
+    kind === "combine" && pickingSlot !== null
+      ? items.filter((item) => item.index !== selected[1 - pickingSlot])
+      : items;
+  const pagination = getPagination(visibleItems.length, page, 4);
   const renderCard = (card: BattleCard, index: number) => (
     <SelectableCard
       card={card}
@@ -196,13 +226,14 @@ export function BrewPotionPanel({
   const ingredients = (
     <div
       className="flex flex-wrap justify-center gap-5"
+      role="group"
       aria-label={
         kind === "combine"
-          ? i18n.text("brewing.choose-two", "Choose two Potions")
+          ? i18n.text("brewing.choose-slot", "Choose Potion for slot {{slot}}", { slot: (pickingSlot ?? 0) + 1 })
           : i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
       }
     >
-      {items.slice(pagination.page * 4, (pagination.page + 1) * 4).map(({ card, index }) => (
+      {visibleItems.slice(pagination.page * 4, (pagination.page + 1) * 4).map(({ card, index }) => (
         <div
           key={index}
           data-potion-choice={index}
@@ -229,6 +260,29 @@ export function BrewPotionPanel({
       ))}
     </div>
   );
+  if (kind === "combine" && submitted && acceptedPotion) {
+    return (
+      <div data-potion-preparation className="screen-fade-in flex w-full flex-col items-center gap-6">
+        <div className={cn(preparationWidthClass, "reward-choice reward-choice-selected relative aspect-[3/4]")}>
+          {resultCard(
+            acceptedPotion,
+            i18n.text("ui.brew-potion-panel.3", "Inspect brew result: {{value0}}", {
+              value0: i18n.displayText(acceptedPotion.title),
+            }),
+          )}
+        </div>
+        <Button
+          ref={continueRef}
+          size="lg"
+          className="min-w-56"
+          disabled={!onContinue || isProgressSavePending()}
+          onClick={onContinue}
+        >
+          {i18n.text("shop.brewing.continue", "Continue")}
+        </Button>
+      </div>
+    );
+  }
   return (
     <div
       data-potion-preparation
@@ -255,9 +309,9 @@ export function BrewPotionPanel({
                 : i18n.text("ui.brew-potion-panel.d6", "Two eligible Potions required."),
           )}
         </p>
-      ) : kind === "strengthen" && variant === "campfire" && result && sourceDeck[a] ? (
+      ) : kind === "combine" ? null : kind === "strengthen" && variant === "campfire" && result && sourceDeck[a] ? (
         <PotionComparison original={sourceDeck[a]} result={result} />
-      ) : recipeBrew ? null : kind === "combine" || variant === "alchemist" ? (
+      ) : recipeBrew ? null : variant === "alchemist" ? (
         <>
           {variant === "alchemist" ? (
             <FlankingPagination
@@ -310,11 +364,15 @@ export function BrewPotionPanel({
                 {sourceCards[selected[slot] ?? -1] ? (
                   <BattleCardButton
                     card={sourceCards[selected[slot]!]!}
-                    buttonRef={recipeBrew ? recipeSlot : undefined}
+                    buttonRef={
+                      recipeBrew ? recipeSlot : kind === "combine" ? (slot === 0 ? mixSlotOne : mixSlotTwo) : undefined
+                    }
                     ariaLabel={
-                      recipeBrew
-                        ? i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
-                        : i18n.text("brewing.clear-slot", "Remove Potion from slot {{slot}}", { slot: slot + 1 })
+                      kind === "combine"
+                        ? i18n.text("brewing.change-slot", "Change Potion in slot {{slot}}", { slot: slot + 1 })
+                        : recipeBrew
+                          ? i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
+                          : i18n.text("brewing.clear-slot", "Remove Potion from slot {{slot}}", { slot: slot + 1 })
                     }
                     className="h-full w-full"
                     wrapperClassName="absolute inset-0"
@@ -323,6 +381,13 @@ export function BrewPotionPanel({
                     shimmerToken={undefined}
                     ariaDisabled={submitted}
                     onClick={() => {
+                      if (kind === "combine") {
+                        if (!submitted && !isProgressSavePending()) {
+                          setPickingSlot(slot);
+                          setPage(0);
+                        }
+                        return;
+                      }
                       if (recipeBrew) {
                         if (!submitted && !isProgressSavePending()) setRecipeOpen(true);
                         return;
@@ -335,13 +400,22 @@ export function BrewPotionPanel({
                         });
                     }}
                   />
-                ) : recipeBrew ? (
+                ) : recipeBrew || kind === "combine" ? (
                   <Surface
                     as="button"
-                    buttonRef={recipeSlot}
-                    ariaLabel={i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")}
+                    buttonRef={recipeBrew ? recipeSlot : slot === 0 ? mixSlotOne : mixSlotTwo}
+                    ariaLabel={
+                      kind === "combine"
+                        ? i18n.text("brewing.choose-slot", "Choose Potion for slot {{slot}}", { slot: slot + 1 })
+                        : i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
+                    }
                     disabled={submitted || isProgressSavePending()}
-                    onClick={() => setRecipeOpen(true)}
+                    onClick={() => {
+                      if (kind === "combine") {
+                        setPickingSlot(slot);
+                        setPage(0);
+                      } else setRecipeOpen(true);
+                    }}
                     className="absolute inset-0 flex h-full w-full items-center justify-center rounded-shell-card border border-dashed border-border bg-transparent text-muted-foreground hover:border-emerald-300 hover:text-emerald-300"
                     clipContents={false}
                   >
@@ -355,6 +429,26 @@ export function BrewPotionPanel({
                   >
                     <FlaskConical aria-hidden="true" className="h-10 w-10" />
                   </div>
+                )}
+                {kind === "combine" && sourceCards[selected[slot] ?? -1] && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute -top-2 -right-2 z-10 h-7 w-7 rounded-full"
+                    aria-label={i18n.text("brewing.clear-slot", "Remove Potion from slot {{slot}}", { slot: slot + 1 })}
+                    disabled={submitted || isProgressSavePending()}
+                    onClick={() => {
+                      setSelected((previous) => {
+                        const next = [...previous];
+                        next[slot] = -1;
+                        return next;
+                      });
+                      setPickingSlot(null);
+                      focusAfterChoice.current = slot;
+                    }}
+                  >
+                    <X aria-hidden="true" className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
             </div>
@@ -388,6 +482,16 @@ export function BrewPotionPanel({
               </div>
             </>
           )}
+        </div>
+      )}
+      {kind === "combine" && pickingSlot !== null && (
+        <div className="flex flex-col items-center gap-3">
+          {visibleItems.length ? (
+            ingredients
+          ) : (
+            <p role="status">{i18n.text("ui.brew-potion-panel.d4", "No eligible Potions.")}</p>
+          )}
+          <PaginationControls page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
         </div>
       )}
       {!submitted && !afford && (
@@ -431,7 +535,9 @@ export function BrewPotionPanel({
                 ref={confirmRef}
                 className={variant === "alchemist" ? "min-w-32" : undefined}
                 aria-describedby={price > 0 || variant === "alchemist" ? priceId : undefined}
-                disabled={submitted || recipeOpen || !result || !afford || isProgressSavePending()}
+                disabled={
+                  submitted || recipeOpen || pickingSlot !== null || !result || !afford || isProgressSavePending()
+                }
                 onClick={() => confirm(operation)}
               >
                 {i18n.displayText(
