@@ -94,8 +94,7 @@ choice source; it does not assemble another utility or attack recipe.
 
 [`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) resolves
 production observations once per inspection. Inline descriptions and card-flight
-targeting read those outcomes directly; the damage-only presentation adapter builds
-a projected card only when requested. Player payment,
+targeting read those outcomes directly. Player payment,
 pre-triggers, ordered effects, and follow-ups resolve through `card-play.ts`;
 enemy abilities resolve through `enemy-turn-attack.ts`. Admission alone is
 hypothetical, so cards outside the hand or above the current Mana remain inspectable.

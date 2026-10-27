@@ -8,11 +8,12 @@ import {
   getEnemyAbilityCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
-import { getBattleDamageInspectionCard, getBattleCardDescriptionInspection } from "@/lib/battle/card-damage-inspection";
+import { getBattleCardDescriptionInspection, inspectBattleCardOutcomes } from "@/lib/battle/card-damage-inspection";
 import type { CombatTextEvent } from "@/lib/battle";
 import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { inspectedDamage } from "../../fixtures/inspection";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const hit = (amount = 6): BattleCardEffect => ({ kind: "damage", damageType: "physical", amount });
@@ -368,8 +369,8 @@ describe("battle damage inspection", () => {
     });
     const card = makeTestCard({ effects: [hit()] });
     const before = JSON.stringify({ state, card });
-    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual(["Deal 15 Physical damage"]);
-    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual(["Deal 15 Physical damage"]);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Deal 15 Physical damage"]);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Deal 15 Physical damage"]);
     expect(rng).not.toHaveBeenCalled();
     expect(JSON.stringify({ state, card })).toBe(before);
   });
@@ -380,9 +381,6 @@ describe("battle damage inspection", () => {
       playerStatuses: { forge: 10 },
       gearEffects: { flatPoisonDamage: 2 },
     });
-    expect(
-      getBattleDamageInspectionCard(makeTestCard({ effects: [hit()] }), battleSnapshot(state)).descriptionLines,
-    ).toEqual(["Deal 8 Poison damage"]);
     expect(state.flags.nextHitPoison).toBe(true);
     expect(getBattleCardDescriptionInspection(makeTestCard({ effects: [hit()] }), state).descriptionLines).toEqual([
       "Deal 8 Poison damage",
@@ -427,8 +425,12 @@ describe("battle damage inspection", () => {
       playerStatuses: { forge: 3, block: 5 },
       talentEffects: { freezeDamagePerMana: 100 },
     });
-    const preview = getBattleDamageInspectionCard(card, battleSnapshot(state));
-    const projected = preview.effects.filter((effect) => effect.kind === "damage").map((effect) => effect.amount);
+    const outcomes = inspectBattleCardOutcomes(card, battleSnapshot(state));
+    const projected = card.effects.flatMap((effect, index) => {
+      if (effect.kind !== "damage") return [];
+      const outcome = outcomes.get(String(index));
+      return outcome?.kind === "exact" ? outcome.packets.map((packet) => packet.amount) : [];
+    });
     const result = playBattleCardResolved(state, card.id, 0);
     const damage = result.combatTexts
       .filter(
@@ -437,17 +439,15 @@ describe("battle damage inspection", () => {
       .map((text) => ("amount" in text ? text.amount : 0));
     expect(
       projected.reduce((a, b) => a + b, 0),
-      JSON.stringify({ preview: preview.effects, texts: result.combatTexts }),
+      JSON.stringify({ outcomes: [...outcomes], texts: result.combatTexts }),
     ).toEqual(damage.reduce((a, b) => a + b, 0));
   });
 
   it("separates repeated hits when a prepared bonus applies only once", () => {
     const state = patchBattleState({ flags: { nextHitPhysicalBonus: 4 } });
     const card = makeTestCard({ effects: [hit(), hit()] });
-    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual([
-      "Deal 10 Physical damage",
-      "Deal 6 Physical damage",
-    ]);
+    const outcomes = inspectBattleCardOutcomes(card, state);
+    expect(["0", "1"].map((key) => inspectedDamage(outcomes.get(key)))).toEqual([10, 6]);
   });
 
   it("does not invent negative Block when inspecting an unaffordable Freeze card", () => {
@@ -462,10 +462,8 @@ describe("battle damage inspection", () => {
       gearEffects: { blockPaysFreezeMana: 1 },
       talentEffects: { blockToPhysicalDamageMultiplier: 1 },
     });
-    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual([
-      "Deal 1 Freeze damage",
-      "Deal 6 Physical damage",
-    ]);
+    const outcomes = inspectBattleCardOutcomes(card, state);
+    expect(["0", "1"].map((key) => inspectedDamage(outcomes.get(key)))).toEqual([1, 6]);
     expect(playBattleCardResolved(state, card.id, 0).state).toBe(state);
     expect(state.playerStatuses.block).toBe(1);
   });
@@ -484,10 +482,8 @@ describe("battle damage inspection", () => {
         { kind: "random-damage", minAmount: 2, maxAmount: 5, damageTypePool: ["physical", "poison"] },
       ],
     });
-    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual([
-      "Deal 8 Freeze damage",
-      "Deal 2–9 Physical, or Poison damage",
-    ]);
+    const outcomes = inspectBattleCardOutcomes(card, state);
+    expect(["0", "1"].map((key) => inspectedDamage(outcomes.get(key)))).toEqual([8, [2, 9]]);
   });
 
   it("adjusts both chance branches without choosing one or changing utility descriptions", () => {
@@ -497,12 +493,11 @@ describe("battle damage inspection", () => {
         { kind: "chance", probability: 0.5, successEffects: [hit()], failureEffects: [{ kind: "heal", amount: 2 }] },
       ],
     });
-    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual([
+    expect(inspectedDamage(inspectBattleCardOutcomes(card, state).get("0.0"))).toBe(9);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
       "50% chance: Deal 9 Physical damage",
       "Otherwise: Restore 2 Health",
     ]);
-    const utility = makeTestCard({ effects: [], descriptionLines: ["Custom utility text"] });
-    expect(getBattleDamageInspectionCard(utility, state)).toBe(utility);
   });
 
   it.each(["frostwarden", "dire-wolf", "stone-golem", "bandit", "hellhound"])(
@@ -528,14 +523,17 @@ describe("battle damage inspection", () => {
           turn: 13,
           gearEffects: { flatPhysicalDamage: 90, flatFreezeDamage: 90 },
         });
-        const preview = getBattleDamageInspectionCard(card, battleSnapshot(state), "enemy");
-        const projected = preview.effects.filter((effect) => effect.kind === "damage").map((effect) => effect.amount);
+        const outcomes = inspectBattleCardOutcomes(card, battleSnapshot(state), "enemy");
+        const projected = card.effects.flatMap((effect, index) => {
+          if (effect.kind !== "damage") return [];
+          const outcome = outcomes.get(String(index));
+          return outcome?.kind === "exact" ? outcome.packets.map((packet) => packet.amount) : [];
+        });
         const texts: CombatTextEvent[] = [];
         const result = applyEnemyAbility(state, card, texts);
-        expect(
-          state.playerHealth - result.playerHealth,
-          JSON.stringify({ card, preview: preview.effects, texts }),
-        ).toBe(projected.reduce((a, b) => a + b, 0));
+        expect(state.playerHealth - result.playerHealth, JSON.stringify({ card, outcomes: [...outcomes], texts })).toBe(
+          projected.reduce((a, b) => a + b, 0),
+        );
       }
     },
   );
@@ -549,31 +547,25 @@ describe("battle damage inspection", () => {
     const card = makeTestCard({
       effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["physical", "poison"] }, hit()],
     });
-    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual([
-      "Deal 3–5 Poison damage",
-      "Deal 10 Physical damage",
-    ]);
+    const outcomes = inspectBattleCardOutcomes(card, state);
+    expect(["0", "1"].map((key) => inspectedDamage(outcomes.get(key)))).toEqual([[3, 5], 10]);
     const zero = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0 }, hit()] });
-    expect(
-      getBattleDamageInspectionCard(zero, patchBattleState({ flags: { nextHitPoison: true } })).descriptionLines,
-    ).toEqual(["Deal 0 Poison damage", "Deal 6 Poison damage"]);
+    const zeroOutcomes = inspectBattleCardOutcomes(zero, patchBattleState({ flags: { nextHitPoison: true } }));
+    expect(["0", "1"].map((key) => inspectedDamage(zeroOutcomes.get(key)))).toEqual([0, 6]);
     expect(state.flags.nextHitPoison).toBe(true);
   });
 
   it("applies Bandit's opening bonus to the first packet rather than every hit", () => {
     const state = patchBattleState({ currentEnemy: enemyById.bandit });
     const card = { ...getEnemyAbilityCard("slash"), effects: [hit(4), hit(4)] };
-    expect(getBattleDamageInspectionCard(card, state, "enemy").descriptionLines).toEqual([
-      "Deal 10 Physical damage",
-      "Deal 5 Physical damage",
-    ]);
+    const outcomes = inspectBattleCardOutcomes(card, state, "enemy");
+    expect(["0", "1"].map((key) => inspectedDamage(outcomes.get(key)))).toEqual([10, 5]);
     expect(state.flags.enemyFirstHitDoubleUsed).toBe(false);
   });
 
-  it("shows Exorcism's current conversion damage while preserving its self cost and cleanse", () => {
+  it("observes Exorcism's current conversion damage without consuming its status", () => {
     const state = patchBattleState({ playerStatuses: { burn: 4 }, playerHealth: 30, playerMaxHealth: 30 });
-    const preview = getBattleDamageInspectionCard(cardById.exorcism!, state);
-    expect(preview.descriptionLines).toEqual(["Take 1 Burn damage", "Cleanse Burn", "Deal 5 Holy damage"]);
+    expect(inspectedDamage(inspectBattleCardOutcomes(cardById.exorcism!, state).get("1"))).toBe(5);
     expect(state.playerStatuses.burn).toBe(4);
   });
 
@@ -583,7 +575,7 @@ describe("battle damage inspection", () => {
     );
     const before = JSON.stringify(cardById);
     for (const card of Object.values(cardById)) {
-      expect(() => getBattleDamageInspectionCard(card, state), card.id).not.toThrow();
+      expect(() => inspectBattleCardOutcomes(card, state), card.id).not.toThrow();
       expect(() => getBattleCardDescriptionInspection(card, state), card.id).not.toThrow();
     }
     expect(JSON.stringify(cardById)).toBe(before);
@@ -596,13 +588,13 @@ describe("battle damage inspection", () => {
       gearEffects: { resistFreeze: 100 },
     });
     const card = getEnemyAbilityCard("frostbolt");
-    const base = getBattleDamageInspectionCard(
+    const base = inspectBattleCardOutcomes(
       card,
       { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } },
       "enemy",
     );
-    const frost = getBattleDamageInspectionCard(card, state, "enemy");
-    expect(frost.effects[0]).toMatchObject({ amount: (base.effects[0] as { amount: number }).amount + 1 });
+    const frost = inspectBattleCardOutcomes(card, state, "enemy");
+    expect(inspectedDamage(frost.get("0"))).toBe((inspectedDamage(base.get("0")) as number) + 1);
   });
 
   it("projects guaranteed hit reactions, Opening follow-ups, and target defeat across multi-packet cards", () => {
@@ -614,10 +606,13 @@ describe("battle damage inspection", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
     });
-    expect(getBattleDamageInspectionCard(fireball, openingState).effects).toEqual([
-      { kind: "damage", damageType: "burn", amount: 2 },
-      { kind: "damage", damageType: "physical", amount: 4 },
-    ]);
+    expect(inspectBattleCardOutcomes(fireball, openingState).get("0")).toMatchObject({
+      kind: "exact",
+      packets: [
+        { damageType: "burn", amount: 2 },
+        { damageType: "physical", amount: 4 },
+      ],
+    });
     expect(playBattleCardResolved(openingState, fireball.id, 0).state.enemyHealth).toBe(94);
 
     // Guaranteed Emberforged Forge and Elemental Mana on an opening Burn hit scale subsequent packets.
@@ -638,13 +633,9 @@ describe("battle damage inspection", () => {
       gearEffects: { forgeOnBurnVsUnburnedChances: [100], elementalDamageManaChance: 100 },
       talentEffects: { burnDamagePerMana: 100 },
     });
-    const emberPreview = getBattleDamageInspectionCard(burnThenFollowUps, emberState);
+    const emberOutcomes = inspectBattleCardOutcomes(burnThenFollowUps, emberState);
     const emberPlayed = playBattleCardResolved(emberState, burnThenFollowUps.id, 0);
-    expect(emberPreview.effects).toEqual([
-      { kind: "damage", damageType: "burn", amount: 2 },
-      { kind: "damage", damageType: "physical", amount: 3 },
-      { kind: "damage", damageType: "burn", amount: 3 },
-    ]);
+    expect(["0", "1", "2"].map((key) => inspectedDamage(emberOutcomes.get(key)))).toEqual([2, 3, 3]);
     expect(emberPlayed.state.enemyHealth).toBe(92);
 
     // Frostfire reaction killing the target zeroes out later packets.
@@ -656,7 +647,8 @@ describe("battle damage inspection", () => {
       enemyMaxHealth: 100,
       enemyStatuses: { burn: 1, freeze: 1 },
     });
-    expect(getBattleDamageInspectionCard(ray, frostfireState).effects).toMatchObject([{ amount: 1 }, { amount: 0 }]);
+    const frostfireOutcomes = inspectBattleCardOutcomes(ray, frostfireState);
+    expect(["0", "1"].map((key) => inspectedDamage(frostfireOutcomes.get(key)))).toEqual([1, 0]);
     expect(playBattleCardResolved(frostfireState, ray.id, 0).state.enemyHealth).toBe(0);
 
     // Detonation consumes existing buildup even when Block absorbs the direct hit.
@@ -679,10 +671,8 @@ describe("battle damage inspection", () => {
         enemyMitigation: { block: 10 },
         enemyStatuses: { [status]: 4 },
       });
-      expect(getBattleDamageInspectionCard(detonateCard, detonateState).effects).toMatchObject([
-        { amount: 2 },
-        { amount: 0 },
-      ]);
+      const outcomes = inspectBattleCardOutcomes(detonateCard, detonateState);
+      expect(["0", "1"].map((key) => inspectedDamage(outcomes.get(key)))).toEqual([2, 0]);
       expect(playBattleCardResolved(detonateState, detonateCard.id, 0).state.enemyHealth).toBe(0);
     }
   });
