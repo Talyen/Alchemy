@@ -5,6 +5,8 @@ import { runTaskCommand } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
 import { REPO_ROOT } from "./lib/repository-paths.mjs";
+import { beginBuildAttempt, finishBuildAttempt } from "./lib/build-retention.mjs";
+import { releaseEdition } from "./lib/release/game-edition.mjs";
 
 async function main(argv = process.argv.slice(2)) {
   const modes = [];
@@ -56,17 +58,34 @@ async function main(argv = process.argv.slice(2)) {
     viteArgs.push(...viteForward);
   }
 
-  const result = await runTaskCommand("npx", ["vite", ...viteArgs], {
-    cwd: REPO_ROOT,
-    env: { ...process.env },
-    label: isDesktop ? "desktop build" : "web build",
-    live,
-  });
-  if (result.error) {
-    console.error(`Failed to run vite ${viteArgs.join(" ")}:`, result.error.message);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    const result = await runTaskCommand("npx", ["vite", ...viteArgs], {
+      cwd: REPO_ROOT,
+      env: { ...process.env },
+      live,
+    });
+    return result.status ?? 1;
   }
-  return result.status ?? 1;
+  const attempt = beginBuildAttempt(REPO_ROOT, { kind: "build", target: releaseEdition().rendererDirectory });
+  let success = false;
+  try {
+    const result = await runTaskCommand("npx", ["vite", ...viteArgs], {
+      cwd: REPO_ROOT,
+      env: { ...process.env },
+      label: isDesktop ? "desktop build" : "web build",
+      live,
+    });
+    if (result.error) {
+      console.error(`Failed to run vite ${viteArgs.join(" ")}:`, result.error.message);
+    }
+    success = result.status === 0;
+    return result.status ?? 1;
+  } finally {
+    finishBuildAttempt(REPO_ROOT, attempt, success);
+  }
 }
 
 export { main as runBuildVerified };
-defineScript(import.meta.url, () => main());
+defineScript(import.meta.url, () => main(), {
+  artifacts: !process.argv.includes("--help") && !process.argv.includes("-h"),
+});

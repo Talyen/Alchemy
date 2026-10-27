@@ -187,10 +187,18 @@ function packageRenderer(
   viaEnvironment = false,
   args?: string[],
   failScript = "",
+  createBuilderOutput = false,
 ) {
   const source = `import cp from 'node:child_process';
+    import fs from 'node:fs';
     import { syncBuiltinESMExports } from 'node:module';
-    cp.spawnSync = (_command, args) => { console.log(JSON.stringify(args)); return { status: args.includes(${JSON.stringify(failScript)}) ? 3 : 0 }; };
+    cp.spawnSync = (_command, args) => { console.log(JSON.stringify(args));
+      if (${createBuilderOutput} && args.includes('--config')) {
+        const config = JSON.parse(fs.readFileSync(args[args.indexOf('--config') + 1], 'utf8'));
+        fs.mkdirSync(config.directories.output + '/win-unpacked', { recursive: true });
+        fs.writeFileSync(config.directories.output + '/win-unpacked/generated', 'package');
+      }
+      return { status: args.includes(${JSON.stringify(failScript)}) ? 3 : 0 }; };
     syncBuiltinESMExports();
     process.argv = [process.execPath, 'scripts/dist-desktop.mjs', ...${JSON.stringify(args ?? (viaEnvironment ? [] : ["--dir"]))}];
     await import('./scripts/dist-desktop.mjs');`;
@@ -235,6 +243,17 @@ it.each([
     ].map((name) => ["run", name]),
   );
   expect(existsSync(join(root, "steam/build"))).toBe(false);
+});
+
+it.skipIf(process.platform === "win32")("packages in isolated staging and promotes successful output", () => {
+  const root = packagingFixture("full");
+  rmSync(join(root, "release-desktop"), { recursive: true });
+  const result = packageRenderer(root, "full", false, ["--dir"], "", true);
+  expect(result.status, result.stderr).toBe(0);
+  expect(readFileSync(join(root, "release-desktop/win-unpacked/generated"), "utf8")).toBe("package");
+  const config = JSON.parse(readFileSync(join(root, "steam/build/electron-full.json"), "utf8"));
+  expect(config.directories.output).toMatch(/^\.cache\/build-retention\/attempts\//u);
+  expect(existsSync(join(root, config.directories.output))).toBe(false);
 });
 
 it.each([

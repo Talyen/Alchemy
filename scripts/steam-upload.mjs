@@ -11,6 +11,7 @@ import { writeSteamBuildVdfs } from "./lib/release/steam-vdf.mjs";
 import { runCommand, runStreamCommand } from "./lib/run-command.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
+import { protectPackageAttempts } from "./lib/build-retention.mjs";
 
 function main(argv = process.argv.slice(2)) {
   const { flags, rest } = parseKnownFlags(argv, { "dry-run": {}, help: { short: "h" } });
@@ -102,6 +103,9 @@ function main(argv = process.argv.slice(2)) {
     return 0;
   }
 
+  // Once upload is attempted, retain the package even if the remote outcome is uncertain.
+  protectPackageAttempts(root, selected.packageDirectory);
+
   function assertSteamcmdOnPath() {
     const probe = process.platform === "win32" ? "where.exe" : "which";
     const result = runCommand(probe, ["steamcmd"]);
@@ -124,4 +128,6 @@ function main(argv = process.argv.slice(2)) {
   return result.status ?? 1;
 }
 
-defineScript(import.meta.url, () => main());
+defineScript(import.meta.url, () => main(), {
+  artifacts: !process.argv.includes("--help") && !process.argv.includes("-h"),
+});

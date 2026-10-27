@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
 import { withArtifactGuard } from "./lib/artifact-guard.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { pruneFailedBuilds } from "./lib/build-retention.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Only Git diff inventories are reproducible from the current checkout. Test,
@@ -72,6 +73,7 @@ export function pruneExpiredArtifacts({
   const cutoff = now - days * 86_400_000;
   const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
+  removed.push(...pruneFailedBuilds(rootDir, { dryRun, now }));
   const consider = (pathname) => {
     const info = bundleInfo(pathname);
     if (info.newest < cutoff) {
