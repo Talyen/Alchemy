@@ -3,6 +3,7 @@ import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import * as assetRefs from "../../assets";
 import * as cardBuilders from "../card-builders";
 import { cardMagnitude } from "../../card-description-model";
+import { SHIELD_BASH_SPEND_VERSION } from "../card-definition-versions";
 
 export const coreCards: BattleCard[] = [
   cardBuilders.damageCard({ id: "slash", damageType: "physical", amount: 4 }),
@@ -132,6 +133,7 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "shield-bash",
+    definitionVersion: SHIELD_BASH_SPEND_VERSION,
     effects: [
       { kind: "player-status", status: "block", amount: 2 },
       { kind: "damage", damageType: "stun", amount: 0, equalToBlock: true, equalToBlockPercent: 50, spendBlock: true },

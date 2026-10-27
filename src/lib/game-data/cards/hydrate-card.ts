@@ -4,6 +4,7 @@ import type { BattleCard } from "../types";
 import { cardById } from "./library/cards";
 import { mapCardDescriptionReferences } from "../card-description-model";
 import { mapEffectChildren } from "../effect-tree";
+import { normalizeSavedCardDefinition } from "./normalize-saved-definition";
 
 export type SavedCard = BattleCard;
 
@@ -53,8 +54,13 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     savedCard.effects.length > 0 &&
     savedCard.descriptionLines.length > 0 &&
     savedCard.descriptionLines.every((line) => typeof line === "string");
-  const content = keepSavedContent ? savedCard : libraryCard;
-  const { consume: catalogConsume, description: _catalogDescription, ...catalogMetadata } = libraryCard;
+  const content = keepSavedContent ? normalizeSavedCardDefinition(savedCard).card : libraryCard;
+  const {
+    consume: catalogConsume,
+    description: _catalogDescription,
+    definitionVersion: _catalogVersion,
+    ...catalogMetadata
+  } = libraryCard;
   // Missing Consume meant reusable in complete saved content, even if the catalog now Consumes.
   const hiddenSummonConsume =
     !content.descriptionLines.includes(CONSUME_DESCRIPTION_LINE) &&
@@ -66,6 +72,7 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
 
   return cloneBattleCard({
     ...catalogMetadata,
+    ...(content.definitionVersion !== undefined && { definitionVersion: content.definitionVersion }),
     descriptionLines: content.descriptionLines,
     effects: content.effects,
     ...(content.description ? { description: content.description } : {}),

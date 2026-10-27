@@ -4,8 +4,8 @@ import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { GameplayDraft } from "../session/gameplay-command";
 
 function hydrateBattleState(battleState: BattleSnapshot): BattleSnapshot {
-  // Piles are re-hydrated against the card catalog so resumed battles pick up
-  // catalog fixes. `pendingTurnStartEffects` (queued card effects + sourceCard)
+  // Piles share guarded card-definition revisions with active-run decks while
+  // retaining valid saved modifications. `pendingTurnStartEffects` (queued card effects + sourceCard)
   // is intentionally preserved as saved: those effects were already rolled and
   // mid-flight when the save was written, so re-hydrating them to the current
   // catalog would change the outcome of an in-flight turn.

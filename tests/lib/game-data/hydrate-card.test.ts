@@ -1,7 +1,8 @@
-import { expect, it } from "vitest";
-import { cardById, type BattleCard } from "@/lib/game-data";
+import { describe, expect, it } from "vitest";
+import { cardById, createEffectDescription, withCardDescription, type BattleCard } from "@/lib/game-data";
 import { cloneBattleCard, hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
+import { normalizeSavedCardDefinition } from "@/lib/game-data/cards/normalize-saved-definition";
 import { removeConsume } from "@/lib/corruption/card-edits";
 
 const library = cardById["molten-bulwark"]!;
@@ -127,4 +128,150 @@ it.each([
   result.description![0]!.parts.push("Changed");
   result.tags!.push("burn");
   expect(source).toEqual(before);
+});
+
+describe("Shield Bash definition revision", () => {
+  function previousBash(): BattleCard {
+    const card = cloneBattleCard(cardById["shield-bash"]!);
+    delete card.definitionVersion;
+    const damage = card.effects[1]!;
+    if (damage.kind !== "damage") throw new Error("Missing Bash damage");
+    delete damage.spendBlock;
+    return withCardDescription(card, createEffectDescription(card.effects));
+  }
+
+  it.each([true, false])("normalizes an ordinary existing card and persists its revision (bound=%s)", (bound) => {
+    const saved = previousBash();
+    if (!bound) delete saved.description;
+    const before = JSON.stringify(saved);
+    const restored = hydrateCard(BattleCardSchema.parse(JSON.parse(before)));
+    expect(restored.definitionVersion).toBe(1);
+    expect(restored.effects[1]).toMatchObject({ equalToBlockPercent: 50, spendBlock: true });
+    expect(restored.descriptionLines).toEqual(["Gain 2 Block", "Spend half your Block to deal Stun damage"]);
+    expect(hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(restored))))).toEqual(restored);
+    expect(JSON.stringify(saved)).toBe(before);
+  });
+
+  it("changes only the old clause on a modified, transmuted card", () => {
+    const original = previousBash();
+    const saved = withCardDescription(
+      {
+        ...original,
+        uid: 42,
+        cost: 0,
+        corrupted: true,
+        transmuted: "holy",
+        baseTitle: "Shield Bash",
+        consume: true,
+        tags: ["archery"],
+        effects: [
+          { kind: "player-status", status: "block", amount: 7 },
+          {
+            kind: "damage",
+            damageType: "holy",
+            amount: 0,
+            equalToBlock: true,
+            equalToBlockPercent: 50,
+            lifesteal: true,
+            ignoreArmor: true,
+          },
+          { kind: "heal", amount: 3 },
+        ],
+      },
+      [],
+    );
+    saved.description = createEffectDescription(saved.effects);
+    saved.description.push({ parts: ["Archery"], role: "keyword" }, { parts: ["Consume"], role: "consume" });
+    const number = saved.description[0]!.parts.find((part) => typeof part !== "string");
+    if (number && typeof number !== "string") number.corrupted = true;
+    const complete = withCardDescription(saved, saved.description);
+    const before = structuredClone(complete);
+    const result = normalizeSavedCardDefinition(complete);
+    expect(result.outcome).toBe("normalized");
+    expect(result.card.effects).toEqual([
+      before.effects[0],
+      { ...before.effects[1], spendBlock: true },
+      before.effects[2],
+    ]);
+    expect(result.card).toMatchObject({
+      uid: 42,
+      cost: 0,
+      corrupted: true,
+      transmuted: "holy",
+      baseTitle: "Shield Bash",
+      consume: true,
+      tags: ["archery"],
+    });
+    expect(result.card.descriptionLines).toContain("Spend half your Block to deal Holy damage");
+    expect(result.card.description![0]).toEqual(before.description![0]);
+    expect(result.card.description!.slice(2)).toEqual(before.description!.slice(2));
+    expect(complete).toEqual(before);
+    expect(hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(result.card))))).toMatchObject({
+      definitionVersion: 1,
+      effects: result.card.effects,
+    });
+  });
+
+  it("preserves a modified Chance wrapper and its unrelated failure branch", () => {
+    const source = previousBash();
+    const saved = withCardDescription(
+      {
+        ...source,
+        corrupted: true,
+        effects: [
+          {
+            kind: "chance",
+            probability: 0.5,
+            successEffects: source.effects,
+            failureEffects: [{ kind: "heal", amount: 3 }],
+          },
+        ],
+      },
+      createEffectDescription([
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: source.effects,
+          failureEffects: [{ kind: "heal", amount: 3 }],
+        },
+      ]),
+    );
+    const result = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(saved))));
+    expect(result.effects[0]).toMatchObject({
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [{ kind: "player-status", amount: 2 }, { spendBlock: true }],
+      failureEffects: [{ kind: "heal", amount: 3 }],
+    });
+    expect(result.descriptionLines.some((line) => line.includes("Spend half your Block"))).toBe(true);
+    expect(hydrateCard(result)).toEqual(result);
+  });
+
+  it("stamps already-spending unversioned cards once and preserves newer revisions", () => {
+    const saved = cloneBattleCard(cardById["shield-bash"]!);
+    delete saved.definitionVersion;
+    const restored = hydrateCard(saved);
+    expect(restored).toEqual(cardById["shield-bash"]);
+    expect(hydrateCard({ ...restored, definitionVersion: 2 }).definitionVersion).toBe(2);
+  });
+
+  it.each(["flat", "duplicate", "pool", "wording"])(
+    "retains an ambiguous %s payload without falsely stamping it",
+    (kind) => {
+      let saved = previousBash();
+      if (kind === "flat") saved.effects = [{ kind: "damage", damageType: "stun", amount: 2 }];
+      if (kind === "duplicate") saved.effects.push({ ...saved.effects[1]! });
+      if (kind === "pool") Object.assign(saved.effects[1]!, { damageTypePool: ["stun", "holy"] });
+      if (kind === "wording") saved = { ...saved, description: undefined, descriptionLines: ["Custom unmatched rule"] };
+      const result = normalizeSavedCardDefinition(saved);
+      expect(result).toMatchObject({ outcome: "ambiguous", card: saved });
+      expect(hydrateCard(saved).effects).toEqual(saved.effects);
+      expect(hydrateCard(saved).definitionVersion).toBeUndefined();
+    },
+  );
+
+  it("does not change unrelated non-spending scaling cards", () => {
+    const saved = cloneBattleCard(cardById["blessed-aegis"]!);
+    expect(hydrateCard(BattleCardSchema.parse(saved))).toEqual(saved);
+  });
 });

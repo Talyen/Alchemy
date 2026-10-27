@@ -32,6 +32,7 @@ export type PersistedBattleCard = z.output<typeof BattleCardSchema>;
 export const BattleCardSchema = z
   .object({
     id: z.string(),
+    definitionVersion: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional().catch(undefined),
     uid: z.number().int().optional().catch(undefined),
     title: z.string().catch(""),
     descriptionLines: z.array(z.unknown()).catch([]),
@@ -60,6 +61,7 @@ export const BattleCardSchema = z
     const cost = Number.isInteger(saved.cost) && saved.cost >= 0 ? saved.cost : -1;
     const result = {
       id: saved.id,
+      ...(saved.definitionVersion !== undefined && { definitionVersion: saved.definitionVersion }),
       title: saved.title,
       descriptionLines: bound?.rendered.descriptionLines ?? described.values ?? [],
       ...(bound ? { description: bound.description } : {}),

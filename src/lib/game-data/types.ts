@@ -109,6 +109,7 @@ export interface CompanionDefinition {
 
 export interface BattleCard {
   id: string;
+  definitionVersion?: number;
   uid?: number;
   title: string;
   descriptionLines: string[];

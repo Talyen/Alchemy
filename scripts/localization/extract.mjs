@@ -293,7 +293,18 @@ export async function extractMessages() {
       flatArmorGained: 1,
       goldGainPercent: 50,
     });
-    for (const source of data.cardLibrary) {
+    // A restored modified Shield Bash can retain another single damage type.
+    // Its migrated clause and known-damage form need the same shipped coverage.
+    const shieldBash = data.cardById["shield-bash"];
+    const restoredBashVariants = data.DAMAGE_TYPES.filter((type) => type !== "stun").map((damageType) => {
+      const effects = shieldBash.effects.map((effect) =>
+        effect.kind === "damage" && effect.spendBlock ? { ...effect, damageType } : effect,
+      );
+      return model.withCardDescription({ ...shieldBash, effects }, data.createEffectDescription(effects));
+    });
+    for (const source of [...data.cardLibrary, ...restoredBashVariants]) {
+      for (const line of model.renderCardDescription(source.effects, source.description).localizedLines)
+        addDescription(line, "Card effect description");
       for (const card of [source, mixer.createMixedPotion(source, data.cardById["mana-potion"])]) {
         const inspected = previews.getBattleCardDescriptionInspection(card, { ...previewState, hand: [card] });
         for (const line of model.renderCardDescription(inspected.effects, inspected.description).localizedLines)
