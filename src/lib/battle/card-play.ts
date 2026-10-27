@@ -70,7 +70,7 @@ function cleanseOnlyCardHasNoTargets(card: BattleCard, state: BattleSnapshot): b
       }
     } else if (effect.kind === "self-damage") {
       // A preceding typed cost can create the status this card cleanses.
-      if (effect.amount > 0 && harmfulPlayerStatusIds.some((status) => status === effect.damageType))
+      if (effect.amount > 0 && harmfulPlayerStatusIds.includes(effect.damageType))
         (createdStatuses ??= new Set()).add(effect.damageType);
     } else {
       return false;
@@ -104,6 +104,9 @@ function validateCardPlay(
 // snapshot. Keep only boolean previews; payment objects stay freshly owned by
 // resolution, and weak keys do not retain completed battles or old hands.
 const playableCards = new WeakMap<BattleSnapshot, Map<number, boolean>>();
+
+const resolveEmptyDraw: NonNullable<BattleState["onEmptyDraw"]> = (current, amount, texts) =>
+  resolvePendingBattleReactions(applyEmergencyWishForEmptyDraw(current, amount, texts), texts);
 
 export function canPlayCard(
   state: BattleSnapshot,
@@ -186,10 +189,7 @@ function resolveCardPlay(
   const previousEmptyDraw = state.onEmptyDraw;
   state = {
     ...state,
-    onEmptyDraw:
-      previousEmptyDraw ??
-      ((current, amount, texts) =>
-        resolvePendingBattleReactions(applyEmergencyWishForEmptyDraw(current, amount, texts), texts)),
+    onEmptyDraw: previousEmptyDraw ?? resolveEmptyDraw,
   };
 
   const freeMana =

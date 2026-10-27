@@ -2,9 +2,9 @@ import { createMixedPotion } from "@/lib/alchemist";
 import {
   characters,
   cloneBattleCard,
-  getCardKeywords,
-  getOfferableCardPool,
-  getStandardPotionPool,
+  getCardKeywordView,
+  getOfferableCardPoolView,
+  getStandardPotionPoolView,
   getStartingDeck,
   type BattleCard,
   type CharacterId,
@@ -31,12 +31,12 @@ export const WILDCARD_SIM_DECK_SIZE: Record<TalentPreset, number> = {
 
 export function cardMatchesAffinity(card: BattleCard, affinityKeywords: readonly KeywordId[]): boolean {
   if (affinityKeywords.length === 0) return true;
-  const cardKeywords = getCardKeywords(card);
+  const cardKeywords = getCardKeywordView(card);
   return affinityKeywords.some((keyword) => cardKeywords.includes(keyword));
 }
 
 function buildAlchemistMixedPotions(seed: number): BattleCard[] {
-  const pool = getStandardPotionPool();
+  const pool = getStandardPotionPoolView();
   const rng = createSeededRng(seed + 9_001);
   const mixed: BattleCard[] = [];
   for (let i = 0; i < ALCHEMIST_MIXED_POTION_COUNT; i++) {
@@ -63,7 +63,7 @@ function getClassDeckTemplate(characterId: CharacterId): ClassDeckTemplate {
     const startingDeck = getStartingDeck(characterId);
     const startingIds = new Set(startingDeck.map((card) => card.id));
     const affinityKeywords = characters[characterId].keywords;
-    const candidates = getOfferableCardPool().filter(
+    const candidates = getOfferableCardPoolView().filter(
       (card) => !startingIds.has(card.id) && cardMatchesAffinity(card, affinityKeywords),
     );
     template = { startingDeck, candidates };
@@ -76,7 +76,7 @@ export function buildClassSimDeck(characterId: CharacterId, preset: TalentPreset
   const rng = createSeededRng(seed);
 
   if (characterId === "wildcard") {
-    return sampleItems(getOfferableCardPool(), WILDCARD_SIM_DECK_SIZE[preset], rng).map(cloneBattleCard);
+    return sampleItems(getOfferableCardPoolView(), WILDCARD_SIM_DECK_SIZE[preset], rng).map(cloneBattleCard);
   }
 
   const { startingDeck, candidates } = getClassDeckTemplate(characterId);

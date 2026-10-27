@@ -29,12 +29,17 @@ export function chunkIntoRows<T>(items: T[], sizes: readonly number[] | number):
   return rows;
 }
 
-const TALENT_TREE_KEYWORDS = (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) =>
-  TALENT_TREE_KEYWORD_IDS.has(kw),
+const TALENT_TREE_KEYWORDS = Object.freeze(
+  (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => TALENT_TREE_KEYWORD_IDS.has(kw)),
 );
 
 export function getTalentTreeKeywordIds(): KeywordId[] {
   return [...TALENT_TREE_KEYWORDS];
+}
+
+/** Internal read-only projection for callers that do not mutate the list. */
+export function getTalentTreeKeywordView(): readonly KeywordId[] {
+  return TALENT_TREE_KEYWORDS;
 }
 
 export function countImplementedTalents(keywordId: KeywordId): number {

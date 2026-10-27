@@ -25,6 +25,8 @@ import { payPendingBleedLeech } from "./stun-leech-resolution";
 import { dealEnemyDotTick, projectEnemyDotDamage } from "./dot-resolve";
 import { processContagion } from "./enemy-healing";
 
+const DECAYING_PLAYER_STATUSES = ["burn", "poison"] as const;
+
 function emitDotCombatText(
   combatTexts: CombatTextEvent[],
   target: "enemy" | "player",
@@ -227,7 +229,7 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
   let nextState = state;
   // Burn and Poison settle their reactions before the next tick. Bleed is
   // followed by the shared end-of-tick settlement, including crowd control.
-  for (const status of ["burn", "poison"] as const) {
+  for (const status of DECAYING_PLAYER_STATUSES) {
     const stacks = nextState.playerStatuses[status];
     if (stacks > 0) {
       nextState = dealPlayerDotTick(

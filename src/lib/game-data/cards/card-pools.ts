@@ -31,8 +31,17 @@ export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {
   return POTION_CARD_IDS.has(card.id);
 }
 
-const offerableCardPool = cardLibrary.filter((card) => !card.excludeFromOfferPool);
-const standardPotionPool = cardLibrary.filter(isStandardPotionCard);
+const offerableCardPool = Object.freeze(cardLibrary.filter((card) => !card.excludeFromOfferPool));
+const standardPotionPool = Object.freeze(cardLibrary.filter(isStandardPotionCard));
+
+/** Read-only catalog views for consumers that do not mutate the pool. */
+export function getOfferableCardPoolView(): readonly BattleCard[] {
+  return offerableCardPool;
+}
+
+export function getStandardPotionPoolView(): readonly BattleCard[] {
+  return standardPotionPool;
+}
 
 export function getOfferableCardPool(): BattleCard[] {
   return [...offerableCardPool];

@@ -1,4 +1,4 @@
-import { cloneBattleCard, getStandardPotionPool, isPotionCard, type BattleCard } from "@/lib/game-data";
+import { cloneBattleCard, getStandardPotionPoolView, isPotionCard, type BattleCard } from "@/lib/game-data";
 import { CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
 import { doublePotionPotency } from ".";
@@ -19,7 +19,7 @@ export function getCampfireBrewKind(deck: readonly BattleCard[]): "new" | "combi
 const DEFENSIVE_POTION_IDS: ReadonlySet<string> = new Set(["health-potion", "stoneskin-potion", "panacea-potion"]);
 
 export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
-  const pool = shuffle(getStandardPotionPool(), rng);
+  const pool = shuffle(getStandardPotionPoolView(), rng);
   const defensiveIndex = pool.findIndex((card) => DEFENSIVE_POTION_IDS.has(card.id));
   if (defensiveIndex > 0) pool.unshift(...pool.splice(defensiveIndex, 1));
   pool.length = Math.min(pool.length, CAMPFIRE_POTION_OFFERS);

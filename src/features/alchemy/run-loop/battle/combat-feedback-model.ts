@@ -5,6 +5,8 @@ import { REACTION_TEXT_LIFETIME_MS } from "@/lib/game-constants";
 import { getCombatImpactVisual } from "../../shared/utils";
 import { combatTextDisplay } from "./combat-feedback-merge";
 
+const FEEDBACK_TARGETS = ["player", "enemy"] as const;
+
 /** Converts a resolved action without mutating events or reading runtime state. */
 export function prepareCombatFeedback(
   events: readonly CombatTextEvent[],
@@ -85,7 +87,7 @@ export function prepareCombatFeedback(
   const bursts: CombatTextBurst[] = [];
   const impacts: Partial<Record<"playerImpactCue" | "enemyImpactCue", Omit<CombatImpactCue, "sequence" | "recoil">>> =
     {};
-  for (const target of ["player", "enemy"] as const) {
+  for (const target of FEEDBACK_TARGETS) {
     const entries = byTarget[target];
     if (entries.length === 0) continue;
     const id = `combat-burst-${actionId}-${target}`;

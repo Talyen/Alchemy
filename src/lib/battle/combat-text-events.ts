@@ -18,7 +18,9 @@ export function emitEnemyBuildupImmunity(
 }
 
 export function shouldShowCombatText(event: CombatTextEvent) {
-  return event.kind !== "status" || !harmfulPlayerStatusIds.some((status) => status === event.stat);
+  return (
+    event.kind !== "status" || !harmfulPlayerStatusIds.includes(event.stat as (typeof harmfulPlayerStatusIds)[number])
+  );
 }
 
 export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {

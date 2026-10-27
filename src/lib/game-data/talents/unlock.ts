@@ -1,6 +1,6 @@
 import { normalizeUnlockedTalents } from "./compute";
 import type { KeywordId } from "../types";
-import { countImplementedTalents, getAllocatableTalentChoices, getTalentTreeKeywordIds } from "./choices";
+import { countImplementedTalents, getAllocatableTalentChoices, getTalentTreeKeywordView } from "./choices";
 import { computeTalentPoints, type TalentXP } from "./progression";
 import { getTalentById } from "./talent-pool-definitions";
 import type { UnlockedTalents } from "./types";
@@ -17,7 +17,7 @@ export type UnlockTalentResult = { ok: true } | { ok: false; reason: UnlockTalen
 /** A menu/indicator predicate; spending a point still goes through canUnlockTalent. */
 export function hasUnspentTalentPoint(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
   const normalized = normalizeUnlockedTalents(unlockedTalents);
-  return getTalentTreeKeywordIds().some((keywordId) => {
+  return getTalentTreeKeywordView().some((keywordId) => {
     const points = Math.min(computeTalentPoints(talentXP[keywordId] ?? 0), countImplementedTalents(keywordId));
     return points > (normalized[keywordId] ?? []).length;
   });

@@ -77,7 +77,9 @@ function generateGearOfferings({
       unusedBases.length > 0
         ? unusedBases
         : fillCount
-          ? basePool.filter((base) => reservedBases.get(base.id) !== "unique")
+          ? repeatableCount === basePool.length
+            ? basePool
+            : basePool.filter((base) => reservedBases.get(base.id) !== "unique")
           : [];
     if (eligibleBases.length === 0) break;
 

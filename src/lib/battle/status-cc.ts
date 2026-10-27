@@ -17,6 +17,7 @@ import { getBattleOutcome } from "./battle-outcome";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 
 export type ActiveCcKeyword = "stun" | "freeze";
+const CC_TRIGGER_ORDER = ["stun", "freeze"] as const;
 
 export function getActiveCcKeyword(cc: CcState): ActiveCcKeyword | null {
   if (cc.stunSkipTurns > 0) return "stun";
@@ -95,7 +96,7 @@ export function resolvePlayerCrowdControlTriggers(state: BattleState, combatText
   // Mirror the enemy guard in tryTriggerEnemyCc: while controlled, new buildup
   // banks for later instead of extending the skip or firing the other stat on
   // a follow-up packet of the same attack.
-  for (const stat of ["stun", "freeze"] as const) {
+  for (const stat of CC_TRIGGER_ORDER) {
     // Stun takes priority; once controlled, bank the other stat for later.
     if (isCcControlled(state.playerCC)) break;
     state = resolvePlayerCrowdControlTrigger({

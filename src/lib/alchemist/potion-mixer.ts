@@ -40,7 +40,8 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
   // Reject before generating descriptions or spending either ingredient.
   if (
     !combinedEffects &&
-    [cardA, cardB].some((card) => card.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success))
+    (cardA.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success) ||
+      cardB.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success))
   )
     return null;
   const tagSet = new Set(cardA.tags);

@@ -4,8 +4,8 @@ import {
   characters,
   companionLibrary,
   computeTalentEffects,
-  getCardKeywords,
-  getOfferableCardPool,
+  getCardKeywordView,
+  getOfferableCardPoolView,
   trinketLibrary,
   type BattleCard,
 } from "@/lib/game-data";
@@ -34,7 +34,7 @@ export { IN_CLASS_CARD_GAUNTLET };
 export { buildBalanceBatchConfig } from "./report-sweep-runner";
 
 function buildRandomDeck(seed: number, size = 10): BattleCard[] {
-  return sampleItems(getOfferableCardPool(), size, createRunStreamRng(seed, "world"));
+  return sampleItems(getOfferableCardPoolView(), size, createRunStreamRng(seed, "world"));
 }
 
 export function* trinketGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
@@ -131,7 +131,7 @@ export function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSw
       const variants = cardLibrary
         .filter(
           (card) =>
-            characterId === "wildcard" || getCardKeywords(card).length === 0 || cardMatchesAffinity(card, affinity),
+            characterId === "wildcard" || getCardKeywordView(card).length === 0 || cardMatchesAffinity(card, affinity),
         )
         .map((card) => {
           const present = baseDeck.some((entry) => entry.id === card.id);

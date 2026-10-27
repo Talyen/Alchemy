@@ -1,12 +1,5 @@
 import { getImmediateDamage, getImmediateDefense } from "@/lib/battle";
-import {
-  characters,
-  getCardKeywords,
-  getCardKeywordView,
-  type BattleCard,
-  type CharacterId,
-  type KeywordId,
-} from "@/lib/game-data";
+import { characters, getCardKeywordView, type BattleCard, type CharacterId, type KeywordId } from "@/lib/game-data";
 
 function keywordProfile(deck: readonly BattleCard[]): Map<KeywordId, number> {
   const profile = new Map<KeywordId, number>();
@@ -29,7 +22,7 @@ function deckSynergy(profile: Map<KeywordId, number>, keywords: readonly Keyword
  * static keyword catalog is sparse, especially for Wildcard.
  */
 export function scoreArchetypeCard(hero: CharacterId, card: BattleCard, deck: readonly BattleCard[]): number {
-  const keywords = getCardKeywords(card);
+  const keywords = getCardKeywordView(card);
   const profile = keywordProfile(deck);
   const affinity = heroAffinity(hero, keywords);
   const synergy = deckSynergy(profile, keywords);

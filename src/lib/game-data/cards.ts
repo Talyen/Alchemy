@@ -6,7 +6,9 @@ export { cloneBattleCard } from "./cards/hydrate-card";
 
 export {
   getOfferableCardPool,
+  getOfferableCardPoolView,
   getStandardPotionPool,
+  getStandardPotionPoolView,
   isCompanionSummonCard,
   isMixedPotionCard,
   isPotionCard,

@@ -7,7 +7,21 @@ import { DAMAGE_TYPES } from "./types";
 import type { BattleCard, BattleCardEffect, KeywordId } from "./types";
 
 type LeafEffectKind = Exclude<BattleCardEffect["kind"], "chance" | "repeat-over-turns">;
-type EffectPresentation<K extends LeafEffectKind> = (effect: Extract<BattleCardEffect, { kind: K }>) => KeywordId[];
+type EffectPresentation<K extends LeafEffectKind> = (
+  effect: Extract<BattleCardEffect, { kind: K }>,
+) => readonly KeywordId[];
+
+const EMPTY_KEYWORDS: readonly KeywordId[] = [];
+const HEALTH_KEYWORDS: readonly KeywordId[] = ["health"];
+const MANA_KEYWORDS: readonly KeywordId[] = ["mana"];
+const GOLD_KEYWORDS: readonly KeywordId[] = ["gold"];
+const WISH_KEYWORDS: readonly KeywordId[] = ["wish"];
+const COMPANION_KEYWORDS: readonly KeywordId[] = ["companion"];
+const ARMOR_KEYWORDS: readonly KeywordId[] = ["armor"];
+const LEECH_KEYWORDS: readonly KeywordId[] = ["leech"];
+const POISON_KEYWORDS: readonly KeywordId[] = ["poison"];
+const ARCHERY_KEYWORDS: readonly KeywordId[] = ["archery"];
+const DODGE_KEYWORDS: readonly KeywordId[] = ["dodge"];
 
 const PRESENTATION: { [K in LeafEffectKind]: EffectPresentation<K> } = {
   damage: (effect) =>
@@ -31,29 +45,29 @@ const PRESENTATION: { [K in LeafEffectKind]: EffectPresentation<K> } = {
       effect.statusPool ?? (effect.status !== "haste" && effect.status !== "phoenixFeather" ? [effect.status] : []),
       effect.perManaCrystal !== undefined || effect.convertCurrentMana !== undefined ? ["mana"] : [],
     ),
-  heal: () => ["health"],
-  "restore-mana": () => ["mana"],
-  "lose-mana": () => ["mana"],
-  "lose-max-mana": () => ["mana"],
-  "gain-max-mana": () => ["mana"],
-  "gain-gold": () => ["gold"],
-  wish: (effect) => (effect.companionIfAbsent ? [] : ["wish"]),
-  "summon-companion": () => ["companion"],
-  "companion-action": () => ["companion"],
-  "random-draw": () => [],
-  "remove-harmful-status": () => [],
-  "lose-health": () => ["health"],
-  "draw-cards": () => [],
-  "remove-enemy-armor": () => ["armor"],
+  heal: () => HEALTH_KEYWORDS,
+  "restore-mana": () => MANA_KEYWORDS,
+  "lose-mana": () => MANA_KEYWORDS,
+  "lose-max-mana": () => MANA_KEYWORDS,
+  "gain-max-mana": () => MANA_KEYWORDS,
+  "gain-gold": () => GOLD_KEYWORDS,
+  wish: (effect) => (effect.companionIfAbsent ? EMPTY_KEYWORDS : WISH_KEYWORDS),
+  "summon-companion": () => COMPANION_KEYWORDS,
+  "companion-action": () => COMPANION_KEYWORDS,
+  "random-draw": () => EMPTY_KEYWORDS,
+  "remove-harmful-status": () => EMPTY_KEYWORDS,
+  "lose-health": () => HEALTH_KEYWORDS,
+  "draw-cards": () => EMPTY_KEYWORDS,
+  "remove-enemy-armor": () => ARMOR_KEYWORDS,
   "multiply-enemy-status": (effect) => [effect.status],
   "remove-player-status": (effect) => [effect.status],
   "self-damage": (effect) => [effect.damageType],
-  "next-hit-crit": () => [],
-  "next-hit-leech": () => ["leech"],
-  "play-next-card-twice": () => [],
-  "next-hit-poison": () => ["poison"],
-  "next-archery-free": () => ["archery"],
-  "dodge-next-attack": () => ["dodge"],
+  "next-hit-crit": () => EMPTY_KEYWORDS,
+  "next-hit-leech": () => LEECH_KEYWORDS,
+  "play-next-card-twice": () => EMPTY_KEYWORDS,
+  "next-hit-poison": () => POISON_KEYWORDS,
+  "next-archery-free": () => ARCHERY_KEYWORDS,
+  "dodge-next-attack": () => DODGE_KEYWORDS,
 };
 
 export { createEffectDescription } from "./effect-description";

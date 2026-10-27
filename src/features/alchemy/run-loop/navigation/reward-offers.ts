@@ -5,7 +5,8 @@ import {
   cardHasKeyword,
   isCompanionSummonCard,
   getOfferableCardPool,
-  getStandardPotionPool,
+  getOfferableCardPoolView,
+  getStandardPotionPoolView,
   selectRewardCards,
   trinketLibrary,
   type BattleCard,
@@ -40,7 +41,7 @@ export interface RewardOfferInput {
 }
 
 export function getRandomPotionCard(rng: () => number): BattleCard | null {
-  const potion = pickRandom(getStandardPotionPool(), rng);
+  const potion = pickRandom(getStandardPotionPoolView(), rng);
   if (!potion) {
     // The pool is statically populated; a data error skips the grant instead of
     // aborting the reward claim mid-command.
@@ -64,8 +65,8 @@ export function getCompanionCardChoices(
         : "companion";
   const companions =
     theme === "companion"
-      ? getOfferableCardPool().filter(isCompanionSummonCard)
-      : getOfferableCardPool().filter((card) => cardHasKeyword(card, theme));
+      ? getOfferableCardPoolView().filter(isCompanionSummonCard)
+      : getOfferableCardPoolView().filter((card) => cardHasKeyword(card, theme));
   return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }
 

@@ -10,6 +10,9 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { setPlayerStatus } from "./status-state";
 import { mergeCombatText } from "./combat-text-events";
 
+const CC_STATUSES = ["stun", "freeze"] as const;
+const DAMAGE_OVER_TIME_STATUSES = ["burn", "poison", "bleed"] as const;
+
 export function applyDodgeTalentStatuses(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (state.talentEffects.drawOnDodge > 0) {
@@ -35,7 +38,7 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     (nextState.playerStatuses.stun > 0 || nextState.playerStatuses.freeze > 0)
   ) {
     const removed = Number(nextState.playerStatuses.stun > 0) + Number(nextState.playerStatuses.freeze > 0);
-    for (const status of ["stun", "freeze"] as const) {
+    for (const status of CC_STATUSES) {
       if (nextState.playerStatuses[status] > 0) {
         mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
       }
@@ -50,7 +53,7 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
   if (amount <= 0) return nextState;
 
   let removedStatuses = 0;
-  for (const status of ["burn", "poison", "bleed"] as const) {
+  for (const status of DAMAGE_OVER_TIME_STATUSES) {
     const previous = nextState.playerStatuses[status];
     nextState = setPlayerStatus(nextState, status, Math.max(0, previous - amount));
     if (previous > 0 && nextState.playerStatuses[status] === 0) {

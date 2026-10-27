@@ -137,14 +137,17 @@ export function chooseWishCard(state: BattleState, cardId: string) {
   }
 
   const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
-  const declinedCards = (state.wishOptions ?? []).filter((card) => card.id !== chosenCard.id);
   let nextState = addCardToHandOrQueue({ ...state, wishOptions: nextWishOptions, wishQueue }, chosenCard);
   const acquiredIds = [chosenCard.id];
-  if (declinedCards.length > 0 && rollBattleChance(nextState.talentEffects.declinedWishCardChance, nextState)) {
-    const bonusCard = pickRandom(declinedCards, getBattleRng(nextState));
-    if (bonusCard) {
-      nextState = addCardToHandOrQueue(nextState, bonusCard);
-      acquiredIds.push(bonusCard.id);
+  const chance = nextState.talentEffects.declinedWishCardChance;
+  if (!(chance <= 0)) {
+    const declinedCards = state.wishOptions!.filter((card) => card.id !== chosenCard.id);
+    if (declinedCards.length > 0 && rollBattleChance(chance, nextState)) {
+      const bonusCard = pickRandom(declinedCards, getBattleRng(nextState));
+      if (bonusCard) {
+        nextState = addCardToHandOrQueue(nextState, bonusCard);
+        acquiredIds.push(bonusCard.id);
+      }
     }
   }
   return { ...nextState, discoveredCardIds: appendUniqueMany(nextState.discoveredCardIds, acquiredIds) };
