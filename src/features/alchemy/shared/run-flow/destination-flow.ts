@@ -100,7 +100,9 @@ export function advanceDestinationOfferState(
     if (choices.includes(destination)) {
       roundsSinceOffered[destination] = 0;
     } else {
-      roundsSinceOffered[destination] = (roundsSinceOffered[destination] ?? 0) + 1;
+      // The saved counter must remain a safe integer when an old or damaged
+      // save already contains the maximum; its pity weight is capped anyway.
+      roundsSinceOffered[destination] = Math.min((roundsSinceOffered[destination] ?? 0) + 1, Number.MAX_SAFE_INTEGER);
     }
   }
   return {

@@ -69,7 +69,7 @@ function validatePackedCatalogs(value) {
       !id ||
       !record(alias) ||
       typeof alias.id !== "string" ||
-      (alias.english !== undefined && typeof alias.english !== "string") ||
+      (alias.english !== undefined && (typeof alias.english !== "string" || !alias.english.trim())) ||
       (alias.values !== undefined &&
         (!record(alias.values) ||
           Object.values(alias.values).some(

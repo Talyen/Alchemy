@@ -16,6 +16,7 @@ export function neighboringGridKeys({ row, col }: LabyrinthGridPosition): string
 }
 
 export function isInLabyrinthGrid(position: LabyrinthGridPosition): boolean {
+  if (!Number.isInteger(position.row) || !Number.isInteger(position.col)) return false;
   const inset = position.row > 0 && position.row < LABYRINTH_GRID.rows - 1 ? LABYRINTH_GRID.sideColumns : 0;
   return (
     position.row >= 0 &&

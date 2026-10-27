@@ -104,6 +104,7 @@ export function rngInt(rng: Rng, n: number): number {
 }
 
 export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): Rng {
+  if (!Number.isFinite(seed)) throw new Error("createRunStreamRng requires a finite seed");
   if (!Number.isSafeInteger(startCounter) || startCounter < 0)
     throw new Error("createRunStreamRng requires a non-negative integer startCounter");
   const salt = getRunStreamSalt(stream);
