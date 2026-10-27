@@ -24,14 +24,18 @@ function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidCha
     return change ? change.next : uid;
   };
   const uniqueGear = state.uniqueGear;
-  const returningFlightUids = uniqueGear.returningFlightUids.map((uid) => remapUid(uid)!);
-  const lastArcheryUid = remapUid(uniqueGear.lastArcheryUid);
-  if (
-    returningFlightUids.every((uid, index) => uid === uniqueGear.returningFlightUids[index]) &&
-    lastArcheryUid === uniqueGear.lastArcheryUid
-  ) {
-    return uniqueGear;
+  let returningFlightUids = uniqueGear.returningFlightUids;
+  for (let index = 0; index < uniqueGear.returningFlightUids.length; index++) {
+    const uid = uniqueGear.returningFlightUids[index]!;
+    const remapped = remapUid(uid)!;
+    if (remapped !== uid) {
+      if (returningFlightUids === uniqueGear.returningFlightUids) returningFlightUids = [...returningFlightUids];
+      returningFlightUids[index] = remapped;
+    }
   }
+  const lastArcheryUid = remapUid(uniqueGear.lastArcheryUid);
+  if (returningFlightUids === uniqueGear.returningFlightUids && lastArcheryUid === uniqueGear.lastArcheryUid)
+    return uniqueGear;
   return { ...uniqueGear, returningFlightUids, lastArcheryUid };
 }
 
@@ -219,7 +223,8 @@ export function drawKeywordCard(
   const deckCard = refilled.deck[index];
   if (!deckCard) return { ...ready, deck: refilled.deck, discard: refilled.discard };
   const card = { ...deckCard, uid: ready.nextCardUid };
-  const remainingDeck = refilled.deck.filter((_, i) => i !== index);
+  const remainingDeck = refilled.deck === ready.deck ? [...refilled.deck] : refilled.deck;
+  remainingDeck.splice(index, 1);
   const remaining = refillDeck(remainingDeck, refilled.discard, readyRng);
   return reportDraw(
     ready,

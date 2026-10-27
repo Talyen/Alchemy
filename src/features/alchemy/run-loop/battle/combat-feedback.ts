@@ -165,9 +165,10 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         const prepared = prepareCombatFeedback(events, ++actionId, timestamp, lifetimeMs);
         if (prepared.bursts.length === 0 && prepared.reactions.length === 0) return;
         const revision = ++textPlanRevision;
-        const dodged = new Set(
-          events.filter((event) => event.kind === "notice" && event.stat === "dodge").map((event) => event.target),
-        );
+        const dodged = new Set<Combatant>();
+        for (const event of events) {
+          if (event.kind === "notice" && event.stat === "dodge") dodged.add(event.target);
+        }
         const impacts: Partial<Pick<CombatFeedbackState, "playerImpactCue" | "enemyImpactCue">> = {};
         for (const key of ["playerImpactCue", "enemyImpactCue"] as const) {
           const visual = prepared.impacts[key];
