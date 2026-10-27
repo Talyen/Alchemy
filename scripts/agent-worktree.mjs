@@ -19,6 +19,18 @@ const UNFINISHED_GIT_STATES = [
   "rebase-apply",
 ];
 
+function hasTrailerOutput(taskPath) {
+  try {
+    const output = fs.lstatSync(path.join(taskPath, "output"), { throwIfNoEntry: false });
+    if (!output) return false;
+    if (!output.isDirectory() || output.isSymbolicLink()) return true;
+    return Boolean(fs.lstatSync(path.join(taskPath, "output/trailers"), { throwIfNoEntry: false }));
+  } catch {
+    // Uninspectable output may contain active trailer work.
+    return true;
+  }
+}
+
 // Recovery commands remain usable from a copied single file. Creation loads
 // only its dependency-free storage helper; integration loads the task launcher.
 function isMainEntry() {
@@ -197,7 +209,8 @@ Add --full-assets for asset authoring; --code-only remains an alias for the defa
 Restore masters in that checkout with: git sparse-checkout disable
 setup-integration moves main to .worktrees/integration; preserves the original
 checkout's files/index on a workspace branch. Run once when adopting this layout.
-integrate verifies and advances main; finish preserves evidence and removes the task.
+integrate verifies, advances main and finishes the task; --keep-worktree retains it.
+finish retries cleanup when a task was retained or automatic cleanup was blocked.
 `);
 }
 
@@ -283,7 +296,7 @@ export async function main(argv = process.argv.slice(2)) {
   try {
     return await runMain(argv, tracker);
   } catch (error) {
-    if (tracker) recordFailedIntegration(task, tracker, error);
+    if (tracker && tracker.phase !== "automatic cleanup") recordFailedIntegration(task, tracker, error);
     throw error;
   }
 }
@@ -375,9 +388,15 @@ async function runMain(argv, tracker) {
     console.log(`Task: ${task}\nWorkspace: ${root}\nCheckout: ${taskPath}\nMain: ${git("rev-parse", "main")}`);
     if (!fs.existsSync(taskPath)) {
       console.log(`Checkout absent. Recorded state: ${state ? `${state.integration}/${state.cleanup}` : "none"}.`);
-      if (state?.integration === "passed" && state.cleanup === "passed")
+      if (state?.integration === "passed" && state.cleanup === "passed") {
         console.log("Task finished; the branch and recorded evidence are retained.");
-      else console.log("Inspect the retained branch and recorded state before creating or recovering work.");
+        if (
+          [state.reviewBase, state.commit].every(
+            (value) => typeof value === "string" && /^[a-f0-9]{40,64}$/u.test(value),
+          )
+        )
+          console.log(`Review integrated changes from the workspace: git diff ${state.reviewBase} ${state.commit}`);
+      } else console.log("Inspect the retained branch and recorded state before creating or recovering work.");
       return;
     }
     const branch = git("-C", taskPath, "branch", "--show-current");
@@ -462,7 +481,38 @@ async function runMain(argv, tracker) {
 
   if (cmd === "list") {
     const r = runGit(["worktree", "list"], { stdio: "inherit" });
-    process.exit(r.status ?? 1);
+    if (r.status !== 0) process.exit(r.status ?? 1);
+    const directory = path.join(root, "reports/integrations");
+    const stat = fs.lstatSync(directory, { throwIfNoEntry: false });
+    if (stat?.isDirectory() && !stat.isSymbolicLink()) {
+      const pending = [];
+      for (const name of fs.readdirSync(directory)) {
+        if (!/^[a-z0-9][a-z0-9-]*\.json$/u.test(name)) continue;
+        const task = name.slice(0, -5);
+        if (/trailer/iu.test(task) || hasTrailerOutput(path.join(WORKTREE_ROOT, task))) continue;
+        const file = path.join(directory, name);
+        const item = fs.lstatSync(file, { throwIfNoEntry: false });
+        if (!item?.isFile() || item.isSymbolicLink() || item.size > 256_000) continue;
+        try {
+          const state = JSON.parse(fs.readFileSync(file, "utf8"));
+          if (
+            state.task === task &&
+            state.integration === "passed" &&
+            ["pending", "blocked"].includes(state.cleanup) &&
+            fs.existsSync(path.join(WORKTREE_ROOT, task))
+          )
+            pending.push(`${task}: ${state.cleanup}`);
+        } catch {
+          // Unknown state is not evidence of a completed task.
+        }
+      }
+      if (pending.length) {
+        console.log("\nIntegrated checkouts to review (activity is not inferred):");
+        for (const entry of pending.slice(0, 20)) console.log(`  ${entry}`);
+        if (pending.length > 20) console.log(`  and ${pending.length - 20} more`);
+      }
+    }
+    return;
   }
 
   if (cmd === "prune") {
@@ -490,6 +540,7 @@ async function runMain(argv, tracker) {
     // protects only main snapshots, merges and advancement, never test-lane waits.
     if (tracker) tracker.phase = "task lock";
     const taskLock = await acquireExclusivePort(taskPort, { label: "Task integration lock" });
+    let automaticFinish = false;
     try {
       if (tracker) tracker.phase = "checkout validation";
       const records = git(root, ["worktree", "list", "--porcelain", "-z"], true).split("\0\0");
@@ -629,9 +680,10 @@ async function runMain(argv, tracker) {
         }
         return;
       }
-      console.log(`Integration phase: verify and advance main; retain task checkout and browsers.`);
+      console.log(`Integration phase: verify and advance main.`);
       let taskHead;
       let reviewBase;
+      let integratedPaths = [];
       const integrationStarted = Date.now();
       let attempts = 0;
       let verificationMs = 0;
@@ -662,6 +714,7 @@ async function runMain(argv, tracker) {
         const paths = git(taskPath, ["diff", "--no-renames", "--name-only", "-z", mainHead, taskHead], true)
           .split("\0")
           .filter(Boolean);
+        integratedPaths = paths;
         if (paths.length) {
           if (tracker) tracker.phase = "verification";
           const { commandInvocation } = await import(
@@ -709,12 +762,29 @@ async function runMain(argv, tracker) {
         checkout: taskPath,
         metrics: { attempts, verificationMs, elapsedMs: Date.now() - integrationStarted },
       });
-      console.log(
-        `State: ${stateFile}. Review integration, then finish: node scripts/agent-worktree.mjs finish --task ${task}`,
-      );
-      await showTaskStatus(task);
+      const trailerTask =
+        /trailer/iu.test(task) ||
+        integratedPaths.some((file) => /(?:^|\/)trailers?(?:\/|\.|-|$)/iu.test(file)) ||
+        hasTrailerOutput(taskPath);
+      automaticFinish = !hasFlag("--keep-worktree") && !trailerTask;
+      if (trailerTask) console.log("Trailer worktree retained; automatic cleanup does not touch trailer work.");
+      else if (hasFlag("--keep-worktree")) console.log("Task worktree retained by --keep-worktree.");
+      console.log(`State: ${stateFile}. Review integrated changes: git diff ${reviewBase} ${taskHead}`);
+      if (!automaticFinish) await showTaskStatus(task);
     } finally {
       await taskLock.release();
+    }
+    if (automaticFinish) {
+      if (tracker) tracker.phase = "automatic cleanup";
+      console.log("Finishing the integrated task and preserving its evidence.");
+      try {
+        await runMain(["finish", "--task", task], null);
+      } catch (error) {
+        console.error(
+          `Integration succeeded, but automatic cleanup did not finish. Inspect status --task ${task} before retrying.`,
+        );
+        throw error;
+      }
     }
     return;
   }
@@ -826,7 +896,7 @@ async function runMain(argv, tracker) {
     }
     console.log(`  cd "${root}"  # return before cleanup`);
     console.log(`  node scripts/agent-worktree.mjs status --task ${task}  # resume task workflow`);
-    console.log(`  node scripts/agent-worktree.mjs finish --task ${task}  # after reviewing integration`);
+    console.log(`  integration automatically finishes the task; use --keep-worktree to retain it`);
     await showTaskStatus(task);
     return;
   }

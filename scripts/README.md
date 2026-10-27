@@ -213,8 +213,7 @@ node scripts/agent-worktree.mjs create --task <slug>
 node scripts/agent-worktree.mjs status --task <slug> # inspect or resume
 # Implement, check and commit in .worktrees/<slug>.
 node scripts/agent-worktree.mjs integrate --task <slug>
-# Review the integrated result, then preserve evidence and close the task.
-node scripts/agent-worktree.mjs finish --task <slug>
+# Review the reported integrated delta from main; cleanup is automatic.
 ```
 
 Status shows the task checkout, base, working paths, recorded integration and latest
@@ -298,11 +297,15 @@ Unfinished Git operations, including bisects, block advancement. Failures preser
 work. Locks are OS-owned loopback listeners; waits are cancellable and never
 reclaim another owner. Test waits never hold the shared integration lock.
 Resolve understood conflicts in the task and retry. Never update main manually.
-Integration retains the task checkout and browsers; `--keep-worktree` remains a
-compatibility flag. No command pushes.
+Integration automatically finishes its own checkout after advancing main; review
+the exact reported base and commit from main or the retained task branch. Pass
+`--keep-worktree` when a preview or further work needs that checkout. Trailer tasks,
+changes to trailer paths and checkouts containing `output/trailers/` stay open.
+No command pushes. `list` flags integrated checkouts whose cleanup is pending or
+blocked for review; it does not infer inactivity or remove them.
 
 `reports/integrations/<slug>.json` records integration and cleanup separately.
-`finish` requires the unchanged, clean task commit to be contained in main. It
+The automatic finish (or an explicit `finish` retry) requires the unchanged, clean task commit to be contained in main. It
 closes only task browsers, preserves the complete `reports/` directory and other
 non-build ignored files in a unique evidence bundle, then removes only that
 registered checkout. The task branch remains. A failure prints a finish retry

@@ -106,11 +106,12 @@ current-source server and isolated browser context, seeds its checkpoint, and
 captures the settled screen. [Visual review](./Docs/UI_VISUAL_REVIEW.md#reproducible-scenarios)
 owns scenario options and original/candidate comparison.
 
-Checks and integration preserve interactive sessions. After reviewing integration,
-run `node scripts/agent-worktree.mjs finish --task <slug>` from the original
-workspace to preserve evidence, close task browsers and remove the completed
-worktree. A cleanup failure leaves integration complete and prints its retry
-command. Never close all sessions or reclaim another task's browser. [Preview details](./scripts/VERIFICATION.md#preview-implementation-notes)
+Checks preserve interactive sessions. Integration automatically preserves evidence,
+closes the task's browsers and removes the integrated worktree; use `--keep-worktree`
+when the preview or further work needs it. Trailer tasks are retained automatically.
+Review the integrated delta using the reported commit and base. A cleanup failure
+leaves integration complete and prints its retry command. Never close all sessions
+or reclaim another task's browser. [Preview details](./scripts/VERIFICATION.md#preview-implementation-notes)
 cover one-shot runners and platform behavior.
 
 ## Verification reuse

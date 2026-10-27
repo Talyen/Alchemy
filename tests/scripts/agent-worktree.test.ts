@@ -311,7 +311,7 @@ process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
       env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive, ...env },
       encoding: "utf8" as const,
     };
-    const integrated = spawnSync(process.execPath, [script, "integrate", "--task", "task"], options);
+    const integrated = spawnSync(process.execPath, [script, "integrate", "--task", "task", "--keep-worktree"], options);
     if (integrated.status !== 0) return integrated;
     const finished = spawnSync(process.execPath, [script, "finish", "--task", "task"], options);
     return { ...finished, stdout: integrated.stdout + finished.stdout, stderr: integrated.stderr + finished.stderr };
@@ -337,7 +337,7 @@ describe("serialized local integration", () => {
     expect(dirty.stdout).toMatch(/Next in .*\/\.worktrees\/task:/u);
     expect(readFileSync(join(taskPath, "unfinished.txt"), "utf8")).toBe("preserve");
     rmSync(join(taskPath, "unfinished.txt"));
-    const integrated = run("integrate", "--task", "task");
+    const integrated = run("integrate", "--task", "task", "--keep-worktree");
     expect(integrated.status, integrated.stderr).toBe(0);
     expect(run("status", "--task", "task").stdout).toContain("review integration");
     const finish = run("finish", "--task", "task");
@@ -358,7 +358,7 @@ describe("serialized local integration", () => {
         env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
         encoding: "utf8",
       });
-    const integrated = run("integrate", "--task", "task");
+    const integrated = run("integrate", "--task", "task", "--keep-worktree");
     expect(integrated.status, integrated.stderr).toBe(0);
     const statePath = join(root, "reports/integrations/task.json");
     const state = JSON.parse(readFileSync(statePath, "utf8"));
@@ -724,22 +724,32 @@ export async function closeTaskBrowsers() {
         git(["commit", "-qm", "test: gate only cleanup"], taskPath);
       }
       if (phase === "cleanup") {
-        const integrated = spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
+        const integrated = spawnSync(process.execPath, [script, "integrate", "--task", "task", "--keep-worktree"], {
           env: { ...process.env, INTEGRATION_CHECKS: checks },
           encoding: "utf8",
         });
         expect(integrated.status, integrated.stderr).toBe(0);
       }
-      const child = spawn(process.execPath, [script, phase === "cleanup" ? "finish" : "integrate", "--task", "task"], {
-        env: {
-          ...process.env,
-          CODEX_WORKTREE_ARCHIVE_ROOT: archive,
-          INTEGRATION_READY: ready,
-          INTEGRATION_RELEASE: release,
-          INTEGRATION_CHECKS: checks,
+      const child = spawn(
+        process.execPath,
+        [
+          script,
+          phase === "cleanup" ? "finish" : "integrate",
+          "--task",
+          "task",
+          ...(phase === "verification" ? ["--keep-worktree"] : []),
+        ],
+        {
+          env: {
+            ...process.env,
+            CODEX_WORKTREE_ARCHIVE_ROOT: archive,
+            INTEGRATION_READY: ready,
+            INTEGRATION_RELEASE: release,
+            INTEGRATION_CHECKS: checks,
+          },
+          stdio: "pipe",
         },
-        stdio: "pipe",
-      });
+      );
       let output = "";
       child.stdout.on("data", (data) => {
         output += data;
@@ -902,11 +912,13 @@ it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
   20000,
 );
 
-it("retains the task after integration and records cleanup as a separate pending phase", () => {
+it("automatically preserves evidence and removes an integrated task while retaining its branch", () => {
   const { root, taskPath, script, git, archive } = integrationFixture();
   using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
 
   writeFileSync(join(root, "main.txt"), "main\n");
+  mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
+  writeFileSync(join(taskPath, "reports/visual-review/evidence.txt"), "keep this evidence");
   git(["add", "main.txt"]);
   git(["commit", "-qm", "test: main"]);
   const result = spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
@@ -914,13 +926,64 @@ it("retains the task after integration and records cleanup as a separate pending
     env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
   });
   expect(result.status, result.stderr).toBe(0);
-  expect(existsSync(taskPath)).toBe(true);
-  expect(existsSync(archive)).toBe(false);
-  expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"))).toMatchObject({
+  expect(existsSync(taskPath)).toBe(false);
+  const state = JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"));
+  expect(state).toMatchObject({
     integration: "passed",
-    cleanup: "pending",
+    cleanup: "passed",
   });
-  expect(result.stdout).toContain("finish --task task");
+  expect(readFileSync(join(state.evidence, "reports/visual-review/evidence.txt"), "utf8")).toBe("keep this evidence");
+  expect(git(["rev-parse", "agent/task"])).toBe(state.commit);
+  expect(result.stdout).toContain(`git diff ${state.reviewBase} ${state.commit}`);
+}, 20000);
+
+it("retains an integrated checkout when explicitly requested and flags it for review", () => {
+  const { root, taskPath, script, archive } = integrationFixture();
+  using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+  const result = spawnSync(process.execPath, [script, "integrate", "--task", "task", "--keep-worktree"], {
+    encoding: "utf8",
+    env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+  });
+  expect(result.status, result.stderr).toBe(0);
+  expect(existsSync(taskPath)).toBe(true);
+  expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).cleanup).toBe("pending");
+  const listed = spawnSync(process.execPath, [script, "list"], { encoding: "utf8" });
+  expect(listed.stdout).toContain("task: pending");
+  expect(listed.stdout).toContain("activity is not inferred");
+}, 20000);
+
+it("does not automatically finish a checkout containing trailer output", () => {
+  const { root, taskPath, script, archive } = integrationFixture();
+  using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+  writeFileSync(join(root, ".git/info/exclude"), "output/\n");
+  mkdirSync(join(taskPath, "output/trailers"), { recursive: true });
+  writeFileSync(join(taskPath, "output/trailers/footage.mp4"), "working footage");
+  const result = spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
+    encoding: "utf8",
+    env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+  });
+  expect(result.status, result.stderr).toBe(0);
+  expect(readFileSync(join(taskPath, "output/trailers/footage.mp4"), "utf8")).toBe("working footage");
+  expect(result.stdout).toContain("Trailer worktree retained");
+}, 20000);
+
+it("reports cleanup failure separately and preserves the integrated checkout", () => {
+  const { root, taskPath, script, git, archive } = integrationFixture();
+  using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
+  symlinkSync(join(root, "shared.txt"), join(taskPath, "reports/visual-review/linked.txt"));
+  const result = spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
+    encoding: "utf8",
+    env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+  });
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain("Integration remains complete; cleanup blocked");
+  const state = JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"));
+  expect(state).toMatchObject({ integration: "passed", cleanup: "blocked" });
+  expect(git(["rev-parse", "main"])).toBe(state.commit);
+  expect(existsSync(taskPath)).toBe(true);
+  const listed = spawnSync(process.execPath, [script, "list"], { encoding: "utf8" });
+  expect(listed.stdout).toContain("task: blocked");
 }, 20000);
 
 it("verifies automatic storage defaults and independent tracked clones", { timeout: 30_000 }, () => {
