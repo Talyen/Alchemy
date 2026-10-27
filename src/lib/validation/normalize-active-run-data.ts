@@ -1,4 +1,3 @@
-import { repairShopOfferings } from "@/lib/active-run-session/shop-offering-repair";
 import { createStarterDraftChoices } from "../starter-draft";
 import { createAlchemistBrewOffers, createCampfirePotionOffers } from "@/lib/alchemist/brewing";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
@@ -119,21 +118,12 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
         },
       },
     };
-  if (activity.kind === "shop") {
-    const repaired = repairShopOfferings(activity.data.cards, activity.data.purchasedSlotKeys, isRecoverableCard);
-    activity = {
-      ...activity,
-      data: { ...activity.data, cards: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys },
-    };
-  }
   if (activity.kind === "alchemist") {
-    const repaired = repairShopOfferings(activity.data.potions, activity.data.purchasedSlotKeys, isRecoverableCard);
     const brewOffers = filterLiveCards(activity.data.brewOffers).filter(isStandardPotionCard);
     activity = {
       ...activity,
       data: {
         ...activity.data,
-        potions: repaired.items,
         brewOffers:
           brewOffers.length > 0 || activity.data.brewUsed
             ? brewOffers
@@ -141,7 +131,6 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
                 createRunStateRng(rngState, "shops"),
                 data.contentSystemType === "labyrinth" ? data.activeLabyrinthRewardModifiers : [],
               ),
-        purchasedSlotKeys: repaired.purchasedSlotKeys,
       },
     };
   }

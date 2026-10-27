@@ -2,11 +2,12 @@ import type { PersistedPendingReward } from "@/lib/active-run-session/reward-typ
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { TRANSMUTATION_KEYWORD_GROUPS } from "@/lib/game-constants";
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
-import { shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
+import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { z } from "zod";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
-import { BattleCardSchema, parseSavedCardEntries, savedCardArraySchema } from "./battle-card-schemas";
+import { isRecoverableCard } from "../normalize-persisted-battle-state";
+import { BattleCardSchema, parseSavedCard, savedCardArraySchema } from "./battle-card-schemas";
 import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
 import {
   EncounterCombatTraitArraySchema,
@@ -105,13 +106,17 @@ function createShopObjectSchema<T extends z.ZodRawShape>(shape: T) {
 }
 
 function repairSavedShopCards(cards: unknown[], purchasedSlotKeys: string[], path: string) {
-  const purchased = new Set(purchasedSlotKeys);
-  const entries = parseSavedCardEntries(cards, path);
+  // Keep gaps until the shared shelf repair has remapped the original indices.
+  const parsed = cards.map((card, index) => parseSavedCard(card, path, index));
+  const repaired = repairShopOfferings(
+    parsed,
+    purchasedSlotKeys,
+    (card) => card !== null && isRecoverableCard(card),
+    (card, index) => shopItemSlotKey(card!.id, index),
+  );
   return {
-    cards: entries.map(({ card }) => card),
-    purchasedSlotKeys: entries.flatMap(({ card, index }, nextIndex) =>
-      purchased.has(shopItemSlotKey(card.id, index)) ? [shopItemSlotKey(card.id, nextIndex)] : [],
-    ),
+    cards: repaired.items.filter((card) => card !== null),
+    purchasedSlotKeys: repaired.purchasedSlotKeys,
   };
 }
 

@@ -201,23 +201,6 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(state.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
     expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[liveCard.id]]);
   });
-  it.each(["shop", "alchemist"] as const)(
-    "remaps shop purchasedSlotKeys when a tombstonedCard offering is dropped (%s)",
-    (kind) => {
-      const result = parseActiveRunData({
-        activity: savedActivityFixture(kind, {
-          [kind === "shop" ? "cards" : "potions"]: [tombstonedCard, liveCard],
-          purchasedSlotKeys: ["slash-1"],
-          refreshesLeft: 1,
-        }),
-      });
-      if (result.activity.kind !== "shop" && result.activity.kind !== "alchemist") throw new Error("Expected shelf");
-      const cards = result.activity.kind === "shop" ? result.activity.data.cards : result.activity.data.potions;
-      expect(cards.map((card) => card.id)).toEqual(["slash"]);
-      expect(result.activity.data.purchasedSlotKeys).toEqual(["slash-0"]);
-    },
-  );
-
   it("drops malformed wishQueue entries instead of aborting the parse", () => {
     const result = parseActiveRunData({
       activity: savedActivityFixture("battle", {
@@ -238,22 +221,39 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(savedActivityData(result, "battle")?.battleState.wishQueue).toEqual([]);
   });
 
-  it.each(["shop", "alchemist"] as const)(
-    "preserves purchased slots when a malformed shop card is removed (%s)",
-    (kind) => {
-      const result = parseActiveRunData({
-        activity: savedActivityFixture(kind, {
-          [kind === "shop" ? "cards" : "potions"]: [null, liveCard],
-          purchasedSlotKeys: ["slash-1"],
-          refreshesLeft: 1,
-        }),
-      });
-      if (result.activity.kind !== "shop" && result.activity.kind !== "alchemist") throw new Error("Expected shelf");
-      const cards = result.activity.kind === "shop" ? result.activity.data.cards : result.activity.data.potions;
-      expect(cards.map((card) => card.id)).toEqual(["slash"]);
-      expect(result.activity.data.purchasedSlotKeys).toEqual(["slash-0"]);
-    },
-  );
+  it.each(
+    (["shop", "alchemist"] as const).flatMap((kind) => [
+      {
+        kind,
+        name: "retired",
+        cards: [tombstonedCard, liveCard],
+        purchased: ["slash-1"],
+        ids: ["slash"],
+        sold: ["slash-0"],
+      },
+      { kind, name: "malformed", cards: [null, liveCard], purchased: ["slash-1"], ids: ["slash"], sold: ["slash-0"] },
+      {
+        kind,
+        name: "combined and duplicate",
+        cards: [null, tombstonedCard, liveCard, liveCard],
+        purchased: ["slash-3", `${tombstonedCard.id}-1`, "orphan-9"],
+        ids: ["slash", "slash"],
+        sold: ["slash-1"],
+      },
+    ]),
+  )("preserves sold slots after $name $kind card repair", ({ kind, cards: savedCards, purchased, ids, sold }) => {
+    const result = parseActiveRunData({
+      activity: savedActivityFixture(kind, {
+        [kind === "shop" ? "cards" : "potions"]: savedCards,
+        purchasedSlotKeys: purchased,
+        refreshesLeft: 1,
+      }),
+    });
+    if (result.activity.kind !== "shop" && result.activity.kind !== "alchemist") throw new Error("Expected shelf");
+    const cards = result.activity.kind === "shop" ? result.activity.data.cards : result.activity.data.potions;
+    expect(cards.map((card) => card.id)).toEqual(ids);
+    expect(result.activity.data.purchasedSlotKeys).toEqual(sold);
+  });
 
   it("preserves activeCombat when battle scalars are corrupt", () => {
     const result = parseActiveRunData({
