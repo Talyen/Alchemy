@@ -49,6 +49,28 @@ interface Outcome {
   complete: boolean;
 }
 
+type Collected<T> =
+  | { kind: "exact"; values: readonly T[] }
+  | { kind: "alternatives"; outcomes: ReadonlyArray<readonly T[]> }
+  | { kind: "unknown" };
+
+/** An interrupted world is usable only when it already observed this effect. */
+function collectObserved<T>(
+  feedback: readonly Outcome[],
+  read: (outcome: Outcome) => ReadonlyMap<BattleCardEffect, readonly T[]>,
+  effect: BattleCardEffect,
+  equal: (a: T, b: T) => boolean,
+): Collected<T> {
+  if (!feedback.length || feedback.some((outcome) => !outcome.complete && !read(outcome).has(effect)))
+    return { kind: "unknown" };
+  const outcomes = feedback.map((outcome) => read(outcome).get(effect) ?? []);
+  const first = outcomes[0]!;
+  const exact = outcomes.every(
+    (candidate) => candidate.length === first.length && candidate.every((entry, index) => equal(entry, first[index]!)),
+  );
+  return exact ? { kind: "exact", values: first } : { kind: "alternatives", outcomes };
+}
+
 /** Replay whole correlated worlds. Missing alternatives never become concrete starting values. */
 export function inspectResolutionOutcomes(
   card: BattleCard,
@@ -150,52 +172,24 @@ export function inspectResolutionOutcomes(
       if (feedback.every((outcome) => outcome.magnitudes.get(effect)?.get(field) === amount))
         magnitudes.set(field, amount);
     }
-    const amounts = feedback[0]?.directAmounts.get(effect) ?? [];
-    const feedbackKnown =
-      feedback.length > 0 && feedback.every((outcome) => outcome.complete || outcome.directAmounts.has(effect));
-    const feedbackExact = feedback.every((outcome) => {
-      const candidate = outcome.directAmounts.get(effect) ?? [];
-      return (
-        candidate.length === amounts.length &&
-        candidate.every((entry, index) => {
-          const first = amounts[index]!;
-          return (
-            entry.target === first.target &&
-            entry.kind === first.kind &&
-            entry.stat === first.stat &&
-            entry.amount === first.amount
-          );
-        })
-      );
-    });
-    const directAmounts: InspectedPackets["directAmounts"] = !feedbackKnown
-      ? { kind: "unknown" }
-      : feedbackExact
-        ? { kind: "exact", amounts }
-        : { kind: "alternatives", outcomes: feedback.map((outcome) => outcome.directAmounts.get(effect) ?? []) };
-    // Scheduling resolves now, but future-turn packets remain authored values.
-    if (
-      effect.kind === "repeat-over-turns" ||
-      feedback.length === 0 ||
-      feedback.some((outcome) => !outcome.complete && !outcome.packets.has(effect))
-    ) {
-      inspected.set(effect, { kind: "unknown", directAmounts, magnitudes });
-      continue;
-    }
-    const packets = feedback.map((outcome) => outcome.packets.get(effect) ?? []);
-    const first = packets[0]!;
-    const exact = packets.every(
-      (candidate) =>
-        candidate === first ||
-        (candidate.length === first.length &&
-          candidate.every((packet, index) => areBattleCardEffectsEqual(packet, first[index]!))),
-    );
-    inspected.set(
+    const direct = collectObserved(
+      feedback,
+      (outcome) => outcome.directAmounts,
       effect,
-      exact
-        ? { kind: "exact", packets: first, directAmounts, magnitudes }
-        : { kind: "alternatives", outcomes: packets, directAmounts, magnitudes },
+      (a, b) => a.target === b.target && a.kind === b.kind && a.stat === b.stat && a.amount === b.amount,
     );
+    const directAmounts: InspectedPackets["directAmounts"] =
+      direct.kind === "exact" ? { kind: "exact", amounts: direct.values } : direct;
+    // Scheduling resolves now, but future-turn packets remain authored values.
+    const attacks =
+      effect.kind === "repeat-over-turns"
+        ? { kind: "unknown" as const }
+        : collectObserved<ObservedAttack>(feedback, (outcome) => outcome.packets, effect, areBattleCardEffectsEqual);
+    inspected.set(effect, {
+      ...(attacks.kind === "exact" ? { kind: "exact", packets: attacks.values } : attacks),
+      directAmounts,
+      magnitudes,
+    });
   }
   return inspected;
 }

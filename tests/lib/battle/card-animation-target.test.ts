@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { cardById, enemyById, type BattleCardEffect } from "@/lib/game-data";
 import { getBattleCardAnimationTarget } from "@/lib/battle/card-animation-target";
-import { inspectBattleCardDamage } from "@/lib/battle/card-damage-inspection";
+import { inspectBattleCardOutcomes } from "@/lib/battle/card-damage-inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
@@ -57,7 +57,7 @@ describe("card flight follows the dominant direct result", () => {
       playerMaxHealth: 40,
       trinketEffects: { ironwoodBucklerThornsOnBlock: 30 },
     });
-    const observed = inspectBattleCardDamage(card, state).outcomes.get("0")?.directAmounts;
+    const observed = inspectBattleCardOutcomes(card, state).get("0")?.directAmounts;
     expect(observed).toEqual({
       kind: "exact",
       amounts: [{ target: "player", kind: "status", stat: "block", amount: 2 }],
