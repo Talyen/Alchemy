@@ -19,7 +19,8 @@ function buildAffinityPool(
   activeRng: () => number,
   companionScoreBonus: number,
 ): BattleCard[] {
-  const deckIds = new Set(deck.map((c) => c.id));
+  const deckIds = new Set<string>();
+  for (const card of deck) deckIds.add(card.id);
   const shuffledCandidates = shuffle(candidates, activeRng);
   const scoreCard = (card: BattleCard): number => {
     let score = 0;
@@ -62,7 +63,7 @@ export function selectRewardCards(
 ): BattleCard[] {
   if (count <= 0) return [];
   const excludedIds = new Set(exclude.map((card) => card.id));
-  const pool = allCards.filter((card) => !excludedIds.has(card.id));
+  const pool = excludedIds.size === 0 ? allCards : allCards.filter((card) => !excludedIds.has(card.id));
   if (pool.length === 0) return [];
   const hasCompanion = deck.some(isCompanionSummonCard);
   // A Companion-only Wish still offers all its choices when the deck already

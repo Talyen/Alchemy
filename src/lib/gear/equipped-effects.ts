@@ -23,8 +23,10 @@ export function computeGearManifest(
   const manifest: GearEffectManifest = createEmptyGearEffectManifest();
   const characterLoadout = loadouts[characterId];
   if (!characterLoadout) return manifest;
+  if (!GEAR_SLOTS.some((slot) => characterLoadout[slot])) return manifest;
 
-  const byId = new Map(inventory.map((item) => [item.instanceId, item]));
+  const byId = new Map<string, GearInstance>();
+  for (const item of inventory) byId.set(item.instanceId, item);
 
   for (const slot of GEAR_SLOTS) {
     const instanceId = characterLoadout[slot];

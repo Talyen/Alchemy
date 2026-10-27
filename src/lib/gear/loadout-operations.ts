@@ -81,7 +81,8 @@ export function findEmptyGearSlot(
 }
 
 export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
-  const definitionById = new Map(inventory.map((item) => [item.instanceId, gearDefinitions[item.definitionId]]));
+  const definitionById = new Map<string, GearDefinition | undefined>();
+  for (const item of inventory) definitionById.set(item.instanceId, gearDefinitions[item.definitionId]);
   const next = createEmptyGearLoadouts();
   const seen = new Set<string>();
 
