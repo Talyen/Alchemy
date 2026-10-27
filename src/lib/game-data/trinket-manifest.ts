@@ -1,32 +1,18 @@
-const neutralTrinketEffects = {
-  extraDrawPerBattle: 0,
-  brassCenserProcChance: 0,
-  firstBurnDoubled: false,
-  boneCharmHealOnKill: 0,
-  forgeStunThreshold: 0,
-  forgeStunAmount: 0,
-  frozenHeartDamage: 0,
-  ironwoodBucklerThornsOnBlock: 0,
-  runicQuillDrawOnConsume: 0,
-  sinEaterHealOnHarmfulStatusRemove: 0,
-  vanguardCrestForgeOnBlockAbsorb: 0,
-  parasiticBloomLeechChance: 0,
-  cutpurseGoldChance: 0,
-  wishingWellGoldOnWish: 0,
-  plagueDoctorPoisonCleanse: 0,
-  mortarPestlePoisonOnPotionUse: 0,
-  sunderingArmorPiercing: 0,
-  resonantChimeCardsRequired: 0,
-  resonantChimeMana: 0,
-  smugglersMapGoldBonus: 0,
-  grovesFavorThornsOnHealthRestore: 0,
-  merchantsFavorDiscount: 0,
-  companionDamageBonus: 0,
-  freezeDurationExtension: 0,
-  thunderstoneDamageOnStun: 0,
-  luckyCloverGoldChance: 0,
+import { trinketDefinitions } from "./compendium/trinket-definitions";
+
+type AuthoredEffects = (typeof trinketDefinitions)[number]["effects"];
+type KeysOfUnion<T> = T extends unknown ? keyof T : never;
+type ValueAt<T, K> = T extends unknown ? (K extends keyof T ? T[K] : never) : never;
+
+export type TrinketManifest = {
+  [K in KeysOfUnion<AuthoredEffects>]: ValueAt<AuthoredEffects, K> extends boolean ? boolean : number;
 };
 
-export type TrinketManifest = typeof neutralTrinketEffects;
-
-export const defaultTrinketEffects: Readonly<TrinketManifest> = Object.freeze(neutralTrinketEffects);
+// The catalog owns both the available mechanics and their neutral values.
+export const defaultTrinketEffects: Readonly<TrinketManifest> = Object.freeze(
+  Object.fromEntries(
+    trinketDefinitions.flatMap(({ effects }) =>
+      Object.entries(effects).map(([key, value]) => [key, typeof value === "boolean" ? false : 0]),
+    ),
+  ) as TrinketManifest,
+);
