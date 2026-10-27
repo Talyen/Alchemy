@@ -30,7 +30,11 @@ const MYSTERY_REWARDS = [
 ] as const;
 
 export function labyrinthCardShopPool(pool: BattleCard[], modifiers: readonly EncounterRewardTraitId[]): BattleCard[] {
-  const theme = modifiers.map((id) => MARKET_THEMES[id]).find((value) => value !== undefined);
+  let theme: KeywordId | undefined;
+  for (const id of modifiers) {
+    theme = MARKET_THEMES[id];
+    if (theme !== undefined) break;
+  }
   return theme ? pool.filter((card) => cardHasKeyword(card, theme)) : pool;
 }
 

@@ -285,6 +285,19 @@ it("saves three valid, reproducible choices per card even when the visit needs m
   expect(createTransmutationOffers([{ ...cardById.slash!, corrupted: true }], createSeededRng(2))).toEqual([]);
 });
 
+it("skips ineligible cards without consuming random choices", () => {
+  const original = [cardById.slash!, cardById.heal!];
+  const withIneligible = [
+    ...original,
+    { ...cardById.block!, corrupted: true },
+    { ...cardById.slash!, transmuted: true },
+  ];
+  const before = createSeededRng(123);
+  const after = createSeededRng(123);
+  expect(createTransmutationOffers(withIneligible, after)).toEqual(createTransmutationOffers(original, before));
+  expect(after()).toBe(before());
+});
+
 it("matches saved sources across a save round-trip but rejects cost drift", () => {
   const deck = [cardById.slash!, cardById.heal!, cardById.block!];
   const choices = createTransmutationOffers(deck, createSeededRng(2));

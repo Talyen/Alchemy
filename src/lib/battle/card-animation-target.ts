@@ -79,19 +79,19 @@ function knownUtilityAmount(effect: BattleCardEffect, outcome: InspectedPackets 
   const observed = outcome?.directAmounts;
   if (!observed || observed.kind === "unknown") return undefined;
   const alternatives = observed.kind === "exact" ? [observed.amounts] : observed.outcomes;
-  const magnitudes = alternatives.map((entries) =>
-    Math.max(
-      0,
-      ...entries
-        .filter(
-          (entry) =>
-            // Healing conversions and riders must not outrank the intended heal.
-            effect.kind !== "heal" || (entry.kind === "heal" && entry.stat === "health"),
-        )
-        .map((entry) => entry.amount),
-    ),
-  );
-  return magnitudes.every((amount) => amount === magnitudes[0]) ? magnitudes[0] : undefined;
+  let first: number | undefined;
+  for (const entries of alternatives) {
+    let magnitude = 0;
+    for (const entry of entries) {
+      // Healing conversions and riders must not outrank the intended heal.
+      if (effect.kind !== "heal" || (entry.kind === "heal" && entry.stat === "health"))
+        magnitude = Math.max(magnitude, entry.amount);
+    }
+    if (Number.isNaN(magnitude)) return undefined;
+    if (first === undefined) first = magnitude;
+    else if (magnitude !== first) return undefined;
+  }
+  return first;
 }
 
 /** Visual recipient only. Compare direct point/count magnitudes, never utility scores or factors. */
