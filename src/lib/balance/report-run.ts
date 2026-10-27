@@ -26,7 +26,7 @@ import {
   runTrinketSweep,
 } from "./report-sweeps";
 import { simulateBatch } from "./simulator-batch";
-import type { BalanceBatchResult, TalentPreset } from "./simulator-types";
+import type { BalanceBatchResult, BattleSimulationResult, TalentPreset } from "./simulator-types";
 
 export type { ReportRunOptions } from "./report-options";
 export { equalWeightByType } from "./core-report-summary";
@@ -44,12 +44,11 @@ function withPhaseTiming<T>(label: string, fn: () => T): T {
   return result;
 }
 
-interface CoreRow extends CoreRateRow {
-  results: BalanceBatchResult["results"];
+export interface CoreRow extends CoreRateRow {
+  results: Array<Pick<BattleSimulationResult, "characterId" | "enemyId" | "anomalies">>;
 }
 
-function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
-  const rows: CoreRow[] = [];
+export function* coreScenarios(options: ReportRunOptions): Iterable<() => CoreRow> {
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const decks = Array.from({ length: options.deckSeeds }, (_, deckIndex) => {
@@ -57,45 +56,55 @@ function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
         return buildClassSimDeck(characterId, tier.preset, deckSeed);
       });
       for (const matchup of coreMatchupsForTier(tier)) {
-        const batches: BalanceBatchResult[] = [];
-        for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
-          const { fightSeed } = coreScenarioSeeds({
-            tier: tier.preset,
+        yield () => {
+          const batches: BalanceBatchResult[] = [];
+          for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
+            const { fightSeed } = coreScenarioSeeds({
+              tier: tier.preset,
+              characterId,
+              enemyId: matchup.enemyId,
+              depth: matchup.depth,
+              deckIndex,
+            });
+            const deck = decks[deckIndex];
+            batches.push(
+              simulateBatch(
+                buildBalanceBatchConfig(options, {
+                  characterId,
+                  enemyId: matchup.enemyId,
+                  depth: matchup.depth,
+                  preset: tier.preset,
+                  seed: fightSeed,
+                  ...(deck ? { deck } : {}),
+                }),
+              ),
+            );
+          }
+          return {
             characterId,
             enemyId: matchup.enemyId,
-            depth: matchup.depth,
-            deckIndex,
-          });
-          const deck = decks[deckIndex];
-          batches.push(
-            simulateBatch(
-              buildBalanceBatchConfig(options, {
-                characterId,
-                enemyId: matchup.enemyId,
-                depth: matchup.depth,
-                preset: tier.preset,
-                seed: fightSeed,
-                ...(deck ? { deck } : {}),
-              }),
+            enemyType: matchup.enemyType,
+            tier: tier.preset,
+            cell: combineRateCells(batches.map(rateCellFromBatch)),
+            cardPlayCounts: sumCardPlayCounts(batches.map((batch) => batch.cardPlayCounts)),
+            results: batches.flatMap((batch) =>
+              batch.results.map(({ characterId: resultCharacterId, enemyId, anomalies }) => ({
+                characterId: resultCharacterId,
+                enemyId,
+                anomalies,
+              })),
             ),
-          );
-        }
-        rows.push({
-          characterId,
-          enemyId: matchup.enemyId,
-          enemyType: matchup.enemyType,
-          tier: tier.preset,
-          cell: combineRateCells(batches.map(rateCellFromBatch)),
-          cardPlayCounts: sumCardPlayCounts(batches.map((batch) => batch.cardPlayCounts)),
-          results: batches.flatMap((batch) => batch.results),
-        });
+          };
+        };
       }
     }
   }
-  return rows;
 }
 
-function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; metrics: AnomalyMetricRow[] } {
+export function collectAnomalies(rows: readonly CoreRow[]): {
+  anomalies: AnomalyReportRow[];
+  metrics: AnomalyMetricRow[];
+} {
   const byField: Record<string, { field: string; maxValue: number; battles: number; peakScenario: string }> = {};
   const perTier: Record<TalentPreset, Record<string, number>> = { early: {}, mid: {}, late: {} };
   for (const row of rows) {
@@ -142,7 +151,7 @@ function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; met
 }
 
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
-  const core = withPhaseTiming("core scenarios", () => runCoreScenarios(options));
+  const core = withPhaseTiming("core scenarios", () => [...coreScenarios(options)].map((run) => run()));
   const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
 
   const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));

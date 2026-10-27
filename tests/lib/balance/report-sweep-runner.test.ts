@@ -4,7 +4,12 @@ import type { BalanceBatchConfig } from "@/lib/balance/simulator-types";
 const { simulateWinSeries } = vi.hoisted(() => ({ simulateWinSeries: vi.fn() }));
 vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
-import { runPairedSweep, type BalanceScenarioConfig } from "@/lib/balance/report-sweep-runner";
+import {
+  runPairedGroup,
+  runPairedSweep,
+  summarizePairedGroups,
+  type BalanceScenarioConfig,
+} from "@/lib/balance/report-sweep-runner";
 import type { ReportRunOptions } from "@/lib/balance/report-options";
 
 const options: ReportRunOptions = {
@@ -79,6 +84,16 @@ describe("runPairedSweep", () => {
     });
     expect(rows[0]!.deltas.late).toMatchObject({ n: 2, delta: 1, turnDelta: -4 });
     expect(rows[0]!.deltas.mid.n).toBe(0);
+  });
+
+  it("retains the same paired statistics after a checkpoint round trip", () => {
+    const groups = (["early", "early", "late"] as const).map((preset, index) => {
+      const scenario = { ...reference, preset, seed: reference.seed + index };
+      return { reference: scenario, variants: [{ id: "added", scenario: { ...scenario, trinketIds: ["test"] } }] };
+    });
+    const uninterrupted = runPairedSweep(options, groups);
+    const saved = groups.map((group) => JSON.parse(JSON.stringify(runPairedGroup(options, group))));
+    expect(summarizePairedGroups(saved)).toEqual(uninterrupted);
   });
 
   it.each<Partial<BalanceScenarioConfig>>([

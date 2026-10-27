@@ -37,7 +37,7 @@ function buildRandomDeck(seed: number, size = 10): BattleCard[] {
   return sampleItems(getOfferableCardPool(), size, createRunStreamRng(seed, "world"));
 }
 
-function* trinketGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
+export function* trinketGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       for (const scenario of BOON_GAUNTLET) {
@@ -69,7 +69,7 @@ export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
   return runPairedSweep(options, trinketGroups(options));
 }
 
-function* isolatedCardGroups(options: ReportRunOptions, enemyId: string): Iterable<PairedSweepGroup> {
+export function* isolatedCardGroups(options: ReportRunOptions, enemyId: string): Iterable<PairedSweepGroup> {
   const ids = reportCharacterIds();
   const depthDelta = gauntletDepthDeltaFor(enemyId);
   const iterations = Math.min(
@@ -118,7 +118,7 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
   return runPairedSweep(options, isolatedCardGroups(options, enemyId));
 }
 
-function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
+export function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   const iterations = Math.min(
     options.pairedIterations,
     Math.max(options.mode === "quick" ? 3 : 1, Math.floor(options.iterations / 5) || 1),
@@ -170,7 +170,7 @@ export function runCardSweepInClass(options: ReportRunOptions): PairedTierRow[] 
   return runPairedSweep(options, inClassCardGroups(options));
 }
 
-function* talentGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
+export function* talentGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const deckSeed = balanceScenarioSeed("talent-deck", tier.preset, characterId);
@@ -214,7 +214,7 @@ export function runTalentSweep(options: ReportRunOptions): PairedTierRow[] {
   return runPairedSweep(options, talentGroups(options));
 }
 
-function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
+export function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   const summons = cardLibrary.flatMap((card) => {
     const companionId = companionIdsFromDeck([card])[0];
     return companionId ? [{ card, companionId }] : [];
@@ -273,7 +273,7 @@ export function runCompanionSweep(options: ReportRunOptions): PairedTierRow[] {
   return runPairedSweep(options, companionGroups(options));
 }
 
-function* gearGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
+export function* gearGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   const lootWeights = resolveLootWeights({
     source: SIM_GEAR_ROLL_SOURCE,
     progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
@@ -323,7 +323,7 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
   return runPairedSweep(options, gearGroups(options));
 }
 
-function* affixGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
+export function* affixGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   for (const tier of REPORT_TIERS) {
     const tierAffixes = gearAffixList.map((affix) => {
       const rarity = affix.uniqueOnly ? "unique" : tier.preset === "late" ? "astral" : "basic";
