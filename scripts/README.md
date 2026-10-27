@@ -187,6 +187,21 @@ deletion share an OS-released loopback mutex keyed by the checkout's real path.
 Separate checkouts do not share a fixed port; a collision fails without deleting
 artifacts. Abandoned guards are recovered only after confirming the owner is dead;
 unreadable ownership stays protected. Raw tools require manual ownership inspection.
+
+Build and packaging commands record local attempt outcomes in
+`.cache/build-retention/`; build, packaging, package verification and Steam upload
+participate in the artifact guard. On idle pruning, a failed local packaging output
+is eligible after 24 hours only if it was produced in an isolated attempt directory,
+the recorded tree still matches, and no `.keep`, symlink, newer success, upload
+attempt or unresolved owner protects it. A dry run reports the same candidates
+without deletion. Release-mode attempts, successful builds, pre-existing or changed
+outputs and unknown receipts remain protected. Steam upload attempts protect their
+package even if the remote outcome is uncertain. On non-Windows local packaging,
+when the canonical output does not exist, the attempt uses isolated staging and
+promotes a successful output to the canonical path. Other packaging keeps its
+existing layout and is never automatically removed. The fixed output paths do not
+identify historical builds or prove that a legacy package was undistributed, so
+this policy does not automatically remove those outputs or any release artifacts.
 No cleanup command authorizes terminating foreign work.
 
 Build outputs, production sources, retained release packages, saves and scratch/output
