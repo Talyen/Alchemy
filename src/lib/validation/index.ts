@@ -16,6 +16,7 @@ export {
   SaveDataSchema,
   UnlockedTalentsSchema,
   isCombatGoldOverride,
+  readRawCombatGold,
   safeParseWithErrors,
   type ParsedActiveRunData,
   type ParsedSaveData,

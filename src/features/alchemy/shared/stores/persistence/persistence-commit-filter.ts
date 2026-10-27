@@ -1,6 +1,6 @@
 import type { GameSession } from "../session/game-session-types";
 import { type GameplayState } from "../session/gameplay-state-reads";
-import { createDefaultProfileSaveFields, type ProfileSaveFields } from "../session/profile-store-types";
+import { PROFILE_SAVE_KEYS } from "../session/profile-store-types";
 import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-save-fields";
 import { projectRunResumeSnapshot } from "./run-resume-codec";
 import { sessionRuntime } from "../session/session-runtime";
@@ -35,11 +35,6 @@ export function subscribePersistenceCommits(listener: () => void, gameSession: G
     unsubscribeGameplay();
   });
 }
-
-// Profile save keys derive from the defaults factory, so a future persisted
-// profile field is compared automatically while collectionTab/collectionPages
-// (UI-only, absent from defaults) never dirty.
-const PROFILE_SAVE_KEYS = Object.keys(createDefaultProfileSaveFields()) as Array<keyof ProfileSaveFields>;
 
 function fieldsEqual<T extends object>(previous: T, next: T, keys: ReadonlyArray<keyof T>): boolean {
   return keys.every((key) => Object.is(previous[key], next[key]));

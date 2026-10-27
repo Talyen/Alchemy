@@ -1,8 +1,8 @@
 import { getEncounterEnemyTrait, type EnemyDescriptionContext } from "@/lib/battle";
-import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { cn } from "@/lib/utils";
 import type { BestiaryEntry } from "../config/game-data-catalog";
+import { selectEnemyTraits } from "../config/enemy-trait-selection";
 import { TraitBox, type TraitBoxVariant } from "./trait-box";
 
 export function EnemyTraits({
@@ -18,13 +18,7 @@ export function EnemyTraits({
   layout?: "stacked" | "inspection";
   variant?: TraitBoxVariant;
 }) {
-  const modifierIds = new Set<string>(modifiers);
-  const traits = new Map(
-    [
-      ...entry.traits.filter((trait) => !modifierIds.has(trait.id)),
-      ...modifiers.map((id) => ENCOUNTER_TRAITS[id].enemyTrait),
-    ].map((trait) => [trait.id, trait]),
-  );
+  const traits = new Map(selectEnemyTraits(entry, modifiers).map((trait) => [trait.id, trait]));
   return (
     <div className={cn(layout === "inspection" && "@container")}>
       <div

@@ -1,6 +1,8 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { setImmediate } = require("node:timers");
+const { createSerialOperations } = require("./serial-operations.cjs");
+const { saveSlotFiles } = require("./save-profile.cjs");
 
 /** Native profile storage outlives every renderer and its session queue. */
 function createDesktopSaveStorage({
@@ -11,17 +13,8 @@ function createDesktopSaveStorage({
   preserveInitialization = async () => {},
   filesystem = fs,
 }) {
-  let lane = Promise.resolve();
+  const lane = createSerialOperations();
   let closed = false;
-  function enqueue(operation) {
-    const result = lane.then(operation);
-    // Reject only this caller. Later operations still own their place.
-    lane = result.then(
-      () => undefined,
-      () => undefined,
-    );
-    return result;
-  }
   function resolveSlot(slot) {
     if (slot === undefined) return slots.primary;
     if (slot === "recovery") return slots.recovery;
@@ -31,7 +24,7 @@ function createDesktopSaveStorage({
     const paths = resolveSlot(slot);
     const candidates = [];
     let localReadFailed = false;
-    for (const filePath of [paths.file, ...paths.backups]) {
+    for (const filePath of saveSlotFiles(paths)) {
       try {
         const data = await filesystem.readFile(filePath, "utf8");
         if (isSavePayload(data)) candidates.push(data);
@@ -51,7 +44,7 @@ function createDesktopSaveStorage({
     const data = stampOwner(input);
     if (!isSavePayload(data)) return Promise.resolve(false);
     const paths = resolveSlot(slot);
-    return enqueue(async () => {
+    return lane.enqueue(async () => {
       try {
         await filesystem.mkdir(path.dirname(paths.file), { recursive: true });
         const handle = await filesystem.open(paths.tmp, "w");
@@ -95,7 +88,7 @@ function createDesktopSaveStorage({
       if (!(await demoProgress.complete({ localOnly: true }))) return false;
       // Wipe both rings so an older recovery snapshot cannot restore a cleared profile.
       for (const paths of Object.values(slots)) {
-        for (const filePath of [paths.file, paths.tmp, ...paths.backups]) {
+        for (const filePath of saveSlotFiles(paths, true)) {
           try {
             await filesystem.unlink(filePath);
           } catch (error) {
@@ -110,14 +103,14 @@ function createDesktopSaveStorage({
     }
   }
   return {
-    read: (slot) => enqueue(() => read(slot)),
+    read: (slot) => lane.enqueue(() => read(slot)),
     write,
-    clear: () => (closed ? Promise.resolve(false) : enqueue(clear)),
-    readDemoImportSource: () => enqueue(() => demoProgress.readSource()),
-    completeDemoInitialization: () => (closed ? Promise.resolve(false) : enqueue(() => demoProgress.complete())),
+    clear: () => (closed ? Promise.resolve(false) : lane.enqueue(clear)),
+    readDemoImportSource: () => lane.enqueue(() => demoProgress.readSource()),
+    completeDemoInitialization: () => (closed ? Promise.resolve(false) : lane.enqueue(() => demoProgress.complete())),
     close() {
       closed = true;
-      return lane;
+      return lane.drain();
     },
   };
 }

@@ -169,6 +169,8 @@ Collection render the deck titles and badges live from this record.
 
 Each enemy has three distinct canonical card IDs in `abilityIds` and exactly two distinct native Traits, one positive followed by one negative. Ability cards must satisfy `isEnemyAbilityCard`: no Consume or hero-only resource effects; every branch must be supported. Content validation checks these requirements. For selection, scaling, targeting and reactions, read [enemy combat rules](./GAME_RULES.md#enemy-abilities-and-traits) when changing their behavior.
 
+Repeated native weaknesses are defined once in the bestiary's `sharedWeaknesses` and copied into each enemy. Keep those copies distinct: localization enumerates each enemy's catalog objects separately.
+
 ## Add a new enemy
 
 All Bestiary enemies, including Skeleton, can appear in random encounters. The
