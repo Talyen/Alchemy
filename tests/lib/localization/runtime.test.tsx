@@ -11,7 +11,8 @@ import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { GearItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
 import { GearTile } from "@/features/alchemy/shared/ui/collection-art-tiles";
 import { makeGearInstance } from "../../fixtures/gear";
-import { gearDefinitionList } from "@/lib/gear";
+import { CRAFTING_CURRENCY_LIST, gearDefinitionList } from "@/lib/gear";
+import { CurrencyChip } from "@/features/alchemy/shared/ui/currency-chip";
 import { displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
@@ -31,6 +32,42 @@ afterEach(async () => {
 });
 
 describe("localized game presentation", () => {
+  it("localizes each complete crafting effect and moves its emphasis with the language", async () => {
+    const effects = {
+      "discordant-dice": ["Würfle alle Affixe neu", "Würfle", "全付加効果を再抽選する", "再抽選する"],
+      "sprig-of-growth": ["Füge ein zufälliges Affix hinzu", "Füge", "ランダムな付加効果を一つ追加する", "追加する"],
+      voidstone: ["Entferne alle Affixe", "Entferne", "全付加効果を取り除く", "取り除く"],
+      "ascension-seal": [
+        "Verbessere einen gewöhnlichen Gegenstand auf Astralqualität",
+        "Verbessere",
+        "基本装備をアストラル品質に強化する",
+        "強化する",
+      ],
+      "severance-maw": ["Entferne ein zufälliges Affix", "Entferne", "ランダムな付加効果を一つ取り除く", "取り除く"],
+      "smiths-whetstone": [
+        "Verbessere ein zufälliges Affix",
+        "Verbessere",
+        "ランダムな付加効果を一つ強化する",
+        "強化する",
+      ],
+    } as const;
+    for (const currency of CRAFTING_CURRENCY_LIST) {
+      const [german, germanEmphasis, japanese, japaneseEmphasis] = effects[currency.id];
+      await act(async () => localization.changeLanguage("de"));
+      const { unmount } = render(<CurrencyChip currency={currency} count={1} onSelect={() => {}} />);
+      const button = screen.getByRole("button");
+      fireEvent.mouseEnter(button.parentElement!);
+      const tooltip = await screen.findByRole("tooltip");
+      expect(tooltip.textContent).toContain(german);
+      expect(tooltip.querySelector("strong")?.textContent).toBe(germanEmphasis);
+      await act(async () => localization.changeLanguage("ja"));
+      expect(tooltip.textContent).toContain(japanese);
+      expect(tooltip.querySelector("strong")?.textContent).toBe(japaneseEmphasis);
+      expect(screen.getByRole("button")).toBe(button);
+      unmount();
+    }
+  });
+
   it("keeps repeated generated descriptions responsive to language and catalog changes", async () => {
     const value = "Deal 17 Bleed damage";
     await localization.changeLanguage("de");
