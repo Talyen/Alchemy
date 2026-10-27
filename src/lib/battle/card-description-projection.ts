@@ -2,6 +2,7 @@ import {
   carryCardDescriptionMarks,
   CARD_MAGNITUDE_FIELDS,
   cardMagnitude,
+  cardMagnitudeValue,
   createEffectDescription,
   getCardDescription,
   getCardEffect,
@@ -82,13 +83,9 @@ export function descriptionFitsEffects(description: CardDescription, effects: re
   return description.every((line) =>
     line.parts.every((part) => {
       if (typeof part === "string") return true;
-      const values = part.references.map((reference) => {
-        const effect = getCardEffect(effects, reference);
-        const value =
-          effect?.kind === reference.kind ? (effect as Record<string, unknown>)[reference.field] : undefined;
-        return typeof value === "number" ? value / (reference.multiplier ?? 1) : NaN;
-      });
-      return values.every((value) => Number.isFinite(value) && value === values[0]);
+      // Empty references were already tolerated here; saved descriptions reject them.
+      const value = cardMagnitudeValue(effects, part);
+      return part.references.length === 0 || (value !== null && Number.isFinite(value));
     }),
   );
 }
