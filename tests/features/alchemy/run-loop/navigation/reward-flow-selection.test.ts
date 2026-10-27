@@ -185,4 +185,15 @@ describe("progressive reward selection", () => {
     expect(exhausted.rewardType).toBe("card");
     expect(exhausted.choices).toHaveLength(3);
   });
+
+  it("does not treat Wildwood encounter traits as forced Hoard offers", () => {
+    const sharedVictoryInput = { rewardModifiers: ["arms-hoard"] as const };
+    const result = createWildwoodRewardState({
+      ...sharedVictoryInput,
+      runDeck: input.runDeck,
+      rng: () => 0.99,
+      lootProgress: { depth: 1, highestCompletedDifficulty: null },
+    });
+    expect(result.rewardType).toBe("boon");
+  });
 });

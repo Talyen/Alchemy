@@ -70,31 +70,20 @@ function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType
 }
 
 export function finalizeRewardState({ rewardState, companionRewardCards }: FinalizeRewardInput): FinalizeRewardResult {
-  const selectedReward = resolveRewardChoice(rewardState);
-
-  if (companionRewardCards && companionRewardCards.length > 0) {
-    return {
-      selectedReward,
-      materials: rewardState.materials,
-      nextRewardState: {
-        ...createNextRewardState(rewardState),
-        choices: companionRewardCards,
-      },
-      clearCompanionRewardCards: true,
-      route: REWARD_ROUTES.COMPANION_REWARD,
-    };
-  }
-
-  const contentSystemType = rewardState.lastVictoryContentSystem ?? CONTENT_SYSTEMS.CAMPAIGN;
-  const currentEnemyType = rewardState.lastVictoryEnemyType ?? ENEMY_TYPES.NORMAL;
-  const route = resolveRewardRoute(contentSystemType, currentEnemyType);
-
+  const hasCompanionReward = Boolean(companionRewardCards?.length);
+  const nextRewardState = createNextRewardState(rewardState);
+  if (companionRewardCards?.length) nextRewardState.choices = companionRewardCards;
   return {
-    selectedReward,
+    selectedReward: resolveRewardChoice(rewardState),
     materials: rewardState.materials,
-    nextRewardState: createNextRewardState(rewardState),
-    clearCompanionRewardCards: false,
-    route,
+    nextRewardState,
+    clearCompanionRewardCards: hasCompanionReward,
+    route: hasCompanionReward
+      ? REWARD_ROUTES.COMPANION_REWARD
+      : resolveRewardRoute(
+          rewardState.lastVictoryContentSystem ?? CONTENT_SYSTEMS.CAMPAIGN,
+          rewardState.lastVictoryEnemyType ?? ENEMY_TYPES.NORMAL,
+        ),
   };
 }
 
@@ -120,34 +109,16 @@ export interface WildwoodRewardInput {
   ownedUniqueIds?: ReadonlySet<string>;
 }
 
-export function createWildwoodRewardState({
-  runDeck,
-  rng,
-  lootProgress,
-  goldPayout = 0,
-  materials,
-  gearAstralChanceBonus = 0,
-  excludedBoonIds = [],
-  ownedTrinketIds = [],
-  ownedUniqueIds = new Set(),
-  createInstanceId,
-}: WildwoodRewardInput): RewardState {
+export function createWildwoodRewardState(input: WildwoodRewardInput): RewardState {
   const empty = createEmptyRewardState();
+  const { goldPayout = 0 } = input;
   return {
     ...empty,
-    ...createRewardOffer({
-      source: "wildwood",
-      runDeck,
-      rng,
-      lootProgress,
-      gearAstralChanceBonus,
-      excludedBoonIds,
-      ownedTrinketIds,
-      ownedUniqueIds,
-      createInstanceId,
-    }),
+    // Wildwood's victory input may carry encounter traits for other reward
+    // effects, but its offer is not a Labyrinth Hoard.
+    ...createRewardOffer({ ...input, source: "wildwood", rewardModifiers: [] }),
     gold: goldPayout,
-    materials: materials ?? empty.materials,
+    materials: input.materials ?? empty.materials,
   };
 }
 
