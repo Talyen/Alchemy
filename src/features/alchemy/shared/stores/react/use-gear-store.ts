@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useGameplayStateStore } from "./gameplay-state-store";
 import { deriveGearCombatRestrictions } from "../session/gear-combat-restrictions";
-import type { GearArmorySlice } from "../session/gear-store";
+import { selectHasAnyOwnedGear, type GearArmorySlice } from "../session/gear-store";
 
 export function useGearCombatRestrictions() {
   const selection = useGameplayStateStore(
@@ -30,10 +30,5 @@ export function useGearArmorySlice(): GearArmorySlice {
 }
 
 export function useArmoryIntroductionPending(): boolean {
-  return useGameplayStateStore(
-    (state) =>
-      !state.profile.hasSeenArmory &&
-      (state.gear.ownedTrinketIds.length > 0 ||
-        Object.values(state.gear.inventories).some((items) => items.length > 0)),
-  );
+  return useGameplayStateStore((state) => !state.profile.hasSeenArmory && selectHasAnyOwnedGear(state.gear));
 }

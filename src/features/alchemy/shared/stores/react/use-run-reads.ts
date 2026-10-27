@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { isActiveRunActivity, runActivityScreen } from "@/lib/active-run-session";
+import { isActiveRunActivity } from "@/lib/active-run-session";
 import {
   computeTalentEffects,
   type CharacterId,
@@ -9,18 +9,23 @@ import {
   type TalentXP,
   type UnlockedTalents,
 } from "@/lib/game-data";
-import { getRunPhase, type Screen } from "@/lib/routing";
+import type { Screen } from "@/lib/routing";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
-import { selectBattle, selectCardInspectionData } from "../session/run-reads";
+import {
+  selectBattle,
+  selectCardInspectionData,
+  selectHasActiveBattle,
+  selectHasActiveRun,
+  selectRunPhase,
+  selectRunResumeScreen,
+} from "../session/run-reads";
 
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
 }
 
 export function useRunResumeScreen(): Screen | null {
-  return useGameplayStateStore((state) =>
-    isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null,
-  );
+  return useGameplayStateStore(selectRunResumeScreen);
 }
 
 export function useTalentEffects(): TalentEffectManifest {
@@ -33,11 +38,11 @@ export function useActiveRunScreenValue(): Screen {
 }
 
 export function useHasActiveBattle(): boolean {
-  return useGameplayStateStore((state) => state.session.activity.kind === "battle");
+  return useGameplayStateStore(selectHasActiveBattle);
 }
 
 export function useHasActiveRun(): boolean {
-  return useGameplayStateStore((state) => isActiveRunActivity(state.session.activity));
+  return useGameplayStateStore(selectHasActiveRun);
 }
 
 export function useForegroundResumeKind(): "battle" | "run" | null {
@@ -107,9 +112,7 @@ export function useRunSessionBattleContext() {
 }
 
 export function useRunPhase(screen?: Screen) {
-  return useGameplayStateStore((state) =>
-    getRunPhase(screen ?? state.run.navigation.screen, state.session.activity.kind === "battle"),
-  );
+  return useGameplayStateStore((state) => selectRunPhase(state, screen));
 }
 
 export function useCardInspectionData() {

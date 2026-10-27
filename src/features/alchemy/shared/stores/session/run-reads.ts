@@ -61,23 +61,33 @@ export function readBattle(gameSession: GameSession): BattleReadView {
 export function readRunRevision(gameSession: GameSession): number {
   return readGameplayState(gameSession).revision;
 }
+export function selectHasActiveRun(state: GameplayState): boolean {
+  return isActiveRunActivity(state.session.activity);
+}
+export function selectHasActiveBattle(state: GameplayState): boolean {
+  return state.session.activity.kind === "battle";
+}
+export function selectRunResumeScreen(state: GameplayState): Screen | null {
+  return runActivityScreen(state.session.activity);
+}
+export function selectRunPhase(state: GameplayState, screen?: Screen): RunPhase {
+  return getRunPhase(screen ?? state.run.navigation.screen, selectHasActiveBattle(state));
+}
 export function readHasActiveRun(gameSession: GameSession): boolean {
-  return isActiveRunActivity(readGameplayState(gameSession).session.activity);
+  return selectHasActiveRun(readGameplayState(gameSession));
 }
 export function readHasActiveBattle(gameSession: GameSession): boolean {
-  return readGameplayState(gameSession).session.activity.kind === "battle";
+  return selectHasActiveBattle(readGameplayState(gameSession));
 }
 export function readActiveRunScreen(gameSession: GameSession): Screen {
   return readGameplayState(gameSession).run.navigation.screen;
 }
 export function readRunResumeScreen(gameSession: GameSession): Screen | null {
-  const state = readGameplayState(gameSession);
-  return isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null;
+  return selectRunResumeScreen(readGameplayState(gameSession));
 }
 
 export function readRunPhase(gameSession: GameSession): RunPhase {
-  const state = readGameplayState(gameSession);
-  return getRunPhase(state.run.navigation.screen, state.session.activity.kind === "battle");
+  return selectRunPhase(readGameplayState(gameSession));
 }
 
 export function selectAutosaveAllowed(
