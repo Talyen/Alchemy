@@ -346,6 +346,39 @@ describe("serialized local integration", () => {
     expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).metrics.attempts).toBe(1);
   }, 20000);
 
+  it("shows the verified integration delta without including concurrent main work", () => {
+    const { root, script, taskPath, git, archive } = integrationFixture();
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+    writeFileSync(join(root, "main.txt"), "concurrent work\n");
+    git(["add", "main.txt"]);
+    git(["commit", "-qm", "test: concurrent main"]);
+    const verifiedMain = git(["rev-parse", "main"]);
+    const run = (...args: string[]) =>
+      spawnSync(process.execPath, [script, ...args], {
+        env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+        encoding: "utf8",
+      });
+    const integrated = run("integrate", "--task", "task");
+    expect(integrated.status, integrated.stderr).toBe(0);
+    const statePath = join(root, "reports/integrations/task.json");
+    const state = JSON.parse(readFileSync(statePath, "utf8"));
+    expect(state.reviewBase).toBe(verifiedMain);
+    const status = run("status", "--task", "task");
+    expect(status.status, status.stderr).toBe(0);
+    expect(status.stdout).toContain(`Integrated changes against verified main ${verifiedMain}:\ntask.txt`);
+    expect(status.stdout).not.toContain("main.txt");
+    expect(status.stdout).toContain(`diff ${verifiedMain} ${git(["rev-parse", "HEAD"], taskPath)}`);
+    delete state.reviewBase;
+    writeFileSync(statePath, JSON.stringify(state));
+    const legacy = run("status", "--task", "task");
+    expect(legacy.stdout).toContain("may include concurrent main changes");
+    expect(legacy.stdout).toContain("main.txt");
+    writeFileSync(statePath, JSON.stringify({ ...state, reviewBase: verifiedMain }));
+    const finished = run("finish", "--task", "task");
+    expect(finished.status, finished.stderr).toBe(0);
+    expect(JSON.parse(readFileSync(statePath, "utf8")).reviewBase).toBe(verifiedMain);
+  }, 20000);
+
   it("moves main to a dedicated checkout without changing dirty workspace files or index", () => {
     const { root, script, taskPath, git, integrate } = integrationFixture();
     using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
@@ -482,6 +515,14 @@ describe("serialized local integration", () => {
     const before = git(["rev-parse", "main"]);
     const failed = integrate({ INTEGRATION_FAIL: "1" });
     expect(failed.status, failed.stderr).toBe(1);
+    const attemptDirectory = join(root, "reports/integrations/attempts");
+    const attempts = readdirSync(attemptDirectory);
+    expect(attempts).toHaveLength(1);
+    const attempt = JSON.parse(readFileSync(join(attemptDirectory, attempts[0]), "utf8"));
+    expect(attempt).toMatchObject({ task: "task", status: "failed", phase: "verification", attempts: 1 });
+    expect(attempt.reason).toContain("Integration verification failed");
+    expect(attempt.elapsedMs).toBeGreaterThanOrEqual(attempt.verificationMs);
+    expect(existsSync(join(root, "reports/integrations/task.json"))).toBe(false);
     expect(git(["rev-parse", "main"])).toBe(before);
     const passed = integrate({ INTEGRATION_PROOF: proof });
     expect(passed.status, passed.stderr).toBe(0);
@@ -490,6 +531,34 @@ describe("serialized local integration", () => {
     expect(existsSync(taskPath)).toBe(false);
     expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
   }, 20000);
+
+  it.skipIf(process.platform === "win32")(
+    "does not overwrite state or follow a symlink while recording a failure",
+    () => {
+      const { root, taskPath, git, integrate } = integrationFixture();
+      const external = mkdtempSync(join(tmpdir(), "alchemy-attempt-external-"));
+      using _scopeCleanup = createCleanup(() => {
+        rmSync(root, { recursive: true, force: true });
+        rmSync(external, { recursive: true, force: true });
+      });
+      const directory = join(root, "reports/integrations");
+      mkdirSync(directory, { recursive: true });
+      const statePath = join(directory, "task.json");
+      const savedState = JSON.stringify({ integration: "passed", cleanup: "pending", commit: "prior" });
+      writeFileSync(statePath, savedState);
+      symlinkSync(external, join(directory, "attempts"));
+      const before = git(["rev-parse", "main"]);
+      const failed = integrate({ INTEGRATION_FAIL: "1" });
+      expect(failed.status).toBe(1);
+      expect(failed.stderr).toContain("Integration verification failed");
+      expect(failed.stderr).toContain("Could not record failed integration attempt");
+      expect(readFileSync(statePath, "utf8")).toBe(savedState);
+      expect(readdirSync(external)).toEqual([]);
+      expect(git(["rev-parse", "main"])).toBe(before);
+      expect(existsSync(taskPath)).toBe(true);
+    },
+    20000,
+  );
 
   it("keeps source documentation available to the combined integration link gate while omitting masters", () => {
     const { root, taskPath, git, integrate } = integrationFixture("docs-", { codeOnlyDocumentation: true });
@@ -592,6 +661,9 @@ describe("serialized local integration", () => {
       );
       expect(busy.status).toBe(1);
       expect(busy.stderr).toContain("Task integration lock busy");
+      const attemptDirectory = join(root, "reports/integrations/attempts");
+      const attempt = JSON.parse(readFileSync(join(attemptDirectory, readdirSync(attemptDirectory)[0]), "utf8"));
+      expect(attempt).toMatchObject({ status: "failed", phase: "task lock", attempts: 0 });
       expect(git(["rev-parse", "main"])).toBe(before);
       child.kill("SIGKILL");
       writeFileSync(release, "release");
