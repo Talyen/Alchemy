@@ -100,14 +100,21 @@ function withKnownUtilityAmount(
   // Match this authored effect's own result, never a total of other resources,
   // overheal conversions, existing stacks or separately triggered rewards.
   const alternatives = direct.kind === "exact" ? [direct.amounts] : direct.outcomes;
-  const amounts = alternatives.map((entries) =>
-    entries.filter((entry) => entry.target === "player" && entry.kind === kind && entry.stat === stat),
-  );
   // Random extra grants are not promised. Keep the guaranteed direct amount,
   // including its known modifiers, rather than reverting to the unmodified card.
-  return amounts.length && amounts.every((entries) => entries.length === 1)
-    ? { ...effect, amount: Math.min(...amounts.map((entries) => entries[0]!.amount)) }
-    : undefined;
+  if (!alternatives.length) return;
+  let minimum = Infinity;
+  for (const entries of alternatives) {
+    let match: ObservedDirectAmount | undefined;
+    for (const entry of entries) {
+      if (entry.target !== "player" || entry.kind !== kind || entry.stat !== stat) continue;
+      if (match) return;
+      match = entry;
+    }
+    if (!match) return;
+    minimum = Math.min(minimum, match.amount);
+  }
+  return { ...effect, amount: minimum };
 }
 
 function firstAttack(outcome: InspectedPackets | undefined): BattleCardEffect | undefined {

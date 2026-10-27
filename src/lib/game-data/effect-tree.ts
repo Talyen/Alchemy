@@ -15,6 +15,20 @@ export function visitBattleCardEffects(
   return false;
 }
 
+function mapChildrenIfChanged(
+  children: BattleCardEffect[],
+  map: (child: BattleCardEffect, index: number) => BattleCardEffect,
+  offset = 0,
+): BattleCardEffect[] {
+  let changed: BattleCardEffect[] | undefined;
+  children.forEach((child, index) => {
+    const mapped = map(child, index + offset);
+    if (mapped !== child && !changed) changed = children.slice();
+    if (changed) changed[index] = mapped;
+  });
+  return changed ?? children;
+}
+
 /** Map one level; ownership copies can opt out of reusing unchanged wrappers. */
 export function mapEffectChildren(
   effect: BattleCardEffect,
@@ -22,27 +36,23 @@ export function mapEffectChildren(
   reuseUnchanged = true,
 ): BattleCardEffect {
   if (effect.kind === "chance") {
-    const successEffects = effect.successEffects.map(map);
-    const failureEffects = effect.failureEffects.map((child, index) =>
-      map(child, effect.successEffects.length + index),
-    );
-    if (
-      reuseUnchanged &&
-      successEffects.every((child, index) => child === effect.successEffects[index]) &&
-      failureEffects.every((child, index) => child === effect.failureEffects[index])
-    )
+    const successEffects = reuseUnchanged
+      ? mapChildrenIfChanged(effect.successEffects, map)
+      : effect.successEffects.map(map);
+    const failureEffects = reuseUnchanged
+      ? mapChildrenIfChanged(effect.failureEffects, map, effect.successEffects.length)
+      : effect.failureEffects.map((child, index) => map(child, effect.successEffects.length + index));
+    if (reuseUnchanged && successEffects === effect.successEffects && failureEffects === effect.failureEffects)
       return effect;
     return {
       ...effect,
-      successEffects,
-      failureEffects,
+      successEffects: successEffects === effect.successEffects ? successEffects.slice() : successEffects,
+      failureEffects: failureEffects === effect.failureEffects ? failureEffects.slice() : failureEffects,
     };
   }
   if (effect.kind === "repeat-over-turns") {
-    const effects = effect.effects.map(map);
-    return reuseUnchanged && effects.every((child, index) => child === effect.effects[index])
-      ? effect
-      : { ...effect, effects };
+    const effects = reuseUnchanged ? mapChildrenIfChanged(effect.effects, map) : effect.effects.map(map);
+    return reuseUnchanged && effects === effect.effects ? effect : { ...effect, effects };
   }
   return effect;
 }

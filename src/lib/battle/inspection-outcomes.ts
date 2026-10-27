@@ -63,12 +63,17 @@ function collectObserved<T>(
 ): Collected<T> {
   if (!feedback.length || feedback.some((outcome) => !outcome.complete && !read(outcome).has(effect)))
     return { kind: "unknown" };
-  const outcomes = feedback.map((outcome) => read(outcome).get(effect) ?? []);
-  const first = outcomes[0]!;
-  const exact = outcomes.every(
-    (candidate) => candidate.length === first.length && candidate.every((entry, index) => equal(entry, first[index]!)),
-  );
-  return exact ? { kind: "exact", values: first } : { kind: "alternatives", outcomes };
+  const first = read(feedback[0]!).get(effect) ?? [];
+  let exact = true;
+  for (const outcome of feedback) {
+    const observations = read(outcome);
+    const candidate = observations.get(effect) ?? [];
+    if (exact && (candidate.length !== first.length || candidate.some((entry, index) => !equal(entry, first[index]!))))
+      exact = false;
+  }
+  return exact
+    ? { kind: "exact", values: first }
+    : { kind: "alternatives", outcomes: feedback.map((outcome) => read(outcome).get(effect) ?? []) };
 }
 
 /** Replay whole correlated worlds. Missing alternatives never become concrete starting values. */

@@ -26,12 +26,14 @@ export function resolveMysteryEventTrinkets(event: MysteryEvent, ownedTrinketIds
     // other. Effects within a single choice still accumulate, keeping
     // sequential grants in one choice distinct.
     choices: event.choices.map((choice, choiceIndex) => {
-      const choiceOwned = new Set(ownedTrinketIds);
+      let choiceOwned: Set<string> | undefined;
       return {
         ...choice,
-        effects: choice.effects.map((effect, effectIndex) =>
-          resolveMysteryTrinketEffect(effect, choiceOwned, `${event.id}:${choiceIndex}:${effectIndex}`),
-        ),
+        effects: choice.effects.map((effect, effectIndex) => {
+          if (effect.kind !== "gainTrinket") return effect;
+          choiceOwned ??= new Set(ownedTrinketIds);
+          return resolveMysteryTrinketEffect(effect, choiceOwned, `${event.id}:${choiceIndex}:${effectIndex}`);
+        }),
       };
     }),
   };

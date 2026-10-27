@@ -54,9 +54,12 @@ export function getLyricFrame(lines: ReadonlyArray<readonly LyricWord[]>, time: 
   if (line < 0) return null;
   const words = lines[line];
   if (!words) return null;
-  return {
-    line,
-    visible: words.filter((word) => word.start <= time).length,
-    active: words.findIndex((word) => time >= word.start && time < word.end),
-  };
+  let visible = 0;
+  let active = -1;
+  for (let index = 0; index < words.length; index++) {
+    const word = words[index]!;
+    if (word.start <= time) visible++;
+    if (active < 0 && time >= word.start && time < word.end) active = index;
+  }
+  return { line, visible, active };
 }
