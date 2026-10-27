@@ -31,16 +31,18 @@ export const UniqueGearBattleStateSchema = z
     returningFlightUids: z.array(z.number().int().nonnegative()).catch([]),
     archeryEchoes: z
       .array(z.unknown())
-      .transform((entries) =>
-        entries.flatMap((entry, index) => {
+      .transform((entries) => {
+        const parsed: Array<z.output<typeof echoCardSchema>> = [];
+        entries.forEach((entry, index) => {
           const result = echoCardSchema.safeParse(entry);
-          if (result.success) return [result.data];
-          recordNestedValidationWarnings([
-            { path: `uniqueGear.archeryEchoes[${index}]`, message: "malformed Archery echo was dropped" },
-          ]);
-          return [];
-        }),
-      )
+          if (result.success) parsed.push(result.data);
+          else
+            recordNestedValidationWarnings([
+              { path: `uniqueGear.archeryEchoes[${index}]`, message: "malformed Archery echo was dropped" },
+            ]);
+        });
+        return parsed;
+      })
       .catch([]),
   })
   .catch(() => ({ ...createUniqueGearBattleState(), archeryEchoes: [] }));

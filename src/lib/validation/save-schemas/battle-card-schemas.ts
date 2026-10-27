@@ -8,12 +8,11 @@ function parseSavedEffectList(values: unknown[]): {
   errors: ValidationError[];
 } {
   const errors: ValidationError[] = [];
-  const parsed = values.flatMap((value, i) => {
+  const parsed: Array<z.infer<typeof BattleCardEffectSchema>> = [];
+  values.forEach((value, i) => {
     const result = BattleCardEffectSchema.safeParse(value);
-    if (!result.success) {
-      errors.push({ path: `effects[${i}]`, message: result.error.message });
-    }
-    return result.success ? [{ ...result.data }] : [];
+    if (result.success) parsed.push({ ...result.data });
+    else errors.push({ path: `effects[${i}]`, message: result.error.message });
   });
   return { values: parsed.length === values.length ? parsed : [], errors };
 }
@@ -89,7 +88,12 @@ export function parseSavedCard(value: unknown, path: string, index: number): Per
 }
 
 export function parseSavedCardArray(values: unknown[], path: string): PersistedBattleCard[] {
-  return values.map((value, index) => parseSavedCard(value, path, index)).filter((card) => card !== null);
+  const cards: PersistedBattleCard[] = [];
+  values.forEach((value, index) => {
+    const card = parseSavedCard(value, path, index);
+    if (card !== null) cards.push(card);
+  });
+  return cards;
 }
 
 export function savedCardArraySchema(path: string) {

@@ -45,7 +45,7 @@ interface Outcome {
   packets: Map<BattleCardEffect, ObservedAttack[]>;
   directAmounts: Map<BattleCardEffect, readonly ObservedDirectAmount[]>;
   magnitudes: Map<BattleCardEffect, Map<ObservedMagnitudeField, number>>;
-  eligible: Set<BattleCardEffect>;
+  ineligible: Set<BattleCardEffect>;
   complete: boolean;
 }
 
@@ -61,17 +61,17 @@ function collectObserved<T>(
   effect: BattleCardEffect,
   equal: (a: T, b: T) => boolean,
 ): Collected<T> {
-  if (!feedback.length || feedback.some((outcome) => !outcome.complete && !read(outcome).has(effect)))
-    return { kind: "unknown" };
+  if (!feedback.length) return { kind: "unknown" };
   const first = read(feedback[0]!).get(effect) ?? [];
   let exact = true;
   for (const outcome of feedback) {
+    if (!exact && outcome.complete) continue;
     const observations = read(outcome);
+    if (!outcome.complete && !observations.has(effect)) return { kind: "unknown" };
+    if (!exact) continue;
     const candidate = observations.get(effect) ?? [];
-    if (candidate.length !== first.length || candidate.some((entry, index) => !equal(entry, first[index]!))) {
+    if (candidate.length !== first.length || candidate.some((entry, index) => !equal(entry, first[index]!)))
       exact = false;
-      break;
-    }
   }
   return exact
     ? { kind: "exact", values: first }
@@ -95,7 +95,7 @@ export function inspectResolutionOutcomes(
       packets: new Map(),
       directAmounts: new Map(),
       magnitudes: new Map(),
-      eligible: new Set(sources),
+      ineligible: new Set(),
       complete: false,
     };
     let decisionIndex = 0;
@@ -122,7 +122,7 @@ export function inspectResolutionOutcomes(
       },
       branch: (effect, success) => {
         if (current !== effect) return;
-        walk(success ? effect.failureEffects : effect.successEffects, (nested) => outcome.eligible.delete(nested));
+        walk(success ? effect.failureEffects : effect.successEffects, (nested) => outcome.ineligible.add(nested));
       },
       attack: (packet) => {
         if (!current) return;
@@ -179,7 +179,7 @@ export function inspectResolutionOutcomes(
 
   const inspected = new Map<BattleCardEffect, InspectedPackets>();
   for (const effect of sources) {
-    const feedback = outcomes.filter((outcome) => outcome.eligible.has(effect));
+    const feedback = outcomes.filter((outcome) => !outcome.ineligible.has(effect));
     const magnitudes = new Map<ObservedMagnitudeField, number>();
     for (const [field, amount] of feedback[0]?.magnitudes.get(effect) ?? []) {
       if (feedback.every((outcome) => outcome.magnitudes.get(effect)?.get(field) === amount))

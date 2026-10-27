@@ -152,8 +152,10 @@ export function resolveInspectedCardPlay(
   const potionMultiplier = cardPotionMultiplier(state, card);
   const observeIndependent = (effects: readonly BattleCardEffect[]) => {
     for (const effect of effects) {
-      if (effect.kind === "chance") observeIndependent([...effect.successEffects, ...effect.failureEffects]);
-      else if (effect.kind === "wish" || effect.kind === "draw-cards" || effect.kind === "companion-action")
+      if (effect.kind === "chance") {
+        observeIndependent(effect.successEffects);
+        observeIndependent(effect.failureEffects);
+      } else if (effect.kind === "wish" || effect.kind === "draw-cards" || effect.kind === "companion-action")
         state.observer.descriptionMagnitude?.("amount", applyPotionMultiplier(effect.amount, potionMultiplier), effect);
       else if (
         (effect.kind === "remove-harmful-status" && !effect.removeAll && effect.amount !== undefined) ||

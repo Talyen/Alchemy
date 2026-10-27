@@ -137,9 +137,11 @@ export function sanitizeEncounterTraitIds(
   values: readonly string[],
   category: EncounterTraitCategory,
 ): EncounterTraitId[] {
-  return [...new Set(values)].filter(
-    (value): value is EncounterTraitId => isEncounterTraitId(value) && ENCOUNTER_TRAITS[value].category === category,
-  );
+  const ids = new Set<EncounterTraitId>();
+  for (const value of values) {
+    if (isEncounterTraitId(value) && ENCOUNTER_TRAITS[value].category === category) ids.add(value);
+  }
+  return [...ids];
 }
 
 export function pickEncounterTrait<Category extends EncounterTraitCategory>(

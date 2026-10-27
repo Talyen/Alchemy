@@ -90,24 +90,28 @@ const PersistedBattleStateWireSchema = z.looseObject({
   wishOptions: savedCardArraySchema("wishOptions").nullable().catch(null),
   wishQueue: z
     .array(z.unknown())
-    .transform((queues) =>
-      queues.flatMap((queue, index) =>
-        Array.isArray(queue) ? [parseSavedCardArray(queue, `wishQueue[${index}]`)] : [],
-      ),
-    )
+    .transform((queues) => {
+      const parsed: Array<ReturnType<typeof parseSavedCardArray>> = [];
+      queues.forEach((queue, index) => {
+        if (Array.isArray(queue)) parsed.push(parseSavedCardArray(queue, `wishQueue[${index}]`));
+      });
+      return parsed;
+    })
     .catch([]),
   pendingTurnStartEffects: z
     .array(z.unknown())
-    .transform((entries) =>
-      entries.flatMap((entry, index) => {
+    .transform((entries) => {
+      const parsed: Array<z.output<typeof pendingTurnStartEffectSchema>> = [];
+      entries.forEach((entry, index) => {
         const result = pendingTurnStartEffectSchema.safeParse(entry);
-        if (result.success) return [result.data];
-        recordNestedValidationWarnings([
-          { path: `pendingTurnStartEffects[${index}]`, message: "malformed scheduled effect was dropped" },
-        ]);
-        return [];
-      }),
-    )
+        if (result.success) parsed.push(result.data);
+        else
+          recordNestedValidationWarnings([
+            { path: `pendingTurnStartEffects[${index}]`, message: "malformed scheduled effect was dropped" },
+          ]);
+      });
+      return parsed;
+    })
     .catch([]),
   mana: z.number().catch(battleFallbacks.mana),
   maxMana: z.number().catch(battleFallbacks.maxMana),
@@ -132,12 +136,14 @@ const PersistedBattleStateWireSchema = z.looseObject({
   appliesFightPacing: z.boolean().catch(battleFallbacks.appliesFightPacing),
   difficultyModifiers: z
     .array(z.unknown())
-    .transform((modifiers) =>
-      modifiers.flatMap((modifier) => {
+    .transform((modifiers) => {
+      const parsed: DifficultyModifier[] = [];
+      modifiers.forEach((modifier) => {
         const result = difficultyModifierSchema.safeParse(modifier);
-        return result.success ? [result.data] : [];
-      }),
-    )
+        if (result.success) parsed.push(result.data);
+      });
+      return parsed;
+    })
     .catch([]),
 });
 
