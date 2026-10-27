@@ -32,8 +32,17 @@ export function isLabyrinthTraitEligible(id: EncounterTraitId, type: LabyrinthNo
   return type === "combat" || type === "elite" || type === "boss";
 }
 
+const incompatibleByTrait = new Map<string, Set<string>>();
+for (const group of INCOMPATIBLE_TRAITS) {
+  for (const id of group) {
+    const incompatible = incompatibleByTrait.get(id) ?? new Set<string>();
+    for (const other of group) incompatible.add(other);
+    incompatibleByTrait.set(id, incompatible);
+  }
+}
+
 export function areLabyrinthTraitsCompatible(a: string, b: string): boolean {
-  return a !== b && !INCOMPATIBLE_TRAITS.some((group) => group.includes(a) && group.includes(b));
+  return a !== b && !incompatibleByTrait.get(a)?.has(b);
 }
 
 export function getEnemyModifiersForNodeType(

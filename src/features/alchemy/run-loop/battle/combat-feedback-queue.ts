@@ -22,11 +22,13 @@ function staggeredLaunch(item: QueueItem, ahead: QueueItem[], now: number) {
 
 type Spread = NonNullable<CombatTextPresentation["spread"]>;
 
-function footprint(item: QueueItem, launchAt: number, spread: Spread, at: number) {
+function footprint(
+  item: QueueItem,
+  frame: ReturnType<typeof combatTextFootprint>,
+  route: ReturnType<typeof combatTextRoute>,
+) {
   const plan = item.presentation;
-  const frame = combatTextFootprint(plan.lane, at - launchAt, plan.lifetimeMs);
   const impact = plan.lane === "impact";
-  const route = combatTextRoute(plan.lane, spread);
   const row = route.row - (plan.lane === "announcement" ? M.reactionOffsetPx : 0);
   const maximumFan = Math.max(0, (280 - item.width * M.peakScale) / 2 - 8);
   const x = impact
@@ -46,11 +48,17 @@ function footprint(item: QueueItem, launchAt: number, spread: Spread, at: number
 }
 
 function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Spread {
-  const recent = ahead.filter(
-    (other) =>
-      other.presentation.lane === item.presentation.lane &&
-      other.presentation.launchAt + M.nearbyLaunchWindowMs >= launchAt,
-  );
+  if (ahead.length === 0) return 0;
+  let recentDamage = false;
+  let recentHeal = false;
+  if (item.presentation.lane === "impact") {
+    for (const other of ahead) {
+      if (other.presentation.lane !== "impact" || other.presentation.launchAt + M.nearbyLaunchWindowMs < launchAt)
+        continue;
+      if (other.family === "damage") recentDamage = true;
+      if (other.family === "heal") recentHeal = true;
+    }
+  }
   const routes: Spread[] =
     item.presentation.lane === "announcement"
       ? [
@@ -62,23 +70,38 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
         ]
       : item.presentation.lane !== "impact"
         ? [0, -1, 1, -2, 2, -3, 3]
-        : item.family === "heal" && recent.some((other) => other.family === "damage")
+        : item.family === "heal" && recentDamage
           ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, -1, -2, -3, -4, -5]
-          : item.family === "damage" && recent.some((other) => other.family === "heal")
+          : item.family === "damage" && recentHeal
             ? [-1, -2, -3, -4, -5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5]
             : [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, 6, 7, 8, 9];
   if (item.presentation.lane === "impact") {
     // Dense bursts can use extra fixed rows instead of reusing an occupied path.
     routes.push(...Array.from({ length: (Math.ceil(ahead.length / 3) + 1) * 3 }, (_, index) => 10 + index));
   }
+  const oldRoutes = new Map<QueueItem, ReturnType<typeof combatTextRoute>>();
   const samples = [];
   for (let elapsed = 0; elapsed < item.presentation.lifetimeMs; elapsed += M.sampleMs) {
     const at = launchAt + elapsed;
-    const previous = ahead
-      .filter((old) => at >= old.presentation.launchAt && at < endsAt(old.presentation))
-      .map((old) => footprint(old, old.presentation.launchAt, old.presentation.spread ?? 0, at))
-      .filter((frame) => frame.opacity >= 0.15);
-    samples.push({ at, previous });
+    const frame = combatTextFootprint(item.presentation.lane, at - launchAt, item.presentation.lifetimeMs);
+    if (frame.opacity < 0.15) continue;
+    const previous = [];
+    for (const old of ahead) {
+      if (at < old.presentation.launchAt || at >= endsAt(old.presentation)) continue;
+      const oldFrame = combatTextFootprint(
+        old.presentation.lane,
+        at - old.presentation.launchAt,
+        old.presentation.lifetimeMs,
+      );
+      if (!(oldFrame.opacity >= 0.15)) continue;
+      let route = oldRoutes.get(old);
+      if (!route) {
+        route = combatTextRoute(old.presentation.lane, old.presentation.spread ?? 0);
+        oldRoutes.set(old, route);
+      }
+      previous.push(footprint(old, oldFrame, route));
+    }
+    samples.push({ frame, previous });
   }
   let best = routes[0]!;
   let bestScore = Infinity;
@@ -86,9 +109,11 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
   // arrival batches do not repeatedly sample the same older animations.
   for (const route of routes) {
     let score = Math.abs(route) * 0.001;
+    const routeGeometry = combatTextRoute(item.presentation.lane, route);
     for (const sample of samples) {
-      const next = footprint(item, launchAt, route, sample.at);
-      if (next.opacity < 0.15) continue;
+      // Overlap penalties cannot decrease the score; ties keep the earlier route.
+      if (score >= bestScore) break;
+      const next = footprint(item, sample.frame, routeGeometry);
       for (const previous of sample.previous) {
         const width = Math.max(
           0,

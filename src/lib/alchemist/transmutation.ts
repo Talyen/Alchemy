@@ -201,11 +201,12 @@ function finishAlteration(
   return cloneBattleCard(withCardDescription(result, description));
 }
 
-export function getTransmutationVariants(
-  card: BattleCard,
-  keyword: KeywordId,
-  deck: readonly BattleCard[],
-): Array<{ sourceKeyword: KeywordId | null; result: BattleCard }> {
+interface PendingVariant {
+  sourceKeyword: KeywordId | null;
+  build: () => BattleCard;
+}
+
+function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: () => boolean): PendingVariant[] {
   if (!isTransmutableCard(card) || cardHasKeyword(card, keyword)) return [];
   // Companion-only Wishes are omitted from affinity metadata but still grant Wish.
   if (keyword === "wish" && visitBattleCardEffects(card.effects, (effect) => effect.kind === "wish")) return [];
@@ -235,15 +236,32 @@ export function getTransmutationVariants(
       .filter((source) => source !== keyword && canConvertSource(card.effects, source))
       .map((sourceKeyword) => ({
         sourceKeyword,
-        result: finishAlteration(
-          card,
-          keyword,
-          card.effects.map((effect) => convertEffect(effect, sourceKeyword, keyword)),
-        ),
+        build: () =>
+          finishAlteration(
+            card,
+            keyword,
+            card.effects.map((effect) => convertEffect(effect, sourceKeyword, keyword)),
+          ),
       }));
   }
   const effects = [...card.effects];
-  if (keyword === "archery" || keyword === "leech") {
+  if (keyword === "archery") {
+    const damage = visitBattleCardEffects(
+      effects,
+      (effect) =>
+        effect.kind === "damage" ||
+        effect.kind === "random-damage" ||
+        effect.kind === "cleanse-player-status-to-damage",
+    );
+    if (!damage) return [];
+    return [
+      {
+        sourceKeyword: null,
+        build: () => finishAlteration(card, keyword, effects, { tags: [...(card.tags ?? []), "archery"] }),
+      },
+    ];
+  }
+  if (keyword === "leech") {
     let damage = false;
     const infuseDamage = (effect: BattleCardEffect): BattleCardEffect => {
       if (
@@ -252,34 +270,36 @@ export function getTransmutationVariants(
         effect.kind === "cleanse-player-status-to-damage"
       ) {
         damage = true;
-        return keyword === "leech" ? { ...effect, lifesteal: true } : effect;
+        return { ...effect, lifesteal: true };
       }
       return mapEffectChildren(effect, infuseDamage);
     };
     const altered = effects.map(infuseDamage);
     if (!damage) return [];
-    const result = finishAlteration(
-      card,
-      keyword,
-      altered,
-      keyword === "archery" ? { tags: [...(card.tags ?? []), "archery"] } : {},
-    );
     // Leech can expand combined damage lines; count the actual preview.
-    if (keyword === "leech" && hasEffectLines(result, CORRUPTION_MAX_EFFECT_LINES + 1)) return [];
-    return [{ sourceKeyword: null, result }];
+    const result = finishAlteration(card, keyword, altered);
+    if (hasEffectLines(result, CORRUPTION_MAX_EFFECT_LINES + 1)) return [];
+    return [{ sourceKeyword: null, build: () => result }];
   }
   if (keyword === "consume" && !isCompanionSummonCard(card))
-    return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects, { consume: true }) }];
+    return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects, { consume: true }) }];
   if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES)) return [];
   if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
   else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
-  else if (
-    keyword === "companion" &&
-    deck.some((entry) => visitBattleCardEffects(entry.effects, (effect) => effect.kind === "summon-companion"))
-  )
-    effects.push({ kind: "companion-action", amount: 1 });
+  else if (keyword === "companion" && hasCompanion()) effects.push({ kind: "companion-action", amount: 1 });
   else return [];
-  return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects) }];
+  return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects) }];
+}
+
+export function getTransmutationVariants(
+  card: BattleCard,
+  keyword: KeywordId,
+  deck: readonly BattleCard[],
+): Array<{ sourceKeyword: KeywordId | null; result: BattleCard }> {
+  return getPendingVariants(card, keyword, () => deck.some(isCompanionSummonCard)).map(({ sourceKeyword, build }) => ({
+    sourceKeyword,
+    result: build(),
+  }));
 }
 
 export function createTransmutationOffers(
@@ -296,12 +316,14 @@ export function createTransmutationOffers(
     }
   }
   const choices = new Map<KeywordId, TransmutationChoice>();
+  let companionPresent: boolean | undefined;
+  const hasCompanion = () => (companionPresent ??= deck.some(isCompanionSummonCard));
   deck.forEach((source, sourceIndex) => {
     if (!isTransmutableCard(source)) return;
     // Roll against this card so unrelated cards cannot crowd out useful choices.
     const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
       group.flatMap((keyword) => {
-        const alterations = getTransmutationVariants(source, keyword, deck);
+        const alterations = getPendingVariants(source, keyword, hasCompanion);
         return alterations.length ? [{ keyword, alterations }] : [];
       }),
     );
@@ -325,7 +347,12 @@ export function createTransmutationOffers(
         choice = { keyword, alterations: [] };
         choices.set(keyword, choice);
       }
-      choice.alterations.push({ ...alteration, source: cloneBattleCard(source), sourceIndex });
+      choice.alterations.push({
+        sourceKeyword: alteration.sourceKeyword,
+        result: alteration.build(),
+        source: cloneBattleCard(source),
+        sourceIndex,
+      });
     }
   });
   return [...choices.values()];
