@@ -65,14 +65,13 @@ describe("Campfire Rest or Brew", () => {
     expect(screen.queryByRole("button", { name: "Strengthen" })).toBeNull();
     const mix = screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement;
     expect(mix.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Choose Potion for slot 1" }));
     fireEvent.click(screen.getByRole("button", { name: "Health Potion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Choose Potion for slot 2" }));
     fireEvent.click(screen.getByRole("button", { name: "Mana Potion" }));
     expect(screen.getByLabelText("Brew preview")).toBeTruthy();
     fireEvent.click(mix);
     expect(p.onBrew).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 1] });
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(screen.getByRole("heading", { name: "Mix Potion" })).toBeTruthy();
-    expect(mix.disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("button", { name: /^Rest$/ })).toBeTruthy();
   });
