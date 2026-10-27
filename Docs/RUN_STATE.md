@@ -37,6 +37,15 @@ not templates to duplicate.
 Use the linked tests to understand existing protection. Select checks under
 [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
+The [generated save/resume pilot](../tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts)
+checks Labyrinth map progress, pending card rewards, Health and RNG after the save
+candidate parser and session restore. These are controlled fixtures, not complete
+player journeys. The default unit tier uses 16 fixed seeds; nightly uses 64 other
+fixed seeds and 64 derived from the UTC date. A failing test names its seed. Replay
+one case with `ALCHEMY_SAVE_PROPERTY_SEED=<seed> npm run test:unit -- tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts`;
+local execution follows the focused-test policy in Contributing. The pilot does not
+shrink inputs, so preserve a failing seed as a focused regression when useful.
+
 Shop purchase/refresh recipes and `runShopTransaction` live together in
 `shop-commands-core.ts`; payment, acquisition, rollback and post-commit feedback
 remain under one transaction. Merchant removal and Alchemist mixing use that
