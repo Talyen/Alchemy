@@ -122,10 +122,13 @@ function resolveStartingPlayerStatuses(
 }
 
 function resolveStartingEnemyThorns(traits: BestiaryEntry["traits"]): number {
-  if (traits.some((trait) => trait.id === "briar-crown")) return LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum;
-  if (traits.some((trait) => trait.id === "thornhide")) return LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum;
-  if (traits.some((trait) => trait.id === "thorns")) return 1;
-  return 0;
+  let thorns = 0;
+  for (const trait of traits) {
+    if (trait.id === "briar-crown") return LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum;
+    if (trait.id === "thornhide") thorns = LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum;
+    else if (trait.id === "thorns" && thorns === 0) thorns = 1;
+  }
+  return thorns;
 }
 
 export function createBattleStartState(

@@ -122,7 +122,7 @@ function prepareCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInsta
       if (!rarity || item.affixes.length >= GEAR_AFFIX_COUNT[rarity].max)
         return "No affix slots or eligible affixes available.";
       const presentIds = new Set(item.affixes.map((affix) => affix.id));
-      const available = buildEligibleAffixPool(definition).filter((affix) => !presentIds.has(affix.id));
+      const available = buildEligibleAffixPool(definition, presentIds);
       if (!available.length) return "No affix slots or eligible affixes available.";
       return (rng) => {
         const chosen = pickRandom(available, rng)!;

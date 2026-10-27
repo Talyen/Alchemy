@@ -5,6 +5,7 @@ import {
   canInspectLabyrinthNode,
   isNodeDiscovered,
   labyrinthNodeVisualState,
+  labyrinthFloorVisualStates,
   withClearedNode,
 } from "@/lib/content-systems/labyrinth/map-state";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
@@ -58,6 +59,19 @@ describe("Labyrinth discovery and movement", () => {
     expect(withClearedNode(map, "labyrinth-floor-2-n14")).toBe(map);
     expect(withClearedNode(map, current)).toBe(map);
     expect(withClearedNode(map, "missing")).toBe(map);
+  });
+
+  it("matches the floor projection for individual lookups as rooms are cleared", () => {
+    const map = gridLabyrinthMapFixture();
+    for (const cleared of [entrance, east, south, diagonal, boss]) {
+      map.nodes[cleared]!.cleared = true;
+      const projected = labyrinthFloorVisualStates(map);
+      for (const id of Object.keys(map.nodes)) {
+        expect(labyrinthNodeVisualState(map, id)).toBe(projected.get(id) ?? "undiscovered");
+      }
+    }
+    map.floors[0]!.nodeIds = map.floors[0]!.nodeIds.filter((id) => id !== east);
+    expect(labyrinthNodeVisualState(map, east)).toBe("undiscovered");
   });
 
   it("allows descent from a completed boss without backtracking", () => {

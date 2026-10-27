@@ -61,16 +61,16 @@ function collectObserved<T>(
   effect: BattleCardEffect,
   equal: (a: T, b: T) => boolean,
 ): Collected<T> {
-  if (!feedback.length || feedback.some((outcome) => !outcome.complete && !read(outcome).has(effect)))
-    return { kind: "unknown" };
+  if (!feedback.length) return { kind: "unknown" };
   const first = read(feedback[0]!).get(effect) ?? [];
   let exact = true;
   for (const outcome of feedback) {
     const observations = read(outcome);
+    if (!outcome.complete && !observations.has(effect)) return { kind: "unknown" };
+    if (!exact) continue;
     const candidate = observations.get(effect) ?? [];
     if (candidate.length !== first.length || candidate.some((entry, index) => !equal(entry, first[index]!))) {
       exact = false;
-      break;
     }
   }
   return exact

@@ -63,22 +63,27 @@ function generateGearOfferings({
   };
 
   for (let index = 0; index < count; index += 1) {
-    const repeatableBases: typeof basePool = [];
     const unusedBases: typeof basePool = [];
+    let repeatableCount = 0;
     for (const base of basePool) {
       const reservation = reservedBases.get(base.id);
       if (reservation === "unique") continue;
-      repeatableBases.push(base);
+      repeatableCount++;
       if (reservation === undefined) unusedBases.push(base);
     }
-    const eligibleBases = unusedBases.length > 0 ? unusedBases : fillCount ? repeatableBases : [];
+    const eligibleBases =
+      unusedBases.length > 0
+        ? unusedBases
+        : fillCount
+          ? basePool.filter((base) => reservedBases.get(base.id) !== "unique")
+          : [];
     if (eligibleBases.length === 0) break;
 
     const availability: LootAvailability = {
       basic: true,
       astral: true,
       // Leave an ordinary base available to fill later slots on a narrow shelf.
-      unique: availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBases.length > 1),
+      unique: availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableCount > 1),
     };
     const rarity = rollTier(availability);
 
