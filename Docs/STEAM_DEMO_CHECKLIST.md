@@ -56,6 +56,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 - [ ] Quit opens no store/browser destination. Verify that native shutdown drains admitted file writes under the [write acknowledgement contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement); distinguish those writes from unfinished renderer work and already acknowledged progress.
 - [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
 - [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+- [ ] Before promising persistent player progress, freeze the supported save baseline. For each candidate, verify upgrade from supported distributed saves and recovery from a damaged primary; retain source saves and record the versions used.
 - [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep [native-binding qualification](./Plans/SteamDemo.md#outstanding-work) open until verified.
 
 ## 5. Readability, feedback, and Options
@@ -85,6 +86,7 @@ Use [audio](./AUDIO.md) and [performance](./PERFORMANCE.md).
 - [ ] Configure distinct demo/full App IDs and depots. Verify renderer, package and upload targets agree; wishlist actions target the full game.
 - [ ] Complete Steamworks build/store review and confirm the base game's page is visible and wishlistable before launch.
 - [ ] Test install, launch, update and uninstall through Steam using the exact candidate and a non-developer account. Require no dev server, missing assets, debug UI or developer credentials.
+- [ ] **EXTERNAL:** On a clean Windows 11 machine with Smart App Control enabled, install and launch the unsigned candidate through Steam; record the setting, build and result. Investigate any block before promotion.
 - [ ] Publish recommended Steam Input layouts and validate delivery and a complete physical-controller journey. Record real configuration IDs in release setup.
 - [ ] Store text/media accurately state the approved content, languages, platforms, controller behavior and system requirements. Do not claim native gamepad support or a Deck rating without evidence.
 - [ ] If a separate demo store page is later approved, supply its required trailer, screenshots, capsule/library assets and content survey under Valve's current rules.
@@ -155,8 +157,10 @@ exactly one usable full-game store destination and the game menu in each case.
 Record the shortcut/layout, native callback evidence and result with the package hash.
 
 Repeat after sleep/resume and Steam reconnection. With isolated acceptance accounts,
-verify newer saves across two devices, Cloud unavailable/reconnecting and demo-to-full
-import while preserving edition slots and initialization receipts.
+verify newer saves across two devices, offline progress followed by reconnection,
+Cloud unavailable/reconnecting and demo-to-full import while preserving edition
+slots and initialization receipts. Record which device and save version won at
+each step; do not overwrite a real player's profile to perform these checks.
 
 Deck evidence includes Proton startup/performance, physical Steam Input/overlay,
 1280×800 readability and suspend/resume. Keep those checks open when hardware is

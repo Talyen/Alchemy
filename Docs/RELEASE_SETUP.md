@@ -24,6 +24,10 @@ serialized save diagnostics from entering reports. Other events use Sentry's sta
 4. Publish [the privacy notice](../PRIVACY.md) on the Steam store page before
    enabling the secrets. Keep its crash-reporting disclosure aligned with this
    runtime contract (canonical wording owned by [PRIVACY.md](../PRIVACY.md)).
+5. Before relying on reporting for a public release, send a controlled test error
+   from a packaged candidate and confirm the correct edition and release, a
+   symbolicated stack trace, and the configured alert. Do not include player saves
+   or account details in the test event. Retain the result with release evidence.
 
 Release desktop builds create hidden source maps, upload them under the edition-specific [Sentry release name](./STEAM_DEMO.md#edition-contract), and delete them before
 electron-builder assembles the application. All packages also exclude source maps, including builds without Sentry.
@@ -60,7 +64,15 @@ survey or an approved Steam listing.
 
 ## Windows signing readiness
 
-Unsigned Steam depots remain supported. To opt into Azure Trusted Signing, create the Trusted Signing account and
+Steam-only Windows releases default to unsigned depots; signing is not a release
+prerequisite. Test the candidate through Steam on Windows 11 with Smart App Control
+enabled under [physical acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence).
+Reconsider signing if that test or player reports identify a problem, or if direct
+installer distribution is added. Signing does not guarantee reputation or prevent
+all warnings. [Microsoft's guidance](https://learn.microsoft.com/windows/apps/package-and-deploy/smartscreen-reputation)
+describes Smart App Control and reputation.
+
+If signing is needed, create an Azure Trusted Signing account and
 certificate profile, grant a Microsoft Entra application the Certificate Profile Signer role, then configure:
 
 - Credentials: `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and `AZURE_CLIENT_SECRET`.

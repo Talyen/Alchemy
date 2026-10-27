@@ -136,7 +136,8 @@ jobs:
           path: |
             reports/performance/
             reports/current-run.*
-          retention-days: 1
+            reports/compact/
+          retention-days: ${{ failure() && 7 || 1 }}
           if-no-files-found: ignore
 
   ship-gate-full:
@@ -191,7 +192,7 @@ jobs:
             coverage/
             reports/runs/
             reports/compact/
-          retention-days: 1
+          retention-days: 7
 
       - name: Retain interaction seed manifests
         if: always()
