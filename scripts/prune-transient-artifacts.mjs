@@ -74,7 +74,11 @@ export function pruneExpiredArtifacts({
   const cutoff = now - days * 86_400_000;
   const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
-  if (transientDirs === TRANSIENT_DIRS) removed.push(...pruneFailedBuilds(rootDir, { dryRun, now }));
+  if (transientDirs === TRANSIENT_DIRS) {
+    const cache = fs.lstatSync(path.join(rootDir, ".cache"), { throwIfNoEntry: false });
+    if (!cache || (cache.isDirectory() && !cache.isSymbolicLink()))
+      removed.push(...pruneFailedBuilds(rootDir, { dryRun, now }));
+  }
   // Only registered managed environments participate. Their inherited OS
   // locks remain held by the tool processes if their launchers terminate.
   if (transientDirs === TRANSIENT_DIRS) {
