@@ -112,16 +112,4 @@ export function tryMixPotionDeck(deck: BattleCard[], indexA: number, indexB: num
   return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
 }
 
-export function doublePotionPotency(card: BattleCard): BattleCard {
-  const { effects, description } = potionParts(card, card.effects.map(doublePotionEffect));
-  appendCardDescriptionTrailer(description, card.tags, card.consume === true);
-  return cloneBattleCard(
-    withCardDescription(
-      {
-        ...card,
-        effects,
-      },
-      description,
-    ),
-  );
-}
+export { doublePotionPotency } from "./potion-scaling";
