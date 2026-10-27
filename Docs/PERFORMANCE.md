@@ -134,6 +134,12 @@ from setup wall time. Replay requires the same checkpoint and action sequence;
 divergence fails. Segments cover transitions, draft, combat, rewards, purchases,
 account navigation and resume. Each requires completed actions and frames.
 A card click counts only after its hand identity leaves the hand.
+Brewing, transmutation, crafting and salvage retain a fixed three-second
+post-result observation window. This provides more frames on slow runners while
+still rejecting segments below their frame and action minimums. The longer
+window changes the mix of transition and settled frames: recapture older
+baselines for these journeys before comparing them, even if the comparison tool
+accepts their checkpoint and action identities.
 
 The summary separates checkpoint inventory from measured card/Wish labels and
 play/end-turn counts. Inventory never proves a mechanic triggered; conditional effects, procs,

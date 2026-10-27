@@ -6,6 +6,9 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../helpers/run-domain-store-test";
+import { claimRunReward, finishRewardClaim } from "@/features/alchemy/run-loop/run/reward-commands";
+import { createProgressionCommands } from "@/features/alchemy/run-loop/run/progression-commands";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { getStartingDeck } from "@/lib/game-data";
@@ -18,6 +21,17 @@ beforeEach(() => {
   setRunSession({ activity: { kind: "labyrinth-map" }, labyrinthMap: gridLabyrinthMapFixture() });
 });
 
+function claimLabyrinthReward() {
+  setRunSession({
+    activity: {
+      kind: "rewards",
+      data: { state: { ...createEmptyRewardState(), lastVictoryContentSystem: "labyrinth" }, companionCards: null },
+    },
+  });
+  expect(claimRunReward(null, defaultGameSession)?.nextScreen).toBe("labyrinth-map");
+  finishRewardClaim(defaultGameSession);
+}
+
 describe("Labyrinth commands", () => {
   it("enters and clears a room once, preserving history and map progress", () => {
     const controller = createLabyrinthController(defaultGameSession);
@@ -27,7 +41,7 @@ describe("Labyrinth commands", () => {
     expect(entered.activeLabyrinthPendingNode).toBe(target);
     expect(controller.enterSelectedNode()).toBeNull();
     expect(readRunSession(defaultGameSession).activity).toBe(entered.activity);
-    controller.onNodeCleared();
+    claimLabyrinthReward();
     expect(readRunSession(defaultGameSession).activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession(defaultGameSession).labyrinthMap!.nodes[target]?.cleared).toBe(true);
     expect(readRunSession(defaultGameSession).labyrinthMap!.currentNodeId).toBe(target);
@@ -82,13 +96,12 @@ describe("Labyrinth commands", () => {
     const controller = createLabyrinthController(defaultGameSession);
     controller.selectNode(target);
     controller.enterSelectedNode();
-    controller.onNodeCleared();
-    setRunSession({ activity: { kind: "labyrinth-map" } });
+    claimLabyrinthReward();
     controller.selectNode("labyrinth-floor-1-n3");
     expect(controller.enterSelectedNode()?.screen).toBe("campfire");
     expect(readRunSession(defaultGameSession).activeLabyrinthPendingNode).toBe("labyrinth-floor-1-n3");
     expect(readRunSession(defaultGameSession).labyrinthMap!.currentNodeId).toBe(target);
-    controller.onNodeCleared();
+    expect(createProgressionCommands(defaultGameSession).leaveVisit("campfire")).toBe("labyrinth-map");
     expect(readRunSession(defaultGameSession).labyrinthMap!.currentNodeId).toBe("labyrinth-floor-1-n3");
   });
 });

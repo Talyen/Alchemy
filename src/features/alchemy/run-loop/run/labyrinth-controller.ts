@@ -8,25 +8,17 @@ import {
   snapshotTransactionValue,
 } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
-  completeRunRoom,
   createDraftRunRandomSource,
-  setActiveLabyrinthPendingNode,
   setLabyrinthMap,
   setSelectedLabyrinthNodeId,
 } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
-import {
-  canDescendFromLabyrinthNode,
-  canInspectLabyrinthNode,
-  withClearedNode,
-} from "@/lib/content-systems/labyrinth/map-state";
-import { logError } from "@/lib/error-logger";
+import { canDescendFromLabyrinthNode, canInspectLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 export interface LabyrinthController {
   selectNode: (nodeId: string) => void;
   deselectNode: () => void;
   enterSelectedNode: () => RunRoomEntered | null;
   descend: () => void;
-  onNodeCleared: () => void;
 }
 export function createLabyrinthController(gameSession: GameSession): LabyrinthController {
   const selectNode = (nodeId: string) => {
@@ -52,29 +44,6 @@ export function createLabyrinthController(gameSession: GameSession): LabyrinthCo
     );
   };
   const enterSelectedNode = () => enterRunRoom({ kind: "labyrinth" }, gameSession);
-  const onNodeCleared = () => {
-    const pending = dispatchRunSessionCommand(
-      (draft) => {
-        const pendingNode = draft.session.activeLabyrinthPendingNode;
-        if (pendingNode) completeRunRoom(draft);
-        setActiveLabyrinthPendingNode(draft, null);
-        setSelectedLabyrinthNodeId(draft, null);
-        if (pendingNode) {
-          const prev = draft.session.labyrinthMap;
-          if (prev) setLabyrinthMap(draft, withClearedNode(snapshotTransactionValue(prev), pendingNode));
-        }
-        return acceptCommand(pendingNode);
-      },
-      undefined,
-      gameSession,
-    );
-    // The pending node is set in enterSelectedNode and cleared here; a clear
-    // with nothing pending means a node handler navigated without ever
-    // clearing (or a double-clear), so log rather than silently ignoring.
-    if (!pending) {
-      logError("[createLabyrinthController] onNodeCleared called without a pending node", "other");
-    }
-  };
   const descend = () => {
     dispatchRunSessionCommand(
       (draft) => {
@@ -103,5 +72,5 @@ export function createLabyrinthController(gameSession: GameSession): LabyrinthCo
       gameSession,
     );
   };
-  return bindSessionCapabilities(gameSession, { selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared });
+  return bindSessionCapabilities(gameSession, { selectNode, deselectNode, enterSelectedNode, descend });
 }
