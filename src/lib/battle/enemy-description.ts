@@ -14,6 +14,7 @@ import {
   ENEMY_BOSS_REGENERATION,
 } from "../game-constants";
 import { scaleEnemyAbilityDamage } from "./battle-enemy-setup";
+import { scaleByRoomMultiplier } from "./amount-helpers";
 import { capitalizeWord } from "../utils";
 import type { BattleState } from "./types";
 
@@ -42,10 +43,10 @@ function scaleEffect(effect: EnemyAbilityEffect, context: EnemyDescriptionContex
     }
     case "heal":
     case "player-status":
-      return { ...effect, amount: Math.round(effect.amount * context.roomScalingMultiplier) };
+      return { ...effect, amount: scaleByRoomMultiplier(context, effect.amount) };
     case "remove-enemy-armor":
       return effect.amount !== undefined && !effect.halve && !effect.removeAll
-        ? { ...effect, amount: Math.round(effect.amount * context.roomScalingMultiplier) }
+        ? { ...effect, amount: scaleByRoomMultiplier(context, effect.amount) }
         : effect;
     case "multiply-enemy-status":
       return effect;
@@ -135,7 +136,7 @@ const TRAIT_DESCRIPTION_SCALERS: Record<
 export function getEncounterEnemyTrait(trait: EnemyTrait, context: EnemyDescriptionContext): EnemyTrait {
   const scaler = TRAIT_DESCRIPTION_SCALERS[trait.id];
   if (!scaler && !ROOM_SCALED_TRAITS.has(trait.id)) return trait;
-  const room = (amount: number) => Math.round(amount * context.roomScalingMultiplier);
+  const room = (amount: number) => scaleByRoomMultiplier(context, amount);
   const description = scaler ? scaler(trait.description, room, context) : scaleTraitNumbers(trait.description, room);
   return description === trait.description ? trait : { ...trait, description };
 }

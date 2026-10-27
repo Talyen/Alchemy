@@ -184,6 +184,11 @@ also checks each damage type and magnitude against the combat rules. Typography
 checks enforce the remaining copy conventions. Run `npm run content:audit`
 before handing off.
 
+Turn-start gains and periodic hits are registered in
+[`enemy-trait-coverage.ts`](../src/lib/content-systems/enemy-trait-coverage.ts),
+which is shared by combat and content validation. Damage resistance and
+vulnerability coverage comes directly from `TRAIT_DAMAGE_RULES`.
+
 - **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
 - **2. Set `enemyType` (`normal`/`elite`/`boss`)** — same file
 - **3. Add traits as `{ id, title, description }` objects** — same file (logic lives in battle system)
