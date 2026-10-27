@@ -1,10 +1,12 @@
 import * as React from "react";
 import * as compilerRuntime from "react/compiler-runtime";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import babel from "@babel/core";
+import { useTranslation } from "react-i18next";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
-import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText, installCatalogs, localization } from "@/lib/localization/runtime";
+import { createTranslationReader, displayText, installCatalogs, localization } from "@/lib/localization/runtime";
 import catalogs from "@/lib/localization/locales/runtime.json";
 
 afterEach(async () => {
@@ -14,6 +16,39 @@ afterEach(async () => {
 
 it("refreshes compiler-cached messages, helpers and explicit memo results without remounting", async () => {
   installCatalogs(catalogs);
+  const hookSource = readFileSync(resolve(process.cwd(), "src/components/use-game-translation.ts"), "utf8");
+  const generatedHook = babel.transformSync(hookSource, {
+    filename: "use-game-translation.ts",
+    configFile: false,
+    babelrc: false,
+    parserOpts: { plugins: ["typescript"] },
+    plugins: [["babel-plugin-react-compiler", { target: "19" }]],
+  })!.code!;
+  expect(generatedHook).toContain("react/compiler-runtime");
+  const hookImports = babel
+    .parseSync(generatedHook, { configFile: false, babelrc: false })!
+    .program.body.filter((node) => node.type === "ImportDeclaration");
+  const hookCompiler = hookImports.find((node) => node.source.value === "react/compiler-runtime")!;
+  let executableHook = generatedHook;
+  for (const node of [...hookImports].reverse())
+    executableHook = executableHook.slice(0, node.start!) + executableHook.slice(node.end!);
+  executableHook = executableHook.replace("export function useGameTranslation", "function useGameTranslation");
+  // Use the actual hook source and real translation runtime, including compiler caches.
+  const createHook = new Function(
+    hookCompiler.specifiers[0]!.local.name,
+    "useMemo",
+    "useTranslation",
+    "localization",
+    "createTranslationReader",
+    executableHook + "; return useGameTranslation;",
+  ) as (...values: unknown[]) => () => ReturnType<typeof createTranslationReader>;
+  const useGameTranslation = createHook(
+    (compilerRuntime as unknown as { c: (size: number) => unknown[] }).c,
+    React.useMemo,
+    useTranslation,
+    localization,
+    createTranslationReader,
+  );
   const generated = babel.transformSync(
     `
     import * as React from "react";

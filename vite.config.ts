@@ -80,7 +80,7 @@ export default defineConfig(({ mode, command }) => {
       react(),
       !process.env.VITEST &&
         babel({
-          include: /\.[jt]sx$/,
+          include: /\.(?:[jt]sx|ts)$/,
           presets: [reactCompilerPreset()],
         }),
       command === "serve" &&
