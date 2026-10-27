@@ -119,6 +119,8 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const runner = options.runner ?? defaultRunner;
   const paths = parseCheckArgs(argv);
   const full = argv.includes("--full");
+  const planOnly = argv.includes("--plan");
+  console.log(planOnly ? "Plan only: no checks have run." : "Executing check; outcomes below describe this run.");
   console.log(
     `Scope: ${full ? "broad completion gate: selected tests, full static validation and applicable builds" : "lightweight task gate: localization, documentation, selected-file formatting and lint; tests and compilation deferred to CI"}.`,
   );
@@ -191,9 +193,10 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   if (argv.includes("--plan")) {
     for (const definition of definitions) {
       console.log(
-        `${definition.enabled ? "Run" : "Skip"}: ${definition.label}${definition.enabled ? ` — ${definition.command} ${definition.args.join(" ")}` : ` — ${definition.reason ?? "not applicable"}`}`,
+        `${definition.enabled ? "Would run" : "Would skip"}: ${definition.label}${definition.enabled ? ` — ${definition.command} ${definition.args.join(" ")}` : ` — ${definition.reason ?? "not applicable"}`}`,
       );
     }
+    console.log("Nested changed-path verification plan:");
     const { main: verify } = await import("./verify-changed.mjs");
     return verify([...verifyArgs, "--plan"]);
   }

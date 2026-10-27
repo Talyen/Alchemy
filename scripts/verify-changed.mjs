@@ -129,7 +129,7 @@ export function main(argv = process.argv.slice(2)) {
     // docs:check itself, so one gate never pays for documentation checks twice.
     const plan = batchUnitCommands(filterPlanCommands(resolveRoutePlan(paths), flags));
     console.log(
-      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "selected units" : "documentation only; unit tests deferred to CI"}`,
+      `${flags.has("plan") ? "Verification plan (not run)" : `Verification run: ${runId}`}; route-selected scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "selected units" : "documentation checks only; unit tests deferred to CI"}`,
     );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     console.log(

@@ -343,7 +343,7 @@ export async function main(argv = process.argv.slice(2)) {
       console.log(`Blocked by unfinished Git operation: ${markers.join(", ")}; resolve it before continuing.`);
     else if (branch !== `agent/${task}`)
       console.log("Blocked: checkout is not on the expected task branch; inspect it.");
-    else if (dirty) console.log("Next: review task-owned changes, run npm run check, and commit them.");
+    else if (dirty) console.log(`Next in ${taskPath}: review task-owned changes, run npm run check, and commit them.`);
     else if (state?.integration === "passed" && state.commit === head) {
       const contained = runGit(["merge-base", "--is-ancestor", head, "main"]);
       if (contained.status === 0)
@@ -356,7 +356,9 @@ export async function main(argv = process.argv.slice(2)) {
       console.log(
         `Next: review the task and its checks, then node scripts/agent-worktree.mjs integrate --task ${task}`,
       );
-    console.log(`Status is a snapshot; checks and review are not inferred. State: ${stateFile}`);
+    console.log(
+      `Review and check completion are not recorded by status; confirm both before integration. State: ${stateFile}`,
+    );
     return;
   }
 

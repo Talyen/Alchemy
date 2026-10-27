@@ -50,6 +50,14 @@ export function main(argv = process.argv.slice(2)) {
     for (const doc of selection.docs)
       console.log(`Owner: ${doc.path}:${doc.start}-${doc.end}${doc.heading ? ` # ${doc.heading}` : ""}`);
     for (const entry of selection.entrypoints) console.log(`Entry: ${entry}`);
+    if (selection.visualScenarios.length) {
+      console.log(
+        `Possible visual scenarios: ${selection.visualScenarios.join(", ")} (confirm the affected screen; npm run visual:scenario -- --list).`,
+      );
+      console.log(
+        "For visible changes compare matched renders and interactions; for changed player text prepare and review translations after wording settles.",
+      );
+    }
     console.log("Pointers only; no document or source contents printed.");
   }
   return 0;

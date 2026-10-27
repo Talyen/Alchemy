@@ -210,6 +210,11 @@ node scripts/agent-worktree.mjs integrate --task <slug>
 node scripts/agent-worktree.mjs finish --task <slug>
 ```
 
+Status shows the task checkout, base, working paths and recorded integration, then
+suggests the next action. It does not infer that review or checks were completed;
+confirm those separately before integration. Commands that edit or check task files
+run in the task checkout; integration and finish run from the original workspace.
+
 Creation starts `agent/<slug>` from committed local main and links dependencies.
 The branch's `alchemyTaskBase` records original provenance; task checks compare
 against the latest shared ancestor with main. Existing branches resume their

@@ -23,6 +23,9 @@ and the relationship to main. Both the plan and completed check list their selec
 paths and step outcomes. Completed runs write `reports/runs/<run-id>/check/coverage.json`
 with the complete selection, reuse provenance, deferred checks and nested verification
 summary when available. A skipped step is not a passed check.
+`--plan` prints proposed steps only; it does not establish a pass. The nested
+changed-path plan describes one step inside the outer gate. A completed local gate
+reports its actual step outcomes and deferred CI work; it does not dispatch CI.
 
 The default task gate runs applicable localization freshness, documentation
 contracts, and selected-file formatting and lint. Formatting and lint batches

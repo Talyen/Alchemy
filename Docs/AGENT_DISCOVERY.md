@@ -16,12 +16,19 @@ duplicate owners are printed once. Text and JSON give the same current, 1-based
 inclusive ranges. Canonical document paths match their topics; a whole-document
 pointer suppresses its subsections. Unknown topics and removed options fail.
 
-Gameplay tests follow gameplay owners; test infrastructure selects verification,
+Focused domain owners appear before shared run-state sections. Gameplay tests follow gameplay owners; test infrastructure selects verification,
 and headless playthrough paths select simulation guidance. Focused owners retain
 applicable run-state and UI contracts. Unmatched paths retain the architecture
 fallback, including mixed selections. Script lookup starts at verification policy
 and implementation map sections; follow links for specific test/cache/browser/CI
 details. Owner lookup does not claim test coverage.
+
+For recognizable Options, Homestead, Battle and Rewards screen paths, lookup also
+suggests existing visual scenarios. These are pointers, not proof that a scenario
+covers the edited state. Confirm the affected screen, compare matched renders and
+exercise the interaction. If player-facing text changed, prepare and review the
+localization packet after wording settles. For other screens, list the available
+scenarios with `npm run visual:scenario -- --list` and use the managed preview as needed.
 
 Find filenames before searching contents, then read relevant sections/symbols and
 consumers. Expand as the contract requires; reuse unchanged reads:

@@ -1,5 +1,6 @@
 export interface Selection {
   tasks: string[];
+  visualScenarios: string[];
   docs: Array<{ path: string; heading: string | null }>;
   entrypoints: string[];
 }

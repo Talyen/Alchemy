@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,6 +11,22 @@ import { resolveRoutePlan } from "../../scripts/lib/verification/change-routes.m
 import { normalizeRunId } from "../../scripts/lib/verification/current-run.mjs";
 
 let runId: string;
+
+it("labels plans and nested verification without claiming checks ran", () => {
+  for (const file of [
+    "src/features/alchemy/shared/stores/commands/gear-commands.ts",
+    "Docs/SIMULATION.md",
+    "src/features/alchemy/meta/screens/options-screen.tsx",
+    "src/lib/localization/runtime.ts",
+  ]) {
+    const output = execFileSync(process.execPath, ["scripts/check.mjs", file, "--plan"], { encoding: "utf8" });
+    expect(output).toContain("Plan only: no checks have run.");
+    expect(output).toContain("Would run: changed-path verification");
+    expect(output).toContain("Nested changed-path verification plan:");
+    expect(output).toContain("Verification plan (not run)");
+    expect(output).not.toContain("local verification complete");
+  }
+});
 beforeEach(() => {
   runId = normalizeRunId(`local-check-test-${randomUUID()}`);
   vi.stubEnv("ALCHEMY_RUN_ID", runId);

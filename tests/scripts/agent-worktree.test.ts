@@ -333,6 +333,8 @@ describe("serialized local integration", () => {
     expect(dirty.status, dirty.stderr).toBe(0);
     expect(dirty.stdout).toContain("unfinished.txt");
     expect(dirty.stdout).toContain("run npm run check");
+    expect(dirty.stdout).toContain("Review and check completion are not recorded by status");
+    expect(dirty.stdout).toMatch(/Next in .*\/\.worktrees\/task:/u);
     expect(readFileSync(join(taskPath, "unfinished.txt"), "utf8")).toBe("preserve");
     rmSync(join(taskPath, "unfinished.txt"));
     const integrated = run("integrate", "--task", "task");

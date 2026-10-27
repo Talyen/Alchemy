@@ -55,6 +55,36 @@ it("replaces general fallback reads with focused owners while retaining contract
   ]);
 });
 
+it("finds specific Gear and reward owners before shared run-state contracts", () => {
+  const gear = selectContext(["src/features/alchemy/shared/stores/commands/gear-commands.ts"]);
+  expect(gear.tasks).toEqual(["gear", "run-state"]);
+  expect(gear.docs[0]).toEqual({ path: "Docs/ARMORY.md", heading: "State flow" });
+  expect(gear.docs).toContainEqual({ path: "Docs/RUN_STATE.md", heading: "Common implementation paths" });
+  expect(gear.docs).toContainEqual({
+    path: "src/features/alchemy/shared/storage/MIGRATIONS.md",
+    heading: "Public save contract",
+  });
+  expect(gear.entrypoints).toContain("src/features/alchemy/shared/stores/commands/gear-commands.ts");
+  const reward = selectContext(["src/features/alchemy/run-loop/run/reward-commands.ts"]);
+  expect(reward.tasks).toContain("rewards");
+  expect(reward.entrypoints).toContain("src/features/alchemy/run-loop/run/reward-commands.ts");
+  const persistence = selectContext(["src/features/alchemy/shared/storage/session-persistence.ts"]);
+  expect(persistence.docs).toContainEqual({ path: "Docs/RUN_WORKFLOWS.md", heading: "Change persisted save data" });
+  const navigation = selectContext(["src/features/alchemy/shell/screen-navigation.ts"]);
+  expect(navigation.entrypoints).toContain("src/features/alchemy/shell/screen-navigation.ts");
+});
+
+it("suggests visual scenarios only for recognized screen paths", () => {
+  const selection = selectContext([
+    "src/features/alchemy/meta/screens/options-screen.tsx",
+    "src/features/alchemy/meta/screens/homestead/node-artwork.tsx",
+    "src/features/alchemy/run-loop/screens/battle-screen/index.tsx",
+    "src/features/alchemy/run-loop/screens/rewards-screen.tsx",
+  ]);
+  expect(selection.visualScenarios).toEqual(["options", "homestead", "battle", "rewards"]);
+  expect(selectContext(["src/features/alchemy/shared/stores/commands/gear-commands.ts"]).visualScenarios).toEqual([]);
+});
+
 it("rejects obsolete capabilities and ambiguous selections", () => {
   for (const option of ["--outline", "--symbol", "--related", "--session", "--tests", "--full"])
     expect(() => parseContextArgs([option])).toThrow("Unknown context option");

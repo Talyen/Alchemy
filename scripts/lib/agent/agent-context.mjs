@@ -4,6 +4,12 @@ import { expandRepositoryPaths } from "../repository-paths.mjs";
 import { readDocumentSection } from "./markdown-sections.mjs";
 
 const owner = (path, heading = null) => ({ path, heading });
+const visualScenarios = [
+  [/(?:\/options(?:-screen|\/)|\/options-screen-route)\S*\.(?:tsx|css)$/u, "options"],
+  [/(?:\/homestead(?:-screen|\/))\S*\.(?:tsx|css)$/u, "homestead"],
+  [/\/battle-screen\/\S*\.(?:tsx|css)$/u, "battle"],
+  [/\/rewards-screen\.tsx$/u, "rewards"],
+];
 export const CONTEXT_TASKS = {
   battle: {
     matches: /(?:\/battle\/|\/battle-commands\.|game-constants\/(?:combat-rules|enemy|battle))/,
@@ -18,7 +24,12 @@ export const CONTEXT_TASKS = {
   "run-state": {
     matches:
       /(?:shared\/(?:stores|storage|run-flow)\/|run-loop\/(?:run|navigation)\/|run-setup\/|active-run-session\/|lib\/validation\/|autosave|alchemy-bootstrap)/,
-    docs: [owner("Docs/RUN_STATE.md"), owner("src/features/alchemy/shared/storage/MIGRATIONS.md")],
+    docs: [
+      owner("Docs/RUN_STATE.md", "Common implementation paths"),
+      owner("Docs/RUN_STATE.md", "Run state"),
+      owner("Docs/RUN_STATE.md", "Completed actions and local saving"),
+      owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Public save contract"),
+    ],
     entrypoints: [
       "src/features/alchemy/shared/stores/commands/run-session-command.ts",
       "src/features/alchemy/shared/stores/persistence/run-profile-save-fields.ts",
@@ -42,9 +53,13 @@ export const CONTEXT_TASKS = {
     entrypoints: ["src/lib/game-data/index.ts"],
   },
   gear: {
-    matches: /(?:\/gear\/|gear-store|gear-session|armory)/,
-    docs: [owner("Docs/ARMORY.md")],
-    entrypoints: ["src/features/alchemy/shared/stores/session/gear-store.ts"],
+    matches: /(?:\/gear\/|gear-(?:store|session|commands)|armory)/,
+    docs: [owner("Docs/ARMORY.md", "State flow")],
+    entrypoints: [
+      "src/features/alchemy/shared/stores/commands/gear-commands.ts",
+      "src/features/alchemy/shared/stores/session/gear-store.ts",
+      "tests/features/alchemy/shared/stores/commands/gear-rejection-generated.test.ts",
+    ],
   },
   settings: {
     matches: /(?:settings(?:-|\.|\/)|device-display|\/screens\/options(?:\/|-))/,
@@ -79,7 +94,25 @@ export const CONTEXT_TASKS = {
       owner("Docs/RUN_WORKFLOWS.md", "Grant materials during a run"),
       owner("Docs/RUN_WORKFLOWS.md", "Add or change post-victory routing (`REWARD_ROUTES`)"),
     ],
-    entrypoints: ["src/lib/loot/policy.ts", "src/features/alchemy/run-loop/navigation/reward-flow.ts"],
+    entrypoints: [
+      "src/features/alchemy/run-loop/run/reward-commands.ts",
+      "src/features/alchemy/run-loop/navigation/reward-flow.ts",
+      "src/lib/loot/policy.ts",
+    ],
+  },
+  persistence: {
+    matches: /(?:shared\/storage\/|shared\/stores\/persistence\/)/,
+    docs: [owner("Docs/RUN_WORKFLOWS.md", "Change persisted save data")],
+    entrypoints: [
+      "src/features/alchemy/shared/storage/session-persistence.ts",
+      "src/features/alchemy/shared/stores/persistence/run-resume-codec.ts",
+      "tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts",
+    ],
+  },
+  navigation: {
+    matches: /(?:run-loop\/navigation\/|shell\/(?:screen-navigation|route-commands)\.)/,
+    docs: [owner("Docs/BATTLE_CONTROLLERS.md", "Battle path"), owner("Docs/WORKFLOWS.md", "Adding a new screen")],
+    entrypoints: ["src/features/alchemy/shell/screen-navigation.ts", "src/features/alchemy/shell/route-commands.ts"],
   },
   assets: {
     matches: /(?:assets|optimize-|sync-generated|public\/(?:Music|sounds)|assets\/sources)/,
@@ -118,15 +151,20 @@ export function selectContext(paths, task = []) {
     if (!Object.hasOwn(CONTEXT_TASKS, topic))
       throw new Error(`Unknown task: ${topic}. Choose ${Object.keys(CONTEXT_TASKS).join(", ")}`);
   const matches = (entry, file) => entry.matches.test(file) || entry.docs.some((doc) => doc.path === file);
-  const selected = Object.entries(CONTEXT_TASKS).filter(
-    ([id, entry]) => tasks.includes(id) || paths.some((file) => matches(entry, file)),
-  );
+  const selected = Object.entries(CONTEXT_TASKS)
+    .filter(([id, entry]) => tasks.includes(id) || paths.some((file) => matches(entry, file)))
+    .sort(([a], [b]) => (a === "run-state" ? 2 : Number(a === "ui")) - (b === "run-state" ? 2 : Number(b === "ui")));
   const docs = selected.flatMap(([, entry]) => entry.docs);
   if (paths.some((file) => !selected.some(([, entry]) => matches(entry, file))))
     docs.push(owner("Docs/ARCHITECTURE.md"));
   const wholeDocs = new Set(docs.filter((doc) => !doc.heading).map((doc) => doc.path));
   return {
     tasks: selected.map(([id]) => id),
+    visualScenarios: [
+      ...new Set(
+        visualScenarios.filter(([pattern]) => paths.some((file) => pattern.test(file))).map(([, name]) => name),
+      ),
+    ],
     docs: [
       ...new Map(
         docs
