@@ -12,9 +12,12 @@ export function getKeywordBorderShineColors(keywordIds: readonly KeywordId[]): r
   const uniqueKeywordIds = [...new Set(keywordIds)];
   if (uniqueKeywordIds.length === 0) return [];
 
-  const primaryColors = [
-    ...new Set(uniqueKeywordIds.flatMap((id) => keywordDefinitions[id]?.shineColors.slice(0, 1) ?? [])),
-  ];
+  const colors = new Set<string>();
+  for (const id of uniqueKeywordIds) {
+    const color = keywordDefinitions[id]?.shineColors[0];
+    if (color !== undefined) colors.add(color);
+  }
+  const primaryColors = [...colors];
 
   if (primaryColors.length === 0) return [];
   if (primaryColors.length === 1) {

@@ -121,9 +121,9 @@ function firstAttack(outcome: InspectedPackets | undefined): BattleCardEffect | 
   if (!outcome || outcome.kind === "unknown") return;
   if (outcome.kind === "exact") {
     const packet = outcome.packets[0];
-    return packet ? summarize([packet]) : undefined;
+    return packet && !Number.isNaN(packet.amount) ? { ...packet } : packet ? summarize([packet]) : undefined;
   }
-  const firstPackets: ObservedAttack[] = [];
+  const firstPackets: DamageEffect[] = [];
   for (const packets of outcome.outcomes) {
     if (!packets[0]) return;
     firstPackets.push(packets[0]);

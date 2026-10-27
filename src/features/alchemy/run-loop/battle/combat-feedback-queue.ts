@@ -133,6 +133,8 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
     if (score < bestScore) {
       best = route;
       bestScore = score;
+      // Scores cannot be negative, and ties retain the first route.
+      if (score === 0) break;
     }
   }
   return best;
@@ -208,17 +210,20 @@ export function scheduleCombatFeedback(
   }
   const plans = new Map<string, CombatTextPresentation>();
   for (const lane of lanes.values()) {
-    const visible = lane.filter((item) => item.presentation.phase === "visible");
+    const visible: QueueItem[] = [];
+    const waiting: QueueItem[] = [];
+    for (const item of lane) {
+      if (item.presentation.phase === "visible") visible.push(item);
+      else if (item.presentation.phase === "waiting") waiting.push(item);
+    }
     for (const item of visible) plans.set(item.id, item.presentation);
     // Keep every admitted entry and every active path. Time, rather than eviction,
     // bounds the backlog; dense arrivals may overlap instead of falling behind combat.
-    const waiting = lane
-      .filter((item) => item.presentation.phase === "waiting")
-      .sort(
-        (a, b) =>
-          a.receivedAt - b.receivedAt ||
-          Number(b.presentation.lane === "announcement") - Number(a.presentation.lane === "announcement"),
-      );
+    waiting.sort(
+      (a, b) =>
+        a.receivedAt - b.receivedAt ||
+        Number(b.presentation.lane === "announcement") - Number(a.presentation.lane === "announcement"),
+    );
     const ahead = [...visible].sort((a, b) => a.presentation.launchAt - b.presentation.launchAt);
     for (const item of waiting) {
       const launchAt = item.scheduled ? item.presentation.launchAt : staggeredLaunch(item, ahead, now);

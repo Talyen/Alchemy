@@ -9,7 +9,8 @@ export { getTalentsForKeyword } from "./talent-pool-definitions";
 export const TALENT_ROW_SIZES = [1, 2, 3, 4] as const;
 
 export function chunkIntoRows<T>(items: T[], sizes: readonly number[] | number): T[][] {
-  if ((typeof sizes === "number" ? [sizes] : sizes).some((size) => !Number.isSafeInteger(size) || size <= 0)) {
+  const invalid = (size: number) => !Number.isSafeInteger(size) || size <= 0;
+  if (typeof sizes === "number" ? invalid(sizes) : sizes.some(invalid)) {
     throw new RangeError("Row sizes must be positive safe integers");
   }
   const rows: T[][] = [];

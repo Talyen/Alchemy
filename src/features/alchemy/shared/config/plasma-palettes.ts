@@ -106,15 +106,16 @@ export function getPlasmaColorPairForCompanion(companion: CompanionDefinition): 
 }
 
 export function getPlasmaKeywordsForEnemy(entry: BestiaryEntry): KeywordId[] {
-  return [...new Set([...getEnemyTraitKeywordIds(entry), ...getEnemyAbilities(entry).flatMap(getCardKeywords)])];
+  const keywords = new Set(getEnemyTraitKeywordIds(entry));
+  for (const ability of getEnemyAbilities(entry)) for (const keyword of getCardKeywords(ability)) keywords.add(keyword);
+  return [...keywords];
 }
 
 function getEnemyTraitKeywordIds(entry: BestiaryEntry, modifiers: readonly EncounterCombatTraitId[] = []): KeywordId[] {
-  const modifierIds = new Set<string>(modifiers);
-  const descriptions = [
-    ...entry.traits.filter((trait) => !modifierIds.has(trait.id)).map((trait) => trait.description),
-    ...modifiers.map((id) => ENCOUNTER_TRAITS[id].enemyTrait.description),
-  ];
+  const modifierIds = modifiers.length ? new Set<string>(modifiers) : undefined;
+  const descriptions: string[] = [];
+  for (const trait of entry.traits) if (!modifierIds?.has(trait.id)) descriptions.push(trait.description);
+  for (const id of modifiers) descriptions.push(ENCOUNTER_TRAITS[id].enemyTrait.description);
   return getPlasmaKeywordsForText(descriptions.join(" "));
 }
 

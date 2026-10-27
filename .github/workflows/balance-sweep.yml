@@ -1,0 +1,112 @@
+name: Full balance sweep
+
+on:
+  workflow_dispatch:
+    inputs:
+      resume_run_id:
+        description: Prior workflow run ID whose shard checkpoints should be resumed (same commit)
+        required: false
+        type: string
+      verify_unsharded:
+        description: Independently rerun the full sweep without shards and compare reports
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      ALCHEMY_BALANCE_MODE: full
+      ALCHEMY_BALANCE_FINDINGS_CAP: 500
+      ALCHEMY_BALANCE_BATCH_GROUPS: 1000000
+      ALCHEMY_BALANCE_SHARD_COUNT: 8
+      ALCHEMY_BALANCE_SHARD_INDEX: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+      - name: Restore prior shard checkpoint
+        if: inputs.resume_run_id != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: balance-shard-${{ matrix.shard }}
+          path: reports/balance-batches
+          run-id: ${{ inputs.resume_run_id }}
+          github-token: ${{ github.token }}
+      - name: Run shard
+        run: npm run balance:sim:batch
+      - name: Preserve shard checkpoint
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: balance-shard-${{ matrix.shard }}
+          path: reports/balance-batches/
+          retention-days: 14
+          if-no-files-found: error
+
+  report:
+    needs: sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ALCHEMY_BALANCE_MODE: full
+      ALCHEMY_BALANCE_FINDINGS_CAP: 500
+      ALCHEMY_BALANCE_MERGE_DIR: reports/balance-shards
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: balance-shard-*
+          path: reports/balance-shards
+      - name: Validate shards and compose report
+        run: |
+          npm run balance:sim:batch
+          git rev-parse HEAD > reports/balance-batches/report/source-commit.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: full-balance-report
+          path: |
+            reports/balance-batches/manifest.json
+            reports/balance-batches/report/
+          retention-days: 30
+          if-no-files-found: error
+
+  parity:
+    if: inputs.verify_unsharded
+    needs: report
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      ALCHEMY_BALANCE_MODE: full
+      ALCHEMY_BALANCE_FINDINGS_CAP: 500
+      ALCHEMY_BALANCE_BATCH_GROUPS: 1000000
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: full-balance-report
+          path: reports/sharded-report
+      - name: Run unsharded sweep and compare reports
+        run: |
+          npm run balance:sim:batch
+          cmp reports/sharded-report/report/matrix.json reports/balance-batches/report/matrix.json
+          cmp reports/sharded-report/report/balance-findings.json reports/balance-batches/report/balance-findings.json
+      - name: Preserve unsharded report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: balance-unsharded-parity
+          path: reports/balance-batches/
+          retention-days: 14
+          if-no-files-found: ignore

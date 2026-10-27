@@ -290,11 +290,11 @@ function getPendingVariants(card: BattleCard, keyword: KeywordId, hasCompanion: 
   }
   if (keyword !== "wish" && keyword !== "dodge" && keyword !== "companion") return [];
   if (hasEffectLines(card, CORRUPTION_MAX_EFFECT_LINES)) return [];
+  if (keyword === "companion" && !hasCompanion()) return [];
   const effects = [...card.effects];
   if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
   else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
-  else if (keyword === "companion" && hasCompanion()) effects.push({ kind: "companion-action", amount: 1 });
-  else return [];
+  else effects.push({ kind: "companion-action", amount: 1 });
   return [{ sourceKeyword: null, build: () => finishAlteration(card, keyword, effects) }];
 }
 

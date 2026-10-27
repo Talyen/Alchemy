@@ -282,9 +282,9 @@ function selfCostOutcomes(
       // At most two meaningful worst cases: Feather retained or already spent.
       let withoutFeather: number | undefined;
       let withFeather: number | undefined;
-      for (const outcome of branches) {
-        if (outcome.phoenixFeather) withFeather = Math.min(withFeather ?? Infinity, outcome.health);
-        else withoutFeather = Math.min(withoutFeather ?? Infinity, outcome.health);
+      for (const branch of branches) {
+        if (branch.phoenixFeather) withFeather = Math.min(withFeather ?? Infinity, branch.health);
+        else withoutFeather = Math.min(withoutFeather ?? Infinity, branch.health);
       }
       outcomes = [];
       if (withoutFeather !== undefined) outcomes.push({ health: withoutFeather, phoenixFeather: false });
