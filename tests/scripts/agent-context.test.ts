@@ -98,6 +98,14 @@ it("explains the preview fallback for an unmatched screen without claiming a sce
   expect(output).not.toContain("Possible visual scenarios:");
 });
 
+it("points content authors to translation review when player text changes", () => {
+  const output = execFileSync(process.execPath, ["scripts/agent-context.mjs", "src/lib/game-data/cards.ts"], {
+    encoding: "utf8",
+  });
+  expect(output).toContain("For changed player text prepare and review translations");
+  expect(output).toContain("npm run i18n:status");
+});
+
 it("rejects obsolete capabilities and ambiguous selections", () => {
   for (const option of ["--outline", "--symbol", "--related", "--session", "--tests", "--full"])
     expect(() => parseContextArgs([option])).toThrow("Unknown context option");

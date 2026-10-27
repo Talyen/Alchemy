@@ -440,7 +440,11 @@ async function runMain(argv, tracker) {
       );
     else if (state?.integration === "passed" && state.commit === head) {
       const contained = runGit(["merge-base", "--is-ancestor", head, "main"]);
-      if (contained.status === 0)
+      if (contained.status === 0 && state.cleanup === "blocked")
+        console.log(
+          `Cleanup blocked: ${state.error ?? "inspect recorded state"}. Resolve the reported condition, then retry node scripts/agent-worktree.mjs finish --task ${task}`,
+        );
+      else if (contained.status === 0)
         console.log(`Next: review integration, then node scripts/agent-worktree.mjs finish --task ${task}`);
       else if (contained.status === 1)
         console.log("Recorded commit is no longer contained in main; inspect before continuing.");

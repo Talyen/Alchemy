@@ -216,6 +216,7 @@ selected paths still match. Other and older receipts remain historical or unveri
 It suggests the next action but does not attest review, visual acceptance or CI;
 confirm those separately before integration. Commands that edit or check task files
 run in the task checkout; integration and finish run from the original workspace.
+If cleanup is blocked, status shows the recorded reason and the finish retry command.
 
 Creation starts `agent/<slug>` from committed local main and links dependencies.
 The branch's `alchemyTaskBase` records original provenance; task checks compare

@@ -865,7 +865,7 @@ it("preserves check evidence and captures before deleting outputs, retaining the
 it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
   "preserves the integrated checkout when evidence contains an %s",
   (entry) => {
-    const { root, taskPath, git, integrate } = integrationFixture();
+    const { root, taskPath, git, integrate, script, archive } = integrationFixture();
     using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
     mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
     if (entry === "symlink") symlinkSync(join(root, "shared.txt"), join(taskPath, "reports/visual-review/linked.txt"));
@@ -885,6 +885,19 @@ it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
     expect(existsSync(taskPath)).toBe(true);
     expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("base\n");
     expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+    const run = (...args: string[]) =>
+      spawnSync(process.execPath, [script, ...args], {
+        env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+        encoding: "utf8",
+      });
+    const status = run("status", "--task", "task");
+    expect(status.stdout).toContain("Cleanup blocked:");
+    expect(status.stdout).toContain("Resolve the reported condition");
+    if (entry === "symlink") rmSync(join(taskPath, "reports/visual-review/linked.txt"));
+    else rmSync(join(taskPath, "reports/current-run.json"));
+    const retry = run("finish", "--task", "task");
+    expect(retry.status, retry.stderr).toBe(0);
+    expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).cleanup).toBe("passed");
   },
   20000,
 );

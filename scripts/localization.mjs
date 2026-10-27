@@ -25,6 +25,7 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const directory = path.join(ROOT, "src/lib/localization/locales");
 const read = (file) => JSON.parse(fs.readFileSync(path.join(directory, file + ".json"), "utf8"));
 const serialize = (value) => JSON.stringify(value, null, 2) + "\n";
+const shellQuote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
 // One message per line keeps metadata diffs readable without expanding every field.
 const serializeRecords = (value) =>
   "{\n" +
@@ -150,6 +151,9 @@ try {
       (count, packet) => count + Object.keys(packet.messages).length,
       0,
     );
+    const relativePacket = path.relative(ROOT, packetFile);
+    const outsideCheckout =
+      relativePacket === ".." || relativePacket.startsWith(`..${path.sep}`) || path.isAbsolute(relativePacket);
     if (!fs.existsSync(packetFile)) {
       console.log(
         `No packet at ${packetFile}; ${pending} pending translations. Run npm run i18n:prepare after wording settles.`,
@@ -159,10 +163,14 @@ try {
       console.log(
         `Packet: ${packetFile}\nStatus: ${result.state}; ${result.pending} pending translations.\n${result.detail}`,
       );
-      if (result.state === "stale") console.log(`Next: npm run i18n:prepare -- ${packetFile}`);
+      if (outsideCheckout)
+        console.log(
+          "Next: copy this packet into the task checkout before preparing or finishing it; preserve the original evidence.",
+        );
+      else if (result.state === "stale") console.log(`Next: npm run i18n:prepare -- ${shellQuote(packetFile)}`);
       else if (result.state === "incomplete")
         console.log("Next: complete or repair packet results, then review their meaning.");
-      else console.log(`Next: review meaning, then npm run i18n:finish -- ${packetFile} --reviewed`);
+      else console.log(`Next: review meaning, then npm run i18n:finish -- ${shellQuote(packetFile)} --reviewed`);
     }
     if (issues.length)
       console.log(`English extraction reported ${issues.length} issue(s); run npm run i18n:check for details.`);
