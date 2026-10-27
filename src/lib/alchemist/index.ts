@@ -1,1 +1,7 @@
-export { doublePotionPotency, createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "./potion-mixer";
+export {
+  doublePotionPotency,
+  createMixedPotion,
+  tryCreateMixedPotion,
+  applyMixToDeck,
+  tryMixPotionDeck,
+} from "./potion-mixer";

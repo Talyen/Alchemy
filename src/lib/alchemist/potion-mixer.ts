@@ -12,6 +12,7 @@ import {
   mapCardDescriptionReferences,
   withCardDescription,
   mixedPotion,
+  isPotionCard,
   visitBattleCardEffects,
 } from "../game-data";
 import { doublePotionEffect, isNonFoldingEffect } from "./potion-scaling";
@@ -98,6 +99,17 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
   }
   const [first, second] = indexA < indexB ? [indexA, indexB] : [indexB, indexA];
   return [...deck.slice(0, first), ...deck.slice(first + 1, second), ...deck.slice(second + 1), mixed];
+}
+
+/** Prepare the complete replacement before either visit spends its service. */
+export function tryMixPotionDeck(deck: BattleCard[], indexA: number, indexB: number) {
+  if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length))
+    return null;
+  const cardA = deck[indexA];
+  const cardB = deck[indexB];
+  if (!cardA || !cardB || !isPotionCard(cardA) || !isPotionCard(cardB)) return null;
+  const potion = tryCreateMixedPotion(cardA, cardB);
+  return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {

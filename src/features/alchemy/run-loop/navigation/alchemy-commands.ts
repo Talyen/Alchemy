@@ -1,4 +1,3 @@
-import { isPotionCard } from "@/lib/game-data";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/commands/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/session/profile-store";
@@ -10,7 +9,7 @@ import {
 } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import { setAlchemyVisit, setRunDeck } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
-import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
+import { tryMixPotionDeck } from "@/lib/alchemist";
 import { getCampfireBrewKind, type BrewOperation } from "@/lib/alchemist/brewing";
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
@@ -34,18 +33,10 @@ export function brewAtCampfire(operation: BrewOperation, gameSession: GameSessio
         appendCardToRunWithDiscovery(draft, result);
       } else if (operation.kind === "combine") {
         const [a, b] = operation.indices;
-        if (a === b || !Number.isInteger(a) || !Number.isInteger(b))
-          return rejectCommand("Alchemy action is unavailable", null);
-        if (
-          !deck[a] ||
-          !deck[b] ||
-          !isPotionCard(snapshotTransactionValue(deck[a])) ||
-          !isPotionCard(snapshotTransactionValue(deck[b]))
-        )
-          return rejectCommand("Alchemy action is unavailable", null);
-        result = tryCreateMixedPotion(snapshotTransactionValue(deck[a]), snapshotTransactionValue(deck[b]));
-        if (!result) return rejectCommand("Alchemy action is unavailable", null);
-        setRunDeck(draft, applyMixToDeck(snapshotTransactionValue(deck), a, b, result));
+        const prepared = tryMixPotionDeck(snapshotTransactionValue(deck), a, b);
+        if (!prepared) return rejectCommand("Alchemy action is unavailable", null);
+        result = prepared.potion;
+        setRunDeck(draft, prepared.deck);
         discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
       } else return rejectCommand("Alchemy action is unavailable", null);
       setAlchemyVisit(draft, "campfire", { ...visit, result, completed: true });
