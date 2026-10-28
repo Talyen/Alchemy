@@ -11,6 +11,7 @@ export function finding(context: FindingContext, details: FindingDetails): Balan
 
 export function median(values: readonly number[]): number {
   if (values.length === 0) return 0;
+  if (values.length === 1) return values[0] ?? 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   const high = sorted[mid] ?? 0;
