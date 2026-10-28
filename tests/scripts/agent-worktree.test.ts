@@ -868,6 +868,7 @@ it("preserves check evidence and captures before deleting outputs, retaining the
   expect(readFileSync(join(evidence, "reports/boss-lyrics/alignment.json"), "utf8")).toBe("retained evidence");
   expect(result.stdout).toContain("Cleanup preview:");
   expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).commit).toBe(git(["rev-parse", "main"]));
+  expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).retentionPolicy).toBe("managed-runs-v1");
   expect(readFileSync(join(root, "reports/browser-closed"), "utf8")).toBe("closed");
   expect(result.stdout).toContain("Preserved integration evidence:");
 }, 20000);
