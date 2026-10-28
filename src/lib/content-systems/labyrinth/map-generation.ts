@@ -117,7 +117,7 @@ function makeNode(input: {
   pickRewardModifier: ReturnType<typeof createRewardModifierPicker>;
   pickEnemyModifier: ReturnType<typeof createEnemyModifierPicker>;
 }): LabyrinthNode {
-  const type = availableNodeType(input.type, input.lootDepth);
+  const type = availableNodeType(input.type, isLootEligible("trinket", input.lootDepth));
   const combatType = type === "combat" || type === "elite" || type === "boss" ? type : null;
   const node: LabyrinthNode = {
     id: input.id,
