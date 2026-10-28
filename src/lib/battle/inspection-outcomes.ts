@@ -62,9 +62,13 @@ function collectObserved<T>(
   equal: (a: T, b: T) => boolean,
 ): Collected<T> {
   if (!feedback.length) return { kind: "unknown" };
-  const first = read(feedback[0]!)?.get(effect) ?? [];
+  const firstOutcome = feedback[0]!;
+  const firstObservations = read(firstOutcome);
+  if (!firstOutcome.complete && !firstObservations?.has(effect)) return { kind: "unknown" };
+  const first = firstObservations?.get(effect) ?? [];
   let exact = true;
-  for (const outcome of feedback) {
+  for (let index = 1; index < feedback.length; index++) {
+    const outcome = feedback[index]!;
     if (!exact && outcome.complete) continue;
     const observations = read(outcome);
     if (!outcome.complete && !observations?.has(effect)) return { kind: "unknown" };

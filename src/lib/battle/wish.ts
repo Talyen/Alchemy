@@ -48,8 +48,11 @@ export function buildWishOptions(
   const battleRng = getBattleRng(state);
   let undiscovered: BattleCard[] = [];
   if (state.talentEffects.wishUndiscoveredCards) {
-    const discovered = new Set(state.discoveredCardIds);
-    undiscovered = candidates.filter((candidate) => !discovered.has(candidate.id));
+    if (state.discoveredCardIds.length === 0) undiscovered = candidates;
+    else {
+      const discovered = new Set(state.discoveredCardIds);
+      undiscovered = candidates.filter((candidate) => !discovered.has(candidate.id));
+    }
   }
   const guaranteed = undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], battleRng) : [];
   const selected = guaranteed;
@@ -64,7 +67,7 @@ export function buildWishOptions(
   for (const candidate of remaining) selected.push(candidate);
 
   if (state.talentEffects.wishCardsUpgraded) {
-    return selected.map((c) => upgradeWishCard(c));
+    for (let index = 0; index < selected.length; index++) selected[index] = upgradeWishCard(selected[index]!);
   }
   return selected;
 }

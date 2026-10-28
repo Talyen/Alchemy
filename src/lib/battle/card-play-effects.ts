@@ -17,7 +17,7 @@ import { cardHasKeyword, isNatureCard } from "./card-classification";
 import { WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
-  if (isPlayerDefeated(state) || !isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0)
+  if (isPlayerDefeated(state) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0 || !isPotionCard(card))
     return state;
   return resolvePendingBattleReactions(
     resolveFollowUpHit(

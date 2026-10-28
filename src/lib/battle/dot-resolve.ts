@@ -46,11 +46,15 @@ export function applyEnemyDotDamage(
   let finalDamage = 0;
   let poisonPulse: EnemyDotPulse | undefined;
   let bleedIndex = -1;
+  let damageBeforeBleed = 0;
   for (let index = 0; index < pulses.length; index++) {
     const pulse = pulses[index]!;
+    if (bleedIndex < 0 && pulse.status === "bleed") {
+      bleedIndex = index;
+      damageBeforeBleed = finalDamage;
+    }
     finalDamage += pulse.finalDamage;
     if (!poisonPulse && pulse.status === "poison") poisonPulse = pulse;
-    if (bleedIndex < 0 && pulse.status === "bleed") bleedIndex = index;
   }
   const hit = damageEnemyHealth(state, finalDamage);
   const previousHealth = hit.previousHealth;
@@ -61,7 +65,8 @@ export function applyEnemyDotDamage(
   // Commit the tick's consumed stacks before rewards can apply fresh statuses.
   for (const pulse of pulses) nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
 
-  const bleedHealthDamage = bleedIndex >= 0 ? pulseHealthDamage(pulses, bleedIndex, previousHealth) : 0;
+  const bleedHealthDamage =
+    bleedIndex >= 0 ? Math.min(pulses[bleedIndex]!.finalDamage, Math.max(0, previousHealth - damageBeforeBleed)) : 0;
   if (bleedHealthDamage > 0) {
     nextState = applyBleedDamageDraw(nextState, bleedHealthDamage, combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
@@ -120,10 +125,12 @@ export function projectEnemyDotDamage(
   let finalDamage = 0;
   let stacks = amount;
   const poisoned = state.enemyStatuses.poison > 0;
-  const bleedBonus =
-    (poisoned ? state.gearEffects.bleedTickBonusVsPoisoned : 0) +
-    (state.enemyStatuses.burn > 0 ? state.gearEffects.bleedTickBonusVsBurning : 0);
-  const burnBonus = poisoned ? state.gearEffects.burnTickBonusVsPoisoned : 0;
+  const needsBurnBleedBonus = status !== "poison";
+  const bleedBonus = needsBurnBleedBonus
+    ? (poisoned ? state.gearEffects.bleedTickBonusVsPoisoned : 0) +
+      (state.enemyStatuses.burn > 0 ? state.gearEffects.bleedTickBonusVsBurning : 0)
+    : 0;
+  const burnBonus = needsBurnBleedBonus && poisoned ? state.gearEffects.burnTickBonusVsPoisoned : 0;
   let bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
   if (status === "bleed") bonus = bleedBonus;
   if (status === "burn") bonus = burnBonus;
