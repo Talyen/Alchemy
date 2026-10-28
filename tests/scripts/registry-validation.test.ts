@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -27,6 +27,49 @@ describe("validateRegistryEntries", () => {
       { source: "b.png", target: "b.webp" },
     ];
     await expect(validateRegistryEntries(entries)).resolves.toEqual(entries);
+  });
+
+  it("requires sources except for explicitly source-free registry entries", async () => {
+    await expect(validateRegistryEntries([{ target: "a.ogg" }])).rejects.toThrow(
+      "Asset source must be a non-empty string",
+    );
+    await expect(
+      validateRegistryEntries([{ source: "", target: "a.ogg" }], { allowMissingSource: true }),
+    ).rejects.toThrow("Asset source must be a non-empty string");
+    await expect(validateRegistryEntries([{ target: "a.ogg" }], { allowMissingSource: true })).resolves.toHaveLength(1);
+  });
+
+  it("requires each target to be a non-empty string", async () => {
+    for (const target of [undefined, "", 42]) {
+      await expect(validateRegistryEntries([{ source: "a.png", target }])).rejects.toThrow(
+        "Asset target must be a non-empty string",
+      );
+    }
+  });
+
+  it("reports invalid source and target in the same entry", async () => {
+    await expect(
+      validateRegistryEntries([{ source: "a.txt", target: "bad.png" }], {
+        checkExport: true,
+        sourcePattern: /\.png$/u,
+        targetPattern: /\.webp$/u,
+      }),
+    ).rejects.toThrow(/Invalid target[\s\S]*Unsupported source/u);
+  });
+
+  it("checks every entry independently with stateful regular expressions", async () => {
+    const sourcePattern = /\.png$/gu;
+    sourcePattern.lastIndex = 2;
+    await expect(
+      validateRegistryEntries(
+        [
+          { source: "a.png", target: "a.webp" },
+          { source: "b.png", target: "b.webp" },
+        ],
+        { sourcePattern, targetPattern: /\.webp$/gu },
+      ),
+    ).resolves.toHaveLength(2);
+    expect(sourcePattern.lastIndex).toBe(2);
   });
 
   it("rejects duplicate sources", async () => {
@@ -81,6 +124,14 @@ describe("validateRegistryEntries", () => {
     await expect(
       validateRegistryEntries([{ source: "missing.png", target: "a.webp" }], { sourceDir: dir }),
     ).rejects.toThrow(/Missing asset source "missing\.png"/);
+  });
+
+  it("rejects directories masquerading as existing source files", async () => {
+    const dir = await makeTempDir();
+    await mkdir(path.join(dir, "image.png"));
+    await expect(
+      validateRegistryEntries([{ source: "image.png", target: "a.webp" }], { sourceDir: dir }),
+    ).rejects.toThrow('Asset source "image.png" is not a file');
   });
 
   it("collects multiple errors in one throw", async () => {
