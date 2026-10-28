@@ -17,7 +17,15 @@ function clause(effect: Damage): string | undefined {
 }
 
 function occurrences(parts: readonly string[], text: string): number {
-  return parts.reduce((count, part) => count + part.split(text).length - 1, 0);
+  let count = 0;
+  for (const part of parts) {
+    let position = part.indexOf(text);
+    while (position !== -1) {
+      count++;
+      position = part.indexOf(text, position + text.length);
+    }
+  }
+  return count;
 }
 
 /** Normalize only the identifiable retired rule; never substitute a modified card from the catalog. */
@@ -36,7 +44,12 @@ export function normalizeSavedCardDefinition(card: BattleCard): NormalizationRes
   const newClause = clause({ ...effect, spendBlock: true });
   if (!oldClause || !newClause)
     return { card, outcome: "ambiguous", reason: "Scaling clause has an unsupported description shape" };
-  const prose = card.description?.flatMap((line) => line.parts.filter((part) => typeof part === "string"));
+  const prose: string[] | undefined = card.description ? [] : undefined;
+  if (prose) {
+    for (const line of card.description!) {
+      for (const part of line.parts) if (typeof part === "string") prose.push(part);
+    }
+  }
   const oldCount = occurrences(card.descriptionLines, oldClause);
   const newCount = occurrences(card.descriptionLines, newClause);
   if (oldCount + newCount !== 1 || (prose && occurrences(prose, oldClause) + occurrences(prose, newClause) !== 1))

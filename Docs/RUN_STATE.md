@@ -557,7 +557,15 @@ progression and rebinding its live manifests in the same command.
 `hydrateAlchemyPersistenceFields` remains the fields-only operation and does not
 restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/validation/parse-active-run.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
 
-Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence/persistence-codec.ts`.
+Domain persistence codecs own field selection, defaults, encoding and hydration.
+`GameplayPersistenceCodec<T>` encodes from an explicit `GameSession` and hydrates
+into a `GameplayDraft`; `StandalonePersistenceCodec<T>` has no draft argument.
+The settings codec binds to its session-owned settings store and prepares hydration
+for coordinated publication. `shared/storage/persistence.ts` composes the saved
+fields into the versioned envelope and delegates subscriptions to
+`persistence-commit-filter.ts`, which observes settings and gameplay together.
+Keep change detection in that shared owner rather than adding subscriptions to
+individual codecs. Codec types live in `shared/stores/persistence/persistence-codec.ts`.
 
 The settings store defers hydration notifications until the coordinator arms save
 protection; subscriber failures are isolated so they cannot interrupt publication.

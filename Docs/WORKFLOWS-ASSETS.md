@@ -57,7 +57,10 @@ without a library; auditions do not install production assets.
 
 After authoring, run the source-freshness check and review the master, manifest
 and generated diff before committing. Regenerate stale outputs explicitly through
-the lifecycle command for that asset. Checks never convert, copy, write or delete.
+the lifecycle command for that asset. Checks do not regenerate prepared outputs
+or modify existing masters. Source-freshness checks can restore omitted masters
+in sparse worktrees as described under [repository sources](#repository-sources-and-ci);
+use the outputs-only check when masters must remain omitted.
 Rendered art, motion and listening acceptance remain separate from hash validation.
 
 For direct `assets.mjs` diagnosis, bare `--check` covers every pipeline, art
@@ -205,7 +208,8 @@ Set `requiresTransparency: true` in the owning art manifest when an image must h
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 
 `2d Assets/Game Sources/Interface/Card Elements/Card Back.png` supplies the back
-of Collection cards. Battle draws and discards use face-up card artwork under
+of Collection cards and the back-to-front battle draw flight. Battle discards
+flip from the card face to artwork sampled from the top of the discard pile; see
 the [transfer motion contract](./UI_BATTLE.md#battle-motion).
 `Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
 (spent/dormant compass stack, leaning right) are distinct compositions, not
