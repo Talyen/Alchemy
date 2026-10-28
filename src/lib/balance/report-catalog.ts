@@ -55,8 +55,10 @@ export function reportTierForPreset(preset: TalentPreset): ReportTier {
   return tier;
 }
 
+const SORTED_CHARACTER_IDS = (Object.keys(characters) as CharacterId[]).sort();
+
 export function reportCharacterIds(): CharacterId[] {
-  return (Object.keys(characters) as CharacterId[]).sort();
+  return [...SORTED_CHARACTER_IDS];
 }
 
 export function coreMatchupsForTier(tier: ReportTier): ReportMatchup[] {
@@ -101,14 +103,12 @@ export const IN_CLASS_CARD_GAUNTLET = [
   { enemyId: "forge-golem", depthDelta: 7 },
 ] as const;
 
-const REPORT_GAUNTLETS = [BOON_GAUNTLET, IN_CLASS_CARD_GAUNTLET] as const;
+const GAUNTLET_SCENARIOS = [...BOON_GAUNTLET, ...IN_CLASS_CARD_GAUNTLET];
 
 /** Canonical depth offset for gauntlet enemies. Isolated single-enemy sweeps use this so card deltas stay comparable across sweeps. */
 export function gauntletDepthDeltaFor(enemyId: string): number {
-  for (const gauntlet of REPORT_GAUNTLETS) {
-    for (const scenario of gauntlet) {
-      if (scenario.enemyId === enemyId) return scenario.depthDelta;
-    }
+  for (const scenario of GAUNTLET_SCENARIOS) {
+    if (scenario.enemyId === enemyId) return scenario.depthDelta;
   }
   return 2;
 }

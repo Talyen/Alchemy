@@ -330,6 +330,12 @@ signing still need their respective platform and release checks.
 
 Incremental TypeScript state lives in checkout-local `.cache/tsbuild/` so isolated
 worktrees that share `node_modules` do not overwrite each other's compiler cache.
+CI retains this directory between static-check jobs, keyed by runner OS/architecture,
+Node version file, dependency lockfile, TypeScript configs and commit. A compatible
+previous commit supplies the starting cache; TypeScript still checks current inputs
+and the static gate always runs. Cache misses run normally without reused analysis.
+Build preflight overlaps localization and generated-output validation, waits for both
+to settle, and rejects either failure before starting Vite.
 
 TypeScript 7 owns source and test compilation. Oxlint owns linting through
 `oxlint.config.ts`, with type-aware source checks supplied by `oxlint-tsgolint`.
@@ -344,7 +350,7 @@ boundaries as well as runtime imports.
 
 | Command                           | Role                                                                                                                                         |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (fast local static; no boundary subset double-run)                              |
+| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (CI or explicitly requested local execution; no boundary subset double-run)     |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
 | `npm run assets:check`            | Read-only repository asset source freshness check                                                                                            |
