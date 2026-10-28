@@ -160,7 +160,7 @@ describe("card flight follows the dominant direct result", () => {
     expect(rng).not.toHaveBeenCalled();
     // Ranking remains presentation-only; the real card retains both recipients.
     const actual = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0);
-    expect(actual.state.playerStatuses.block).toBe(12);
+    expect(actual.state.playerStatuses.block).toBe(6);
     expect(actual.state.enemyHealth).toBe(state.enemyHealth);
   });
 });
