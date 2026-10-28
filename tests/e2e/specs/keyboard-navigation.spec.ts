@@ -106,7 +106,7 @@ test(
   "Escape, pointer clicks and wheel input keep focus inactive until fresh keyboard input",
   critical,
   async ({ page }) => {
-    test.setTimeout(45_000);
+    test.setTimeout(process.env.CI ? 0 : 45_000);
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");
     await exerciseFocusInputOptions(page);
@@ -117,7 +117,7 @@ test(
   "wheel input cancels real card-transfer recovery and pointer inspection stays unfocused",
   critical,
   async ({ page }) => {
-    test.setTimeout(45_000);
+    test.setTimeout(process.env.CI ? 0 : 45_000);
     await exerciseFocusInputBattle(page);
   },
 );

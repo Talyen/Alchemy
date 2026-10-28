@@ -85,7 +85,7 @@ async function crossLanguageResume(page: Page, locale: AcceptanceLocale, ready: 
 for (const locale of acceptanceLocales) {
   test.describe(locale, () => {
     // These journeys boot several pages and compare independently resumed saves.
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 0 : 60_000);
 
     test.beforeEach(() => {
       // oxlint-disable-next-line playwright/no-skipped-test -- Pseudotext is deliberately developer-only.

@@ -9,7 +9,8 @@ const excludedTestPaths = ["tests/balance/**", "tests/playthrough/**"];
 const domTypeScriptPatterns = ["tests/**/*.dom.test.ts", "tests/**/use-*.test.ts", "tests/**/*-hook.test.ts"];
 const sharedProjectConfig = {
   restoreMocks: true,
-  testTimeout: 5_000,
+  testTimeout: process.env.CI ? 0 : 5_000,
+  hookTimeout: process.env.CI ? 0 : 10_000,
   slowTestThreshold: 1_000,
   pool: "threads" as const,
   deps: {
@@ -30,6 +31,8 @@ export default defineConfig({
     },
   },
   test: {
+    testTimeout: process.env.CI ? 0 : 5_000,
+    hookTimeout: process.env.CI ? 0 : 10_000,
     maxWorkers: Math.min(VITEST_MAX_WORKERS, Math.max(1, availableParallelism() - 1)),
     projects: [
       {

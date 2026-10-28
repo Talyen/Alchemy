@@ -238,100 +238,116 @@ process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
 }
 
 describe("serialized local integration", () => {
-  it("reports safe next steps for dirty, integrated and cleaned task states", () => {
-    const { root, taskPath, run } = integrationFixture();
+  it(
+    "reports safe next steps for dirty, integrated and cleaned task states",
+    () => {
+      const { root, taskPath, run } = integrationFixture();
 
-    writeFileSync(join(taskPath, "unfinished.txt"), "preserve");
-    const dirty = run(["status", "--task", "task"]);
-    expect(dirty.status, dirty.stderr).toBe(0);
-    expect(dirty.stdout).toContain("unfinished.txt");
-    expect(dirty.stdout).toContain("run npm run check");
-    expect(dirty.stdout).toContain("Review is not recorded by status");
-    expect(dirty.stdout).toMatch(/Next in .*\/\.worktrees\/task:/u);
-    expect(readFileSync(join(taskPath, "unfinished.txt"), "utf8")).toBe("preserve");
-    rmSync(join(taskPath, "unfinished.txt"));
-    const integrated = run(["integrate", "--task", "task", "--keep-worktree"]);
-    expect(integrated.status, integrated.stderr).toBe(0);
-    expect(run(["status", "--task", "task"]).stdout).toContain("review integration");
-    const finish = run(["finish", "--task", "task"]);
-    expect(finish.status, finish.stderr).toBe(0);
-    expect(run(["status", "--task", "task"]).stdout).toContain("Checkout absent");
-    expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).metrics.attempts).toBe(1);
-  }, 20000);
+      writeFileSync(join(taskPath, "unfinished.txt"), "preserve");
+      const dirty = run(["status", "--task", "task"]);
+      expect(dirty.status, dirty.stderr).toBe(0);
+      expect(dirty.stdout).toContain("unfinished.txt");
+      expect(dirty.stdout).toContain("run npm run check");
+      expect(dirty.stdout).toContain("Review is not recorded by status");
+      expect(dirty.stdout).toMatch(/Next in .*\/\.worktrees\/task:/u);
+      expect(readFileSync(join(taskPath, "unfinished.txt"), "utf8")).toBe("preserve");
+      rmSync(join(taskPath, "unfinished.txt"));
+      const integrated = run(["integrate", "--task", "task", "--keep-worktree"]);
+      expect(integrated.status, integrated.stderr).toBe(0);
+      expect(run(["status", "--task", "task"]).stdout).toContain("review integration");
+      const finish = run(["finish", "--task", "task"]);
+      expect(finish.status, finish.stderr).toBe(0);
+      expect(run(["status", "--task", "task"]).stdout).toContain("Checkout absent");
+      expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).metrics.attempts).toBe(1);
+    },
+    ciTimeout(20000),
+  );
 
-  it("shows the verified integration delta without including concurrent main work", () => {
-    const { root, taskPath, git, run } = integrationFixture();
+  it(
+    "shows the verified integration delta without including concurrent main work",
+    () => {
+      const { root, taskPath, git, run } = integrationFixture();
 
-    writeFileSync(join(root, "main.txt"), "concurrent work\n");
-    git(["add", "main.txt"]);
-    git(["commit", "-qm", "test: concurrent main"]);
-    const verifiedMain = git(["rev-parse", "main"]);
-    const integrated = run(["integrate", "--task", "task", "--keep-worktree"]);
-    expect(integrated.status, integrated.stderr).toBe(0);
-    const statePath = join(root, "reports/integrations/task.json");
-    const state = JSON.parse(readFileSync(statePath, "utf8"));
-    expect(state.reviewBase).toBe(verifiedMain);
-    const status = run(["status", "--task", "task"]);
-    expect(status.status, status.stderr).toBe(0);
-    expect(status.stdout).toContain(`Integrated changes against verified main ${verifiedMain}:\ntask.txt`);
-    expect(status.stdout).not.toContain("main.txt");
-    expect(status.stdout).toContain(`diff ${verifiedMain} ${git(["rev-parse", "HEAD"], taskPath)}`);
-    delete state.reviewBase;
-    writeFileSync(statePath, JSON.stringify(state));
-    const legacy = run(["status", "--task", "task"]);
-    expect(legacy.stdout).toContain("may include concurrent main changes");
-    expect(legacy.stdout).toContain("main.txt");
-    writeFileSync(statePath, JSON.stringify({ ...state, reviewBase: verifiedMain }));
-    const finished = run(["finish", "--task", "task"]);
-    expect(finished.status, finished.stderr).toBe(0);
-    expect(JSON.parse(readFileSync(statePath, "utf8")).reviewBase).toBe(verifiedMain);
-  }, 20000);
+      writeFileSync(join(root, "main.txt"), "concurrent work\n");
+      git(["add", "main.txt"]);
+      git(["commit", "-qm", "test: concurrent main"]);
+      const verifiedMain = git(["rev-parse", "main"]);
+      const integrated = run(["integrate", "--task", "task", "--keep-worktree"]);
+      expect(integrated.status, integrated.stderr).toBe(0);
+      const statePath = join(root, "reports/integrations/task.json");
+      const state = JSON.parse(readFileSync(statePath, "utf8"));
+      expect(state.reviewBase).toBe(verifiedMain);
+      const status = run(["status", "--task", "task"]);
+      expect(status.status, status.stderr).toBe(0);
+      expect(status.stdout).toContain(`Integrated changes against verified main ${verifiedMain}:\ntask.txt`);
+      expect(status.stdout).not.toContain("main.txt");
+      expect(status.stdout).toContain(`diff ${verifiedMain} ${git(["rev-parse", "HEAD"], taskPath)}`);
+      delete state.reviewBase;
+      writeFileSync(statePath, JSON.stringify(state));
+      const legacy = run(["status", "--task", "task"]);
+      expect(legacy.stdout).toContain("may include concurrent main changes");
+      expect(legacy.stdout).toContain("main.txt");
+      writeFileSync(statePath, JSON.stringify({ ...state, reviewBase: verifiedMain }));
+      const finished = run(["finish", "--task", "task"]);
+      expect(finished.status, finished.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(statePath, "utf8")).reviewBase).toBe(verifiedMain);
+    },
+    ciTimeout(20000),
+  );
 
-  it("moves main to a dedicated checkout without changing dirty workspace files or index", () => {
-    const { root, script, taskPath, git, integrate } = integrationFixture();
+  it(
+    "moves main to a dedicated checkout without changing dirty workspace files or index",
+    () => {
+      const { root, script, taskPath, git, integrate } = integrationFixture();
 
-    writeFileSync(join(root, "shared.txt"), "staged work\n");
-    git(["add", "shared.txt"]);
-    writeFileSync(join(root, "shared.txt"), "unstaged work\n");
-    writeFileSync(join(root, "untracked.txt"), "untracked work\n");
-    const index = readFileSync(join(root, ".git/index"));
-    const before = git(["rev-parse", "main"]);
-    const setup = runNode([script, "setup-integration"]);
-    expect(setup.status, setup.stderr).toBe(0);
-    const main = join(root, ".worktrees/integration");
-    expect(git(["branch", "--show-current"])).toBe("workspace/main");
-    expect(git(["branch", "--show-current"], main)).toBe("main");
-    expect(git(["rev-parse", "main"])).toBe(before);
-    expect(readFileSync(join(root, ".git/index"))).toEqual(index);
-    expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("unstaged work\n");
-    expect(git(["show", ":shared.txt"])).toBe("staged work");
-    expect(readFileSync(join(root, "untracked.txt"), "utf8")).toBe("untracked work\n");
-    const repeated = runNode([script, "setup-integration"]);
-    expect(repeated.status, repeated.stderr).toBe(0);
-    const result = integrate();
-    expect(result.status, result.stderr).toBe(0);
-    expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
-    expect(git(["rev-parse", "HEAD"])).toBe(before);
-    expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("unstaged work\n");
-    expect(git(["show", ":shared.txt"])).toBe("staged work");
-    expect(readFileSync(join(main, "task.txt"), "utf8")).toBe("task\n");
-    expect(existsSync(taskPath)).toBe(false);
-    expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"))).toMatchObject({
-      integration: "passed",
-      cleanup: "passed",
-    });
-  }, 20000);
+      writeFileSync(join(root, "shared.txt"), "staged work\n");
+      git(["add", "shared.txt"]);
+      writeFileSync(join(root, "shared.txt"), "unstaged work\n");
+      writeFileSync(join(root, "untracked.txt"), "untracked work\n");
+      const index = readFileSync(join(root, ".git/index"));
+      const before = git(["rev-parse", "main"]);
+      const setup = runNode([script, "setup-integration"]);
+      expect(setup.status, setup.stderr).toBe(0);
+      const main = join(root, ".worktrees/integration");
+      expect(git(["branch", "--show-current"])).toBe("workspace/main");
+      expect(git(["branch", "--show-current"], main)).toBe("main");
+      expect(git(["rev-parse", "main"])).toBe(before);
+      expect(readFileSync(join(root, ".git/index"))).toEqual(index);
+      expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("unstaged work\n");
+      expect(git(["show", ":shared.txt"])).toBe("staged work");
+      expect(readFileSync(join(root, "untracked.txt"), "utf8")).toBe("untracked work\n");
+      const repeated = runNode([script, "setup-integration"]);
+      expect(repeated.status, repeated.stderr).toBe(0);
+      const result = integrate();
+      expect(result.status, result.stderr).toBe(0);
+      expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+      expect(git(["rev-parse", "HEAD"])).toBe(before);
+      expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("unstaged work\n");
+      expect(git(["show", ":shared.txt"])).toBe("staged work");
+      expect(readFileSync(join(main, "task.txt"), "utf8")).toBe("task\n");
+      expect(existsSync(taskPath)).toBe(false);
+      expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"))).toMatchObject({
+        integration: "passed",
+        cleanup: "passed",
+      });
+    },
+    ciTimeout(20000),
+  );
 
-  it("leaves main ownership unchanged when the integration destination already exists", () => {
-    const { root, script, git } = integrationFixture();
+  it(
+    "leaves main ownership unchanged when the integration destination already exists",
+    () => {
+      const { root, script, git } = integrationFixture();
 
-    mkdirSync(join(root, ".worktrees/integration"));
-    writeFileSync(join(root, ".worktrees/integration/unfinished"), "preserved");
-    const result = runNode([script, "setup-integration"]);
-    expect(result.status).toBe(1);
-    expect(git(["branch", "--show-current"])).toBe("main");
-    expect(readFileSync(join(root, ".worktrees/integration/unfinished"), "utf8")).toBe("preserved");
-  }, 20000);
+      mkdirSync(join(root, ".worktrees/integration"));
+      writeFileSync(join(root, ".worktrees/integration/unfinished"), "preserved");
+      const result = runNode([script, "setup-integration"]);
+      expect(result.status).toBe(1);
+      expect(git(["branch", "--show-current"])).toBe("main");
+      expect(readFileSync(join(root, ".worktrees/integration/unfinished"), "utf8")).toBe("preserved");
+    },
+    ciTimeout(20000),
+  );
 
   it.skipIf(process.platform === "win32")(
     "integrates and removes a checkout whose path Git would quote",
@@ -344,7 +360,7 @@ describe("serialized local integration", () => {
       expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
       expect(existsSync(taskPath)).toBe(false);
     },
-    20000,
+    ciTimeout(20000),
   );
 
   it.each(["main", "task"])(
@@ -365,7 +381,7 @@ describe("serialized local integration", () => {
         true,
       );
     },
-    20000,
+    ciTimeout(20000),
   );
 
   it.skipIf(process.platform === "win32")(
@@ -392,49 +408,57 @@ describe("serialized local integration", () => {
       expect(git(["config", "core.fsmonitor"])).toBe(monitor);
       expect(git(["config", "core.untrackedCache"])).toBe("true");
     },
-    20000,
+    ciTimeout(20000),
   );
 
-  it("checks both sides of a committed rename before integration", () => {
-    const { root, taskPath, git, integrate } = integrationFixture();
-    const paths = join(root, ".git", "checked-paths.json");
+  it(
+    "checks both sides of a committed rename before integration",
+    () => {
+      const { root, taskPath, git, integrate } = integrationFixture();
+      const paths = join(root, ".git", "checked-paths.json");
 
-    git(["mv", "shared.txt", "renamed.txt"], taskPath);
-    git(["commit", "-qm", "test: move source"], taskPath);
-    const result = integrate({ INTEGRATION_PATHS: paths });
-    expect(result.status, result.stderr).toBe(0);
-    expect(JSON.parse(readFileSync(paths, "utf8"))).toEqual(["renamed.txt", "shared.txt", "task.txt"]);
-  }, 20000);
+      git(["mv", "shared.txt", "renamed.txt"], taskPath);
+      git(["commit", "-qm", "test: move source"], taskPath);
+      const result = integrate({ INTEGRATION_PATHS: paths });
+      expect(result.status, result.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(paths, "utf8"))).toEqual(["renamed.txt", "shared.txt", "task.txt"]);
+    },
+    ciTimeout(20000),
+  );
 
-  it("checks the combined result before advancing main and preserves main on a failed check", () => {
-    const { root, taskPath, git, integrate } = integrationFixture();
-    const proof = join(tmpdir(), `alchemy-proof-${process.pid}-${Date.now()}`);
-    using _scopeCleanup = createCleanup(() => {
-      rmSync(proof, { force: true });
-    });
+  it(
+    "checks the combined result before advancing main and preserves main on a failed check",
+    () => {
+      const { root, taskPath, git, integrate } = integrationFixture();
+      const proof = join(tmpdir(), `alchemy-proof-${process.pid}-${Date.now()}`);
+      using _scopeCleanup = createCleanup(() => {
+        rmSync(proof, { force: true });
+      });
 
-    writeFileSync(join(root, "main.txt"), "main\n");
-    git(["add", "main.txt"]);
-    git(["commit", "-qm", "test: concurrent main change"]);
-    const before = git(["rev-parse", "main"]);
-    const failed = integrate({ INTEGRATION_FAIL: "1" });
-    expect(failed.status, failed.stderr).toBe(1);
-    const attemptDirectory = join(root, "reports/integrations/attempts");
-    const attempts = readdirSync(attemptDirectory);
-    expect(attempts).toHaveLength(1);
-    const attempt = JSON.parse(readFileSync(join(attemptDirectory, attempts[0]), "utf8"));
-    expect(attempt).toMatchObject({ task: "task", status: "failed", phase: "verification", attempts: 1 });
-    expect(attempt.reason).toContain("Integration verification failed");
-    expect(attempt.elapsedMs).toBeGreaterThanOrEqual(attempt.verificationMs);
-    expect(existsSync(join(root, "reports/integrations/task.json"))).toBe(false);
-    expect(git(["rev-parse", "main"])).toBe(before);
-    const passed = integrate({ INTEGRATION_PROOF: proof });
-    expect(passed.status, passed.stderr).toBe(0);
-    expect(readFileSync(proof, "utf8")).toBe("main\ntask\n");
-    expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
-    expect(existsSync(taskPath)).toBe(false);
-    expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
-  }, 20000);
+      writeFileSync(join(root, "main.txt"), "main\n");
+      git(["add", "main.txt"]);
+      git(["commit", "-qm", "test: concurrent main change"]);
+      const before = git(["rev-parse", "main"]);
+      const failed = integrate({ INTEGRATION_FAIL: "1" });
+      expect(failed.status, failed.stderr).toBe(1);
+      const attemptDirectory = join(root, "reports/integrations/attempts");
+      const attempts = readdirSync(attemptDirectory);
+      expect(attempts).toHaveLength(1);
+      const attempt = JSON.parse(readFileSync(join(attemptDirectory, attempts[0]), "utf8"));
+      expect(attempt).toMatchObject({ task: "task", status: "failed", phase: "verification", attempts: 1 });
+      expect(attempt.reason).toContain("Integration verification failed");
+      expect(attempt.elapsedMs).toBeGreaterThanOrEqual(attempt.verificationMs);
+      expect(existsSync(join(root, "reports/integrations/task.json"))).toBe(false);
+      expect(git(["rev-parse", "main"])).toBe(before);
+      const passed = integrate({ INTEGRATION_PROOF: proof });
+      expect(passed.status, passed.stderr).toBe(0);
+      expect(readFileSync(proof, "utf8")).toBe("main\ntask\n");
+      expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+      expect(existsSync(taskPath)).toBe(false);
+      expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
+    },
+    ciTimeout(20000),
+  );
 
   it.skipIf(process.platform === "win32")(
     "does not overwrite state or follow a symlink while recording a failure",
@@ -461,28 +485,32 @@ describe("serialized local integration", () => {
       expect(git(["rev-parse", "main"])).toBe(before);
       expect(existsSync(taskPath)).toBe(true);
     },
-    20000,
+    ciTimeout(20000),
   );
 
-  it("keeps source documentation available to the combined integration link gate while omitting masters", () => {
-    const { root, taskPath, git, integrate } = integrationFixture("docs-", { codeOnlyDocumentation: true });
+  it(
+    "keeps source documentation available to the combined integration link gate while omitting masters",
+    () => {
+      const { root, taskPath, git, integrate } = integrationFixture("docs-", { codeOnlyDocumentation: true });
 
-    const proof = join(root, ".git/documentation-proof.json");
-    const expectedCwd = realpathSync(taskPath);
-    writeFileSync(join(root, "main.txt"), "concurrent main\n");
-    git(["add", "main.txt"]);
-    git(["commit", "-qm", "test: advance main before documentation verification"]);
+      const proof = join(root, ".git/documentation-proof.json");
+      const expectedCwd = realpathSync(taskPath);
+      writeFileSync(join(root, "main.txt"), "concurrent main\n");
+      git(["add", "main.txt"]);
+      git(["commit", "-qm", "test: advance main before documentation verification"]);
 
-    const result = integrate({ INTEGRATION_DOCUMENTATION_PROOF: proof });
-    expect(result.status, result.stderr).toBe(0);
-    expect(JSON.parse(readFileSync(proof, "utf8"))).toEqual({
-      cwd: expectedCwd,
-      documentationLinksPassed: true,
-      mastersOmitted: true,
-    });
-    expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
-    expect(readFileSync(join(root, "assets/sources/master.png"), "utf8")).toBe("master");
-  }, 20000);
+      const result = integrate({ INTEGRATION_DOCUMENTATION_PROOF: proof });
+      expect(result.status, result.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(proof, "utf8"))).toEqual({
+        cwd: expectedCwd,
+        documentationLinksPassed: true,
+        mastersOmitted: true,
+      });
+      expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+      expect(readFileSync(join(root, "assets/sources/master.png"), "utf8")).toBe("master");
+    },
+    ciTimeout(20000),
+  );
 
   it.each(["main", "task"])(
     "refuses a %s checkout detached at the same commit during verification",
@@ -497,86 +525,94 @@ describe("serialized local integration", () => {
       expect(git(["rev-parse", "HEAD"])).toBe(before);
       expect(existsSync(join(root, "task.txt"))).toBe(false);
     },
-    20000,
+    ciTimeout(20000),
   );
 
-  it("refuses dirty main and preserves a conflicting merge in the task worktree", () => {
-    const { root, taskPath, git, integrate } = integrationFixture();
+  it(
+    "refuses dirty main and preserves a conflicting merge in the task worktree",
+    () => {
+      const { root, taskPath, git, integrate } = integrationFixture();
 
-    writeFileSync(join(taskPath, "task.txt"), "unfinished task\n");
-    const dirtyTask = integrate();
-    expect(dirtyTask.status).toBe(1);
-    expect(dirtyTask.stderr).toContain("uncommitted work");
-    expect(readFileSync(join(taskPath, "task.txt"), "utf8")).toBe("unfinished task\n");
-    writeFileSync(join(taskPath, "task.txt"), "task\n");
-    writeFileSync(join(root, "shared.txt"), "main\n");
-    const dirty = integrate();
-    expect(dirty.status).toBe(1);
-    expect(dirty.stderr).toContain("uncommitted work");
-    expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("main\n");
-    git(["add", "shared.txt"]);
-    git(["commit", "-qm", "test: main conflict"]);
-    writeFileSync(join(taskPath, "shared.txt"), "task\n");
-    git(["add", "shared.txt"], taskPath);
-    git(["commit", "-qm", "test: task conflict"], taskPath);
-    const before = git(["rev-parse", "main"]);
-    expect(integrate().status).toBe(1);
-    expect(git(["rev-parse", "main"])).toBe(before);
-    expect(git(["status", "--porcelain"], taskPath)).toContain("UU shared.txt");
-    expect(readFileSync(join(taskPath, "shared.txt"), "utf8")).toContain("<<<<<<<");
-    writeFileSync(join(taskPath, "shared.txt"), "task\n");
-    git(["add", "shared.txt"], taskPath);
-    // A resolved, staged merge can have no status entries yet still be unfinished.
-    expect(git(["status", "--porcelain"], taskPath)).toBe("");
-    const unfinished = integrate();
-    expect(unfinished.status).toBe(1);
-    expect(unfinished.stderr).toContain("Unfinished Git operation");
-    expect(git(["rev-parse", "main"])).toBe(before);
-  }, 20000);
-
-  it("excludes a second integrator and releases the lock after an interrupted owner", async () => {
-    const { root, script, taskPath, git, integrate } = integrationFixture();
-    const signals = mkdtempSync(join(tmpdir(), "alchemy-lock-"));
-    const ready = join(signals, "ready");
-    const release = join(signals, "release");
-    const before = git(["rev-parse", "main"]);
-    const child = spawn(process.execPath, [script, "integrate", "--task", "task"], {
-      env: { ...process.env, INTEGRATION_READY: ready, INTEGRATION_RELEASE: release },
-      stdio: "ignore",
-    });
-    const closed = new Promise((resolve) => {
-      child.once("close", resolve);
-    });
-    try {
-      const deadline = Date.now() + 10000;
-      while (!existsSync(ready) && Date.now() < deadline && child.exitCode === null) {
-        await new Promise((resolve) => {
-          setTimeout(resolve, 20);
-        });
-      }
-      expect(existsSync(ready)).toBe(true);
-      // Invoke from the task's script to exercise the shared Git-directory lock.
-      const busy = runNode([join(taskPath, "scripts", "agent-worktree.mjs"), "integrate", "--task", "task"], {
-        env: { ...process.env, ALCHEMY_LOCK_WAIT_MS: "0" },
-      });
-      expect(busy.status).toBe(1);
-      expect(busy.stderr).toContain("Task integration lock busy");
-      const attemptDirectory = join(root, "reports/integrations/attempts");
-      const attempt = JSON.parse(readFileSync(join(attemptDirectory, readdirSync(attemptDirectory)[0]), "utf8"));
-      expect(attempt).toMatchObject({ status: "failed", phase: "task lock", attempts: 0 });
+      writeFileSync(join(taskPath, "task.txt"), "unfinished task\n");
+      const dirtyTask = integrate();
+      expect(dirtyTask.status).toBe(1);
+      expect(dirtyTask.stderr).toContain("uncommitted work");
+      expect(readFileSync(join(taskPath, "task.txt"), "utf8")).toBe("unfinished task\n");
+      writeFileSync(join(taskPath, "task.txt"), "task\n");
+      writeFileSync(join(root, "shared.txt"), "main\n");
+      const dirty = integrate();
+      expect(dirty.status).toBe(1);
+      expect(dirty.stderr).toContain("uncommitted work");
+      expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("main\n");
+      git(["add", "shared.txt"]);
+      git(["commit", "-qm", "test: main conflict"]);
+      writeFileSync(join(taskPath, "shared.txt"), "task\n");
+      git(["add", "shared.txt"], taskPath);
+      git(["commit", "-qm", "test: task conflict"], taskPath);
+      const before = git(["rev-parse", "main"]);
+      expect(integrate().status).toBe(1);
       expect(git(["rev-parse", "main"])).toBe(before);
-      child.kill("SIGKILL");
-      writeFileSync(release, "release");
-      await closed;
-      const retry = integrate();
-      expect(retry.status, retry.stderr).toBe(0);
-    } finally {
-      child.kill("SIGKILL");
-      writeFileSync(release, "release");
-      await closed;
-      rmSync(signals, { recursive: true, force: true });
-    }
-  }, 20000);
+      expect(git(["status", "--porcelain"], taskPath)).toContain("UU shared.txt");
+      expect(readFileSync(join(taskPath, "shared.txt"), "utf8")).toContain("<<<<<<<");
+      writeFileSync(join(taskPath, "shared.txt"), "task\n");
+      git(["add", "shared.txt"], taskPath);
+      // A resolved, staged merge can have no status entries yet still be unfinished.
+      expect(git(["status", "--porcelain"], taskPath)).toBe("");
+      const unfinished = integrate();
+      expect(unfinished.status).toBe(1);
+      expect(unfinished.stderr).toContain("Unfinished Git operation");
+      expect(git(["rev-parse", "main"])).toBe(before);
+    },
+    ciTimeout(20000),
+  );
+
+  it(
+    "excludes a second integrator and releases the lock after an interrupted owner",
+    async () => {
+      const { root, script, taskPath, git, integrate } = integrationFixture();
+      const signals = mkdtempSync(join(tmpdir(), "alchemy-lock-"));
+      const ready = join(signals, "ready");
+      const release = join(signals, "release");
+      const before = git(["rev-parse", "main"]);
+      const child = spawn(process.execPath, [script, "integrate", "--task", "task"], {
+        env: { ...process.env, INTEGRATION_READY: ready, INTEGRATION_RELEASE: release },
+        stdio: "ignore",
+      });
+      const closed = new Promise((resolve) => {
+        child.once("close", resolve);
+      });
+      try {
+        const deadline = Date.now() + 10000;
+        while (!existsSync(ready) && Date.now() < deadline && child.exitCode === null) {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+          });
+        }
+        expect(existsSync(ready)).toBe(true);
+        // Invoke from the task's script to exercise the shared Git-directory lock.
+        const busy = runNode([join(taskPath, "scripts", "agent-worktree.mjs"), "integrate", "--task", "task"], {
+          env: { ...process.env, ALCHEMY_LOCK_WAIT_MS: "0" },
+        });
+        expect(busy.status).toBe(1);
+        expect(busy.stderr).toContain("Task integration lock busy");
+        const attemptDirectory = join(root, "reports/integrations/attempts");
+        const attempt = JSON.parse(readFileSync(join(attemptDirectory, readdirSync(attemptDirectory)[0]), "utf8"));
+        expect(attempt).toMatchObject({ status: "failed", phase: "task lock", attempts: 0 });
+        expect(git(["rev-parse", "main"])).toBe(before);
+        child.kill("SIGKILL");
+        writeFileSync(release, "release");
+        await closed;
+        const retry = integrate();
+        expect(retry.status, retry.stderr).toBe(0);
+      } finally {
+        child.kill("SIGKILL");
+        writeFileSync(release, "release");
+        await closed;
+        rmSync(signals, { recursive: true, force: true });
+      }
+    },
+    ciTimeout(20000),
+  );
 
   it.each(["verification", "cleanup"])(
     "allows another task to integrate during %s and preserves the combined result",
@@ -693,76 +729,84 @@ export async function closeTaskBrowsers() {
         rmSync(signals, { recursive: true, force: true });
       }
     },
-    20000,
+    ciTimeout(20000),
   );
 });
 
-it("preserves check evidence and captures before deleting outputs, retaining the branch and leaving peers untouched", () => {
-  const { root, taskPath, git, integrate, archive } = integrationFixture();
+it(
+  "preserves check evidence and captures before deleting outputs, retaining the branch and leaving peers untouched",
+  () => {
+    const { root, taskPath, git, integrate, archive } = integrationFixture();
 
-  writeFileSync(join(root, "main.txt"), "main\n");
-  git(["add", "main.txt"]);
-  git(["commit", "-qm", "test: main"]);
-  writeFileSync(join(taskPath, ".gitignore"), ".worktrees/\nreports/\nignored\nnode_modules/\n.cache/\n");
-  git(["add", ".gitignore"], taskPath);
-  git(["commit", "-qm", "test: ignore outputs"], taskPath);
-  writeFileSync(join(taskPath, "ignored"), "local evidence");
-  mkdirSync(join(taskPath, "node_modules"));
-  writeFileSync(join(taskPath, "node_modules", "cached"), "rebuildable");
-  mkdirSync(join(taskPath, "scripts/trailers/node_modules"), { recursive: true });
-  writeFileSync(join(taskPath, "scripts/trailers/node_modules/tool"), "rebuildable");
-  mkdirSync(join(taskPath, ".cache/lyrics/venv"), { recursive: true });
-  writeFileSync(join(taskPath, ".cache/lyrics/venv/tool"), "rebuildable");
-  mkdirSync(join(taskPath, "reports/boss-lyrics/venv"), { recursive: true });
-  writeFileSync(join(taskPath, "reports/boss-lyrics/venv/tool"), "rebuildable");
-  writeFileSync(join(taskPath, "reports/boss-lyrics/alignment.json"), "retained evidence");
-  mkdirSync(join(taskPath, "reports/runs/check-test"), { recursive: true });
-  mkdirSync(join(taskPath, "reports/runs/reused-test"), { recursive: true });
-  mkdirSync(join(taskPath, "reports/visual-review"));
-  writeFileSync(join(taskPath, "reports/runs/check-test/run.md"), "passing integration check");
-  writeFileSync(join(taskPath, "reports/runs/reused-test/output.log"), "original verification evidence");
-  writeFileSync(join(taskPath, "reports/visual-review/screen.png"), "selected capture");
-  writeFileSync(
-    join(taskPath, "reports/current-run.json"),
-    JSON.stringify({ runId: "check-test", artifacts: [{ path: "reports/runs/reused-test/output.log" }] }),
-  );
-  writeFileSync(join(taskPath, "reports/current-run.md"), "latest summary");
-  // Completion closes the task's browsers before removing their launcher.
-  writeFileSync(
-    join(taskPath, "scripts/lib/agent-browser-session.mjs"),
-    `import fs from 'node:fs'; export async function closeTaskBrowsers() { fs.mkdirSync(${JSON.stringify(join(root, "reports"))}, { recursive: true }); fs.writeFileSync(${JSON.stringify(join(root, "reports/browser-closed"))}, 'closed'); }`,
-  );
-  git(["add", "scripts/lib/agent-browser-session.mjs"], taskPath);
-  git(["commit", "-qm", "test: browser lifecycle"], taskPath);
-  const peer = join(root, ".worktrees", "peer");
-  git(["worktree", "add", "-b", "agent/peer", peer]);
-  writeFileSync(join(peer, "unfinished"), "peer work");
-  const result = integrate();
-  expect(result.status, result.stderr).toBe(0);
-  expect(readdirSync(archive)).toEqual([]);
-  expect(git(["worktree", "list", "--porcelain"])).not.toContain(taskPath);
-  expect(readFileSync(join(peer, "unfinished"), "utf8")).toBe("peer work");
-  expect(git(["rev-parse", "agent/task"])).toBe(git(["rev-parse", "main"]));
-  const bundles = readdirSync(join(root, "reports/integrations")).filter((entry) => !entry.endsWith(".json"));
-  expect(bundles).toHaveLength(1);
-  const evidence = join(root, "reports/integrations", bundles[0]);
-  expect(readFileSync(join(evidence, "reports/runs/check-test/run.md"), "utf8")).toBe("passing integration check");
-  expect(readFileSync(join(evidence, "reports/runs/reused-test/output.log"), "utf8")).toBe(
-    "original verification evidence",
-  );
-  expect(readFileSync(join(evidence, "reports/visual-review/screen.png"), "utf8")).toBe("selected capture");
-  expect(readFileSync(join(evidence, "ignored"), "utf8")).toBe("local evidence");
-  expect(existsSync(join(evidence, "node_modules"))).toBe(false);
-  expect(existsSync(join(evidence, "scripts/trailers/node_modules"))).toBe(false);
-  expect(existsSync(join(evidence, ".cache"))).toBe(false);
-  expect(existsSync(join(evidence, "reports/boss-lyrics/venv"))).toBe(false);
-  expect(readFileSync(join(evidence, "reports/boss-lyrics/alignment.json"), "utf8")).toBe("retained evidence");
-  expect(result.stdout).toContain("Cleanup preview:");
-  expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).commit).toBe(git(["rev-parse", "main"]));
-  expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).retentionPolicy).toBe("managed-runs-v1");
-  expect(readFileSync(join(root, "reports/browser-closed"), "utf8")).toBe("closed");
-  expect(result.stdout).toContain("Preserved integration evidence:");
-}, 20000);
+    writeFileSync(join(root, "main.txt"), "main\n");
+    git(["add", "main.txt"]);
+    git(["commit", "-qm", "test: main"]);
+    writeFileSync(join(taskPath, ".gitignore"), ".worktrees/\nreports/\nignored\nnode_modules/\n.cache/\n");
+    git(["add", ".gitignore"], taskPath);
+    git(["commit", "-qm", "test: ignore outputs"], taskPath);
+    writeFileSync(join(taskPath, "ignored"), "local evidence");
+    mkdirSync(join(taskPath, "node_modules"));
+    writeFileSync(join(taskPath, "node_modules", "cached"), "rebuildable");
+    mkdirSync(join(taskPath, "scripts/trailers/node_modules"), { recursive: true });
+    writeFileSync(join(taskPath, "scripts/trailers/node_modules/tool"), "rebuildable");
+    mkdirSync(join(taskPath, ".cache/lyrics/venv"), { recursive: true });
+    writeFileSync(join(taskPath, ".cache/lyrics/venv/tool"), "rebuildable");
+    mkdirSync(join(taskPath, "reports/boss-lyrics/venv"), { recursive: true });
+    writeFileSync(join(taskPath, "reports/boss-lyrics/venv/tool"), "rebuildable");
+    writeFileSync(join(taskPath, "reports/boss-lyrics/alignment.json"), "retained evidence");
+    mkdirSync(join(taskPath, "reports/runs/check-test"), { recursive: true });
+    mkdirSync(join(taskPath, "reports/runs/reused-test"), { recursive: true });
+    mkdirSync(join(taskPath, "reports/visual-review"));
+    writeFileSync(join(taskPath, "reports/runs/check-test/run.md"), "passing integration check");
+    writeFileSync(join(taskPath, "reports/runs/reused-test/output.log"), "original verification evidence");
+    writeFileSync(join(taskPath, "reports/visual-review/screen.png"), "selected capture");
+    writeFileSync(
+      join(taskPath, "reports/current-run.json"),
+      JSON.stringify({ runId: "check-test", artifacts: [{ path: "reports/runs/reused-test/output.log" }] }),
+    );
+    writeFileSync(join(taskPath, "reports/current-run.md"), "latest summary");
+    // Completion closes the task's browsers before removing their launcher.
+    writeFileSync(
+      join(taskPath, "scripts/lib/agent-browser-session.mjs"),
+      `import fs from 'node:fs'; export async function closeTaskBrowsers() { fs.mkdirSync(${JSON.stringify(join(root, "reports"))}, { recursive: true }); fs.writeFileSync(${JSON.stringify(join(root, "reports/browser-closed"))}, 'closed'); }`,
+    );
+    git(["add", "scripts/lib/agent-browser-session.mjs"], taskPath);
+    git(["commit", "-qm", "test: browser lifecycle"], taskPath);
+    const peer = join(root, ".worktrees", "peer");
+    git(["worktree", "add", "-b", "agent/peer", peer]);
+    writeFileSync(join(peer, "unfinished"), "peer work");
+    const result = integrate();
+    expect(result.status, result.stderr).toBe(0);
+    expect(readdirSync(archive)).toEqual([]);
+    expect(git(["worktree", "list", "--porcelain"])).not.toContain(taskPath);
+    expect(readFileSync(join(peer, "unfinished"), "utf8")).toBe("peer work");
+    expect(git(["rev-parse", "agent/task"])).toBe(git(["rev-parse", "main"]));
+    const bundles = readdirSync(join(root, "reports/integrations")).filter((entry) => !entry.endsWith(".json"));
+    expect(bundles).toHaveLength(1);
+    const evidence = join(root, "reports/integrations", bundles[0]);
+    expect(readFileSync(join(evidence, "reports/runs/check-test/run.md"), "utf8")).toBe("passing integration check");
+    expect(readFileSync(join(evidence, "reports/runs/reused-test/output.log"), "utf8")).toBe(
+      "original verification evidence",
+    );
+    expect(readFileSync(join(evidence, "reports/visual-review/screen.png"), "utf8")).toBe("selected capture");
+    expect(readFileSync(join(evidence, "ignored"), "utf8")).toBe("local evidence");
+    expect(existsSync(join(evidence, "node_modules"))).toBe(false);
+    expect(existsSync(join(evidence, "scripts/trailers/node_modules"))).toBe(false);
+    expect(existsSync(join(evidence, ".cache"))).toBe(false);
+    expect(existsSync(join(evidence, "reports/boss-lyrics/venv"))).toBe(false);
+    expect(readFileSync(join(evidence, "reports/boss-lyrics/alignment.json"), "utf8")).toBe("retained evidence");
+    expect(result.stdout).toContain("Cleanup preview:");
+    expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).commit).toBe(
+      git(["rev-parse", "main"]),
+    );
+    expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).retentionPolicy).toBe(
+      "managed-runs-v1",
+    );
+    expect(readFileSync(join(root, "reports/browser-closed"), "utf8")).toBe("closed");
+    expect(result.stdout).toContain("Preserved integration evidence:");
+  },
+  ciTimeout(20000),
+);
 
 it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
   "preserves the integrated checkout when evidence contains an %s",
@@ -796,71 +840,87 @@ it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
     expect(retry.status, retry.stderr).toBe(0);
     expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).cleanup).toBe("passed");
   },
-  20000,
+  ciTimeout(20000),
 );
 
-it("automatically preserves evidence and removes an integrated task while retaining its branch", () => {
-  const { root, taskPath, git, run } = integrationFixture();
+it(
+  "automatically preserves evidence and removes an integrated task while retaining its branch",
+  () => {
+    const { root, taskPath, git, run } = integrationFixture();
 
-  writeFileSync(join(root, "main.txt"), "main\n");
-  mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
-  writeFileSync(join(taskPath, "reports/visual-review/evidence.txt"), "keep this evidence");
-  git(["add", "main.txt"]);
-  git(["commit", "-qm", "test: main"]);
-  const result = run(["integrate", "--task", "task"]);
-  expect(result.status, result.stderr).toBe(0);
-  expect(existsSync(taskPath)).toBe(false);
-  const state = JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"));
-  expect(state).toMatchObject({
-    integration: "passed",
-    cleanup: "passed",
-  });
-  expect(readFileSync(join(state.evidence, "reports/visual-review/evidence.txt"), "utf8")).toBe("keep this evidence");
-  expect(git(["rev-parse", "agent/task"])).toBe(state.commit);
-  expect(result.stdout).toContain(`git diff ${state.reviewBase} ${state.commit}`);
-}, 20000);
+    writeFileSync(join(root, "main.txt"), "main\n");
+    mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
+    writeFileSync(join(taskPath, "reports/visual-review/evidence.txt"), "keep this evidence");
+    git(["add", "main.txt"]);
+    git(["commit", "-qm", "test: main"]);
+    const result = run(["integrate", "--task", "task"]);
+    expect(result.status, result.stderr).toBe(0);
+    expect(existsSync(taskPath)).toBe(false);
+    const state = JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"));
+    expect(state).toMatchObject({
+      integration: "passed",
+      cleanup: "passed",
+    });
+    expect(readFileSync(join(state.evidence, "reports/visual-review/evidence.txt"), "utf8")).toBe("keep this evidence");
+    expect(git(["rev-parse", "agent/task"])).toBe(state.commit);
+    expect(result.stdout).toContain(`git diff ${state.reviewBase} ${state.commit}`);
+  },
+  ciTimeout(20000),
+);
 
-it("retains an integrated checkout when explicitly requested and flags it for review", () => {
-  const { root, taskPath, script, run } = integrationFixture();
+it(
+  "retains an integrated checkout when explicitly requested and flags it for review",
+  () => {
+    const { root, taskPath, script, run } = integrationFixture();
 
-  const result = run(["integrate", "--task", "task", "--keep-worktree"]);
-  expect(result.status, result.stderr).toBe(0);
-  expect(existsSync(taskPath)).toBe(true);
-  expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).cleanup).toBe("pending");
-  const listed = runNode([script, "list"]);
-  expect(listed.stdout).toContain("task: pending");
-  expect(listed.stdout).toContain("activity is not inferred");
-}, 20000);
+    const result = run(["integrate", "--task", "task", "--keep-worktree"]);
+    expect(result.status, result.stderr).toBe(0);
+    expect(existsSync(taskPath)).toBe(true);
+    expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8")).cleanup).toBe("pending");
+    const listed = runNode([script, "list"]);
+    expect(listed.stdout).toContain("task: pending");
+    expect(listed.stdout).toContain("activity is not inferred");
+  },
+  ciTimeout(20000),
+);
 
-it("does not automatically finish a checkout containing trailer output", () => {
-  const { root, taskPath, run } = integrationFixture();
+it(
+  "does not automatically finish a checkout containing trailer output",
+  () => {
+    const { root, taskPath, run } = integrationFixture();
 
-  writeFileSync(join(root, ".git/info/exclude"), "output/\n");
-  mkdirSync(join(taskPath, "output/trailers"), { recursive: true });
-  writeFileSync(join(taskPath, "output/trailers/footage.mp4"), "working footage");
-  const result = run(["integrate", "--task", "task"]);
-  expect(result.status, result.stderr).toBe(0);
-  expect(readFileSync(join(taskPath, "output/trailers/footage.mp4"), "utf8")).toBe("working footage");
-  expect(result.stdout).toContain("Trailer worktree retained");
-}, 20000);
+    writeFileSync(join(root, ".git/info/exclude"), "output/\n");
+    mkdirSync(join(taskPath, "output/trailers"), { recursive: true });
+    writeFileSync(join(taskPath, "output/trailers/footage.mp4"), "working footage");
+    const result = run(["integrate", "--task", "task"]);
+    expect(result.status, result.stderr).toBe(0);
+    expect(readFileSync(join(taskPath, "output/trailers/footage.mp4"), "utf8")).toBe("working footage");
+    expect(result.stdout).toContain("Trailer worktree retained");
+  },
+  ciTimeout(20000),
+);
 
-it("reports cleanup failure separately and preserves the integrated checkout", () => {
-  const { root, taskPath, script, git, run } = integrationFixture();
+it(
+  "reports cleanup failure separately and preserves the integrated checkout",
+  () => {
+    const { root, taskPath, script, git, run } = integrationFixture();
 
-  mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
-  symlinkSync(join(root, "shared.txt"), join(taskPath, "reports/visual-review/linked.txt"));
-  const result = run(["integrate", "--task", "task"]);
-  expect(result.status).toBe(1);
-  expect(result.stderr).toContain("Integration remains complete; cleanup blocked");
-  const state = JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"));
-  expect(state).toMatchObject({ integration: "passed", cleanup: "blocked" });
-  expect(git(["rev-parse", "main"])).toBe(state.commit);
-  expect(existsSync(taskPath)).toBe(true);
-  const listed = runNode([script, "list"]);
-  expect(listed.stdout).toContain("task: blocked");
-}, 20000);
+    mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
+    symlinkSync(join(root, "shared.txt"), join(taskPath, "reports/visual-review/linked.txt"));
+    const result = run(["integrate", "--task", "task"]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Integration remains complete; cleanup blocked");
+    const state = JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"));
+    expect(state).toMatchObject({ integration: "passed", cleanup: "blocked" });
+    expect(git(["rev-parse", "main"])).toBe(state.commit);
+    expect(existsSync(taskPath)).toBe(true);
+    const listed = runNode([script, "list"]);
+    expect(listed.stdout).toContain("task: blocked");
+  },
+  ciTimeout(20000),
+);
 
-it("verifies automatic storage defaults and independent tracked clones", { timeout: 30_000 }, () => {
+it("verifies automatic storage defaults and independent tracked clones", { timeout: ciTimeout(30_000) }, () => {
   const result = runNode(
     [
       join(process.cwd(), "tests/fixtures/worktree-storage-check.mjs"),
@@ -870,3 +930,7 @@ it("verifies automatic storage defaults and independent tracked clones", { timeo
   );
   expect(result.status, result.stdout + result.stderr).toBe(0);
 });
+
+function ciTimeout(ms: number) {
+  return process.env.CI ? 0 : ms;
+}

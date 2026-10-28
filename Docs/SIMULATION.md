@@ -145,8 +145,7 @@ shops, mysteries, corruption, homestead, talents, and Armory operations. It neve
 mounts React or renders the game. Each career owns an independent game session,
 including its settings, deterministic inputs, persistence, and subscriptions. The
 CLI runs each career in a fresh child process;
-progress persists between that career's runs. The parent watchdog also terminates
-synchronous hangs.
+progress persists between that career's runs. The local parent watchdog also terminates synchronous hangs. GitHub Actions runs do not apply that execution deadline.
 
 ### Commands
 
@@ -177,7 +176,7 @@ Options include `--hero`, `--mode` (campaign, labyrinth, wildwood), `--difficult
 `--horizon` (rooms for endless modes), `--max-steps`, `--max-turns`, `--timeout`
 (seconds per child), and `--resume-at` (load acknowledged bytes after this action).
 Default budgets are two runs, 12 rooms for endless observations, 10,000 actions,
-100 battle turns, a 120-second external watchdog, and 32 MiB of journal evidence.
+100 battle turns, a 120-second local external watchdog, and 32 MiB of journal evidence. GitHub Actions has no repository-defined worker deadline.
 Budget exhaustion and unsupported decisions fail as incomplete; neither counts
 as a gameplay defeat. Reaching an endless horizon invokes production End Run
 and is recorded separately from defeat and victory.

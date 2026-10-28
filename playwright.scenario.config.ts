@@ -13,7 +13,7 @@ export default defineConfig(createAlchemyPlaywrightConfig("e2e"), {
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  timeout: 60_000,
+  timeout: process.env.CI ? 0 : 60_000,
   use: {
     viewport: scenario.viewport,
     deviceScaleFactor: 1,

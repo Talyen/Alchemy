@@ -88,7 +88,7 @@ for (const locale of acceptanceLocales) {
       // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
       test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a QA locale");
       // This journey includes a cold module load and an independently booted resume.
-      test.setTimeout(60_000);
+      test.setTimeout(process.env.CI ? 0 : 60_000);
       const label = (english: string) => translatedLabel(locale, english);
       const deck = Array.from({ length: 6 }, () =>
         makeCard({

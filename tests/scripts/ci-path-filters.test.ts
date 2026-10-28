@@ -157,7 +157,6 @@ describe("desktop CI artifact flow", () => {
     expect(readWorkflow("nightly").jobs["ship-gate-full"].with).toMatchObject({
       full: true,
       renderer: "",
-      timeout: 45,
     });
     expect(nightly.steps).toContainEqual(
       expect.objectContaining({

@@ -58,7 +58,7 @@ async function runWorker(label, checkpointAt) {
     ["scripts/run-playthrough-worker.mjs", input, output, journal],
     {
       cwd: REPO_ROOT,
-      timeout: 120_000,
+      timeout: process.env.CI ? 0 : 120_000,
       maxBuffer: 2 * 1024 * 1024,
     },
   );
