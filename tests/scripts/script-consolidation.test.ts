@@ -12,7 +12,19 @@ import { resolvePrettierTargets } from "../../scripts/run-prettier.mjs";
 describe("script consolidation", () => {
   it("parses simple flags, values, shorts, and passthrough", () => {
     const parsed = parseKnownFlags(
-      ["input file", "--check", "-c", "--mode=web", "--mode", "desktop=demo", "-m=native", "--", "--mode=ignored"],
+      [
+        "input file",
+        "--check",
+        "-c",
+        "--mode=web",
+        "--mode",
+        "desktop=demo",
+        "-m=native",
+        "--mode=-dash",
+        "-m=-2",
+        "--",
+        "--mode=ignored",
+      ],
       {
         check: { short: "c" },
         mode: { short: "m", takesValue: true },
@@ -20,13 +32,14 @@ describe("script consolidation", () => {
     );
     expect(parsed).toEqual({
       flags: new Set(["check"]),
-      values: new Map([["mode", ["web", "desktop=demo", "native"]]]),
+      values: new Map([["mode", ["web", "desktop=demo", "native", "-dash", "-2"]]]),
       rest: ["input file", "--mode=ignored"],
     });
     for (const option of ["--bogus", "-mc", "--=oops", "--constructor", "--toString", "--__proto__", "--check=true"]) {
       expect(() => parseKnownFlags([option], { check: { short: "c" } }), option).toThrow(UsageError);
     }
     expect(() => parseKnownFlags(["--mode"], { mode: { takesValue: true } })).toThrow(UsageError);
+    expect(() => parseKnownFlags(["--mode", "--check"], { mode: { takesValue: true }, check: {} })).toThrow(UsageError);
     expect(() => parseKnownFlags(["--mode="], { mode: { takesValue: true } })).toThrow(UsageError);
     expect(() => parseKnownFlags(["--mode", ""], { mode: { takesValue: true } })).toThrow(UsageError);
     expect(() => parseKnownFlags(["--mode=desktop"], { check: {} })).toThrow(UsageError);
