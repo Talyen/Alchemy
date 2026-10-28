@@ -15,7 +15,7 @@ import {
   MaterialInventorySchema,
   TalentXPSchema,
 } from "./schema-enums";
-import { deduplicatedStringArraySchema } from "./validation-utils";
+import { deduplicatedStringArraySchema, savedStringArraySchema } from "./validation-utils";
 const RunObtainedGearItemSchema = z.object({
   kind: z.literal("gear"),
   instance: GearInstanceSchema,
@@ -110,7 +110,7 @@ export const RunProgressSchema = z.object({
     },
     z.record(z.string(), z.number().int().nonnegative()),
   ),
-  runBoons: z.array(z.string()).catch([]),
+  runBoons: savedStringArraySchema().catch([]),
   encounteredRunEnemyIds: deduplicatedStringArraySchema(),
   selectedDifficulty: DifficultyIdSchema.nullable().catch(null),
   contentSystemType: ContentSystemIdSchema.catch("campaign"),

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { LabyrinthNodeTypeSchema } from "./schema-enums";
+import { savedStringArraySchema } from "./validation-utils";
 import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 import {
   LABYRINTH_GRID,
@@ -10,12 +11,10 @@ import {
   labyrinthGridPositions,
 } from "@/lib/content-systems/labyrinth/grid";
 
-export const EncounterCombatTraitArraySchema = z
-  .array(z.string())
+export const EncounterCombatTraitArraySchema = savedStringArraySchema()
   .transform((values): EncounterCombatTraitId[] => sanitizeEncounterTraitIds(values, "combat"))
   .catch([] as EncounterCombatTraitId[]);
-export const EncounterRewardTraitArraySchema = z
-  .array(z.string())
+export const EncounterRewardTraitArraySchema = savedStringArraySchema()
   .transform((values): EncounterRewardTraitId[] => sanitizeEncounterTraitIds(values, "reward"))
   .catch([] as EncounterRewardTraitId[]);
 

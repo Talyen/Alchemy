@@ -156,6 +156,10 @@ An unfinished Campfire with no usable Potion offer rebuilds its standard offers
 once using the saved events stream. A resumed Labyrinth map clears stale pending
 room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
 the battle and profile; a valid zero balance remains authoritative.
+Malformed entries in saved Boons, destination lists, encounter Traits and reward
+choice IDs are dropped individually, preserving valid siblings and their order.
+Trinket shop repair also remaps purchased slot keys when a malformed offering is
+removed, so sold items remain sold after restoration.
 
 ### Load order
 

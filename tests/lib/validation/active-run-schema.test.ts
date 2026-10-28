@@ -1,8 +1,12 @@
 import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, it, expect } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
+import { hydrateTrinketShopState } from "@/lib/active-run-session/shop-persistence";
+import { restorePendingRewardBundle } from "@/lib/active-run-session/pending-reward-persistence";
+import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
+import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 
 describe("ActiveRunDataSchema persisted session payloads", () => {
   const run = (overrides: Record<string, unknown> = {}) =>
@@ -53,6 +57,101 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     if (result.success) {
       expect(result.data.encounteredRunEnemyIds).toEqual(["goblin"]);
     }
+  });
+
+  it("preserves earned Boons when a sibling ID is malformed", () => {
+    const result = ActiveRunDataSchema.parse(run({ runBoons: ["lucky-clover", 42, "other-boon"] }));
+    expect(result.runBoons).toEqual(["lucky-clover", "other-boon"]);
+  });
+
+  it("preserves destination offers and history when a sibling is malformed", () => {
+    const result = ActiveRunDataSchema.parse(
+      run({
+        completedDestinations: ["Mystery", null, "Campfire"],
+        lastOfferedDestinations: ["Card Shop", {}, "Mystery"],
+        activity: savedActivityFixture("destination", {
+          destinations: [null, "Campfire", "Mystery"],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: null,
+        }),
+      }),
+    );
+    expect(result.completedDestinations).toEqual(["Mystery", "Campfire"]);
+    expect(result.lastOfferedDestinations).toEqual(["Card Shop", "Mystery"]);
+    expect(savedActivityData(result, "destination")?.destinations).toEqual(["Campfire", "Mystery"]);
+  });
+
+  it("preserves valid encounter traits beside malformed saved entries", () => {
+    const map = gridLabyrinthMapFixture();
+    const id = map.currentNodeId;
+    const result = ActiveRunDataSchema.parse(
+      run({
+        contentSystemType: "labyrinth",
+        labyrinthMap: {
+          ...map,
+          nodes: {
+            ...map.nodes,
+            [id]: { ...map.nodes[id], modifiers: ["tempered", null], rewardModifiers: [0, "alchemist"] },
+          },
+        },
+        activeLabyrinthModifiers: ["plated", {}, "tempered"],
+        activeLabyrinthRewardModifiers: ["companion", false],
+      }),
+    );
+    expect(result.activeLabyrinthModifiers).toEqual(["plated", "tempered"]);
+    expect(result.activeLabyrinthRewardModifiers).toEqual(["companion"]);
+    expect(result.labyrinthMap?.nodes[id]?.modifiers).toEqual(["tempered"]);
+    expect(result.labyrinthMap?.nodes[id]?.rewardModifiers).toEqual(["alchemist"]);
+  });
+
+  it("retains pending reward choices and companion choices when a sibling ID is malformed", () => {
+    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
+    if (!companion) throw new Error("Missing Companion fixture");
+    const result = ActiveRunDataSchema.parse(
+      run({
+        activity: savedActivityFixture("rewards", {
+          rewardType: "card",
+          choiceIds: ["slash", null, "block"],
+          companionChoiceIds: [false, companion.id],
+          selectedId: null,
+          gold: 12,
+          materials: {},
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: "normal",
+          lastVictoryContentSystem: null,
+        }),
+      }),
+    );
+    const saved = savedActivityData(result, "rewards");
+    expect(saved).toMatchObject({ choiceIds: ["slash", "block"], companionChoiceIds: [companion.id], gold: 12 });
+    const restored = restorePendingRewardBundle(saved!);
+    if (restored.rewardState?.rewardType !== "card") throw new Error("Expected card reward");
+    expect(restored.rewardState.choices.map((choice) => choice.id)).toEqual(["slash", "block"]);
+    expect(restored.companionRewardCards?.map((card) => card.id)).toEqual([companion.id]);
+  });
+
+  it("keeps the Trinket shop and sold slots after dropping a malformed offering", () => {
+    const [first, second] = trinketLibrary;
+    if (!first || !second) throw new Error("Missing Trinket fixtures");
+    const result = ActiveRunDataSchema.parse(
+      run({
+        activity: savedActivityFixture("trinket-shop", {
+          trinketIds: [null, first.id, "retired", second.id],
+          purchasedSlotKeys: [`${second.id}-3`],
+          refreshesLeft: 2,
+          firstPurchaseUsed: true,
+        }),
+      }),
+    );
+    const saved = savedActivityData(result, "trinket-shop");
+    expect(saved).not.toBeNull();
+    const restored = hydrateTrinketShopState(saved!);
+    expect(restored.trinkets.map((trinket) => trinket.id)).toEqual([first.id, second.id]);
+    expect(restored.purchasedSlotKeys).toEqual([`${second.id}-1`]);
+    expect(restored.refreshesLeft).toBe(2);
+    expect(restored.firstPurchaseUsed).toBe(true);
   });
 
   it("preserves run deck array for unstarted run", () => {

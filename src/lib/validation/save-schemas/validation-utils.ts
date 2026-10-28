@@ -66,6 +66,13 @@ export function deduplicatedStringArraySchema() {
   return z.preprocess(deduplicateStrings, z.array(z.string())).catch([]);
 }
 
+/** Drop damaged entries without changing the order or multiplicity of valid IDs. */
+export function savedStringArraySchema() {
+  return z
+    .array(z.unknown())
+    .transform((values) => values.filter((value): value is string => typeof value === "string"));
+}
+
 export function deduplicateFromSet<T extends string>(val: unknown, validIds: ReadonlySet<T> | readonly T[]): T[] {
   if (!Array.isArray(val)) return [];
   const set: ReadonlySet<string> = validIds instanceof Set ? validIds : new Set<string>(validIds);
