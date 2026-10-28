@@ -18,6 +18,7 @@ export function DetailPopup({
   descriptionNodes,
   newLineIndices,
   card,
+  padding,
   ...tooltipProps
 }: {
   idPrefix: string;
@@ -35,7 +36,11 @@ export function DetailPopup({
 }) {
   const i18n = useGameTranslation();
   return (
-    <PortaledTooltip {...tooltipProps} className="rounded-shell-tooltip">
+    <PortaledTooltip
+      {...tooltipProps}
+      {...(padding !== undefined ? { padding } : {})}
+      className="rounded-shell-tooltip"
+    >
       <TooltipHeader className={chip ? "flex flex-wrap items-center gap-2" : undefined}>
         {title}
         {chip ? <TooltipChip className="shrink-0 whitespace-nowrap">{chip}</TooltipChip> : null}

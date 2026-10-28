@@ -122,5 +122,5 @@ function SelectableCardSurface({
     suppressTooltip,
   };
 
-  return <BattleCardButton {...buttonProps} {...hover} />;
+  return hover ? <BattleCardButton {...buttonProps} {...hover} /> : <BattleCardButton {...buttonProps} />;
 }

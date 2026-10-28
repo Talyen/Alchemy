@@ -193,7 +193,7 @@ for (const locale of acceptanceLocales) {
             const longName = fresh.getByText(label("Arcane Mending"), { exact: true });
             await expect(longName).toBeVisible();
             expect(await longName.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
-            const cardFace = fresh.locator(".talent-card-face").filter({ has: longName });
+            const cardFace = fresh.locator(".talent-node-content").filter({ has: longName });
             expect(await cardFace.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
             await fresh.getByRole("button", { name: label("Open game menu"), exact: true }).click();
             await fresh
