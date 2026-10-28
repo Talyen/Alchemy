@@ -178,7 +178,7 @@ Homestead mutation timing remains unchanged.
 - **Armory access** — the Main Menu always offers Armory, including before any Gear or Trinkets are owned. Combat preserves browsing but makes the battling hero’s Armory tab read-only through `useGearCombatRestrictions`; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run characters.
 - **Interaction policy** — `armory-item-state.ts` owns inventory/equipment click decisions alongside targeting affordances. Equipped slots retain locked browsing; inventory tiles retain reservation and compatibility guards. `use-armory-targeting-state.ts` owns mutually exclusive idle, salvage, currency, and salvage-confirmation modes through intent callbacks. Store commands still validate authoritative mutations.
-- **Run start** — `run-start-command.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
+- **Run start** — `run-start-command.ts` includes `computeGearManifest.maxHealth` in the starting Health cap.
 
 ### Write paths
 
