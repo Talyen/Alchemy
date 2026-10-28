@@ -1,4 +1,5 @@
 declare module "*scripts/trailers/media.mjs" {
+  export const CAPTURE_ENCODER_POLICY: Readonly<{ maxBitrate: number; bufferBits: number }>;
   export function assertFrameDimensions(buffer: Buffer, width: number, height: number): void;
   export function captureEncoderArgs(fps: number, policy?: string): string[];
   export function ffmpegPath(): string;

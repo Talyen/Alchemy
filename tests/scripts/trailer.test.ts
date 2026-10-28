@@ -1,6 +1,11 @@
 import fs from "node:fs";
 import { pointerPath, samplePointer } from "../../scripts/trailers/direction.mjs";
-import { assertFrameDimensions, captureEncoderArgs, validateSourceVideo } from "../../scripts/trailers/media.mjs";
+import {
+  assertFrameDimensions,
+  CAPTURE_ENCODER_POLICY,
+  captureEncoderArgs,
+  validateSourceVideo,
+} from "../../scripts/trailers/media.mjs";
 import { describe, expect, it, vi } from "vitest";
 import {
   compileRenderChunks,
@@ -16,6 +21,8 @@ const authored = JSON.parse(fs.readFileSync(new URL("../../trailers/boss-spotlig
 
 describe("trailer edit admission and synchronization", () => {
   it("keeps ordinary source capture lossless and requires an explicit bounded policy", () => {
+    expect(CAPTURE_ENCODER_POLICY.maxBitrate).toBe(64_000_000);
+    expect(CAPTURE_ENCODER_POLICY.bufferBits).toBe(128_000_000);
     expect(captureEncoderArgs(60)).toEqual(["-preset", "ultrafast", "-crf", "0", "-g", "1"]);
     expect(captureEncoderArgs(60, "bounded")).toEqual([
       "-preset",
