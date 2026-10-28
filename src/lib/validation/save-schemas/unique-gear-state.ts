@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { BattleCardEffectSchema, keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { BattleCardEffectSchema } from "@/lib/game-data";
+import { SavedKeywordArraySchema } from "./battle-card-schemas";
 import { createUniqueGearBattleState } from "@/lib/battle";
 import { parseValidEntries } from "./validation-utils";
 
@@ -11,7 +12,7 @@ const echoCardSchema = z
     cost: z.number().nonnegative(),
     descriptionLines: z.array(z.string()),
     effects: z.array(BattleCardEffectSchema),
-    tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
+    tags: SavedKeywordArraySchema.optional().catch(undefined),
   })
   .transform(({ tags, ...card }) => ({ ...card, ...(tags === undefined ? {} : { tags }) }));
 

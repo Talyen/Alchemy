@@ -7,12 +7,10 @@ import {
   CompanionIdSchema,
   EnemyStatusIdSchema,
   isEnemyId,
-  keywordDefinitions,
   type BattleCard,
   type DifficultyModifier,
-  type KeywordId,
 } from "@/lib/game-data";
-import { parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
+import { parseSavedCardArray, savedCardArraySchema, SavedKeywordArraySchema } from "./battle-card-schemas";
 import { MaterialInventorySchema } from "./schema-enums";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 import { deduplicatedStringArraySchema, parseValidEntries } from "./validation-utils";
@@ -57,14 +55,20 @@ const difficultyModifierSchema = z
 const pendingTurnStartEffectSchema = z
   .object({
     remainingTurns: z.number().int().min(1).max(10),
-    effects: z.array(BattleCardEffectSchema),
+    effects: z.array(z.unknown()).transform((effects) =>
+      parseValidEntries(effects, BattleCardEffectSchema, {
+        path: "pendingTurnStartEffects.effects",
+        message: "malformed scheduled child effect was dropped",
+      }),
+    ),
     sourceCard: z
       .object({
         id: z.string(),
-        consume: z.boolean().optional(),
-        tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
+        consume: z.boolean().optional().catch(undefined),
+        tags: SavedKeywordArraySchema.optional().catch(undefined),
       })
-      .optional(),
+      .optional()
+      .catch(undefined),
   })
   .transform(({ sourceCard, ...pulse }) => ({
     ...pulse,

@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { BattleCardEffectSchema, keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import {
+  BattleCardEffectSchema,
+  cardById,
+  isMixedPotionCard,
+  keywordDefinitions,
+  type KeywordId,
+} from "@/lib/game-data";
 import { parseSavedCardDescription } from "./card-description-schema";
 import { recordNestedValidationWarnings, type ValidationError } from "./validation-utils";
 
@@ -27,6 +33,12 @@ function cloneSavedDescriptionLines(values: unknown[]): { values: string[] | nul
   return { values: [...values], errors: [] };
 }
 
+export const SavedKeywordArraySchema = z
+  .array(z.unknown())
+  .transform((values) =>
+    values.filter((value): value is KeywordId => typeof value === "string" && Object.hasOwn(keywordDefinitions, value)),
+  );
+
 export type PersistedBattleCard = z.output<typeof BattleCardSchema>;
 
 export const BattleCardSchema = z
@@ -41,17 +53,14 @@ export const BattleCardSchema = z
     // -1 marks a corrupt/unparseable cost that survived load repair; runtime
     // treats it as broken data, never as a playable cost.
     cost: z.number().catch(-1),
-    consume: z.boolean().optional(),
-    corrupted: z.boolean().optional(),
+    consume: z.unknown().optional(),
+    corrupted: z.boolean().optional().catch(undefined),
     transmuted: z
       .custom<KeywordId>((value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value))
       .optional()
       .catch(undefined),
-    tags: z
-      .array(z.custom<KeywordId>((value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value)))
-      .optional()
-      .catch(undefined),
-    baseTitle: z.string().optional(),
+    tags: SavedKeywordArraySchema.optional().catch(undefined),
+    baseTitle: z.string().optional().catch(undefined),
     effects: z.array(z.unknown()).catch([]),
   })
   .transform((saved) => {
@@ -59,6 +68,14 @@ export const BattleCardSchema = z
     const effects = parseSavedEffectList(saved.effects);
     const bound = parseSavedCardDescription(saved.description, effects.values);
     const cost = Number.isInteger(saved.cost) && saved.cost >= 0 ? saved.cost : -1;
+    const consume =
+      saved.consume === undefined || typeof saved.consume === "boolean"
+        ? saved.consume
+        : Object.hasOwn(cardById, saved.id)
+          ? cardById[saved.id]?.consume
+          : isMixedPotionCard(saved)
+            ? true
+            : undefined;
     const result = {
       id: saved.id,
       ...(saved.definitionVersion !== undefined && { definitionVersion: saved.definitionVersion }),
@@ -69,7 +86,7 @@ export const BattleCardSchema = z
       cost,
       effects: effects.values,
       ...(saved.uid !== undefined ? { uid: saved.uid } : {}),
-      ...(saved.consume !== undefined ? { consume: saved.consume } : {}),
+      ...(consume !== undefined ? { consume } : {}),
       ...(saved.corrupted !== undefined ? { corrupted: saved.corrupted } : {}),
       ...(saved.transmuted !== undefined ? { transmuted: saved.transmuted } : {}),
       ...(saved.tags !== undefined ? { tags: saved.tags } : {}),

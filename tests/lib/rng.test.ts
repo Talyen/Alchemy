@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createSeededRng,
   getBattleRng,
@@ -292,4 +292,27 @@ describe("rolls", () => {
     expect(() => rollPercent(Number.NaN, () => 0.5)).toThrow();
     expect(() => rollChance(Number.NaN, () => 0.5)).toThrow();
   });
+});
+
+it("validates sample counts before reading items or calling the exclusion key", () => {
+  const keyOf = () => {
+    throw new Error("key callback should not run");
+  };
+  expect(() => sampleItemsExcluding([1], -1, () => 0, new Set(), keyOf)).toThrow(
+    "sampleItems requires a non-negative integer count",
+  );
+  const items = new Proxy([1], {
+    get() {
+      throw new Error("items should not be read");
+    },
+  });
+  expect(() => sampleItems(items, -1, () => 0)).toThrow("sampleItems requires a non-negative integer count");
+});
+
+it("does not inspect excluded items for a zero-sized sample", () => {
+  const keyOf = vi.fn((item: number) => item);
+  const rng = vi.fn(() => 0.5);
+  expect(sampleItemsExcluding([1, 2, 3], 0, rng, new Set([1]), keyOf)).toEqual([]);
+  expect(keyOf).not.toHaveBeenCalled();
+  expect(rng).not.toHaveBeenCalled();
 });
