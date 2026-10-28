@@ -66,6 +66,7 @@ export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: s
     }
     if (missing) return missing;
     start = end;
+    if (start >= talents.length) break;
   }
   return [];
 }

@@ -12,6 +12,20 @@ export { canEnterLabyrinthNode } from "./map-state";
 
 const COMBAT_NODE_TYPES = new Set<LabyrinthNodeType>(["combat", "elite", "boss"]);
 
+const WEIGHTED_NODE_TYPES: readonly LabyrinthNodeType[] = [
+  "combat",
+  "combat",
+  "elite",
+  "mystery",
+  "rest",
+  "corruption",
+  "transmutation",
+  "shop",
+  "alchemist",
+  "trinket-shop",
+  "equipment-shop",
+];
+
 function pickEnemyId(type: EnemyType, used: ReadonlySet<string>, rng: () => number): string | undefined {
   const pool = enemiesByType[type];
   const preferred = used.size ? pool.filter((enemy) => !used.has(enemy.id)) : pool;
@@ -19,31 +33,17 @@ function pickEnemyId(type: EnemyType, used: ReadonlySet<string>, rng: () => numb
   return pickRandom(candidates, rng)?.id;
 }
 
-function availableNodeType(type: LabyrinthNodeType, lootDepth: number): LabyrinthNodeType {
-  return type === "trinket-shop" && !isLootEligible("trinket", lootDepth) ? "equipment-shop" : type;
+function availableNodeType(type: LabyrinthNodeType, trinketEligible: boolean): LabyrinthNodeType {
+  return type === "trinket-shop" && !trinketEligible ? "equipment-shop" : type;
 }
 
 function plannedTypes(count: number, rng: () => number, lootDepth: number): LabyrinthNodeType[] {
-  const eligibleSupports = LABYRINTH_SUPPORT_TYPES.filter(
-    (type) => type !== "trinket-shop" || isLootEligible("trinket", lootDepth),
-  );
+  const trinketEligible = isLootEligible("trinket", lootDepth);
+  const eligibleSupports = LABYRINTH_SUPPORT_TYPES.filter((type) => type !== "trinket-shop" || trinketEligible);
   const support = shuffleInPlace(eligibleSupports, rng);
   const middle: LabyrinthNodeType[] = support.slice(0, Math.min(3, count - 2));
-  const weighted: LabyrinthNodeType[] = [
-    "combat",
-    "combat",
-    "elite",
-    "mystery",
-    "rest",
-    "corruption",
-    "transmutation",
-    "shop",
-    "alchemist",
-    "trinket-shop",
-    "equipment-shop",
-  ];
   while (middle.length < count - 2) {
-    const next = availableNodeType(pickRandom(weighted, rng) ?? "combat", lootDepth);
+    const next = availableNodeType(pickRandom(WEIGHTED_NODE_TYPES, rng) ?? "combat", trinketEligible);
     if (LABYRINTH_SUPPORT_TYPES.includes(next as (typeof LABYRINTH_SUPPORT_TYPES)[number]) && middle.includes(next)) {
       middle.push("combat");
     } else {
@@ -58,7 +58,7 @@ export function orderTypesForPositions(
   positions: readonly LabyrinthGridPosition[],
   rng: () => number,
 ): LabyrinthNodeType[] {
-  if (types.length !== positions.length) return [...types];
+  if (types.length !== positions.length || types.length <= 3) return [...types];
   const indexByKey = new Map<string, number>();
   positions.forEach((position, index) => indexByKey.set(gridKey(position), index));
   const neighbors = positions.map((position) => {

@@ -137,8 +137,8 @@ function resolveLeechGainRewards(state: BattleState, texts: CombatTextEvent[]): 
     rollBattleChance(state.talentEffects.leechCleanseChance, state)
   )
     next = removeHarmfulPlayerStatuses(next, 1, texts);
-  for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance])
-    if (rollBattleChance(chance, state)) next = gainManaWithCombatText(next, 1, texts);
+  if (rollBattleChance(state.talentEffects.manaOnLeechChance, state)) next = gainManaWithCombatText(next, 1, texts);
+  if (rollBattleChance(state.gearEffects.manaOnLeechChance, state)) next = gainManaWithCombatText(next, 1, texts);
   return next;
 }
 

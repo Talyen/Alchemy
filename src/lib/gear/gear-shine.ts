@@ -15,6 +15,7 @@ function selectTextShineKeywordIds(
   instanceKeywordIds: readonly KeywordId[],
   affinityKeywords: readonly KeywordId[],
 ): KeywordId[] {
+  if (affinityKeywords.length === 0) return instanceKeywordIds.slice(0, MAX_TEXT_SHINE_KEYWORDS);
   const affinity = new Set(affinityKeywords);
   const preferred: KeywordId[] = [];
   const remaining: KeywordId[] = [];

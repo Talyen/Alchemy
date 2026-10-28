@@ -109,19 +109,49 @@ export function initializeEnemyState(enemy: BestiaryEntry, battleRooms: number, 
     else if (trait.id === "regeneration") regenerates = true;
     else if (trait.id === "shielded-arrival") shieldedArrival = true;
   }
-  const companion = modifiers.find((modifier) => modifier.kind === "start-companion");
+  // Each setup value uses the first matching modifier, even in repaired or
+  // hand-authored inputs containing duplicates.
+  let healthMultiplier: number | undefined;
+  let startingArmor: number | undefined;
+  let startBlock: number | undefined;
+  let manaBonus: number | undefined;
+  let companion: Extract<DifficultyModifier, { kind: "start-companion" }> | undefined;
+  for (const modifier of modifiers) {
+    switch (modifier.kind) {
+      case "enemy-health-multiplier":
+        healthMultiplier ??= modifier.amount;
+        break;
+      case "enemy-starting-armor":
+        startingArmor ??= modifier.amount;
+        break;
+      case "start-block":
+        startBlock ??= modifier.amount;
+        break;
+      case "start-max-mana":
+        manaBonus ??= modifier.amount;
+        break;
+      case "start-companion":
+        companion ??= modifier;
+        break;
+      case "enemy-attacks-gain-leech":
+      case "enemy-damage-multiplier":
+      case "gold-multiplier":
+      case "increase-enemy-damage":
+      case "increase-enemy-physical-damage":
+      case "increase-enemy-status":
+        break;
+    }
+  }
   const traitArmor = livingArmor ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul) : 0;
   const traitBlock = startingBlock ? Math.round(ENEMY_STARTING_BLOCK * roomMul) : 0;
   const regeneration = enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION;
   return {
-    enemyMaxHealth: Math.round(
-      scaleEnemyHealth(enemy, roomMul) * modifierAmount(modifiers, "enemy-health-multiplier", 1),
-    ),
+    enemyMaxHealth: Math.round(scaleEnemyHealth(enemy, roomMul) * (healthMultiplier ?? 1)),
     enemyRegeneration: regenerates ? Math.round(regeneration * roomMul) : 0,
     roomScalingMultiplier: roomMul,
-    startingArmor: modifierAmount(modifiers, "enemy-starting-armor") + traitArmor,
-    startBlock: modifierAmount(modifiers, "start-block"),
-    manaBonus: modifierAmount(modifiers, "start-max-mana"),
+    startingArmor: (startingArmor ?? 0) + traitArmor,
+    startBlock: startBlock ?? 0,
+    manaBonus: manaBonus ?? 0,
     startCompanion: Boolean(companion),
     startCompanionId: companion?.companionId ?? "wolf",
     startingEnemyBlock: traitBlock + (shieldedArrival ? LABYRINTH_MODIFIER_CONFIG.shieldedArrivalBlock : 0),

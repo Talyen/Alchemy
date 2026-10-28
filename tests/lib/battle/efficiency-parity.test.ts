@@ -38,3 +38,49 @@ it("keeps draft scores detached and follows mutable effects", () => {
   frozenResult.damage = -1;
   expect(nominalCardValue(effects)).toEqual({ damage: 7, defense: 3 });
 });
+
+it("keeps the first duplicate enemy setup modifiers, including zero values", async () => {
+  const { initializeEnemyState } = await import("@/lib/battle/battle-enemy-setup");
+  const { enemyBestiary } = await import("@/lib/game-data");
+  const enemy = enemyBestiary[0]!;
+  const base = initializeEnemyState(enemy, 1, []);
+  const result = initializeEnemyState(enemy, 1, [
+    { kind: "enemy-health-multiplier", amount: 0 },
+    { kind: "enemy-health-multiplier", amount: 2 },
+    { kind: "enemy-starting-armor", amount: 0 },
+    { kind: "enemy-starting-armor", amount: 8 },
+    { kind: "start-block", amount: 0 },
+    { kind: "start-block", amount: 5 },
+    { kind: "start-max-mana", amount: 0 },
+    { kind: "start-max-mana", amount: 3 },
+    { kind: "start-companion", companionId: "wolf" },
+    { kind: "start-companion", companionId: "phoenix" },
+  ]);
+  expect(result).toMatchObject({
+    enemyMaxHealth: 0,
+    startingArmor: base.startingArmor,
+    startBlock: 0,
+    manaBonus: 0,
+    startCompanion: true,
+    startCompanionId: "wolf",
+  });
+});
+
+it("preserves Potion offer order and the following seeded draw", async () => {
+  const { createCampfirePotionOffers } = await import("@/lib/alchemist/brewing");
+  const { getStandardPotionPoolView } = await import("@/lib/game-data");
+  const { CAMPFIRE_POTION_OFFERS } = await import("@/lib/game-constants");
+  const { createSeededRng, shuffle } = await import("@/lib/rng");
+  for (let seed = 1; seed <= 32; seed++) {
+    const actualRng = createSeededRng(seed);
+    const referenceRng = createSeededRng(seed);
+    const actual = createCampfirePotionOffers(actualRng);
+    const reference = shuffle(getStandardPotionPoolView(), referenceRng);
+    const index = reference.findIndex((card) =>
+      ["health-potion", "stoneskin-potion", "panacea-potion"].includes(card.id),
+    );
+    if (index > 0) reference.unshift(...reference.splice(index, 1));
+    expect(actual).toEqual(reference.slice(0, CAMPFIRE_POTION_OFFERS));
+    expect(actualRng()).toBe(referenceRng());
+  }
+});

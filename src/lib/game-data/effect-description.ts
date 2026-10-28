@@ -115,7 +115,13 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
           " Armor",
         ];
       if (effect.statusPool) return ["Gain ", amount(), ` ${joinOptions(effect.statusPool.map(capitalizeWord), true)}`];
-      if (["block", "armor", "thorns", "forge"].includes(effect.status)) return ["Gain ", amount(), ` ${status}`];
+      if (
+        effect.status === "block" ||
+        effect.status === "armor" ||
+        effect.status === "thorns" ||
+        effect.status === "forge"
+      )
+        return ["Gain ", amount(), ` ${status}`];
       throw new Error(`effectDescriptionLine: unsupported player-status ${effect.status}`);
     }
     case "heal":
