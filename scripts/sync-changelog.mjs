@@ -52,8 +52,8 @@ export async function syncChangelog(options = {}) {
       console.log("CHANGELOG.md is already in sync");
     }
   } catch (error) {
-    // Throw instead of exiting so tests observe the failure; defineScript
-    // still maps this to exit 1 for the CLI.
+    if (!checkOnly || !(error instanceof Error) || !error.message.startsWith("Generated file is stale:")) throw error;
+    // Preserve the actionable check-mode message without hiding I/O failures.
     throw new Error("CHANGELOG.md ## [Unreleased] is out of sync with git log. Run: npm run sync:changelog", {
       cause: error,
     });

@@ -18,7 +18,7 @@ export function parseKnownFlags(argv, spec = {}, { usage } = {}) {
     if (options?.short) shortToLong.set(options.short, name);
   }
   const pushValue = (name, value, flagLabel) => {
-    if (value == null || value.startsWith("-"))
+    if (value == null || value.length === 0 || value.startsWith("-"))
       throw new UsageError(`${flagLabel} requires a value.${usage ? ` ${usage}` : ""}`);
     if (!values.has(name)) values.set(name, []);
     values.get(name).push(value);

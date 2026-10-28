@@ -27,6 +27,8 @@ describe("script consolidation", () => {
       expect(() => parseKnownFlags([option], { check: { short: "c" } }), option).toThrow(UsageError);
     }
     expect(() => parseKnownFlags(["--mode"], { mode: { takesValue: true } })).toThrow(UsageError);
+    expect(() => parseKnownFlags(["--mode="], { mode: { takesValue: true } })).toThrow(UsageError);
+    expect(() => parseKnownFlags(["--mode", ""], { mode: { takesValue: true } })).toThrow(UsageError);
     expect(() => parseKnownFlags(["--mode=desktop"], { check: {} })).toThrow(UsageError);
     expect(() => parseKnownFlags(["-m=desktop"], { check: {} })).toThrow(UsageError);
   });

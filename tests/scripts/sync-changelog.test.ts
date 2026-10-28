@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -93,4 +93,19 @@ describe("sync-changelog", () => {
     await expect(syncChangelog({ root, check: true })).rejects.toThrow(/out of sync with git log/);
     expect(readFileSync(join(root, "CHANGELOG.md"), "utf8")).toContain("_Stale._");
   });
+
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "reports write failures instead of misdiagnosing them as stale generated content",
+    async () => {
+      const root = gitRepoWithCommit("feat: test write errors");
+      const changelog = join(root, "CHANGELOG.md");
+      writeFileSync(changelog, "# Changelog\n\n## [Unreleased]\n\n_Stale._\n", "utf8");
+      chmodSync(changelog, 0o444);
+      try {
+        await expect(syncChangelog({ root })).rejects.toMatchObject({ code: "EACCES" });
+      } finally {
+        chmodSync(changelog, 0o644);
+      }
+    },
+  );
 });

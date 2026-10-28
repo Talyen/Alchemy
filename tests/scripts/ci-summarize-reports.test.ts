@@ -387,6 +387,24 @@ describe("current-run pointer", () => {
     expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence pruned/missing");
     expect(formatRecentRun(root, failed[0] ?? {})).toContain("reports/evidence.md");
   });
+
+  it("keeps generated local and GitHub evidence IDs distinct and stable when labels are long", () => {
+    const now = new Date("2026-08-24T15:47:49Z");
+    const label = "long-verification-label-".repeat(4);
+    const localA = createRunId(label, { now, pid: 42, suffix: "aaaaaa" });
+    const localB = createRunId(label, { now, pid: 42, suffix: "bbbbbb" });
+    expect(localA).not.toBe(localB);
+    expect(localA).toContain("aaaaaa");
+    expect(localA.length).toBeLessThanOrEqual(48);
+
+    const shared = { GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" };
+    const envA = { ...shared, GITHUB_JOB: "long-job-name-".repeat(5) + "a" };
+    const envB = { ...shared, GITHUB_JOB: "long-job-name-".repeat(5) + "b" };
+    const githubA = ensureRunId("ignored", envA);
+    expect(githubA).not.toBe(ensureRunId("ignored", envB));
+    expect(githubA.length).toBeLessThanOrEqual(48);
+    expect(ensureRunId("ignored", envA)).toBe(githubA);
+  });
 });
 
 describe("Playwright failure diagnostics", () => {
