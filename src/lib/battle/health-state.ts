@@ -31,9 +31,9 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
   const survivedHealthLoss = enemyHealth > 0 && enemyHealth < previousHealth;
   const triggersCinderSkin =
     survivedHealthLoss &&
-    hasEnemyTrait(state, "cinder-skin") &&
     state.turn % 2 === 1 &&
-    !state.flags.cinderSkinUsedThisTurn;
+    !state.flags.cinderSkinUsedThisTurn &&
+    hasEnemyTrait(state, "cinder-skin");
   const weakensAttack =
     survivedHealthLoss && (hasEnemyTrait(state, "flickering") || hasEnemyTrait(state, "loose-rubble"));
   return {

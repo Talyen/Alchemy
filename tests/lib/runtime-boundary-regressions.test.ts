@@ -94,7 +94,7 @@ it("Companion-only Wishes recognize nested summons using the canonical detector"
       },
     ],
   };
-  vi.spyOn(gameData, "getOfferableCardPool").mockReturnValue([nested]);
+  vi.spyOn(gameData, "getOfferableCardPoolView").mockReturnValue([nested]);
   const options = buildWishOptions(patchBattleState({ rng: () => 0.99 }), undefined, true);
   expect(options.map((card) => card.id)).toContain(nested.id);
 });

@@ -104,8 +104,8 @@ export function createRewardOffer({
     ownedTrinkets ? trinketLibrary.filter((entry) => !ownedTrinkets.has(entry.id)) : trinketLibrary;
   const availability = getRewardLootAvailability(ownedUniqueIds, {
     cards: cards.length > 0,
-    boons: trinketLibrary.some((entry) => !excludedBoons?.has(entry.id)),
-    trinkets: trinketLibrary.some((entry) => !ownedTrinkets?.has(entry.id)),
+    boons: excludedBoons ? trinketLibrary.some((entry) => !excludedBoons.has(entry.id)) : trinketLibrary.length > 0,
+    trinkets: ownedTrinkets ? trinketLibrary.some((entry) => !ownedTrinkets.has(entry.id)) : trinketLibrary.length > 0,
   });
   const weightsFor = (available: typeof availability) =>
     resolveLootWeights({ source, progress: lootProgress, astralChanceBonus: gearAstralChanceBonus, available });

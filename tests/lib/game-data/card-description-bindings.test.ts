@@ -197,7 +197,7 @@ describe("card description bindings", () => {
       typeof part === "string" ? part.replace(" twice", " two times") : part,
     );
     const pool = vi
-      .spyOn(cardPools, "getOfferableCardPool")
+      .spyOn(cardPools, "getOfferableCardPoolView")
       .mockReturnValue([card, withCardDescription(ray, ray.description!)]);
     using _scopeCleanup = createCleanup(() => pool.mockRestore());
 

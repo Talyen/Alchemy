@@ -2,6 +2,7 @@ import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { battleSnapshot } from "@/lib/battle";
+import { companionLibrary } from "@/lib/game-data";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { playTurnFrames } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattlePresentationPort } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -112,11 +113,16 @@ describe("playTurnFrames", () => {
 
     const frame = makeHasteFrame();
     const companionTexts = [{ target: "enemy", kind: "damage", stat: "health", amount: 6 }] as const;
-    const companionState = patchBattleState({ ...frame.turn.state, enemyHealth: 14 });
+    const turn = {
+      ...frame.turn,
+      state: battleSnapshot(patchBattleState({ ...frame.turn.state, activeCompanion: companionLibrary.wolf })),
+    };
+    const companionState = patchBattleState({ ...turn.state, enemyHealth: 14 });
     const companionFrame = {
       ...frame,
+      turn,
       companion: {
-        id: "hound",
+        id: "wolf",
         texts: [...companionTexts],
         state: battleSnapshot(companionState),
       },
@@ -149,11 +155,16 @@ describe("playTurnFrames", () => {
 
     const frame = makeHasteFrame();
     const companionTexts = [{ target: "enemy", kind: "damage", stat: "health", amount: 6 }] as const;
-    const companionState = patchBattleState({ ...frame.turn.state, enemyHealth: 14 });
+    const turn = {
+      ...frame.turn,
+      state: battleSnapshot(patchBattleState({ ...frame.turn.state, activeCompanion: companionLibrary.wolf })),
+    };
+    const companionState = patchBattleState({ ...turn.state, enemyHealth: 14 });
     const companionFrame = {
       ...frame,
+      turn,
       companion: {
-        id: "hound",
+        id: "wolf",
         texts: [...companionTexts],
         state: battleSnapshot(companionState),
       },

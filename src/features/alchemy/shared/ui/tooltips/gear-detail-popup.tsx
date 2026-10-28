@@ -9,6 +9,7 @@ export function GearDetailPopup({
   definition,
   instance,
   notice,
+  padding,
   ...tooltipProps
 }: {
   definition: GearDefinition | undefined;
@@ -22,6 +23,7 @@ export function GearDetailPopup({
   return (
     <PortaledTooltip
       {...tooltipProps}
+      {...(padding !== undefined ? { padding } : {})}
       className="rounded-shell-tooltip"
       plasmaColorPair={getPlasmaColorPairForGear(instance)}
     >

@@ -53,7 +53,8 @@ export function resampleCardShopOfferings(
 ): BattleCard[] {
   const novel = selectRewardCards(deck, pool, count, currentItems, rng);
   if (novel.length >= count) return novel;
-  return [...novel, ...selectRewardCards(deck, pool, count - novel.length, novel, rng)];
+  novel.push(...selectRewardCards(deck, pool, count - novel.length, novel, rng));
+  return novel;
 }
 
 // Initial visits sample unconditionally: shop rooms only generate once their
@@ -69,14 +70,15 @@ function sampleUnownedTrinkets(
     ? sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, new Set(currentIds), (entry) => entry.id)
     : sampleItems(available, TRINKET_SHOP_OFFERED, rng);
   if (novel.length >= TRINKET_SHOP_OFFERED) return novel;
+  if (novel.length === 0) return sampleItems(available, TRINKET_SHOP_OFFERED, rng);
   // Too few unseen offerings: top up from the same pool, keeping only the
   // already-sampled novel picks excluded (current shelf items may return).
   const novelIds = new Set<string>();
   for (const entry of novel) novelIds.add(entry.id);
-  return [
-    ...novel,
+  novel.push(
     ...sampleItemsExcluding(available, TRINKET_SHOP_OFFERED - novel.length, rng, novelIds, (entry) => entry.id),
-  ];
+  );
+  return novel;
 }
 
 export function resampleTrinketShopOfferings(
@@ -131,7 +133,8 @@ export function resampleEquipmentShopOfferings(
   const selected = new Set<string | undefined>();
   for (const item of novel) selected.add(gearDefinitions[item.definitionId]?.baseItemId);
   const fallbackBases = selected.size ? baseItems.filter((id) => !selected.has(id)) : baseItems;
-  return [...novel, ...sample(EQUIPMENT_SHOP_OFFERED - novel.length, fallbackBases.length ? fallbackBases : baseItems)];
+  novel.push(...sample(EQUIPMENT_SHOP_OFFERED - novel.length, fallbackBases.length ? fallbackBases : baseItems));
+  return novel;
 }
 
 export function createInitialShopState(
