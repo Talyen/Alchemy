@@ -6,7 +6,9 @@ import type { GearAffixTooltipEntry } from "@/lib/gear";
 const CHANGE_MS = 360;
 interface AffixRow {
   entry: GearAffixTooltipEntry;
-  change?: "added" | "changed" | "removed";
+  change?: "added" | "changed" | "removed" | "replaced";
+  previous?: GearAffixTooltipEntry;
+  slot: string;
   revision: number;
 }
 
@@ -18,15 +20,16 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
     signature,
     entries,
     revision: 0,
-    rows: entries.map((entry): AffixRow => ({ entry, revision: 0 })),
+    rows: entries.map((entry, index): AffixRow => ({ entry, slot: `initial-${index}`, revision: 0 })),
   }));
 
   if (signature !== snapshot.signature) {
     const revision = snapshot.revision + 1;
     const current = new Map(entries.map((entry) => [entry.affixId, entry]));
     const previous = new Map(snapshot.entries.map((entry) => [entry.affixId, entry]));
+    const additions = entries.filter((entry) => !previous.has(entry.affixId));
     const rows: AffixRow[] = reducedMotion
-      ? entries.map((entry) => ({ entry, revision }))
+      ? entries.map((entry, index) => ({ entry, slot: `reduced-${revision}-${index}`, revision }))
       : [
           // A reroll can reorder its payload. Keep surviving lines in their inspected
           // positions; affix order has no gameplay meaning. Discard obsolete exits.
@@ -34,15 +37,26 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
             .filter((row) => row.change !== "removed")
             .map((row): AffixRow => {
               const entry = current.get(row.entry.affixId);
-              if (!entry) return { entry: row.entry, change: "removed", revision };
+              if (!entry) {
+                const replacement = additions.shift();
+                if (replacement)
+                  return {
+                    entry: replacement,
+                    previous: row.entry,
+                    slot: row.slot,
+                    change: "replaced",
+                    revision,
+                  };
+                return { entry: row.entry, slot: row.slot, change: "removed", revision };
+              }
               const old = previous.get(entry.affixId)!;
               // Entry keys include catalog order, so they are not a visible change.
               const changed = old.name !== entry.name || old.text !== entry.text || old.value !== entry.value;
-              return changed ? { entry, change: "changed", revision } : { ...row, entry };
+              return changed ? { entry, slot: row.slot, change: "changed", revision } : { ...row, entry };
             }),
-          ...entries
-            .filter((entry) => !previous.has(entry.affixId))
-            .map((entry): AffixRow => ({ entry, change: "added", revision })),
+          ...additions.map(
+            (entry, index): AffixRow => ({ entry, slot: `added-${revision}-${index}`, change: "added", revision }),
+          ),
         ];
     // Adjust during render so a removed row never flashes out before its exit begins.
     setSnapshot({ signature, entries, revision, rows });
@@ -59,7 +73,7 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
                 ...current,
                 rows: current.rows
                   .filter((row) => row.change !== "removed")
-                  .map(({ entry, revision }) => ({ entry, revision })),
+                  .map(({ entry, revision, slot }) => ({ entry, revision, slot })),
               }
             : current,
         ),
@@ -68,7 +82,15 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
     return () => window.clearTimeout(timer);
   }, [snapshot.revision, snapshot.rows, reducedMotion]);
 
-  return reducedMotion ? entries.map((entry): AffixRow => ({ entry, revision: snapshot.revision })) : snapshot.rows;
+  return reducedMotion
+    ? entries.map(
+        (entry, index): AffixRow => ({
+          entry,
+          slot: `reduced-${snapshot.revision}-${index}`,
+          revision: snapshot.revision,
+        }),
+      )
+    : snapshot.rows;
 }
 
 /** Keep localized keyword spans and whitespace intact; opacity never changes glyph geometry. */
