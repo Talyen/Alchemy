@@ -35,9 +35,11 @@ selection; missing selected sources fail before full preparation publishes or pr
 
 Ordinary development and builds consume committed prepared outputs without
 regenerating them. `predev` uses output-only validation; asset CI checks source
-freshness. Neither needs an external library. Code-only task worktrees must
-restore masters with `git sparse-checkout disable` before source authoring or
-source checks. Keep the master, selection and prepared outputs in one commit.
+freshness. Neither needs an external library. In a sparse task checkout, source
+checks and preparation automatically restore selected missing non-trailer masters
+from the Git index without replacing existing files. Direct source authoring can
+use `--full-assets` or `git sparse-checkout disable` to show the full source tree.
+Keep the master, selection and prepared outputs in one commit.
 
 The optional [Sound desk](../scripts/audio-review/README.md) browses replacements
 only with an explicit `--library <Sounds directory>`. Existing snapshots reopen
@@ -45,7 +47,7 @@ without a library; auditions do not install production assets.
 
 ## Validation and commit
 
-| Need                                          | Read-only command                 | Establishes                                                                                      |
+| Need                                          | Command                           | Establishes                                                                                      |
 | --------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Final source freshness after authoring        | `npm run assets:check`            | Source/settings hashes, prepared bytes, inventories, orphans, generated art and version metadata |
 | Development/package integrity without masters | `npm run assets:check:outputs`    | Selection/settings fingerprints, prepared bytes, inventories and generated code                  |

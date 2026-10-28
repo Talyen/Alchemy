@@ -1,16 +1,17 @@
 import type { BattleCard, BattleCardEffect, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffects } from "./effect-metadata";
 import { TALENT_TREE_KEYWORD_IDS } from "./talents/xp-keywords";
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 
-// Cost/title variants can share an immutable effect tree. Cache that tree,
-// while keeping Consume and tags on the card that actually requested it.
+// Cache only fully frozen effect trees; copied cards remain editable. Consume
+// and tags belong to the card that actually requested the keywords.
 const EFFECT_KEYWORD_CACHE = new WeakMap<readonly BattleCardEffect[], readonly KeywordId[]>();
 
 function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly KeywordId[] {
   const cached = EFFECT_KEYWORD_CACHE.get(effects);
   if (cached) return cached;
   const result = Object.freeze(collectKeywordsFromBattleEffects(effects));
-  EFFECT_KEYWORD_CACHE.set(effects, result);
+  if (isDeeplyFrozenData(effects)) EFFECT_KEYWORD_CACHE.set(effects, result);
   return result;
 }
 

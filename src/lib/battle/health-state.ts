@@ -62,6 +62,11 @@ export function deathsDoorGraceTurns(extension: number): number {
   return DEATHS_DOOR_GRACE_TURNS + Math.max(0, extension);
 }
 
+/** Revival must leave a living hero even when maximum Health is very low. */
+export function phoenixFeatherRevivalHealth(maxHealth: number): number {
+  return Math.max(1, Math.round(maxHealth * CAMPFIRE_HEAL_FRACTION));
+}
+
 export interface EnemyTraitIgnoreMitigationOptions {
   ignoreMitigation?: boolean;
 }
@@ -108,7 +113,7 @@ export function applyPlayerCombatDamage(
   }
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (state.playerStatuses.phoenixFeather > 0) {
-    const healAmount = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
+    const healAmount = phoenixFeatherRevivalHealth(state.playerMaxHealth);
     combatTexts?.push({ target: "player", kind: "notice", stat: "phoenixFeather", text: "Revived" });
     combatTexts?.push({ target: "player", kind: "heal", stat: "health", amount: healAmount });
     return {

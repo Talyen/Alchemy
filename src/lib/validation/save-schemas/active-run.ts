@@ -16,7 +16,7 @@ import {
   LabyrinthPendingNodeSchema,
 } from "./labyrinth-schemas";
 import { PersistedBattleStateSchema } from "./persisted-battle-state";
-import { RunProgressSchema } from "./run-progress";
+import { repairRunHistory, RunProgressSchema } from "./run-progress";
 import {
   ContentSystemIdSchema,
   DestinationArraySchema,
@@ -24,7 +24,7 @@ import {
   MaterialIdSchema,
   MaterialInventorySchema,
 } from "./schema-enums";
-import { deduplicatedStringArraySchema, parseValidEntries } from "./validation-utils";
+import { deduplicatedStringArraySchema, parseValidEntries, savedStringArraySchema } from "./validation-utils";
 
 const KnownKeywordSchema = z.custom<KeywordId>(
   (value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value),
@@ -88,7 +88,7 @@ const CorruptionResultPersistSchema = z
   .nullable()
   .catch(null);
 
-const WildwoodBossIdListSchema = z.array(z.string()).transform((ids) => sanitizeWildwoodBossIds(ids));
+const WildwoodBossIdListSchema = z.array(z.unknown()).transform((ids) => sanitizeWildwoodBossIds(ids));
 const OptionalWildwoodBossIdSchema = z
   .string()
   .nullable()
@@ -176,7 +176,20 @@ const AlchemistObjectSchema = createShopObjectSchema({
 });
 
 const TrinketShopObjectSchema = createShopObjectSchema({
-  trinketIds: z.array(z.string()),
+  trinketIds: z.array(z.unknown()),
+}).transform((state) => {
+  const ids = state.trinketIds.map((id) => (typeof id === "string" ? id : null));
+  const repaired = repairShopOfferings(
+    ids,
+    state.purchasedSlotKeys,
+    (id) => id !== null,
+    (id, index) => shopItemSlotKey(id!, index),
+  );
+  return {
+    ...state,
+    trinketIds: repaired.items.filter((id) => id !== null),
+    purchasedSlotKeys: repaired.purchasedSlotKeys,
+  };
 });
 
 const EquipmentShopObjectSchema = createShopObjectSchema({
@@ -195,7 +208,7 @@ const WildwoodDraftObjectSchema = z.object({
 const WildwoodDraftStateSchema = WildwoodDraftObjectSchema.nullable().catch(null);
 
 const PersistedPendingRewardBaseSchema = {
-  companionChoiceIds: z.array(z.string()).catch([]),
+  companionChoiceIds: savedStringArraySchema().catch([]),
   selectedId: z.string().nullable().catch(null),
   gold: z.number().int().nonnegative().catch(0),
   materials: MaterialInventorySchema.catch(emptyInventory()),
@@ -208,7 +221,7 @@ const PersistedPendingRewardBaseSchema = {
 function createChoicePendingRewardSchema(rewardType: "card" | "boon" | "trinket") {
   return z.object({
     rewardType: z.literal(rewardType),
-    choiceIds: z.array(z.string()),
+    choiceIds: savedStringArraySchema(),
     ...PersistedPendingRewardBaseSchema,
   });
 }
@@ -265,7 +278,9 @@ const ActiveRunDataObjectSchema = z.object({
 
 export type ValidatedActiveRunData = z.output<typeof ActiveRunDataObjectSchema>;
 
-export const ActiveRunDataSchema = ActiveRunDataObjectSchema.transform(normalizeActiveRunData)
+export const ActiveRunDataSchema = z
+  .preprocess(repairRunHistory, ActiveRunDataObjectSchema)
+  .transform(normalizeActiveRunData)
   .refine(
     (data) =>
       data.contentSystemType !== "labyrinth" ||

@@ -28,7 +28,10 @@ export const UniqueGearBattleStateSchema = z
     wardbreakerPurgeUsed: ready,
     finalSparkUsed: ready,
     lastArcheryUid: cardUid,
-    returningFlightUids: z.array(z.number().int().nonnegative()).catch([]),
+    returningFlightUids: z
+      .array(z.unknown())
+      .transform((entries) => parseValidEntries(entries, z.number().int().nonnegative()))
+      .catch([]),
     archeryEchoes: z
       .array(z.unknown())
       .transform((entries) =>

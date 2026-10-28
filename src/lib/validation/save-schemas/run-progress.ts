@@ -15,7 +15,7 @@ import {
   MaterialInventorySchema,
   TalentXPSchema,
 } from "./schema-enums";
-import { deduplicatedStringArraySchema } from "./validation-utils";
+import { deduplicatedStringArraySchema, savedStringArraySchema } from "./validation-utils";
 const RunObtainedGearItemSchema = z.object({
   kind: z.literal("gear"),
   instance: GearInstanceSchema,
@@ -50,6 +50,27 @@ function normalizeRunObtainedItems(raw: unknown): Array<z.infer<typeof RunObtain
 
 const RunObtainedItemArraySchema = z.preprocess(normalizeRunObtainedItems, z.array(RunObtainedItemSchema));
 
+const RunHistoryEntrySchema = z.object({
+  id: z.string().min(1),
+  destination: z.enum(Object.values(DESTINATIONS)),
+  act: z.number().int().positive(),
+  floor: z.number().int().positive().nullable(),
+  completed: z.boolean(),
+});
+
+/** Retain usable visits and never call a repaired or missing history complete. */
+export function repairRunHistory(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const run = value as Record<string, unknown>;
+  if (!Array.isArray(run.runHistory)) return { ...run, runHistoryPartial: true };
+  const history: Array<z.output<typeof RunHistoryEntrySchema>> = [];
+  for (const entry of run.runHistory) {
+    const parsed = RunHistoryEntrySchema.safeParse(entry);
+    if (parsed.success) history.push(parsed.data);
+  }
+  return history.length === run.runHistory.length ? value : { ...run, runHistory: history, runHistoryPartial: true };
+}
+
 // Fresh fallback per use: stepRunRng advances counters in place, so sharing
 // one frozen object across parses would hand live runs an unusable state.
 function createFallbackRunRngState(): RunRngState {
@@ -72,17 +93,7 @@ const RunRngStateSchema = z
   .catch(createFallbackRunRngState);
 
 export const RunProgressSchema = z.object({
-  runHistory: z
-    .array(
-      z.object({
-        id: z.string().min(1),
-        destination: z.enum(Object.values(DESTINATIONS)),
-        act: z.number().int().positive(),
-        floor: z.number().int().positive().nullable(),
-        completed: z.boolean(),
-      }),
-    )
-    .catch([]),
+  runHistory: z.array(RunHistoryEntrySchema).catch([]),
   runHistoryPartial: z.boolean().catch(true),
   runGoldEarned: z.number().int().nonnegative().nullable().catch(null),
   characterId: CharacterIdSchema,
@@ -110,7 +121,7 @@ export const RunProgressSchema = z.object({
     },
     z.record(z.string(), z.number().int().nonnegative()),
   ),
-  runBoons: z.array(z.string()).catch([]),
+  runBoons: savedStringArraySchema().catch([]),
   encounteredRunEnemyIds: deduplicatedStringArraySchema(),
   selectedDifficulty: DifficultyIdSchema.nullable().catch(null),
   contentSystemType: ContentSystemIdSchema.catch("campaign"),

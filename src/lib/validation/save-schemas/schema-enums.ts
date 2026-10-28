@@ -20,6 +20,7 @@ import { clamp } from "@/lib/math";
 import {
   deduplicateFromSet,
   deduplicateStrings,
+  savedStringArraySchema,
   toFiniteNonNegativeInt,
   toSafeNonNegativeInt,
 } from "./validation-utils";
@@ -40,8 +41,7 @@ export const ContentSystemIdSchema = z.enum(CONTENT_SYSTEM_IDS);
 export const EnemyTypeSchema = z.enum(ENEMY_TYPE_VALUES);
 export const MaterialIdSchema = z.enum(MATERIAL_IDS);
 
-export const DestinationArraySchema = z
-  .array(z.string())
+export const DestinationArraySchema = savedStringArraySchema()
   .catch([])
   .transform((values) => filterValidDestinations(values));
 

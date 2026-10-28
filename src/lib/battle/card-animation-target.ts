@@ -3,6 +3,7 @@ import { effectTarget, getBattleCardPlayTarget } from "./card-classification";
 import { inspectBattleCardOutcomes } from "./card-damage-inspection";
 import type { InspectedPackets } from "./inspection-outcomes";
 import type { BattleSnapshot } from "./types";
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 
 type Target = "player" | "enemy";
 
@@ -15,7 +16,7 @@ function isCost(effect: BattleCardEffect): boolean {
   );
 }
 
-// Effect trees are immutable; the projection stays private and follows their lifetime.
+// Cache only immutable effect trees; the projection stays private.
 const costFreeEffects = new WeakMap<readonly BattleCardEffect[], BattleCardEffect[]>();
 
 function withoutCosts(effects: readonly BattleCardEffect[]): BattleCardEffect[] {
@@ -35,7 +36,7 @@ function withoutCosts(effects: readonly BattleCardEffect[]): BattleCardEffect[] 
     else if (effect.kind === "repeat-over-turns") result.push({ ...effect, effects: withoutCosts(effect.effects) });
     else result.push(effect);
   }
-  costFreeEffects.set(effects, result);
+  if (isDeeplyFrozenData(effects)) costFreeEffects.set(effects, result);
   return result;
 }
 

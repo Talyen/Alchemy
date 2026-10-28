@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { LabyrinthNodeTypeSchema } from "./schema-enums";
+import { savedStringArraySchema } from "./validation-utils";
 import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 import {
   LABYRINTH_GRID,
@@ -10,12 +11,10 @@ import {
   labyrinthGridPositions,
 } from "@/lib/content-systems/labyrinth/grid";
 
-export const EncounterCombatTraitArraySchema = z
-  .array(z.string())
+export const EncounterCombatTraitArraySchema = savedStringArraySchema()
   .transform((values): EncounterCombatTraitId[] => sanitizeEncounterTraitIds(values, "combat"))
   .catch([] as EncounterCombatTraitId[]);
-export const EncounterRewardTraitArraySchema = z
-  .array(z.string())
+export const EncounterRewardTraitArraySchema = savedStringArraySchema()
   .transform((values): EncounterRewardTraitId[] => sanitizeEncounterTraitIds(values, "reward"))
   .catch([] as EncounterRewardTraitId[]);
 
@@ -114,18 +113,13 @@ export const LabyrinthMapSchema = z
   .refine(isValidLabyrinthMap, { message: "Invalid labyrinth map structure" })
   .transform((map): LabyrinthMap => {
     const currentNode = map.nodes[map.currentNodeId];
-    // Safe by construction: isValidLabyrinthMap refine above rejects maps
-    // without an entrance on the current floor, so find always succeeds here.
-    // If the refine is ever relaxed, this becomes a silent null-map fallback.
-    const entrance = Object.values(map.nodes).find(
-      (node) => node.floor === map.currentFloor && node.type === "entrance",
-    );
     return {
       ...map,
       currentNodeId:
         currentNode?.floor === map.currentFloor && currentNode.cleared
           ? currentNode.id
-          : (entrance?.id ?? map.currentNodeId),
+          : (Object.values(map.nodes).find((node) => node.floor === map.currentFloor && node.type === "entrance")?.id ??
+            map.currentNodeId),
     };
   })
   .nullable()

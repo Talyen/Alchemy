@@ -31,7 +31,8 @@ vi.mock("../../scripts/assets/sound-assets.mjs", async (importOriginal) => ({
   validateSoundAssetRegistry: vi.fn(),
 }));
 vi.mock("ffmpeg-static", () => ({ default: "fixture-ffmpeg" }));
-vi.mock("node:child_process", () => ({
+vi.mock("node:child_process", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:child_process")>()),
   execFile: (_file: string, args: string[], callback: (error: unknown, stdout?: string, stderr?: string) => void) => {
     fixture.convert(args).then(() => callback(null, "", ""), callback);
   },

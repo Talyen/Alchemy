@@ -270,8 +270,9 @@ New task checkouts default to omitting `assets/sources/` when the target
 revision supports output-only development/build validation and has prepared art,
 music and sounds. Committed runtime media, generated code, test inputs and desktop
 icons remain present. Older/incomplete revisions use full assets. Use
-`create --task <slug> --full-assets` for asset production, or run
-`git sparse-checkout disable` in a task before source checks/preparation/authoring.
+`create --task <slug> --full-assets` or `git sparse-checkout disable` for direct
+source authoring. Source checks and preparation restore selected missing
+non-trailer masters automatically without replacing existing files.
 `--code-only` remains an alias for automatic defaults; it cannot be combined with
 `--full-assets`. Missing-source preparation preserves outputs and prints restoration guidance.
 

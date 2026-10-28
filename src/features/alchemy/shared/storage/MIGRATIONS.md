@@ -156,6 +156,10 @@ An unfinished Campfire with no usable Potion offer rebuilds its standard offers
 once using the saved events stream. A resumed Labyrinth map clears stale pending
 room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
 the battle and profile; a valid zero balance remains authoritative.
+Malformed entries in saved Boons, destination lists, encounter Traits and reward
+choice IDs are dropped individually, preserving valid siblings and their order.
+Trinket shop repair also remaps purchased slot keys when a malformed offering is
+removed, so sold items remain sold after restoration.
 
 ### Load order
 
@@ -240,6 +244,8 @@ New runs start with empty complete
 history and zero earned Gold. Older runs default to empty partial history and unknown
 Gold (`null`): subsequent visits are recorded with an omitted-history marker, while
 Gold remains unknown until a fresh run. Never infer missing earnings from the purse.
+Damaged room entries are dropped individually and mark the recap partial; a missing
+or invalid history also marks it partial even if its saved flag claimed otherwise.
 History and earnings round-trip without recording visits or replaying earnings on
 load. [Recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership) governs
 the transient ending snapshot.
