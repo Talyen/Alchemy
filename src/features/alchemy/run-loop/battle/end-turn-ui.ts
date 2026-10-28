@@ -13,6 +13,7 @@ import type { BattleControllerContext } from "./battle-context";
 import { commitEndTurn } from "./battle-session";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 import type { BattlePresentationPort } from "./battle-presentation-store";
+import { presentCompanionAction } from "./companion-presentation";
 
 export interface PlayTurnFramesOptions {
   onHandDrawn?: () => void;
@@ -43,8 +44,7 @@ function presentCompanionResolution(frame: BattleTurnFrame, presentation: Battle
     !turn.state.deathsDoorActive && companion.state.deathsDoorActive,
   );
   if (animate) {
-    presentation.shakeCompanion();
-    presentation.telegraphAttack("companion");
+    presentCompanionAction(presentation, turn.state.activeCompanion);
   }
   presentCombatTexts(presentation, companion.texts, sound);
 }

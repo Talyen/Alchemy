@@ -3,6 +3,7 @@ import { playResolvedCombatSound, presentCombatTexts } from "./controller-utils"
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 import type { BattleStarted } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
+import { presentCompanionAction } from "./companion-presentation";
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function presentBattleStart({ startingTexts, companionId, outcome, openingCardIds }: BattleStarted) {
@@ -19,8 +20,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
         ? playBattleEvent("deathsDoor")
         : undefined;
     if (companionId) {
-      presentationStore.shakeCompanion();
-      presentationStore.telegraphAttack("companion");
+      presentCompanionAction(presentationStore, battleState.activeCompanion);
     }
     presentCombatTexts(presentationStore, startingTexts, focalSound);
     if (outcome) session.handleVictoryDefeat?.(outcome);
