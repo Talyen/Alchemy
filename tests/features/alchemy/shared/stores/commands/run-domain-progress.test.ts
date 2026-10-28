@@ -338,23 +338,46 @@ it("applyRunStartSnapshot clears runTalentXP and run-end snapshots when starting
     runEndTalentXP: { burn: 5 },
     runEndItems: [{ kind: "trinket", trinketId: "bone-charm" }],
   });
-  setRunProgress({ runObtainedItems: [{ kind: "trinket", trinketId: "bone-charm" }] });
+  setRunProgress({
+    runObtainedItems: [{ kind: "trinket", trinketId: "bone-charm" }],
+    roomsEncountered: 9,
+    currentAct: 2,
+    destinationIndexInAct: 3,
+    completedDestinations: ["Campfire"],
+    lastOfferedDestinations: ["Campfire"],
+    destinationRoundsSinceOffered: { Campfire: 4 },
+    runBoons: ["bone-charm"],
+    encounteredRunEnemyIds: ["goblin"],
+    runGoldEarned: 100,
+    runHistoryPartial: true,
+  });
   applyRunStartSnapshot({
     characterId: "knight",
     contentSystemType: "campaign",
-    freshDeck: [],
+    runDeck: [],
     selectedDifficulty: "difficulty-1",
     runPlayerHealth: 80,
     runMaxHealth: 80,
+  });
+  expect(readActiveRun(defaultGameSession)).toMatchObject({
+    runTalentXP: {},
+    runObtainedItems: [],
+    runDeck: [],
+    runPlayerHealth: 80,
+    runMaxHealth: 80,
+    runMetaMaxHealth: 80,
     roomsEncountered: 0,
     currentAct: 1,
     destinationIndexInAct: 0,
     completedDestinations: [],
+    lastOfferedDestinations: [],
+    destinationRoundsSinceOffered: {},
     runBoons: [],
-    hasActiveRun: true,
+    encounteredRunEnemyIds: [],
+    runGoldEarned: 0,
+    runHistory: [],
+    runHistoryPartial: false,
   });
-  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-  expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([]);
   expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
   expect(readRunSession(defaultGameSession).runEndItems).toEqual([]);
   expect(readRunSession(defaultGameSession).hasActiveRun).toBe(true);
@@ -367,16 +390,10 @@ it("applyRunStartSnapshot reseeds run RNG instead of reusing the previous run", 
   applyRunStartSnapshot({
     characterId: "knight",
     contentSystemType: "campaign",
-    freshDeck: [],
+    runDeck: [],
     selectedDifficulty: "difficulty-1",
     runPlayerHealth: 80,
     runMaxHealth: 80,
-    roomsEncountered: 0,
-    currentAct: 1,
-    destinationIndexInAct: 0,
-    completedDestinations: [],
-    runBoons: [],
-    hasActiveRun: true,
   });
   expect(readActiveRun(defaultGameSession).rng.counters).toEqual({
     rewards: 0,

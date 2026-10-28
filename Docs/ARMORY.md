@@ -178,7 +178,7 @@ Homestead mutation timing remains unchanged.
 - **Armory access** — the Main Menu always offers Armory, including before any Gear or Trinkets are owned. Combat preserves browsing but makes the battling hero’s Armory tab read-only through `useGearCombatRestrictions`; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run characters.
 - **Interaction policy** — `armory-item-state.ts` owns inventory/equipment click decisions alongside targeting affordances. Equipped slots retain locked browsing; inventory tiles retain reservation and compatibility guards. `use-armory-targeting-state.ts` owns mutually exclusive idle, salvage, currency, and salvage-confirmation modes through intent callbacks. Store commands still validate authoritative mutations.
-- **Run start** — `run-start-command.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
+- **Run start** — `run-start-command.ts` includes `computeGearManifest.maxHealth` in the starting Health cap.
 
 ### Write paths
 
@@ -233,7 +233,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) wires `routeCommands
 
 Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Allowed Gear, talent, and Homestead mutations refresh that manifest through `rebindLiveRunMeta` in the same session command. Battle calculations read the battle manifest, never the Gear aggregate directly. `battle/scaled-damage.ts` holds only shared helpers, not a dispatch table: each consumer reads the manifest where its effect applies.
 
-Trinket effects snapshot the same way via `computeTrinketManifest` (`src/lib/trinkets.ts`) over run Boons plus the equipped Trinket. Every `TrinketManifest` key is granted by at least one trinket and has a documented battle/run consumer; the key→consumer map lives in the manifest coverage test (`tests/lib/content-validation/trinket-validation.test.ts`) and fails compilation when a key is added or removed without updating it.
+Trinket effects snapshot the same way via `computeTrinketManifest` (`src/lib/trinkets.ts`) over run Boons plus the equipped Trinket. Manifest fields and neutral defaults derive from the Trinket catalog. [Content validation](../tests/lib/content-validation/trinket-validation.test.ts) checks active effects and matching descriptions; it does not establish battle/run consumer coverage. New effects still require their consumers and focused behavioral coverage under [content authoring](./CONTENT_AUTHORING.md#add-a-new-trinket).
 
 ### Affix rules
 

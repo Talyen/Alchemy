@@ -11,9 +11,10 @@ function addNumericEffect(current: number, added: number): number {
 
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
-  const { companionBondLevels, ...numericEffects } = partial;
-  for (const key of Object.keys(numericEffects) as Array<keyof typeof numericEffects>) {
-    const amount = numericEffects[key];
+  const { companionBondLevels } = partial;
+  for (const key of Object.keys(partial) as Array<keyof HomesteadEffectManifest>) {
+    if (key === "companionBondLevels") continue;
+    const amount = partial[key];
     if (typeof amount === "number") base[key] = addNumericEffect(base[key], amount);
   }
   if (companionBondLevels) {
@@ -53,9 +54,9 @@ export function computeHomesteadEffects(
   applyItemTiers(effects, farmPlots, plantedFarms);
   applyItemTiers(effects, researchUpgrades, completedResearch);
 
-  for (const [id, level] of Object.entries(bondedCompanions)) {
+  for (const id of Object.keys(bondedCompanions)) {
     if (Object.hasOwn(effects.companionBondLevels, id)) {
-      effects.companionBondLevels[id as keyof typeof effects.companionBondLevels] = level;
+      effects.companionBondLevels[id as keyof typeof effects.companionBondLevels] = bondedCompanions[id]!;
     }
   }
 

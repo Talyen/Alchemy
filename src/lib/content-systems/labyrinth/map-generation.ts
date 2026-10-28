@@ -1,12 +1,12 @@
 import { isLootEligible } from "@/lib/loot";
-import { pickRandom, rngInt, shuffle } from "@/lib/rng";
+import { pickRandom, rngInt, shuffleInPlace } from "@/lib/rng";
 import { enemiesByType, enemyById, type BattleCard, type EnemyType } from "@/lib/game-data";
 
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_SUPPORT_TYPES, labyrinthFloorId, labyrinthNodeId } from "./data";
 import { LABYRINTH_GRID, gridKey, labyrinthGridPositions, neighboringGridKeys } from "./grid";
 import { createEnemyModifierPicker, createRewardModifierPicker } from "./modifiers";
-import { canDescendFromLabyrinthNode, floorNodes } from "./map-state";
+import { canDescendFromLabyrinthNode } from "./map-state";
 
 export { canEnterLabyrinthNode } from "./map-state";
 
@@ -27,7 +27,7 @@ function plannedTypes(count: number, rng: () => number, lootDepth: number): Laby
   const eligibleSupports = LABYRINTH_SUPPORT_TYPES.filter(
     (type) => type !== "trinket-shop" || isLootEligible("trinket", lootDepth),
   );
-  const support = shuffle(eligibleSupports, rng);
+  const support = shuffleInPlace(eligibleSupports, rng);
   const middle: LabyrinthNodeType[] = support.slice(0, Math.min(3, count - 2));
   const weighted: LabyrinthNodeType[] = [
     "combat",
@@ -50,7 +50,7 @@ function plannedTypes(count: number, rng: () => number, lootDepth: number): Laby
       middle.push(next);
     }
   }
-  return ["entrance", ...shuffle(middle, rng), "boss"];
+  return ["entrance", ...shuffleInPlace(middle, rng), "boss"];
 }
 
 export function orderTypesForPositions(
@@ -72,7 +72,7 @@ export function orderTypesForPositions(
   const seated = [...types];
   const interiorSlots: number[] = [];
   for (let index = 1; index < types.length - 1; index++) interiorSlots.push(index);
-  const slots = shuffle(interiorSlots, rng);
+  const slots = shuffleInPlace(interiorSlots, rng);
   function conflictsAt(index: number): number {
     let count = 0;
     for (const other of neighbors[index] ?? []) {
@@ -139,11 +139,11 @@ function makeNode(input: {
 }
 
 function generateFloorPositions(rng: () => number): LabyrinthGridPosition[] {
-  const columns = Array.from({ length: LABYRINTH_GRID.columns }, (_, col) => col);
   const entrance = { row: 0, col: rngInt(rng, LABYRINTH_GRID.columns) };
-  const eligibleColumns = columns.filter(
-    (col) => Math.abs(col - entrance.col) >= LABYRINTH_GRID.minimumBossColumnDistance,
-  );
+  const eligibleColumns: number[] = [];
+  for (let col = 0; col < LABYRINTH_GRID.columns; col++) {
+    if (Math.abs(col - entrance.col) >= LABYRINTH_GRID.minimumBossColumnDistance) eligibleColumns.push(col);
+  }
   const boss = {
     row: LABYRINTH_GRID.rows - 1,
     col: pickRandom(eligibleColumns, rng) ?? 0,
@@ -231,8 +231,11 @@ export function expandBeyondBoss(
   const depth = map.currentFloor + 1;
   const nextFloor = map.floors.find((floor) => floor.depth === depth);
   if (nextFloor) {
-    const entrance = floorNodes(map, depth).find((node) => node.type === "entrance");
-    return entrance ? { ...map, currentFloor: depth, currentNodeId: entrance.id } : map;
+    for (const id of nextFloor.nodeIds) {
+      const node = map.nodes[id];
+      if (node?.type === "entrance") return { ...map, currentFloor: depth, currentNodeId: node.id };
+    }
+    return map;
   }
 
   const usedEnemies = new Set<string>();

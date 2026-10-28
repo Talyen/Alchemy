@@ -1,4 +1,3 @@
-import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import type { TalentXP } from "@/lib/game-data";
@@ -152,26 +151,4 @@ export function createInitialPermanentFields(): PermanentProgressFields {
     bondedCompanions,
     effects: computeHomesteadEffects(constructedBuildings, plantedFarms, completedResearch, bondedCompanions),
   };
-}
-
-// The projection itself owns its field list; keep its exact inferred shape
-// while checking each value against the live progress contract.
-export function runFieldsFromSnapshot(snapshot: RunStartSnapshot) {
-  return {
-    characterId: snapshot.characterId,
-    contentSystemType: snapshot.contentSystemType,
-    runDeck: snapshot.freshDeck,
-    selectedDifficulty: snapshot.selectedDifficulty,
-    runPlayerHealth: snapshot.runPlayerHealth,
-    runMaxHealth: snapshot.runMaxHealth,
-    runMetaMaxHealth: snapshot.runMaxHealth,
-    roomsEncountered: snapshot.roomsEncountered,
-    currentAct: snapshot.currentAct,
-    destinationIndexInAct: snapshot.destinationIndexInAct,
-    completedDestinations: snapshot.completedDestinations,
-    lastOfferedDestinations: [],
-    destinationRoundsSinceOffered: {},
-    runBoons: snapshot.runBoons,
-    encounteredRunEnemyIds: [],
-  } satisfies Partial<ActiveRunProgressFields>;
 }
