@@ -6,7 +6,6 @@ import { getKeywordShineColors } from "@/features/alchemy/shared/config";
 import { TALENT_ROW_SIZES, chunkIntoRows } from "@/lib/game-data";
 import type { TalentDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { TalentUnlockBurst } from "./talent-unlock-burst";
 import { TalentNodeFace, TALENT_NODE_UNLOCK_MS } from "./talent-node-face";
 
 export interface TalentTreeProps {
@@ -81,7 +80,6 @@ const TalentCard = memo(function TalentCard({
                 : i18n.text("ui.talent-tree.d4", "Locked"),
         )}
       </span>
-      <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
       <TalentNodeFace talent={talent} title={i18n.displayText(talent.name ?? "Talent")} state={nodeState} />
     </button>
   );

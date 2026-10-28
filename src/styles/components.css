@@ -255,7 +255,7 @@
     transform: rotateY(180deg);
   }
 
-  /* Talent content stays fixed; only its native rounded frame celebrates an unlock. */
+  /* Content and border geometry stay fixed; light travels on the measured rounded path. */
   .talent-node {
     --talent-readable-accent: color-mix(in srgb, var(--talent-accent) 45%, #f6eddf);
     background: #171918;
@@ -266,20 +266,39 @@
     translate: none;
   }
 
-  .talent-node-frame {
+  .talent-node-glow {
     position: absolute;
     z-index: 0;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow:
+      0 0 4px rgb(255 248 223 / 90%),
+      0 0 20px color-mix(in srgb, var(--talent-readable-accent) 90%, transparent),
+      0 0 28px color-mix(in srgb, var(--talent-readable-accent) 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
+  }
+
+  .talent-node-frame {
+    position: absolute;
+    z-index: 1;
     inset: 0;
     border: 2px solid #68716b;
     border-radius: inherit;
     background: #171918;
     box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
     pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
   }
 
   .talent-node-content {
     position: relative;
-    z-index: 1;
+    z-index: 3;
     display: flex;
     width: 100%;
     flex: 1;
@@ -358,10 +377,6 @@
     border-color: #b9bcb3;
   }
 
-  .talent-node[data-node-state="available"] .talent-node-frame:not([data-reduced-motion="true"]) {
-    animation: talentAvailableDrift 3.6s ease-in-out infinite;
-  }
-
   .talent-node:is([data-node-state="unlocked"], [data-node-state="unlocking"]) .talent-node-frame {
     border-color: var(--talent-readable-accent);
   }
@@ -372,9 +387,56 @@
   }
 
   .talent-node-frame[data-unlocking="true"] {
-    animation:
-      talentFramePop 400ms cubic-bezier(0.2, 0.75, 0.3, 1) both,
-      talentFrameGlow 400ms ease-out both;
+    animation: talentBorderIgnition 1000ms linear both;
+  }
+
+  .talent-node-glow[data-unlocking="true"] {
+    animation: talentIgnitionGlow 1000ms ease-out both;
+  }
+
+  .talent-node-ignition {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
+  }
+
+  .talent-ignition-track,
+  .talent-ignition-dash,
+  .talent-ignition-shine {
+    opacity: 0;
+  }
+
+  .talent-ignition-track {
+    stroke: var(--talent-readable-accent);
+    stroke-dasharray: 0 100;
+  }
+
+  .talent-ignition-halo {
+    stroke: var(--talent-readable-accent);
+  }
+
+  .talent-ignition-core {
+    stroke: #fff8df;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-track {
+    animation: talentIgnitionTrack 1000ms linear both;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-dash {
+    animation: talentIgnitionDash 1000ms linear both;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-shine {
+    transform-box: view-box;
+    animation: talentIgnitionShine 1000ms ease-out both;
   }
 
   @supports (color: oklch(from #000 l c h)) {
@@ -386,42 +448,93 @@
     }
   }
 
-  @keyframes talentFramePop {
+  @keyframes talentBorderIgnition {
     0%,
-    100% {
-      transform: scale(1);
+    65% {
+      border-color: #b9bcb3;
     }
-    40% {
-      transform: scale(1.04);
+    75%,
+    100% {
+      border-color: var(--talent-readable-accent);
     }
   }
 
-  @keyframes talentAvailableDrift {
+  @keyframes talentIgnitionGlow {
     0%,
     100% {
-      transform: translateY(0);
-      box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+      opacity: 0;
     }
-    50% {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgb(0 0 0 / 45%);
+    10%,
+    55% {
+      opacity: 0.4;
+    }
+    70% {
+      opacity: 1;
     }
   }
 
-  @keyframes talentFrameGlow {
+  @keyframes talentIgnitionTrack {
     0%,
-    100% {
-      box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+    10% {
+      opacity: 1;
+      stroke-dasharray: 0 100;
     }
-    40% {
-      box-shadow:
-        0 0 12px color-mix(in srgb, var(--talent-readable-accent) 35%, transparent),
-        0 4px 14px rgb(0 0 0 / 35%);
+    65%,
+    90% {
+      opacity: 1;
+      stroke-dasharray: 100 0;
+    }
+    100% {
+      opacity: 0;
+      stroke-dasharray: 100 0;
+    }
+  }
+
+  @keyframes talentIgnitionDash {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: 0;
+    }
+    8%,
+    10% {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+    65% {
+      opacity: 1;
+      stroke-dashoffset: -100;
+    }
+    72%,
+    100% {
+      opacity: 0;
+      stroke-dashoffset: -100;
+    }
+  }
+
+  @keyframes talentIgnitionShine {
+    0%,
+    15% {
+      opacity: 0;
+      transform: translateX(-65%);
+    }
+    20% {
+      opacity: 0.65;
+    }
+    55% {
+      opacity: 0.65;
+      transform: translateX(65%);
+    }
+    65%,
+    100% {
+      opacity: 0;
+      transform: translateX(65%);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .talent-node-frame {
+    .talent-node-frame,
+    .talent-node-glow,
+    .talent-node-ignition * {
       animation: none !important;
     }
   }

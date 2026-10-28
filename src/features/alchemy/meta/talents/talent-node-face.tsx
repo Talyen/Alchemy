@@ -1,15 +1,16 @@
-import { createElement, type CSSProperties, type ReactNode } from "react";
+import { createElement, useRef, type CSSProperties, type ReactNode } from "react";
 
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { getTalentIcon } from "@/features/alchemy/shared/config";
 import { keywordDefinitions, type TalentDefinition } from "@/lib/game-data";
 import { renderTokenizedDescription } from "../../shared/ui/localized-description";
+import { TalentNodeIgnition } from "./talent-node-ignition";
 
 export type TalentNodeState = "locked" | "available" | "unlocking" | "unlocked";
-export const TALENT_NODE_UNLOCK_MS = 400;
+export const TALENT_NODE_UNLOCK_MS = 1000;
 
-/** The rounded frame celebrates an unlock while the reading surface stays fixed. */
+/** Unlock feedback changes only color and light; every contour stays stationary. */
 export function TalentNodeFace({
   talent,
   state,
@@ -21,14 +22,19 @@ export function TalentNodeFace({
 }) {
   const i18n = useGameTranslation();
   const reduceMotion = useReducedMotionPreference();
+  const frameRef = useRef<HTMLSpanElement>(null);
+  const animateUnlock = state === "unlocking" && !reduceMotion;
   return (
     <>
+      <span className="talent-node-glow" data-unlocking={animateUnlock ? "true" : undefined} aria-hidden="true" />
       <span
+        ref={frameRef}
         className="talent-node-frame"
-        data-unlocking={state === "unlocking" && !reduceMotion ? "true" : undefined}
+        data-unlocking={animateUnlock ? "true" : undefined}
         data-reduced-motion={reduceMotion ? "true" : undefined}
         aria-hidden="true"
       />
+      {!reduceMotion && <TalentNodeIgnition frameRef={frameRef} active={animateUnlock} />}
       <span className="talent-node-content">
         <span className="talent-node-header">
           <span className="talent-node-icon-wrap" aria-hidden="true">
