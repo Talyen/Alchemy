@@ -6,7 +6,13 @@ import type { BattleStarted } from "@/features/alchemy/shared/stores/commands/ba
 import { presentCompanionAction } from "./companion-presentation";
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
-  function presentBattleStart({ startingTexts, companionId, outcome, openingCardIds }: BattleStarted) {
+  function presentBattleStart({
+    startingTexts,
+    companionId,
+    companionActions,
+    outcome,
+    openingCardIds,
+  }: BattleStarted) {
     const battleState = ctx.battle.read().battleState;
     preloadBattleSounds(openingCardIds, battleState.currentEnemy.abilityIds);
     session.resetBattleSession();
@@ -19,7 +25,8 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       : battleState.deathsDoorActive
         ? playBattleEvent("deathsDoor")
         : undefined;
-    if (companionId) {
+    if (companionActions) presentationStore.enqueueCompanionActions(companionActions);
+    else if (companionId) {
       presentCompanionAction(presentationStore, battleState.activeCompanion);
     }
     presentCombatTexts(presentationStore, startingTexts, focalSound);

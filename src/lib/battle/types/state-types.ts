@@ -179,9 +179,16 @@ export interface BattleResolution {
   combatTexts: CombatTextEvent[];
 }
 
+/** Resolved presentation facts, never part of a saved battle or another RNG draw. */
+export interface CompanionActionCue {
+  companionId: CompanionDefinition["id"];
+  kind: "attack" | "cast";
+}
+
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
   rng: Rng;
+  onCompanionAction?: (cue: CompanionActionCue) => void;
   observer?: BattleResolutionObserver;
   /** A deferred offer has pending choices but no identities until external input. */
   sampleWishOptions?: (sample: () => BattleCard[]) => { cards: BattleCard[]; deferred: boolean };

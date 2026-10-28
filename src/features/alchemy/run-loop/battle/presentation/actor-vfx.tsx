@@ -5,6 +5,7 @@ import { CompanionPanel } from "@/features/alchemy/run-loop/battle/presentation/
 import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
+import { CompanionActionMotion } from "./ui/companion-action-motion";
 
 type ShakingArtPanelProps = Omit<
   ComponentProps<typeof ArtPanel>,
@@ -37,8 +38,17 @@ export function ShakingArtPanel({ presentation, side, shimmerId, ...props }: Sha
 
 export function ShakingCompanionPanel({
   presentation,
+  inactive = false,
   ...props
-}: Omit<ComponentProps<typeof CompanionPanel>, "shaking"> & { presentation: BattlePresentationStore }) {
+}: Omit<ComponentProps<typeof CompanionPanel>, "shaking"> & {
+  presentation: BattlePresentationStore;
+  inactive?: boolean;
+}) {
   const shaking = useStore(presentation, (s) => s.companionShaking);
-  return <CompanionPanel {...props} shaking={shaking} />;
+  const cue = useStore(presentation, (s) => s.companionActionCue);
+  return (
+    <CompanionActionMotion cue={!inactive && cue?.companionId === props.companion.id ? cue : null}>
+      <CompanionPanel {...props} shaking={shaking} />
+    </CompanionActionMotion>
+  );
 }

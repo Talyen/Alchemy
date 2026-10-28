@@ -107,9 +107,10 @@ describe("End Turn execution and playback", () => {
     releaseDiscard();
     await vi.runAllTimersAsync();
     const after = battlePresentation.getState();
-    const utility = companionId === "library-owl";
-    expect(after.playerAttackToken - before.playerAttackToken).toBe(utility ? 0 : 1);
-    expect(after.playerCastToken - before.playerCastToken).toBe(utility ? 1 : 0);
+    expect(after.playerAttackToken).toBe(before.playerAttackToken);
+    expect(after.playerCastToken).toBe(before.playerCastToken);
+    // All queued action animations have completed; no stale cue survives.
+    expect(after.companionActionCue).toBeNull();
     expect(readGameplayState(defaultGameSession)).toBe(committed);
   });
 

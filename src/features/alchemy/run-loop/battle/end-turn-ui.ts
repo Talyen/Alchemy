@@ -22,6 +22,7 @@ export interface PlayTurnFramesOptions {
 
 function presentTurnResolution(frame: BattleTurnFrame, presentation: BattlePresentationPort) {
   const { before, turn } = frame;
+  presentation.enqueueCompanionActions(frame.companionActions ?? []);
   const texts = turn.kind === "haste" ? turn.combatTexts : turn.enemyResolutionCombatTexts;
   const sound = playResolvedCombatSound(
     turn.kind === "haste"
@@ -44,7 +45,8 @@ function presentCompanionResolution(frame: BattleTurnFrame, presentation: Battle
     !turn.state.deathsDoorActive && companion.state.deathsDoorActive,
   );
   if (animate) {
-    presentCompanionAction(presentation, turn.state.activeCompanion);
+    if (companion.actions) presentation.enqueueCompanionActions(companion.actions);
+    else presentCompanionAction(presentation, turn.state.activeCompanion);
   }
   presentCombatTexts(presentation, companion.texts, sound);
 }
@@ -142,7 +144,7 @@ export function createBattleEndTurnUi(
           presentCombatTexts(presentation, frame.turn.enemyTurnStartCombatTexts);
         }
         presentTurnResolution(frame, presentation);
-        presentCompanionResolution(frame, presentation);
+        presentCompanionResolution(frame, presentation, true);
       }
       presentation.setDisplayedBattle(null);
       presentation.resetHandTransferUi();

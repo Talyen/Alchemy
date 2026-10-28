@@ -166,10 +166,21 @@ export function ArtPanel(props: ArtPanelProps) {
               />
             </CombatantDodge>
           </div>
-          {artCorner}
         </div>
         <ActorStatsPanel {...props} healthToken={healthToken} cardWidthClass={resolvedCardWidthClass} />
       </CombatantAttackLunge>
+      {artCorner ? (
+        <div
+          className={cn(
+            artWrapClass,
+            "pointer-events-none absolute top-0 [&>*]:pointer-events-auto",
+            resolvedCardWidthClass,
+          )}
+          style={{ height: "calc(var(--battle-portrait-height) + 2px)" }}
+        >
+          {artCorner}
+        </div>
+      ) : null}
     </div>
   );
 }

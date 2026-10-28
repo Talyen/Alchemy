@@ -53,9 +53,9 @@ describe("createBattleInit", () => {
     const before = battlePresentation.getState();
     init.presentBattleStart({ companionId: id, startingTexts: [], openingCardIds: [], outcome: null });
     const after = battlePresentation.getState();
-    const utility = id === "library-owl";
-    expect(after.playerAttackToken - before.playerAttackToken).toBe(utility ? 0 : 1);
-    expect(after.playerCastToken - before.playerCastToken).toBe(utility ? 1 : 0);
+    expect(after.playerAttackToken).toBe(before.playerAttackToken);
+    expect(after.playerCastToken).toBe(before.playerCastToken);
+    expect(after.companionActionCue).toMatchObject({ companionId: id, kind: id === "library-owl" ? "cast" : "attack" });
   });
 
   it("derives current talent and homestead manifests from the battle-start draft", () => {

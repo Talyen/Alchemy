@@ -13,6 +13,7 @@ export interface CardEffectResolutionContext {
   // resolve no damage for Unique repeats or Archery echoes.
   attackAttempted?: { value: boolean };
   onDamageDealt?: (amount: number) => void;
+  onChanceResolved?: (effect: Extract<BattleCardEffect, { kind: "chance" }>, success: boolean) => void;
   damageMultiplier?: number;
   baseDamageBonus?: number;
   guaranteedCrit?: boolean;

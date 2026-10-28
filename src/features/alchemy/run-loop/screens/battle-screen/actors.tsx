@@ -81,6 +81,7 @@ export function BattleActors({
                 <div className={battleCompanionCornerClass}>
                   <ShakingCompanionPanel
                     presentation={presentation}
+                    inactive={isPlayerDefeated(battleState)}
                     companion={battleState.activeCompanion}
                     ccKeyword={playerCcKeyword}
                     turnActive={isPlayerTurn}
