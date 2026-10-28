@@ -214,7 +214,8 @@ export function nativeMusicOffsets(recipe) {
   if (!recipe.music.lyrics) return offsets;
   for (const shot of compileTimeline(recipe).shots) {
     const clip = recipe.clips.find((entry) => entry.id === shot.clip);
-    if (clip.scene !== "boss" && clip.scene !== "checkpoint") continue;
+    const resumesBoss = clip.scene === "menu" && clip.checkpoint && clip.boss;
+    if (clip.scene !== "boss" && clip.scene !== "checkpoint" && !resumesBoss) continue;
     if (clip.lyrics === false) continue;
     if (clip.boss !== recipe.music.boss)
       throw new Error(`${clip.id}: native lyrics need the battle boss to match the soundtrack`);
@@ -255,4 +256,14 @@ export function compileRenderChunks(timeline) {
     from: index * frames,
     to: Math.min(timeline.durationInFrames - 1, (index + 1) * frames - 1),
   }));
+}
+
+/** A resumed bundle cannot silently mix different source-capture policies. */
+export function captureOptionsMatch(start, options) {
+  return (
+    (start.encoderPolicy ?? "lossless") === (options.encoderPolicy ?? "lossless") &&
+    (start.pinVideoStart ?? false) === (options.pinVideoStart ?? false) &&
+    (start.foregroundLyrics ?? false) === (options.foregroundLyrics ?? false) &&
+    JSON.stringify(start.captureWindows ?? null) === JSON.stringify(options.captureWindows ?? null)
+  );
 }

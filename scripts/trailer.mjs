@@ -97,6 +97,10 @@ Capture/render are intentional media-production jobs. On the shared Mac, wrap ma
     doctor();
     if (fs.existsSync(path.join(out, "capture.json"))) throw new UsageError("Bundle is already complete; use render");
     const start = JSON.parse(fs.readFileSync(path.join(out, "capture-start.json"), "utf8"));
+    if (start.captureWindows)
+      throw new UsageError(
+        "Preserve selected-window captures and replay into a fresh bundle; full-master recovery does not apply",
+      );
     await captureRecipe({
       root: ROOT,
       out,
@@ -104,6 +108,8 @@ Capture/render are intentional media-production jobs. On the shared Mac, wrap ma
       draft: start.draft,
       source: start.source,
       recover: true,
+      pinVideoStart: start.pinVideoStart ?? false,
+      encoderPolicy: start.encoderPolicy ?? "lossless",
     });
     console.log(`Recovered bundle: ${out}`);
     return;
