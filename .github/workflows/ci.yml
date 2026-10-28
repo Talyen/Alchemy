@@ -199,6 +199,15 @@ jobs:
 
       - uses: ./.github/actions/setup
 
+      # Reuse compiler analysis, never a pass/fail result: static checks always run.
+      - name: Cache incremental TypeScript state
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: .cache/tsbuild/
+          key: tsbuild-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig*.json') }}-${{ github.sha }}
+          restore-keys: |
+            tsbuild-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig*.json') }}-
+
       - name: Static checks
         run: npm run lint:ci
 
@@ -316,6 +325,7 @@ jobs:
         with:
           sparse-checkout: |
             /*
+            !/assets/sources/
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -372,6 +382,7 @@ jobs:
         with:
           sparse-checkout: |
             /*
+            !/assets/sources/
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -420,6 +431,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-desktop-win
+          compression-level: 0
           path: release-desktop/
           retention-days: 3
 

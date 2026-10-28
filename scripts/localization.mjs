@@ -41,7 +41,6 @@ const serializeRuntime = (value) =>
   "aliases": ${serializeRecords(value.aliases).trimEnd()}
 }
 `;
-const runtimeCatalog = (messages, glossary) => packCatalogs(compiled(messages, glossary), messages);
 const write = async (file, value) => {
   const destination = path.join(directory, file + ".json");
   const temporary = `${destination}.${process.pid}.tmp`;
@@ -67,28 +66,23 @@ function compiled(messages, glossary) {
       for (const [category, value] of Object.entries(message.forms)) locales.en[`${id}_${category}`] = value;
   }
   for (const locale of TARGETS) {
-    const entries = resolveAliases(messages, read(locale), glossary[locale], locale);
+    const translations = read(locale);
+    const entries = resolveAliases(messages, translations, glossary[locale], locale);
+    const current = (id, entry) =>
+      messages[id] &&
+      entry.reviewed === true &&
+      entry.sourceHash === sourceHash(messages[id], glossary[locale], locale);
     locales[locale] = Object.fromEntries(
       Object.entries(entries)
-        .filter(
-          ([id, entry]) =>
-            messages[id] &&
-            entry.reviewed === true &&
-            entry.sourceHash === sourceHash(messages[id], glossary[locale], locale),
-        )
+        .filter(([id, entry]) => current(id, entry))
         .map(([id, entry]) => [id, entry.text]),
     );
-  }
-  for (const locale of TARGETS)
-    for (const [id, entry] of Object.entries(read(locale))) {
-      if (
-        messages[id] &&
-        entry.reviewed === true &&
-        entry.sourceHash === sourceHash(messages[id], glossary[locale], locale) &&
-        entry.forms
-      )
+    // Stored plural forms follow the base messages; aliases derive text only.
+    for (const [id, entry] of Object.entries(translations)) {
+      if (current(id, entry) && entry.forms)
         for (const [category, value] of Object.entries(entry.forms)) locales[locale][`${id}_${category}`] = value;
     }
+  }
   return locales;
 }
 
@@ -112,8 +106,8 @@ function steamExports(messages, locales) {
   }
   return { store: serialize(store), presence: `"lang"\n{\n${presence.join("\n")}\n}\n` };
 }
-function writeSteamExports(messages, glossary) {
-  const output = steamExports(messages, compiled(messages, glossary));
+function writeSteamExports(messages, catalogs) {
+  const output = steamExports(messages, catalogs);
   fs.writeFileSync(path.join(ROOT, "steam/localized-store-copy.json"), output.store);
   fs.writeFileSync(path.join(ROOT, "steam/rich-presence.vdf"), output.presence);
 }
@@ -195,8 +189,9 @@ try {
         locale,
         validateResults({ messages, glossary: glossary[locale], locale, results: {}, previous: read(locale) }),
       );
-    await write("runtime", runtimeCatalog(messages, glossary));
-    writeSteamExports(messages, glossary);
+    const catalogs = compiled(messages, glossary);
+    await write("runtime", packCatalogs(catalogs, messages));
+    writeSteamExports(messages, catalogs);
     console.log(`Extracted ${Object.keys(messages).length} English messages`);
     if (command === "prepare") {
       fs.mkdirSync(path.dirname(packetFile), { recursive: true });
@@ -234,10 +229,11 @@ try {
     );
     // Validate every locale before replacing any catalog.
     for (const [locale, entries] of Object.entries(next)) await write(locale, entries);
-    await write("runtime", runtimeCatalog(messages, glossary));
-    writeSteamExports(messages, glossary);
+    const catalogs = compiled(messages, glossary);
+    await write("runtime", packCatalogs(catalogs, messages));
+    writeSteamExports(messages, catalogs);
     console.log(`Applied reviewed translations for ${Object.keys(next).join(", ") || "no pending locales"}`);
-    if (command === "finish") checkCatalogs(messages, glossary, issues);
+    if (command === "finish") checkCatalogs(messages, glossary, issues, catalogs);
   } else if (command === "check") {
     checkCatalogs(messages, glossary, issues);
   }
@@ -246,9 +242,8 @@ try {
   process.exitCode = 1;
 }
 
-function checkCatalogs(messages, glossary, issues) {
+function checkCatalogs(messages, glossary, issues, catalogs = compiled(messages, glossary)) {
   const failures = [...issues];
-  const catalogs = compiled(messages, glossary);
   // These captions are baked into reviewed artwork, so text changes need new art.
   if (!isDeepStrictEqual(Object.keys(promoCopy).sort(), Object.keys(languages).sort()))
     failures.push("Promo artwork languages differ from the shipped registry");
