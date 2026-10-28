@@ -1738,19 +1738,21 @@ html.alchemy-disable-animations .card-play-rejected::before {
     mask-image: none;
     text-shadow: none;
     animation: gear-affix-fade-in 90ms linear both;
+    /* The global reduced-motion rule otherwise reduces this stationary fade to 1ms. */
+    animation-duration: 90ms !important;
   }
   .gear-affix-exit > .gear-affix-ink-line {
     animation-name: gear-affix-fade-out;
   }
   .gear-affix-replacement .gear-affix-enter > .gear-affix-ink-line {
-    animation-duration: 90ms;
+    animation-duration: 90ms !important;
     animation-delay: 90ms;
   }
   .gear-affix-enter > .gear-affix-ink-description {
     animation-delay: 0ms;
   }
   .gear-affix-row[data-affix-change="removed"] {
-    animation-duration: 180ms;
+    animation-duration: 180ms !important;
   }
 }
 html.alchemy-disable-animations .gear-affix-enter > .gear-affix-ink-line,
