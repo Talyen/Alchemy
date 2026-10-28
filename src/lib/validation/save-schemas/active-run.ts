@@ -40,12 +40,16 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
     kind: z.literal("healHealth"),
     amount: z.number().int().nonnegative().catch(0),
   }),
-  z.object({ kind: z.literal("gainGold"), amount: z.number() }),
+  z.object({ kind: z.literal("gainGold"), amount: z.number().int().nonnegative().catch(0) }),
   z.object({ kind: z.literal("gainXP"), keyword: KnownKeywordSchema, amount: z.number().int().nonnegative().catch(0) }),
   z.object({ kind: z.literal("gainTrinket"), trinketId: z.string() }),
   z.object({ kind: z.literal("gainRandomGear") }),
   z.object({ kind: z.literal("gainGeneratedGear"), baseItemId: z.string(), astral: z.literal(true).optional() }),
-  z.object({ kind: z.literal("gainMaterial"), material: MaterialIdSchema, amount: z.number() }),
+  z.object({
+    kind: z.literal("gainMaterial"),
+    material: MaterialIdSchema,
+    amount: z.number().int().nonnegative().catch(0),
+  }),
 ]);
 
 const MysteryChoicePersistSchema = z.object({

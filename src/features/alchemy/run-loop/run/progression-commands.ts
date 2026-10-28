@@ -131,7 +131,7 @@ export function createProgressionCommands(gameSession: GameSession) {
               return rejectCommand("Activity is not a visit", null);
           }
           completeRunRoom(draft);
-          setRoomsEncountered(draft, (previous) => previous + 1);
+          setRoomsEncountered(draft, (previous) => Math.min(Number.MAX_SAFE_INTEGER, previous + 1));
           clearMysteryVisitState(draft);
           clearShopOfferings(draft);
           setCorruptionResult(draft, null);

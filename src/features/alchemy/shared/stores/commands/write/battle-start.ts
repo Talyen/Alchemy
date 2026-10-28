@@ -36,7 +36,7 @@ export function initializeBattle(draft: GameplayDraft, request: BattleStartReque
   if (!enemy) return null;
   const startingHealth = draft.run.activeRun.runPlayerHealth;
   const run = draft.run.activeRun;
-  const nextRoomsEncountered = run.roomsEncountered + 1;
+  const nextRoomsEncountered = Math.min(Number.MAX_SAFE_INTEGER, run.roomsEncountered + 1);
   setRoomsEncountered(draft, nextRoomsEncountered);
   const encounterTraitIds = run.contentSystemType === "labyrinth" ? draft.session.activeLabyrinthModifiers : [];
   const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;

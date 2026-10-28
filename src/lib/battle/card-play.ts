@@ -217,7 +217,7 @@ function resolveCardPlay(
     ...paymentState,
     hand: paymentState.hand.filter((_, handIndex) => handIndex !== index),
     flags: { ...paymentState.flags, playNextCardTwice: false },
-    cardsPlayedThisTurn: paymentState.cardsPlayedThisTurn + 1,
+    cardsPlayedThisTurn: Math.min(Number.MAX_SAFE_INTEGER, paymentState.cardsPlayedThisTurn + 1),
     mana: Math.max(0, paymentState.mana - effectiveCost),
   };
   if (manaSpent > 0 && state.playerStatuses.block === 0 && state.gearEffects.blockOnPaidCardWithoutBlock > 0) {
