@@ -65,6 +65,8 @@ function validateDefinitionReferences(collector: Collector, data: ResolvedGearDa
   for (const definition of data.definitionList) {
     if (!Object.hasOwn(data.definitions, definition.id))
       collector.error("gear", definition.id, "Listed gear definition is missing from definition record");
+    else if (data.definitions[definition.id] !== definition)
+      collector.error("gear", definition.id, "Listed gear definition differs from the registered definition");
     if (!Object.hasOwn(data.baseItems, definition.baseItemId))
       collector.error("gear", definition.id, `Gear definition references unknown base item ${definition.baseItemId}`);
     if (definition.rarity === "unique" && !uniqueIds.has(definition.id))
