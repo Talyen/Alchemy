@@ -1342,6 +1342,7 @@
   "description.59beb64628cde4ce": {"text":"<keyword0>出血</keyword0>多量","sourceHash":"8294ecd5b1f29f6e1ef27f6ea24de77b3c27f53426037fa893bad70714354b04","reviewed":true},
   "description.5a50193db905a52d": {"text":"<keyword0>体力</keyword0>が半分未満になると<keyword1>装甲</keyword1>を{{value0}}得る","sourceHash":"7a548dbd30fca52a22dfb9379a5bc27e9090b71f49fed8a454c88057ad72e0a7","reviewed":true},
   "description.5a69d1fa9b9de404": {"text":"<keyword0>仲間</keyword0>がいなければ、仲間を<keyword1>願う</keyword1>","sourceHash":"a4e0d95523bb943e9250742e10561e46e500da0f81b6ac49511a339000ae9035","reviewed":true},
+  "description.5a8b0795b50c1d43": {"text":"<keyword0>冷気</keyword0>ダメージを{{value0}}追加する。受ける<keyword1>冷気</keyword1>ダメージが半分になる。","sourceHash":"116c7e039fc0eb895b7060c9864bd08604b3c9c66f5aa639d149521c4dc0f52b","reviewed":true},
   "description.5aa695a7e2cf7f2f": {"text":"<magnitude0>{{value0}}</magnitude0>–<magnitude1>{{value1}}</magnitude1>の<keyword0>聖</keyword0>または<keyword1>気絶</keyword1>ダメージを与える","sourceHash":"a812c21d2bc58d39607fc6cb540af2ed16fb19c64c7d7a3d86448634c6c8d048","reviewed":true},
   "description.5ac736c3efad1c29": {"text":"<keyword1>毒</keyword1>状態の敵を倒すと、{{value0}}%の確率で{{value1}}<keyword0>ゴールド</keyword0>を盗む","sourceHash":"e914991ee69b37a3023617c1609825e3c94ce76608f59cbd56e9a450aca8a7d9","reviewed":true},
   "description.5af7f17d8596b491": {"text":"<keyword0>炎上</keyword0>状態の英雄へのダメージが{{value0}}%増加する。","sourceHash":"0b3995abeb7f25f79bd388f794d0637ccfbfa1c7f2e84fefc06b1ad3418923c7","reviewed":true},

@@ -18,6 +18,8 @@ export const GIANT_SNAKE_EXTRA_BLOCK_STRIP = 1;
 export const TRAIT_DAMAGE_WEAKNESS_MULTIPLIER = 2;
 
 export const LABYRINTH_HALF_DAMAGE_WARDS = [
+  // Glacial Surge shares the same non-stacking Freeze ward as Frostbound Ward.
+  { traitId: "glacial-shell", damageType: "freeze" },
   { traitId: "venom-ward", damageType: "poison" },
   { traitId: "crimson-ward", damageType: "bleed" },
   { traitId: "sunward", damageType: "holy" },
