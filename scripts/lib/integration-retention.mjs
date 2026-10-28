@@ -60,5 +60,3 @@ export function pruneIntegratedRuns(root, { now = Date.now(), dryRun = false } =
   }
   return removed;
 }
-
-export const INTEGRATION_RETENTION_POLICY = POLICY;
