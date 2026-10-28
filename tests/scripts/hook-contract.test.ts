@@ -78,6 +78,7 @@ describe("canonical verification commands", () => {
     ).toEqual(
       [
         "dependency-security",
+        "trailer-dependency-security",
         "localization",
         "static-checks",
         "documentation-checks",

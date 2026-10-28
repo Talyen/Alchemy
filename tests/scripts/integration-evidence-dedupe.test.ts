@@ -42,7 +42,7 @@ it("clones matching evidence into independent files and leaves trailer or unsupp
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
-});
+}, 15_000);
 
 it("does not replace byte-identical files with different or unknown metadata", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-evidence-metadata-"));

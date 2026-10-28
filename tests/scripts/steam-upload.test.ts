@@ -79,7 +79,11 @@ describe("steam-upload script", () => {
     await ensureFakeWinUnpacked();
     const source = `import cp from 'node:child_process';
       import {syncBuiltinESMExports} from 'node:module';
-      cp.spawnSync = () => { throw new Error('unexpected SteamCMD launch'); };
+      cp.spawnSync = (command, args) => {
+        if (command === 'python3' && args.includes('--prune') && args.includes('--environment'))
+          return { status: 0, stdout: '{"removed":false}' };
+        throw new Error('unexpected SteamCMD launch');
+      };
       syncBuiltinESMExports();
       process.argv = [process.execPath, 'scripts/steam-upload.mjs', '--dry-run'];
       await import('./scripts/steam-upload.mjs');`;

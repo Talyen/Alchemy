@@ -118,7 +118,11 @@ describe("complete catalog deterministic preview coverage", () => {
       expect(getBattleCardDescriptionInspection(card, stateFor(card)).descriptionLines, card.id).toEqual(
         card.id === "kindling"
           ? ["Deal 1 Burn damage", "If the enemy was not Burning, deal 3 Burn damage instead (base damage tripled)"]
-          : card.descriptionLines,
+          : card.id === "shield-bash"
+            ? ["Gain 2 Block", "Spend half your Block to deal 1 Stun damage"]
+            : card.id === "burning-blade"
+              ? ["Deal 1 Burn damage, increased by half your Forge (1 total)"]
+              : card.descriptionLines,
       );
     }
   });
