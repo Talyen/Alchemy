@@ -187,7 +187,7 @@ describe("chooseCard tag filtering", () => {
     expect(slashOnly).toHaveLength(1);
     expect(getCardKeywords(slashOnly[0])).not.toContain("archery");
 
-    using _poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
+    using _poolSpy = vi.spyOn(cardPools, "getOfferableCardPoolView").mockReturnValue(slashOnly);
 
     apply({ kind: "chooseCard", tag: "archery" });
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices!;

@@ -82,6 +82,8 @@ export default {
     "tests/fixtures/e2e.ts": ["exports"],
   },
   ignore: ["tests/environment.d.ts", "tests/electron/electron-environment.d.ts", "tests/trailer-media-types.d.ts"],
+  // The lyrics tool invokes the system Python interpreter, not an npm package binary.
+  ignoreBinaries: ["python3"],
   ignoreDependencies: [
     // Loaded via node_modules path string in scripts/lib/command-invocation.mjs; knip cannot trace it.
     "electron-builder",

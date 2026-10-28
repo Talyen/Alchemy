@@ -9,6 +9,11 @@ import { defineScript } from "./lib/script-run.mjs";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const STEPS = [
   ["dependency security", "npm", ["run", "check:dependencies"]],
+  [
+    "trailer dependency security",
+    "npm",
+    ["audit", "--prefix", "scripts/trailers", "--package-lock-only", "--audit-level=moderate"],
+  ],
   ["localization", "npm", ["run", "i18n:check"]],
   ["static checks", "npm", ["run", "check:static"]],
   ["documentation checks", "npm", ["run", "docs:check"]],

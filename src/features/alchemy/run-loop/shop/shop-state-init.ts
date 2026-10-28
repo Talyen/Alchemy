@@ -44,10 +44,6 @@ export function merchantShopPoolView(modifiers: readonly EncounterRewardTraitId[
   return labyrinthCardShopPool(getOfferableCardPoolView(), modifiers);
 }
 
-export function merchantShopPool(modifiers: readonly EncounterRewardTraitId[] = []): BattleCard[] {
-  return [...merchantShopPoolView(modifiers)];
-}
-
 export function resampleCardShopOfferings(
   deck: BattleCard[],
   pool: readonly BattleCard[],
