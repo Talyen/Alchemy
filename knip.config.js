@@ -27,6 +27,8 @@ export default {
     "src/app/playthrough/{career,fixtures,report}.ts",
     // Staging adapters loaded by the media CLI through Vite SSR.
     "tests/trailers/scenarios.ts",
+    // The Steam trailer suite is a separate production CLI entry point.
+    "trailers/steam-suite-2026-10-25/capture-session.mjs",
     // Loaded through Vite SSR by the balance and loot report CLI runner.
     "src/lib/balance/index.ts",
     "src/lib/game-data/index.ts",
