@@ -1,5 +1,5 @@
 import { makeTestCard } from "../../../../fixtures/cards";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CorruptionScreen } from "@/features/alchemy/run-loop/screens/corruption-screen";
@@ -93,9 +93,12 @@ describe("CorruptionScreen", () => {
     async (card) => {
       render(<CorruptionScreen runDeck={[card]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
 
-      expect(await screen.findByRole("button", { name: /Corrupt a Card/i })).toHaveProperty("disabled", true);
+      const enter = await screen.findByRole("button", { name: /Corrupt a Card/i });
+      expect(enter).toHaveProperty("disabled", true);
       expect(screen.getByRole("button", { name: "Leave" })).toHaveProperty("disabled", false);
-      expect(screen.getByText("No eligible cards remain.")).toBeTruthy();
+      expect(
+        within(enter.closest<HTMLElement>("[data-corruption-entry-panel]")!).getByText("No eligible cards remain."),
+      ).toBeTruthy();
     },
   );
 
