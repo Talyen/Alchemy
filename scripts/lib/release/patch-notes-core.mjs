@@ -91,7 +91,7 @@ export function parseConventionalCommit(subject) {
 export function cleanCommitBody(body) {
   return (body ?? "")
     .split("\n")
-    .filter((line) => !line.startsWith("Co-authored-by:"))
+    .filter((line) => !/^\s*Co-authored-by:/iu.test(line))
     .filter((line) => !USER_FACING_TRAILER.test(line.trim()))
     .join("\n")
     .trim();
@@ -106,7 +106,7 @@ export function isInfraPath(filePath) {
   if (INFRA_NAMES.has(filePath) || filePath.endsWith(".md") || filePath.endsWith(".generated.ts")) {
     return true;
   }
-  if (filePath.includes("/tests/") || filePath.endsWith(".test.ts") || filePath.endsWith(".spec.ts")) {
+  if (filePath.includes("/tests/") || /\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(filePath)) {
     return true;
   }
   return INFRA_PREFIXES.some((prefix) => filePath.startsWith(prefix));
@@ -186,7 +186,9 @@ export function buildChangelogUnreleased(commits) {
 
   for (const { subject, body } of normalizeCommits(commits)) {
     const parsed = parseConventionalCommit(subject);
-    const section = TYPE_TO_CHANGELOG_SECTION[parsed.type];
+    const section = Object.hasOwn(TYPE_TO_CHANGELOG_SECTION, parsed.type)
+      ? TYPE_TO_CHANGELOG_SECTION[parsed.type]
+      : undefined;
     if (!section || section === TYPE_TO_CHANGELOG_SECTION.other) continue;
     if (!grouped.has(section)) grouped.set(section, []);
 
@@ -227,7 +229,7 @@ export function buildPatchNotesMarkdown(version, commits, knownIssues = []) {
   for (const commit of normalizeCommits(commits)) {
     if (!isUserFacing(commit)) continue;
     const parsed = parseConventionalCommit(commit.subject);
-    const target = TYPE_TO_PATCH_SECTION[parsed.type] ?? "Features";
+    const target = Object.hasOwn(TYPE_TO_PATCH_SECTION, parsed.type) ? TYPE_TO_PATCH_SECTION[parsed.type] : "Features";
     const lines = extractPlayerFacingLines(commit);
     if (lines.length === 0) continue;
     sections[target].push(...lines);
@@ -295,7 +297,7 @@ export function extractChangelogSection(content, heading) {
 export function replaceChangelogUnreleased(content, unreleasedMarkdown) {
   const unreleasedHeading = "## [Unreleased]";
   const unreleasedBlock = unreleasedMarkdown.trimEnd() + "\n";
-  const unreleasedIndex = content.indexOf(unreleasedHeading);
+  const unreleasedIndex = findUnreleasedHeading(content);
 
   if (unreleasedIndex === -1) {
     const versionSection = content.search(/\n## \[/u);
@@ -312,6 +314,10 @@ export function replaceChangelogUnreleased(content, unreleasedMarkdown) {
   return `${content.slice(0, unreleasedIndex)}${unreleasedBlock}${content.slice(endIndex)}`;
 }
 
+function findUnreleasedHeading(content) {
+  return /^[ \t]*## \[Unreleased\](?: \([^\r\n]*)?[ \t]*\r?$/mu.exec(content)?.index ?? -1;
+}
+
 export function promoteUnreleasedSection(content, version, dateIso) {
   const unreleased = extractChangelogSection(content, "## [Unreleased]");
   const heading = `## [${version.replace(/^v/, "")}]`;
@@ -325,7 +331,7 @@ export function promoteUnreleasedSection(content, version, dateIso) {
   const emptyUnreleased = buildChangelogUnreleased([]);
 
   let next = replaceChangelogUnreleased(content, emptyUnreleased);
-  const insertAt = next.indexOf("## [Unreleased]");
+  const insertAt = findUnreleasedHeading(next);
   const versionBlock = `${versionHeading}\n\n${promotedBody}\n\n`;
   next = `${next.slice(0, insertAt)}${versionBlock}${next.slice(insertAt)}`;
   return next;

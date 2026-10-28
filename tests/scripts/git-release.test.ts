@@ -8,6 +8,8 @@ import {
   latestVersionTag,
   previousVersionTag,
   resolvePatchNoteRange,
+  assertValidSemver,
+  assertValidTag,
 } from "../../scripts/lib/release/git-release.mjs";
 
 const tempDirs: string[] = [];
@@ -46,6 +48,17 @@ function commitFile(root: string, relativePath: string, message: string, body = 
 }
 
 describe("git-release", () => {
+  it("accepts complete semantic versions and rejects malformed identifiers in versions and tags", () => {
+    for (const version of ["0.1.0", "1.2.3-rc.0+build.01", "1.2.3-alpha-1"]) {
+      expect(() => assertValidSemver(version)).not.toThrow();
+      expect(() => assertValidTag(`v${version}`)).not.toThrow();
+    }
+    for (const version of ["01.2.3", "1.02.3", "1.2.3-01", "1.2.3-rc..1", "1.2.3+build."]) {
+      expect(() => assertValidSemver(version)).toThrow("Invalid semantic version");
+      expect(() => assertValidTag(`v${version}`)).toThrow("Invalid tag revision");
+    }
+    expect(() => assertValidTag("HEAD")).not.toThrow();
+  });
   it("returns subject, body, and changed paths for commits since a tag", () => {
     const root = gitRepo();
     commitFile(root, "seed.txt", "chore: seed");

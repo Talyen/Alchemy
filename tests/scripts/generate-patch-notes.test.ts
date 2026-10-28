@@ -17,6 +17,41 @@ import {
 } from "../../scripts/lib/release/patch-notes-core.mjs";
 
 describe("generate-patch-notes", () => {
+  it("omits case-insensitive and indented coauthor trailers from player notes", () => {
+    const lines = extractPlayerFacingLines({
+      subject: "fix: repair the battle",
+      body: "Players can finish the battle.\n\n  co-authored-by: Contributor <contributor@example.com>",
+    });
+    expect(lines).toEqual(["Players can finish the battle."]);
+  });
+
+  it("treats colocated TSX and JavaScript test files as infrastructure", () => {
+    for (const file of ["src/ui/widget.test.tsx", "src/ui/widget.spec.jsx", "src/lib/logic.test.mjs"])
+      expect(isUserFacing({ subject: "fix: improve coverage", body: "", files: [file] }), file).toBe(false);
+    expect(isUserFacing({ subject: "fix: improve widget", body: "", files: ["src/ui/widget.tsx"] })).toBe(true);
+  });
+
+  it("handles inherited object property names as unknown commit types", () => {
+    const commits = [{ subject: "constructor: improve the game", body: "User-Facing: yes" }];
+    expect(buildPatchNotesMarkdown("1.2.3", commits)).toContain("improve the game");
+    expect(buildChangelogUnreleased(commits)).toContain("_No changes yet._");
+  });
+
+  it("finds the actual unreleased heading when its text also occurs in prose", () => {
+    const source =
+      "# Changelog\n\nThe marker `## [Unreleased]` names the next section.\n\n## [Unreleased]\n\n- fix: preserve saves\n\n## [0.1.0] (2026-01-01)\n\nOld release.\n";
+    const replaced = replaceChangelogUnreleased(source, "## [Unreleased]\n\nnew\n");
+    expect(replaced).toContain("The marker `## [Unreleased]` names the next section.");
+    expect(extractChangelogSection(replaced, "## [Unreleased]")).toBe("new");
+    const promoted = promoteUnreleasedSection(source, "0.2.0", "2026-10-27");
+    expect(promoted).toContain("The marker `## [Unreleased]` names the next section.");
+    expect(extractChangelogSection(promoted, "## [0.2.0]")).toContain("fix: preserve saves");
+    expect(extractChangelogSection(promoted, "## [0.1.0]")).toContain("Old release.");
+    const indented = source.replace("\n## [Unreleased]\n", "\n  ## [Unreleased] (draft)\n");
+    const repaired = replaceChangelogUnreleased(indented, "## [Unreleased]\n\nnew\n");
+    expect(repaired).not.toContain("(draft)");
+    expect(extractChangelogSection(repaired, "## [Unreleased]")).toBe("new");
+  });
   it("rejects misspelled options instead of writing during an intended preview", () => {
     expect(() => parseGeneratePatchNotesArgs(["--dryrun"], {})).toThrow("Unknown patch-note option");
     expect(parseGeneratePatchNotesArgs(["--dry-run"], {})).toMatchObject({ dryRun: true });

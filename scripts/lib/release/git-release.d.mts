@@ -1,3 +1,7 @@
+export function assertValidSemver(version: string): void;
+
+export function assertValidTag(tag: string): void;
+
 export function latestVersionTag(root: string): string | null;
 
 export function previousVersionTag(root: string, currentTag: string): string | null;

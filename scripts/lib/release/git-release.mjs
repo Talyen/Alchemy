@@ -5,7 +5,7 @@ const FIELD_SEPARATOR = "\x1f";
 const RECORD_SEPARATOR = "\x1e";
 const GIT_LOG_MAX_BUFFER = 16 * 1024 * 1024;
 
-export const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+export const SEMVER_RE = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
 
 export function assertValidSemver(version) {
   if (!SEMVER_RE.test(version)) throw new Error(`Invalid semantic version: ${version}`);
@@ -13,7 +13,7 @@ export function assertValidSemver(version) {
 
 export function assertValidTag(tag) {
   if (tag === "HEAD") return;
-  if (!/^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(tag)) {
+  if (!SEMVER_RE.test(tag.startsWith("v") ? tag.slice(1) : tag)) {
     throw new Error(`Invalid tag revision: ${tag}`);
   }
 }
