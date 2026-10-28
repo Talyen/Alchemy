@@ -124,6 +124,37 @@ describe("CorruptionScreen", () => {
     expect(onExit).toHaveBeenCalledOnce();
   });
 
+  it("keeps the original comparison visible and retires the picker as soon as corruption commits", async () => {
+    localStorage.removeItem("alchemy-disable-animations");
+    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(100);
+    const user = userEvent.setup();
+    const onCorrupt = vi.fn();
+    const onExit = vi.fn();
+    const { rerender } = render(
+      <CorruptionScreen runDeck={[testSlash]} result={null} onCorrupt={onCorrupt} onExit={onExit} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Corrupt a Card" }));
+    await user.click(await screen.findByRole("button", { name: "Select Slash" }));
+    const heading = screen.getByRole("heading", { name: "Altar of Corruption" });
+    await user.click(screen.getByRole("button", { name: "Corrupt" }));
+    const result: CorruptionResult = {
+      originalCard: testSlash,
+      corruptedCard: testCorruptedCard,
+      transformed: false,
+      delta: 1,
+    };
+    rerender(<CorruptionScreen runDeck={[testCorruptedCard]} result={result} onCorrupt={onCorrupt} onExit={onExit} />);
+
+    const original = screen.getByRole("button", { name: "Original: Slash" });
+    expect(original.closest(".screen-fade-out, [inert]")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Altar of Corruption" })).toBe(heading);
+    expect(screen.queryByRole("button", { name: "Corrupt", hidden: true })).toBeNull();
+    expect(onCorrupt).toHaveBeenCalledExactlyOnceWith(0);
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(onExit).toHaveBeenCalledOnce();
+  });
+
   it.each(["button", "Escape"])("resets selection when canceling with %s and re-entering", async (method) => {
     const user = userEvent.setup();
     render(<CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);

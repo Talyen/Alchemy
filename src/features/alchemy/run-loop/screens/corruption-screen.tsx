@@ -113,7 +113,15 @@ function CorruptionIntro({
   );
 }
 
-function CorruptionResultView({ result, onContinue }: { result: CorruptionResult; onContinue: () => void }) {
+function CorruptionResultView({
+  result,
+  revealChange,
+  onContinue,
+}: {
+  result: CorruptionResult;
+  revealChange: boolean;
+  onContinue: () => void;
+}) {
   const i18n = useGameTranslation();
   return (
     <div className="flex flex-col items-center gap-4">
@@ -136,7 +144,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         <div className="col-start-2 flex shrink-0 self-center">
           <MoveRight className="h-10 w-10 text-red-800" />
         </div>
-        <div className="col-start-3 flex flex-col items-center">
+        <div className={cn("col-start-3 flex flex-col items-center", revealChange && "screen-fade-in")}>
           <BattleCardButton
             card={result.corruptedCard}
             comparisonCard={result.originalCard}
@@ -150,7 +158,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         <div className={cn("col-start-1", controlLabelClass)}>
           <CardTitle card={result.originalCard} />
         </div>
-        <div className={cn("col-start-3", controlLabelClass)}>
+        <div className={cn("col-start-3", controlLabelClass, revealChange && "screen-fade-in")}>
           <CardTitle card={result.corruptedCard} />
         </div>
       </div>
@@ -209,11 +217,13 @@ export function CorruptionScreen({
   }
 
   return (
-    <FadeSlot swapKey={result ? "result" : selecting ? "select" : "intro"} className="h-full w-full">
+    // Applying corruption keeps the original card and altar visible; only the
+    // changed card reveals. Intro/picker navigation still uses the shared fade.
+    <FadeSlot swapKey={result || selecting ? "select" : "intro"} className="h-full w-full">
       <TitledScreenShell title={i18n.text("ui.corruption-screen.10", "Altar of Corruption")}>
         <div className={cn("flex flex-col items-center gap-6 text-center", result || selecting ? "mt-3" : "mt-6")}>
           {result ? (
-            <CorruptionResultView result={result} onContinue={handleExit} />
+            <CorruptionResultView result={result} revealChange={selecting} onContinue={handleExit} />
           ) : selecting ? (
             <div className="flex w-full min-w-0 flex-col items-center gap-4">
               <div>
