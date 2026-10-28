@@ -170,25 +170,6 @@
   }
 }
 
-@keyframes talentAllocatableShineIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes talentAllocatableIdle {
-  0%,
-  100% {
-    box-shadow: 0 0 8px color-mix(in srgb, var(--talent-accent) 25%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 18px color-mix(in srgb, var(--talent-accent) 50%, transparent);
-  }
-}
-
 @keyframes shine {
   0% {
     background-position: 0% 0%;
