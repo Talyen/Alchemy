@@ -1,4 +1,6 @@
-import { useId, useLayoutEffect, useState, type RefObject } from "react";
+import { cn } from "@/lib/utils";
+
+import { useId, useLayoutEffect, useState, type CSSProperties, type RefObject } from "react";
 
 interface BorderGeometry {
   width: number;
@@ -50,10 +52,21 @@ export function TalentNodeIgnition({
   const { width, height, inset, radius } = geometry;
   const rect = { x: inset, y: inset, width: width - inset * 2, height: height - inset * 2, rx: radius, ry: radius };
 
+  const perimeter = 2 * (rect.width + rect.height - 4 * radius) + 2 * Math.PI * radius;
+  const topCenter = ((rect.width - 2 * radius) / 2 / perimeter) * 100;
+  const start = -(topCenter + 50 - 5);
+
   return (
     <svg
       className="talent-node-ignition"
       viewBox={`0 0 ${width} ${height}`}
+      style={
+        {
+          "--talent-arc-start": `${start}px`,
+          "--talent-arc-forward-end": `${start - 50}px`,
+          "--talent-arc-back-end": `${start + 50}px`,
+        } as CSSProperties
+      }
       data-active={active ? "true" : undefined}
       aria-hidden="true"
       focusable="false"
@@ -66,30 +79,42 @@ export function TalentNodeIgnition({
           <rect {...rect} fill="none" stroke="white" strokeWidth={inset * 2 + 1} />
         </mask>
         <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0.25" stopColor="white" stopOpacity="0" />
-          <stop offset="0.40" stopColor="white" stopOpacity="0.15" />
-          <stop offset="0.52" stopColor="#fff8df" stopOpacity="0.9" />
-          <stop offset="0.72" stopColor="white" stopOpacity="0" />
+          <stop offset="0.3" stopColor="white" stopOpacity="0" />
+          <stop offset="0.48" stopColor="white" stopOpacity="0.15" />
+          <stop offset="0.54" stopColor="#fff8df" stopOpacity="0.9" />
+          <stop offset="0.65" stopColor="white" stopOpacity="0" />
         </linearGradient>
       </defs>
       <rect {...rect} className="talent-ignition-track" pathLength={100} fill="none" strokeWidth={inset * 2} />
-      <rect
-        {...rect}
-        className="talent-metal-outline talent-ignition-halo"
-        pathLength={100}
-        fill="none"
-        strokeWidth={6.5}
-        strokeLinecap="round"
-        filter={`url(#${id}-halo)`}
-      />
-      <rect
-        {...rect}
-        className="talent-metal-outline talent-ignition-core"
-        pathLength={100}
-        fill="none"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-      />
+      {(["forward", "back"] as const).map((direction) => (
+        <g key={direction}>
+          <rect
+            {...rect}
+            className={cn(
+              "talent-ignition-dash talent-ignition-halo",
+              direction === "forward" ? "talent-twin-forward" : "talent-twin-back",
+            )}
+            pathLength={100}
+            fill="none"
+            strokeWidth={6.5}
+            strokeLinecap="round"
+            strokeDasharray="10 90"
+            filter={`url(#${id}-halo)`}
+          />
+          <rect
+            {...rect}
+            className={cn(
+              "talent-ignition-dash talent-ignition-core",
+              direction === "forward" ? "talent-twin-forward" : "talent-twin-back",
+            )}
+            pathLength={100}
+            fill="none"
+            strokeWidth={1.6}
+            strokeLinecap="round"
+            strokeDasharray="10 90"
+          />
+        </g>
+      ))}
       <g mask={`url(#${id}-annulus)`}>
         <rect
           className="talent-ignition-shine"

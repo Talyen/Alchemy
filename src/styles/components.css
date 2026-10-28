@@ -531,77 +531,96 @@
     }
   }
 
-  /* Isolated comparison B: the entire edge ignites; only the annulus carries the light band. */
-  .talent-metal-outline {
+  /* Isolated comparison C: two rounded-path arcs split from the bottom and meet at the top. */
+  .talent-node-frame[data-unlocking="true"] {
+    animation-name: talentTwinBorder;
+  }
+  .talent-node-glow[data-unlocking="true"] {
+    animation-name: talentTwinGlow;
+  }
+  .talent-node-ignition[data-active="true"] .talent-twin-forward {
+    animation: talentTwinForward 1000ms linear both;
+  }
+  .talent-node-ignition[data-active="true"] .talent-twin-back {
+    animation: talentTwinBack 1000ms linear both;
+  }
+  .talent-node-ignition[data-active="true"] .talent-ignition-track {
+    animation: talentTwinTrack 1000ms linear both;
+  }
+  .talent-node-ignition[data-active="true"] .talent-ignition-shine {
+    animation: none;
     opacity: 0;
   }
-
-  .talent-node-frame[data-unlocking="true"] {
-    animation-name: talentMetalBorder;
-  }
-
-  .talent-node-glow[data-unlocking="true"] {
-    animation-name: talentMetalGlow;
-  }
-
-  .talent-node-ignition[data-active="true"] .talent-metal-outline {
-    animation: talentMetalOutline 1000ms ease-out both;
-  }
-
-  .talent-node-ignition[data-active="true"] .talent-ignition-track {
-    animation: talentMetalTrack 1000ms linear both;
-  }
-
-  .talent-node-ignition[data-active="true"] .talent-ignition-shine {
-    animation: talentMetalShine 1000ms ease-in-out both;
-  }
-
-  @keyframes talentMetalBorder {
-    0% {
+  @keyframes talentTwinBorder {
+    0%,
+    64% {
       border-color: #b9bcb3;
     }
-    10%,
+    72%,
     100% {
       border-color: var(--talent-readable-accent);
     }
   }
-
-  @keyframes talentMetalGlow {
+  @keyframes talentTwinGlow {
     0%,
     100% {
       opacity: 0;
     }
     10%,
-    50% {
-      opacity: 0.8;
+    58% {
+      opacity: 0.3;
     }
     72% {
-      opacity: 0.45;
-    }
-  }
-
-  @keyframes talentMetalOutline {
-    0%,
-    100% {
-      opacity: 0;
-    }
-    8% {
       opacity: 1;
     }
-    25% {
-      opacity: 0.35;
+  }
+  @keyframes talentTwinForward {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-start);
     }
-    65% {
-      opacity: 0.15;
+    8%,
+    10% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-start);
+    }
+    64% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-forward-end);
+    }
+    78%,
+    100% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-forward-end);
     }
   }
-
-  @keyframes talentMetalTrack {
+  @keyframes talentTwinBack {
     0% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-start);
+    }
+    8%,
+    10% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-start);
+    }
+    64% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-back-end);
+    }
+    78%,
+    100% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-back-end);
+    }
+  }
+  @keyframes talentTwinTrack {
+    0%,
+    58% {
       opacity: 0;
       stroke-dasharray: 100 0;
     }
-    10%,
+    72%,
     90% {
       opacity: 1;
       stroke-dasharray: 100 0;
@@ -609,26 +628,6 @@
     100% {
       opacity: 0;
       stroke-dasharray: 100 0;
-    }
-  }
-
-  @keyframes talentMetalShine {
-    0%,
-    15% {
-      opacity: 0;
-      transform: translateX(-65%);
-    }
-    22% {
-      opacity: 1;
-    }
-    65% {
-      opacity: 1;
-      transform: translateX(65%);
-    }
-    78%,
-    100% {
-      opacity: 0;
-      transform: translateX(65%);
     }
   }
 
