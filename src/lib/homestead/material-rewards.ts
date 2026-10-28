@@ -54,11 +54,15 @@ export function computeGoldReward(amount: number, multiplier: number, findBonus:
 }
 
 export function applyMaterialFindBonus(materials: MaterialInventory, effects: MaterialFindEffects): MaterialInventory {
-  const found = { ...materials };
+  return applyFindBonusToOwnedMaterials({ ...materials }, effects);
+}
+
+/** Only newly owned reward inventories may be updated in place. */
+function applyFindBonusToOwnedMaterials(materials: MaterialInventory, effects: MaterialFindEffects): MaterialInventory {
   for (const material of MATERIAL_IDS) {
-    found[material] = applyRewardFindBonus(materials[material], effects[MATERIAL_FIND_KEYS[material]]);
+    materials[material] = applyRewardFindBonus(materials[material], effects[MATERIAL_FIND_KEYS[material]]);
   }
-  return found;
+  return materials;
 }
 
 // Reward policy: combat bundles → location modifiers → find bonuses.
@@ -97,7 +101,7 @@ export interface CombatMaterialRewardInput {
 /** Shared bundles → scavenger → herbalist → Homestead find bonuses. */
 export function computeCombatMaterialReward(input: CombatMaterialRewardInput): MaterialInventory {
   const base = getCombatMaterialLoot(input.enemyType, input.progressionBand, input.rng);
-  return applyMaterialFindBonus(applyScavengerHerbalistModifiers(base, input), input.effects);
+  return applyFindBonusToOwnedMaterials(applyScavengerHerbalistModifiers(base, input), input.effects);
 }
 
 /** Mystery grants skip location traits and apply the matching resource bonus. */

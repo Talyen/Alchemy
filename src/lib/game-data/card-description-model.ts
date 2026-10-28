@@ -53,7 +53,8 @@ export function cardMagnitude(
   options: Omit<CardMagnitude, "kind" | "id" | "references"> & { shared?: CardMagnitudeReference[] } = {},
 ): CardMagnitude {
   const { shared = [], ...format } = options;
-  const id = `${[reference.effectIndex, ...(reference.effectPath ?? [])].join("/")}:${reference.field}`;
+  const path = reference.effectPath?.length ? `/${reference.effectPath.join("/")}` : "";
+  const id = `${reference.effectIndex}${path}:${reference.field}`;
   return { kind: "magnitude", id, references: [reference, ...shared], ...format };
 }
 
@@ -119,6 +120,10 @@ function referenceKey(reference: CardMagnitudeReference): string {
 }
 
 function magnitudeSignature(magnitude: CardMagnitude): string {
+  if (magnitude.references.length === 1) {
+    const reference = magnitude.references[0]!;
+    return `${referenceKey(reference)}/${reference.multiplier ?? 1}`;
+  }
   return magnitude.references.map((reference) => `${referenceKey(reference)}/${reference.multiplier ?? 1}`).join("|");
 }
 
@@ -131,8 +136,13 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
     for (const part of line.parts) {
       if (typeof part === "string") continue;
       identities.set(magnitudeSignature(part), part);
-      if (part.corrupted) for (const reference of part.references) marked.add(referenceKey(reference));
-      if (part.distilled) for (const reference of part.references) distilled.add(referenceKey(reference));
+      if (part.corrupted || part.distilled) {
+        for (const reference of part.references) {
+          const key = referenceKey(reference);
+          if (part.corrupted) marked.add(key);
+          if (part.distilled) distilled.add(key);
+        }
+      }
     }
   }
   return description.map((line) => ({

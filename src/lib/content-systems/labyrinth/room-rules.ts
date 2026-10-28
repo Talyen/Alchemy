@@ -73,17 +73,15 @@ export function applyLabyrinthMysteryModifiers(
   if (!boostedKinds.length && healing === null) return event;
   return {
     ...event,
-    choices: event.choices.map((choice) => ({
-      ...choice,
-      effects: [
-        ...choice.effects.map((effect) => {
-          if ("amount" in effect && boostedKinds.some((kind) => kind === effect.kind)) {
-            return { ...effect, amount: effect.amount * LABYRINTH_MODIFIER_CONFIG.double };
-          }
-          return effect;
-        }),
-        ...(healing === null ? [] : [{ kind: "healHealth" as const, amount: healing }]),
-      ],
-    })),
+    choices: event.choices.map((choice) => {
+      const effects = choice.effects.map((effect) => {
+        if ("amount" in effect && boostedKinds.some((kind) => kind === effect.kind)) {
+          return { ...effect, amount: effect.amount * LABYRINTH_MODIFIER_CONFIG.double };
+        }
+        return effect;
+      });
+      if (healing !== null) effects.push({ kind: "healHealth", amount: healing });
+      return { ...choice, effects };
+    }),
   };
 }

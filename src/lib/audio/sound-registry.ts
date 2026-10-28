@@ -5,7 +5,7 @@ import type { Screen } from "../routing/screens";
 // Null keeps a semantic event available while explicitly choosing silence.
 type SoundCue = string | null;
 
-export const cardSounds: Record<string, string[]> = {
+export const cardSounds: Readonly<Record<string, readonly string[]>> = {
   avatar: ["battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg"],
   exorcism: ["battle-focus-purge-01-ef2ba588-0-1500.ogg"],
   "sanctified-plate": ["battle-focus-arcane-metal-01-5abcc0c6-250-1500.ogg"],
@@ -220,13 +220,18 @@ export const screenAmbienceSounds = {
 
 export type UISound = keyof typeof uiSounds;
 
+const NO_CARD_SOUNDS: readonly string[] = Object.freeze([]);
+
 export function getCardSounds(cardId: string): readonly string[] {
   const key = isMixedPotionCard({ id: cardId }) ? MIXED_POTION_CARD_ID : cardId;
-  return Object.hasOwn(cardSounds, key) ? cardSounds[key]! : [];
+  return Object.hasOwn(cardSounds, key) ? cardSounds[key]! : NO_CARD_SOUNDS;
 }
 
+let registeredSoundFiles: readonly string[] | undefined;
+
 export function allRegisteredSoundFiles(): string[] {
-  return [
+  // Registrations are authored module data; callers still receive their own array.
+  registeredSoundFiles ??= [
     ...new Set(
       [
         ...Object.values(cardSounds).flat(),
@@ -237,4 +242,5 @@ export function allRegisteredSoundFiles(): string[] {
       ].filter((name): name is string => typeof name === "string"),
     ),
   ];
+  return [...registeredSoundFiles];
 }

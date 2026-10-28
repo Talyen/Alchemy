@@ -23,7 +23,8 @@ export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
   const defensiveIndex = pool.findIndex((card) => DEFENSIVE_POTION_IDS.has(card.id));
   if (defensiveIndex > 0) pool.unshift(...pool.splice(defensiveIndex, 1));
   pool.length = Math.min(pool.length, CAMPFIRE_POTION_OFFERS);
-  return pool.map(cloneBattleCard);
+  for (let index = 0; index < pool.length; index++) pool[index] = cloneBattleCard(pool[index]!);
+  return pool;
 }
 
 export function applyStrongSpiritsToPotions(
