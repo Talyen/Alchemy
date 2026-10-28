@@ -9,7 +9,7 @@ import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { addForgeToPlayer } from "./player-rewards";
 import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR } from "../game-constants";
-import { damageOnlyEffects } from "./card-classification";
+import { damageOnlyEffects, isAttackCard } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { createCompanionActionCard } from "./companion-scaling";
@@ -32,6 +32,13 @@ export function resolveCompanionTurnStart(
 
   if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 
+  const cue = { companionId: state.activeCompanion.id, kind: isAttackCard(companionCard) ? "attack" : "cast" } as const;
+  if (companionCard.effects.length) state.onCompanionAction?.(cue);
+  // Owl/Moth Bond repeats are resolved inside this action's chance effect.
+  // Observe the actual roll; presentation must neither reroll it nor infer success.
+  const repeat =
+    cue.companionId === "library-owl" || cue.companionId === "mana-moth" ? companionCard.effects[1] : undefined;
+
   return resolveSecondaryAction(state, "companion", (s) => {
     const burningEnemy = s.enemyStatuses.burn > 0;
     const companionAttackBonus = { amount: s.flags.companionNextAttackBonus };
@@ -49,6 +56,9 @@ export function resolveCompanionTurnStart(
         onDamageDealt: (amount) => {
           damageDealt += amount;
           if (amount > 0) damagePackets += 1;
+        },
+        onChanceResolved: (effect, success) => {
+          if (success && effect === repeat) s.onCompanionAction?.(cue);
         },
       }),
       companionCard,

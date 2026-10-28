@@ -7,7 +7,7 @@ import {
   getBattleCardAnimationTarget,
   type BattleSnapshot,
 } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
+import { visitBattleCardEffects, type BattleCard } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
@@ -163,6 +163,8 @@ export function createBattleCardPlay(
       return false;
     }
     getPresentation().setDisplayedBattle(null);
+    if (visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion"))
+      getPresentation().clearCompanionActions();
     session.checkBattleEnd(played.state, sessionNum);
     if (!ctx.playback.isCurrent(sessionNum)) return true;
     // Victory grace permits the accepted card feedback while finishing.
@@ -184,6 +186,7 @@ export function createBattleCardPlay(
       currentState.hand,
       played.state,
       () => {
+        getPresentation().enqueueCompanionActions(played.companionActions ?? []);
         presentCombatTexts(getPresentation(), played.combatTexts, focalSound);
       },
       sessionNum,

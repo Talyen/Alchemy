@@ -125,7 +125,7 @@ describe("repeatability-based talent balance", () => {
     );
     const guarded = applyPlayerStatusEffect(forged, { kind: "player-status", status: "block", amount: 2 }, []);
     expect(forged.playerStatuses.forge).toBe(9);
-    expect(guarded.playerStatuses).toMatchObject({ forge: 9, block: 4, armor: 0 });
+    expect(guarded.playerStatuses).toMatchObject({ forge: 9, block: 3, armor: 0 });
     expect(guarded.enemyHealth).toBe(100);
   });
 

@@ -16,7 +16,7 @@ function makePresentation() {
     showCombatTexts: vi.fn(),
     telegraphAttack: vi.fn(),
     telegraphCast: vi.fn(),
-    shakeCompanion: vi.fn(),
+    enqueueCompanionActions: vi.fn(),
   } as unknown as BattlePresentationPort;
 }
 
@@ -70,7 +70,9 @@ describe("playTurnFrames", () => {
       expect(presentation.showCombatTexts).toHaveBeenCalledWith(frame.turn.combatTexts);
     }
     expect(presentation.setDisplayedBattle).toHaveBeenCalledWith(frame.turn.state);
-    expect(presentation.telegraphAttack).not.toHaveBeenCalled();
+    expect(presentation.enqueueCompanionActions).not.toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ kind: "attack" })]),
+    );
     expect(presentation.telegraphCast).not.toHaveBeenCalled();
   });
 
@@ -144,8 +146,7 @@ describe("playTurnFrames", () => {
     await playPromise;
 
     expect(presentation.setDisplayedBattle).toHaveBeenCalledWith(companionFrame.companion.state);
-    expect(presentation.telegraphAttack).toHaveBeenCalledWith("companion");
-    expect(presentation.shakeCompanion).toHaveBeenCalled();
+    expect(presentation.enqueueCompanionActions).toHaveBeenCalledWith([expect.objectContaining({ kind: "attack" })]);
     expect(presentation.showCombatTexts).toHaveBeenCalledWith(expect.arrayContaining([...companionTexts]));
   });
 
@@ -184,9 +185,8 @@ describe("playTurnFrames", () => {
     await vi.advanceTimersByTimeAsync(500);
     await playPromise;
 
-    // Companion sound, shake, lunge, and text still play
-    expect(presentation.telegraphAttack).toHaveBeenCalledWith("companion");
-    expect(presentation.shakeCompanion).toHaveBeenCalled();
+    // Independent companion action and text still play.
+    expect(presentation.enqueueCompanionActions).toHaveBeenCalledWith([expect.objectContaining({ kind: "attack" })]);
     expect(presentation.showCombatTexts).toHaveBeenCalledWith(expect.arrayContaining([...companionTexts]));
     // But displayedBattle was not overwritten with stale companion.state
     expect(presentation.setDisplayedBattle).not.toHaveBeenCalledWith(companionFrame.companion.state);

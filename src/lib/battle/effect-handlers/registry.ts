@@ -122,6 +122,7 @@ function resolveSingleEffect(
     const rng = getBattleRng(state);
     const success = rollChance(effect.probability, rng);
     state.observer?.branch(effect, success);
+    context.onChanceResolved?.(effect, success);
     const branch = success ? effect.successEffects : effect.failureEffects;
 
     return resolveBattleSequence(

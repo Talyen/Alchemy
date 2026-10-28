@@ -1,4 +1,5 @@
-import type { CombatTextEvent } from "@/lib/battle";
+import type { CombatTextEvent, CompanionActionCue } from "@/lib/battle";
+import { createCompanionActionPlayback, type CompanionPlaybackCue } from "./companion-presentation";
 import {
   CARD_REJECTION_FEEDBACK_MS,
   COMBAT_RECOIL_COOLDOWN_MS,
@@ -13,13 +14,14 @@ import { prepareCombatFeedback } from "./combat-feedback-model";
 import { advanceCombatFeedback, scheduleCombatFeedback, nextCombatFeedbackDeadline } from "./combat-feedback-queue";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 
-type Combatant = "player" | "enemy" | "companion";
+type Combatant = "player" | "enemy";
 
 export interface CombatFeedbackState {
   floatingCombatBursts: CombatTextBurst[];
   reactionAnnouncements: ReactionAnnouncement[];
   cardRejection: { cardKey: string; mana: boolean } | null;
   companionShaking: boolean;
+  companionActionCue: CompanionPlaybackCue | null;
   playerImpactCue: CombatImpactCue | null;
   enemyImpactCue: CombatImpactCue | null;
   playerAttackToken: number;
@@ -33,6 +35,8 @@ export interface CombatFeedbackState {
 export interface CombatFeedbackActions {
   rejectCardPlay: (cardKey: string, mana: boolean) => boolean;
   shakeCompanion: () => void;
+  enqueueCompanionActions: (cues: readonly CompanionActionCue[]) => void;
+  clearCompanionActions: () => void;
   telegraphAttack: (side: Combatant) => void;
   telegraphCast: (side: Combatant) => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
@@ -45,6 +49,7 @@ export function createCombatFeedbackState(): CombatFeedbackState {
     reactionAnnouncements: [],
     cardRejection: null,
     companionShaking: false,
+    companionActionCue: null,
     playerImpactCue: null,
     enemyImpactCue: null,
     playerAttackToken: 0,
@@ -60,10 +65,11 @@ interface CombatFeedbackDeps {
   update: (reduce: (state: CombatFeedbackState) => Partial<CombatFeedbackState>) => void;
   isVisible: () => boolean;
   now: () => number;
+  isCompanionCurrent?: (cue: CompanionActionCue) => boolean;
 }
 
 /** One owner for feedback resources; the store remains the sole owner of visible state. */
-export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackDeps): {
+export function createCombatFeedback({ update, isVisible, now, isCompanionCurrent }: CombatFeedbackDeps): {
   actions: CombatFeedbackActions;
   cancel: () => void;
 } {
@@ -78,6 +84,10 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
   let impactSequence = 0;
   let textPlanRevision = 0;
   let cancelTextDeadline: (() => void) | undefined;
+  const companionPlayback = createCompanionActionPlayback(
+    (companionActionCue) => update(() => ({ companionActionCue })),
+    (cue) => isVisible() && (isCompanionCurrent?.(cue) ?? true),
+  );
 
   function cancelTexts() {
     generation += 1;
@@ -118,7 +128,7 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
   }
 
   function telegraph(kind: "Attack" | "Cast", side: Combatant) {
-    const key = `${side === "companion" ? "player" : side}${kind}Token` as const;
+    const key = `${side}${kind}Token` as const;
     update((state) => ({ [key]: state[key] + 1 }));
   }
 
@@ -130,6 +140,7 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
       rejecting = false;
       lastImpact.clear();
       cancelCompanionShake = undefined;
+      companionPlayback.clear(false);
     },
     actions: {
       rejectCardPlay: (cardKey, mana) => {
@@ -143,6 +154,8 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         return true;
       },
       shakeCompanion,
+      enqueueCompanionActions: (cues) => companionPlayback.enqueue(cues),
+      clearCompanionActions: () => companionPlayback.clear(),
       telegraphAttack: (side) => telegraph("Attack", side),
       telegraphCast: (side) => telegraph("Cast", side),
       showCombatTexts: (events) => {

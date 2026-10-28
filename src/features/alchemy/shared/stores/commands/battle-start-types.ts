@@ -1,10 +1,11 @@
-import type { CombatTextEvent } from "@/lib/battle";
+import type { CombatTextEvent, CompanionActionCue } from "@/lib/battle";
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import type { DifficultyModifier } from "@/lib/game-data";
 
 export interface BattleStarted {
   startingTexts: CombatTextEvent[];
   companionId: string | null;
+  companionActions?: CompanionActionCue[];
   outcome: "victory" | "defeat" | null;
   openingCardIds: string[];
 }

@@ -120,6 +120,10 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
       update: (reduce) => set(reduce),
       isVisible: () => readBattle(gameSession).hasActiveBattle && readRunPhase(gameSession) === "battle",
       now: () => Date.now(),
+      isCompanionCurrent: (cue) => {
+        const battle = readBattle(gameSession).battleState;
+        return battle.activeCompanion?.id === cue.companionId && battle.playerHealth > 0;
+      },
     });
     const actions: Omit<BattlePresentationStateWithActions, keyof (BattlePresentationState & CombatFeedbackState)> = {
       ...feedback.actions,

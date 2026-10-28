@@ -1606,6 +1606,11 @@ html.alchemy-disable-animations .card-play-rejected::before {
   transform-origin: center bottom;
 }
 
+.companion-action-highlight {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
 /* Crafting changes only the affected affix; authoritative gear is already updated. */
 .gear-affix-lines {
   margin-bottom: -4px;

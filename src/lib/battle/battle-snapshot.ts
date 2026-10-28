@@ -6,6 +6,7 @@ export function battleSnapshot(state: BattleSnapshot & Partial<BattleResolutionC
     rng: _rng,
     action: _action,
     onEmptyDraw: _onEmptyDraw,
+    onCompanionAction: _onCompanionAction,
     observer: _observer,
     sampleWishOptions: _sampleWishOptions,
     ...snapshot

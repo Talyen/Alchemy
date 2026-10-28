@@ -8,7 +8,7 @@ import { deliverPendingHandCards, refillEmptyDrawPile } from "./draw";
 import { applyHealingWithCombatText } from "./player-rewards";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-import type { BattleState, BattleSnapshot, CombatTextEvent } from "./types";
+import type { BattleState, BattleSnapshot, CombatTextEvent, CompanionActionCue } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { processEnemyAbility } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
@@ -181,7 +181,8 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
 export interface BattleTurnFrame {
   before: BattleSnapshot;
   turn: EndPlayerTurnResolution<BattleSnapshot>;
-  companion: { id: string; texts: CombatTextEvent[]; state: BattleSnapshot } | null;
+  companion: { id: string; texts: CombatTextEvent[]; state: BattleSnapshot; actions?: CompanionActionCue[] } | null;
+  companionActions?: CompanionActionCue[];
 }
 
 export interface ResolvedBattleTurn {
@@ -210,16 +211,25 @@ export function resolveTurnSequence(
   // omit it and continue until player input is possible or combat ends.
   while (getBattleOutcome(state) === null && frames.length < (options?.maxTurns ?? Infinity)) {
     const before = battleSnapshot(state);
+    const companionActions: CompanionActionCue[] = [];
+    state = {
+      ...state,
+      onCompanionAction: (cue) => {
+        companionActions.push(cue);
+        context.onCompanionAction?.(cue);
+      },
+    };
     const turn = endPlayerTurn(state);
     state = turn.state;
+    const turnCompanionActions = companionActions.splice(0);
     let companion: BattleTurnFrame["companion"] = null;
     if (!turn.playerTurnSkipped && getBattleOutcome(state) === null && state.activeCompanion) {
       const id = state.activeCompanion.id;
       const texts: CombatTextEvent[] = [];
       state = processCompanionTurnStart(state, texts);
-      companion = { id, texts, state: battleSnapshot(state) };
+      companion = { id, texts, state: battleSnapshot(state), actions: companionActions };
     }
-    frames.push({ before, turn: snapshotTurn(turn), companion });
+    frames.push({ before, turn: snapshotTurn(turn), companion, companionActions: turnCompanionActions });
     if (!turn.playerTurnSkipped || state.wishOptions) break;
   }
   return { state: battleSnapshot(state), frames };
