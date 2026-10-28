@@ -1,73 +1,3 @@
-import forgeGolemIdle1 from "@/assets/boss-idles/forge-golem-idle-1.mp4";
-import forgeGolemIdle1At640 from "@/assets/boss-idles/forge-golem-idle-1-640.mp4";
-import forgeGolemIdle1At1280 from "@/assets/boss-idles/forge-golem-idle-1-1280.mp4";
-import forgeGolemIdle2 from "@/assets/boss-idles/forge-golem-idle-2.mp4";
-import forgeGolemIdle2At640 from "@/assets/boss-idles/forge-golem-idle-2-640.mp4";
-import forgeGolemIdle2At1280 from "@/assets/boss-idles/forge-golem-idle-2-1280.mp4";
-import forgeGolemIdle3 from "@/assets/boss-idles/forge-golem-idle-3.mp4";
-import forgeGolemIdle3At640 from "@/assets/boss-idles/forge-golem-idle-3-640.mp4";
-import forgeGolemIdle3At1280 from "@/assets/boss-idles/forge-golem-idle-3-1280.mp4";
-import frostwardenIdle1 from "@/assets/boss-idles/frostwarden-idle-1.mp4";
-import frostwardenIdle1At640 from "@/assets/boss-idles/frostwarden-idle-1-640.mp4";
-import frostwardenIdle1At1280 from "@/assets/boss-idles/frostwarden-idle-1-1280.mp4";
-import frostwardenIdle2 from "@/assets/boss-idles/frostwarden-idle-2.mp4";
-import frostwardenIdle2At640 from "@/assets/boss-idles/frostwarden-idle-2-640.mp4";
-import frostwardenIdle2At1280 from "@/assets/boss-idles/frostwarden-idle-2-1280.mp4";
-import frostwardenIdle3 from "@/assets/boss-idles/frostwarden-idle-3.mp4";
-import frostwardenIdle3At640 from "@/assets/boss-idles/frostwarden-idle-3-640.mp4";
-import frostwardenIdle3At1280 from "@/assets/boss-idles/frostwarden-idle-3-1280.mp4";
-import ironBearIdle1 from "@/assets/boss-idles/iron-bear-idle-1.mp4";
-import ironBearIdle1At640 from "@/assets/boss-idles/iron-bear-idle-1-640.mp4";
-import ironBearIdle1At1280 from "@/assets/boss-idles/iron-bear-idle-1-1280.mp4";
-import ironBearIdle2 from "@/assets/boss-idles/iron-bear-idle-2.mp4";
-import ironBearIdle2At640 from "@/assets/boss-idles/iron-bear-idle-2-640.mp4";
-import ironBearIdle2At1280 from "@/assets/boss-idles/iron-bear-idle-2-1280.mp4";
-import ironBearIdle3 from "@/assets/boss-idles/iron-bear-idle-3.mp4";
-import ironBearIdle3At640 from "@/assets/boss-idles/iron-bear-idle-3-640.mp4";
-import ironBearIdle3At1280 from "@/assets/boss-idles/iron-bear-idle-3-1280.mp4";
-import blightTreantIdle1 from "@/assets/boss-idles/blight-treant-idle-1.mp4";
-import blightTreantIdle1At640 from "@/assets/boss-idles/blight-treant-idle-1-640.mp4";
-import blightTreantIdle1At1280 from "@/assets/boss-idles/blight-treant-idle-1-1280.mp4";
-import blightTreantIdle2 from "@/assets/boss-idles/blight-treant-idle-2.mp4";
-import blightTreantIdle2At640 from "@/assets/boss-idles/blight-treant-idle-2-640.mp4";
-import blightTreantIdle2At1280 from "@/assets/boss-idles/blight-treant-idle-2-1280.mp4";
-import blightTreantIdle3 from "@/assets/boss-idles/blight-treant-idle-3.mp4";
-import blightTreantIdle3At640 from "@/assets/boss-idles/blight-treant-idle-3-640.mp4";
-import blightTreantIdle3At1280 from "@/assets/boss-idles/blight-treant-idle-3-1280.mp4";
-import bloodCountessIdle1 from "@/assets/boss-idles/blood-countess-idle-1.mp4";
-import bloodCountessIdle1At640 from "@/assets/boss-idles/blood-countess-idle-1-640.mp4";
-import bloodCountessIdle1At1280 from "@/assets/boss-idles/blood-countess-idle-1-1280.mp4";
-import bloodCountessIdle2 from "@/assets/boss-idles/blood-countess-idle-2.mp4";
-import bloodCountessIdle2At640 from "@/assets/boss-idles/blood-countess-idle-2-640.mp4";
-import bloodCountessIdle2At1280 from "@/assets/boss-idles/blood-countess-idle-2-1280.mp4";
-import bloodCountessIdle3 from "@/assets/boss-idles/blood-countess-idle-3.mp4";
-import bloodCountessIdle3At640 from "@/assets/boss-idles/blood-countess-idle-3-640.mp4";
-import bloodCountessIdle3At1280 from "@/assets/boss-idles/blood-countess-idle-3-1280.mp4";
-import bloodCountessIdle4 from "@/assets/boss-idles/blood-countess-idle-4.mp4";
-import bloodCountessIdle4At640 from "@/assets/boss-idles/blood-countess-idle-4-640.mp4";
-import bloodCountessIdle4At1280 from "@/assets/boss-idles/blood-countess-idle-4-1280.mp4";
-import bloodCountessIdle5 from "@/assets/boss-idles/blood-countess-idle-5.mp4";
-import bloodCountessIdle5At640 from "@/assets/boss-idles/blood-countess-idle-5-640.mp4";
-import bloodCountessIdle5At1280 from "@/assets/boss-idles/blood-countess-idle-5-1280.mp4";
-import seraphIdle1 from "@/assets/boss-idles/seraph-idle-1.mp4";
-import seraphIdle1At640 from "@/assets/boss-idles/seraph-idle-1-640.mp4";
-import seraphIdle1At1280 from "@/assets/boss-idles/seraph-idle-1-1280.mp4";
-import seraphIdle2 from "@/assets/boss-idles/seraph-idle-2.mp4";
-import seraphIdle2At640 from "@/assets/boss-idles/seraph-idle-2-640.mp4";
-import seraphIdle2At1280 from "@/assets/boss-idles/seraph-idle-2-1280.mp4";
-import seraphIdle3 from "@/assets/boss-idles/seraph-idle-3.mp4";
-import seraphIdle3At640 from "@/assets/boss-idles/seraph-idle-3-640.mp4";
-import seraphIdle3At1280 from "@/assets/boss-idles/seraph-idle-3-1280.mp4";
-import stoneTitanIdle1 from "@/assets/boss-idles/stone-titan-idle-1.mp4";
-import stoneTitanIdle1At640 from "@/assets/boss-idles/stone-titan-idle-1-640.mp4";
-import stoneTitanIdle1At1280 from "@/assets/boss-idles/stone-titan-idle-1-1280.mp4";
-import stoneTitanIdle2 from "@/assets/boss-idles/stone-titan-idle-2.mp4";
-import stoneTitanIdle2At640 from "@/assets/boss-idles/stone-titan-idle-2-640.mp4";
-import stoneTitanIdle2At1280 from "@/assets/boss-idles/stone-titan-idle-2-1280.mp4";
-import stoneTitanIdle3 from "@/assets/boss-idles/stone-titan-idle-3.mp4";
-import stoneTitanIdle3At640 from "@/assets/boss-idles/stone-titan-idle-3-640.mp4";
-import stoneTitanIdle3At1280 from "@/assets/boss-idles/stone-titan-idle-3-1280.mp4";
-
 export interface BossIdleClip {
   readonly variants: readonly [
     { readonly width: 640; readonly src: string },
@@ -76,53 +6,40 @@ export interface BossIdleClip {
   ];
 }
 
-function clip(small: string, medium: string, full: string): BossIdleClip {
+// Eager URL imports register files without loading or decoding the videos.
+const videos = import.meta.glob<string>("/src/assets/boss-idles/*.mp4", { eager: true, import: "default" });
+
+// Explicit selection and order keep adding files from changing battle playback.
+const clipCounts = {
+  "forge-golem": 3,
+  frostwarden: 3,
+  "iron-bear": 3,
+  "blight-treant": 3,
+  "blood-countess": 5,
+  seraph: 3,
+  "stone-titan": 3,
+} as const;
+
+function clip(id: string, number: number): BossIdleClip {
+  const name = `/src/assets/boss-idles/${id}-idle-${number}`;
+  const source = (suffix: string) => {
+    const src = videos[`${name}${suffix}.mp4`];
+    if (!src) throw new Error(`Missing boss idle video: ${name}${suffix}.mp4`);
+    return src;
+  };
   return {
     variants: [
-      { width: 640, src: small },
-      { width: 1280, src: medium },
-      { width: 1920, src: full },
+      { width: 640, src: source("-640") },
+      { width: 1280, src: source("-1280") },
+      { width: 1920, src: source("") },
     ],
   };
 }
 
 // Battle presentation only: these URLs never join the startup image preload set.
-export const bossIdleClips: Readonly<Partial<Record<string, readonly BossIdleClip[]>>> = {
-  "forge-golem": [
-    clip(forgeGolemIdle1At640, forgeGolemIdle1At1280, forgeGolemIdle1),
-    clip(forgeGolemIdle2At640, forgeGolemIdle2At1280, forgeGolemIdle2),
-    clip(forgeGolemIdle3At640, forgeGolemIdle3At1280, forgeGolemIdle3),
-  ],
-  frostwarden: [
-    clip(frostwardenIdle1At640, frostwardenIdle1At1280, frostwardenIdle1),
-    clip(frostwardenIdle2At640, frostwardenIdle2At1280, frostwardenIdle2),
-    clip(frostwardenIdle3At640, frostwardenIdle3At1280, frostwardenIdle3),
-  ],
-  "iron-bear": [
-    clip(ironBearIdle1At640, ironBearIdle1At1280, ironBearIdle1),
-    clip(ironBearIdle2At640, ironBearIdle2At1280, ironBearIdle2),
-    clip(ironBearIdle3At640, ironBearIdle3At1280, ironBearIdle3),
-  ],
-  "blight-treant": [
-    clip(blightTreantIdle1At640, blightTreantIdle1At1280, blightTreantIdle1),
-    clip(blightTreantIdle2At640, blightTreantIdle2At1280, blightTreantIdle2),
-    clip(blightTreantIdle3At640, blightTreantIdle3At1280, blightTreantIdle3),
-  ],
-  "blood-countess": [
-    clip(bloodCountessIdle1At640, bloodCountessIdle1At1280, bloodCountessIdle1),
-    clip(bloodCountessIdle2At640, bloodCountessIdle2At1280, bloodCountessIdle2),
-    clip(bloodCountessIdle3At640, bloodCountessIdle3At1280, bloodCountessIdle3),
-    clip(bloodCountessIdle4At640, bloodCountessIdle4At1280, bloodCountessIdle4),
-    clip(bloodCountessIdle5At640, bloodCountessIdle5At1280, bloodCountessIdle5),
-  ],
-  seraph: [
-    clip(seraphIdle1At640, seraphIdle1At1280, seraphIdle1),
-    clip(seraphIdle2At640, seraphIdle2At1280, seraphIdle2),
-    clip(seraphIdle3At640, seraphIdle3At1280, seraphIdle3),
-  ],
-  "stone-titan": [
-    clip(stoneTitanIdle1At640, stoneTitanIdle1At1280, stoneTitanIdle1),
-    clip(stoneTitanIdle2At640, stoneTitanIdle2At1280, stoneTitanIdle2),
-    clip(stoneTitanIdle3At640, stoneTitanIdle3At1280, stoneTitanIdle3),
-  ],
-};
+export const bossIdleClips: Readonly<Partial<Record<string, readonly BossIdleClip[]>>> = Object.fromEntries(
+  Object.entries(clipCounts).map(([id, count]) => [
+    id,
+    Array.from({ length: count }, (_, index) => clip(id, index + 1)),
+  ]),
+);
