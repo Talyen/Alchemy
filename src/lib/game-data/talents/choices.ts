@@ -53,6 +53,7 @@ export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
   const talents = talentPoolByKeyword.get(keywordId) ?? [];
   if (talents.length === 0) return [];
+  if (unlockedIds.length === 0) return talents.slice(0, TALENT_ROW_SIZES[0]);
   const unlocked = new Set(unlockedIds);
   let start = 0;
   for (let row = 0; row <= TALENT_ROW_SIZES.length; row++) {

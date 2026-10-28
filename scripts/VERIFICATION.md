@@ -344,6 +344,9 @@ worktrees; they retain prepared art, audio, icons and manifests. The asset-integ
 job still checks out source masters for freshness validation. Windows package
 uploads disable archive compression because the installer and media are already
 compressed. Release packaging retains full Git history for patch notes.
+The React Compiler Babel pass generates intermediate source maps only for development
+or when the resolved build requests maps (including CLI overrides). Ordinary web
+builds avoid that discarded mapping work; desktop hidden maps remain enabled.
 Build preflight overlaps localization and generated-output validation, waits for both
 to settle, and rejects either failure before starting Vite.
 
