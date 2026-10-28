@@ -15,8 +15,7 @@ function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly Ke
   return result;
 }
 
-export function getCardKeywords(card: BattleCard): KeywordId[] {
-  const base = cachedEffectKeywords(card.effects);
+function mergeCardKeywords(card: BattleCard, base: readonly KeywordId[]): KeywordId[] {
   if (!card.consume && !card.tags?.length) return [...base];
   if (card.consume && !card.tags?.length) return base.includes("consume") ? [...base] : [...base, "consume"];
   if (card.tags?.length === 1) {
@@ -32,6 +31,10 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   return [...keywords];
 }
 
+export function getCardKeywords(card: BattleCard): KeywordId[] {
+  return mergeCardKeywords(card, cachedEffectKeywords(card.effects));
+}
+
 /** Internal read-only view for consumers that do not retain or mutate keywords. */
 export function getCardKeywordView(card: BattleCard): readonly KeywordId[] {
   const base = cachedEffectKeywords(card.effects);
@@ -40,7 +43,7 @@ export function getCardKeywordView(card: BattleCard): readonly KeywordId[] {
     (!card.tags?.length || card.tags.every((tag) => base.includes(tag)))
   )
     return base;
-  return getCardKeywords(card);
+  return mergeCardKeywords(card, base);
 }
 
 /** Predicate callers can use the immutable cache without copying its array. */

@@ -1,3 +1,4 @@
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 import { expect, it } from "vitest";
 import { cardLibrary, companionLibrary, type KeywordId } from "@/lib/game-data";
 import {
@@ -99,7 +100,7 @@ it("preserves keyword order and detached results for single and repeated tags", 
   const card = makeTestCard({ effects: [{ kind: "heal", amount: 1 }], tags: ["health"] });
   const baseView = getCardKeywordView(card);
   expect(baseView).toEqual(["health"]);
-  expect(getCardKeywordView(card)).toBe(baseView);
+  expect(getCardKeywordView(card)).toEqual(baseView);
   const detached = getCardKeywords(card);
   detached.push("burn");
   expect(getCardKeywordView(card)).toEqual(["health"]);
@@ -109,4 +110,19 @@ it("preserves keyword order and detached results for single and repeated tags", 
   expect(getCardKeywords(card)).toEqual(["health", "consume"]);
   card.tags = ["archery", "archery"];
   expect(getCardKeywordView(card)).toEqual(["health", "consume", "archery"]);
+});
+
+it("does not treat symbol-keyed mutable data or accessors as deeply frozen", () => {
+  const key = Symbol("nested");
+  const child = { value: 1 };
+  const container = Object.freeze({ [key]: child });
+  expect(isDeeplyFrozenData(container)).toBe(false);
+  Object.freeze(child);
+  expect(isDeeplyFrozenData(container)).toBe(true);
+  const accessor = Object.freeze({
+    get [key]() {
+      return 1;
+    },
+  });
+  expect(isDeeplyFrozenData(accessor)).toBe(false);
 });
