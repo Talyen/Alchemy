@@ -3,18 +3,21 @@ import { MILESTONE_KINDS } from "./agent-report-types";
 
 /** One sample per career, even when it reached several milestones of a kind. */
 export function firstMilestoneRuns(careers: readonly CareerResult[]) {
-  const entries = careers.map((career) => Object.entries(career.telemetry.milestones));
-  return MILESTONE_KINDS.map((kind) => {
-    const firstRuns: number[] = [];
-    for (const career of entries) {
-      let first: number | undefined;
-      for (const [key, run] of career) {
-        if (key.startsWith(`${kind}:`)) first = first === undefined ? run + 1 : Math.min(first, run + 1);
-      }
-      if (first !== undefined) firstRuns.push(first);
+  const milestones = MILESTONE_KINDS.map((kind) => ({ kind, firstRuns: [] as number[] }));
+  const byKind = new Map<string, (typeof milestones)[number]>(milestones.map((entry) => [entry.kind, entry]));
+  for (const career of careers) {
+    const firstByKind = new Map<string, number>();
+    for (const [key, run] of Object.entries(career.telemetry.milestones)) {
+      const separator = key.indexOf(":");
+      if (separator < 0) continue;
+      const kind = key.slice(0, separator);
+      if (!byKind.has(kind)) continue;
+      const first = firstByKind.get(kind);
+      firstByKind.set(kind, first === undefined ? run + 1 : Math.min(first, run + 1));
     }
-    return { kind, firstRuns };
-  });
+    for (const [kind, first] of firstByKind) byKind.get(kind)!.firstRuns.push(first);
+  }
+  return milestones;
 }
 
 export function roomMortality(runs: ReadonlyArray<CareerResult["outcomes"][number]>, rooms: readonly number[]) {
@@ -115,7 +118,8 @@ export function summarizeProgress(results: CareerResult[]) {
   return [...groups].map(([cohort, careers]) => {
     const complete = careers.filter((career) => career.status === "completed");
     const runs = complete.flatMap((career) => career.outcomes);
-    const maxRooms = Math.max(0, ...runs.map((run) => run.rooms));
+    let maxRooms = 0;
+    for (const run of runs) maxRooms = Math.max(maxRooms, run.rooms);
     const mortality = roomMortality(
       runs,
       Array.from({ length: maxRooms + 1 }, (_, room) => room),

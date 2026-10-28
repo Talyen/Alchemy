@@ -29,14 +29,14 @@ function slotsForPreset(preset: TalentPreset): GearSlot[] {
 }
 
 function poolForSlot(slot: GearSlot, keywords: readonly string[], rangedMainHand: boolean): GearBaseItemDefinition[] {
-  const inSlot = gearBaseItemList.filter(
-    (item) =>
-      item.compatibleSlots.includes(slot) &&
-      (slot !== "off-hand" || (rangedMainHand ? item.slotRule === "quiver" : item.slotRule !== "quiver")),
-  );
-  const affinity = inSlot.filter(
-    (item) => keywords.length === 0 || item.affinityKeywords.some((keyword) => keywords.includes(keyword)),
-  );
+  const inSlot: GearBaseItemDefinition[] = [];
+  const affinity: GearBaseItemDefinition[] = [];
+  for (const item of gearBaseItemList) {
+    if (!item.compatibleSlots.includes(slot)) continue;
+    if (slot === "off-hand" && (rangedMainHand ? item.slotRule !== "quiver" : item.slotRule === "quiver")) continue;
+    inSlot.push(item);
+    if (keywords.length > 0 && item.affinityKeywords.some((keyword) => keywords.includes(keyword))) affinity.push(item);
+  }
   return affinity.length > 0 ? affinity : inSlot;
 }
 

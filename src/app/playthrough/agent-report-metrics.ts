@@ -38,14 +38,20 @@ function quantile(sorted: number[], probability: number): MaybeNumber {
 
 export function distribution(values: number[]): AgentDistribution {
   const sorted = [...values].sort((a, b) => a - b);
+  let min = Infinity;
+  let max = -Infinity;
+  for (const value of values) {
+    min = Math.min(min, value);
+    max = Math.max(max, value);
+  }
   return {
     count: values.length,
-    min: values.length ? Math.min(...values) : null,
+    min: values.length ? min : null,
     q25: quantile(sorted, 0.25),
     median: quantile(sorted, 0.5),
     mean: mean(values),
     q75: quantile(sorted, 0.75),
-    max: values.length ? Math.max(...values) : null,
+    max: values.length ? max : null,
   };
 }
 
@@ -138,30 +144,24 @@ export function buildRunProgression(careers: CompletedCareer[]): AgentRunProgres
 }
 
 export function buildRunOutcomes(careers: CompletedCareer[]): AgentRunOutcomeMetric[] {
-  let runCount = 0;
-  for (const career of careers) runCount = Math.max(runCount, career.outcomes.length);
-  return Array.from({ length: runCount }, (_, run) => {
-    let count = 0;
-    let victories = 0;
-    let defeats = 0;
-    let rooms = 0;
-    for (const career of careers) {
-      const outcome = career.outcomes[run];
-      if (outcome === undefined) continue;
-      count++;
-      victories += outcome.outcome === "victory" ? 1 : 0;
-      defeats += outcome.outcome === "defeat" ? 1 : 0;
-      rooms += outcome.rooms;
+  const totals: Array<{ count: number; victories: number; defeats: number; rooms: number }> = [];
+  for (const career of careers) {
+    for (const [run, outcome] of career.outcomes.entries()) {
+      const total = (totals[run] ??= { count: 0, victories: 0, defeats: 0, rooms: 0 });
+      total.count++;
+      total.victories += Number(outcome.outcome === "victory");
+      total.defeats += Number(outcome.outcome === "defeat");
+      total.rooms += outcome.rooms;
     }
-    return {
-      run: run + 1,
-      runs: count,
-      victories,
-      defeats,
-      victoryRate: rate(victories, count),
-      meanRooms: count ? round(rooms / count) : null,
-    };
-  });
+  }
+  return totals.map(({ count, victories, defeats, rooms }, run) => ({
+    run: run + 1,
+    runs: count,
+    victories,
+    defeats,
+    victoryRate: rate(victories, count),
+    meanRooms: count ? round(rooms / count) : null,
+  }));
 }
 
 export function buildFirstVictoryRun(careers: CompletedCareer[]): {
@@ -219,7 +219,8 @@ export function buildDeckCohesion(careers: CompletedCareer[]): AgentDeckCohesion
 
 export function buildSurvival(runs: CareerRun[]): AgentCohortSummary["survivalByRoom"] {
   if (!runs.length) return [];
-  const maxRoom = Math.max(...runs.map((run) => run.rooms));
+  let maxRoom = -Infinity;
+  for (const run of runs) maxRoom = Math.max(maxRoom, run.rooms);
   const rooms =
     maxRoom <= 128
       ? Array.from({ length: maxRoom + 1 }, (_, room) => room)

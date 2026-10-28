@@ -81,8 +81,9 @@ export function pairedWinStats(
 
 export function combinePairedWinStats(stats: readonly PairedWinStats[]): PairedWinStats {
   const combined = emptyPairedWinStats();
+  const keys = Object.keys(combined) as Array<keyof PairedWinStats>;
   for (const entry of stats) {
-    for (const key of Object.keys(combined) as Array<keyof PairedWinStats>) combined[key] += entry[key];
+    for (const key of keys) combined[key] += entry[key];
   }
   return combined;
 }
@@ -125,7 +126,7 @@ export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta 
 
 export function topPlayedCards(counts: Record<string, number>, limit = 5): Array<{ cardId: string; count: number }> {
   return Object.entries(counts)
-    .map(([cardId, count]) => ({ cardId, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit);
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([cardId, count]) => ({ cardId, count }));
 }

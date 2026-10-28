@@ -50,12 +50,13 @@ export interface CoreRow extends CoreRateRow {
 
 export function* coreScenarios(options: ReportRunOptions): Iterable<() => CoreRow> {
   for (const tier of REPORT_TIERS) {
+    const matchups = coreMatchupsForTier(tier);
     for (const characterId of reportCharacterIds()) {
       const decks = Array.from({ length: options.deckSeeds }, (_, deckIndex) => {
         const deckSeed = balanceScenarioSeed("core-deck", tier.preset, characterId, deckIndex);
         return buildClassSimDeck(characterId, tier.preset, deckSeed);
       });
-      for (const matchup of coreMatchupsForTier(tier)) {
+      for (const matchup of matchups) {
         yield () => {
           const batches: BalanceBatchResult[] = [];
           for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
@@ -109,11 +110,13 @@ export function collectAnomalies(rows: readonly CoreRow[]): {
   const perTier: Record<TalentPreset, Record<string, number>> = { early: {}, mid: {}, late: {} };
   for (const row of rows) {
     const threshold = getAnomalyThreshold(row.tier);
+    const tierLabel = reportTierForPreset(row.tier).label;
+    const tierMaxima = perTier[row.tier];
     for (const simulation of row.results) {
       const anomalies = simulation.anomalies;
       for (const { key, label } of ANOMALY_METRICS) {
         const value = anomalies[key];
-        perTier[row.tier][key] = Math.max(perTier[row.tier][key] ?? 0, value);
+        tierMaxima[key] = Math.max(tierMaxima[key] ?? 0, value);
         if (value <= threshold) continue;
         byField[key] ??= { field: label, maxValue: 0, battles: 0, peakScenario: "" };
         const entry = byField[key];
@@ -133,11 +136,7 @@ export function collectAnomalies(rows: readonly CoreRow[]): {
               ? anomalies.maxSingleHitDamageToPlayerStat
               : "";
         const card = cardId ? (cardById[cardId]?.title ?? cardId) : "";
-        entry.peakScenario = [
-          `${simulation.characterId} vs ${simulation.enemyId} (${reportTierForPreset(row.tier).label})`,
-          stat,
-          card,
-        ]
+        entry.peakScenario = [`${simulation.characterId} vs ${simulation.enemyId} (${tierLabel})`, stat, card]
           .filter(Boolean)
           .join(" · ");
       }
@@ -219,7 +218,7 @@ export function composeBalanceReport(
 }
 
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
-  const core = withPhaseTiming("core scenarios", () => [...coreScenarios(options)].map((run) => run()));
+  const core = withPhaseTiming("core scenarios", () => Array.from(coreScenarios(options), (run) => run()));
   const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
 
   const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));

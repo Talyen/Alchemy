@@ -8,12 +8,16 @@ import type { BalanceReportModel } from "./report-model";
 
 function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
   const findings: BalanceFinding[] = [];
+  const peaks = new Map<string, string>();
+  for (const entry of model.anomalies) {
+    // Preserve the first matching peak, as in the original report lookup.
+    if (!peaks.has(entry.field)) peaks.set(entry.field, entry.peakScenario);
+  }
   for (const row of model.anomalyMetrics) {
     for (const { preset: tier } of REPORT_TIERS) {
       const value = row.values[tier];
       const threshold = ANOMALY_THRESHOLD_BY_PRESET[tier];
       if (value <= threshold) continue;
-      const peak = model.anomalies.find((entry) => entry.field === row.field);
       findings.push(
         finding(
           {
@@ -21,7 +25,7 @@ function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
             id: row.field,
             title: row.field,
             tier,
-            worstScenario: peak?.peakScenario ?? row.field,
+            worstScenario: peaks.get(row.field) ?? row.field,
           },
           {
             severity: "watch",
