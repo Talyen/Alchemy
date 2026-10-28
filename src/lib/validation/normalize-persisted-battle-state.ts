@@ -25,7 +25,7 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
-import { toFiniteNonNegativeInt, toSafeNonNegativeInt } from "./save-schemas/validation-utils";
+import { toSafeNonNegativeInt } from "./save-schemas/validation-utils";
 import { isRecord } from "@/lib/utils";
 import {
   ENCOUNTER_TRAITS,
@@ -301,7 +301,7 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
       lastArcheryUid: unambiguousUid(state.uniqueGear.lastArcheryUid),
       returningFlightUids: [...returningFlightUids],
     },
-    cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
+    cardsPlayedThisTurn: toSafeNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
     nextCardUid,
     hand: overflow.length ? repaired.hand.slice(0, MAX_HAND_SIZE) : repaired.hand,
     pendingHandCards: [...overflow, ...repaired.pendingHandCards],

@@ -12,6 +12,9 @@ import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persis
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { saveEnvelopeFixture } from "../../fixtures/saves";
+import { buildings } from "@/lib/homestead/data";
+import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
+import { savedActivityFixture } from "../../fixtures/run-activity";
 
 function battle(patch: Record<string, unknown> = {}) {
   return { ...defaultBattleState(), hand: [{ ...cardById.slash!, uid: 1 }], ...patch };
@@ -25,6 +28,72 @@ function battleSave(patch: Record<string, unknown> = {}) {
 }
 
 describe("progress recovery regressions", () => {
+  it("keeps valid Homestead purchases when malformed list entries cannot be converted to strings", () => {
+    const building = buildings[0]!;
+    const raw = saveEnvelopeFixture({ constructedBuildings: [building.id, { toString: null }, null] });
+    const selected = selectSaveCandidates([JSON.stringify(raw)]).state;
+    expect(selected.status.kind).toBe("ok");
+    expect(selected.data.constructedBuildings[building.id]).toBe(1);
+  });
+
+  it("repairs a card play count that cannot advance precisely", () => {
+    const restored = PersistedBattleStateSchema.parse(
+      battle({ cardsPlayedThisTurn: Number.MAX_VALUE, mana: 3, maxMana: 3 }),
+    );
+    expect(restored.cardsPlayedThisTurn).toBe(0);
+    const next = playBattleCardResolved({ ...restored, rng: () => 0.99 }, "slash", 0).state;
+    expect(next.cardsPlayedThisTurn).toBe(1);
+    const saturated = PersistedBattleStateSchema.parse(
+      battle({ cardsPlayedThisTurn: Number.MAX_SAFE_INTEGER, mana: 3, maxMana: 3 }),
+    );
+    const afterPlay = playBattleCardResolved({ ...saturated, rng: () => 0.99 }, "slash", 0).state;
+    expect(afterPlay.cardsPlayedThisTurn).toBe(Number.MAX_SAFE_INTEGER);
+    expect(PersistedBattleStateSchema.parse(afterPlay).cardsPlayedThisTurn).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it("repairs invalid saved Mystery Gold and Material quantities independently", () => {
+    const choice = {
+      label: "Offer",
+      effects: [
+        { kind: "gainGold", amount: Number.MAX_VALUE },
+        { kind: "gainMaterial", material: "wood", amount: 2.5 },
+        { kind: "gainMaterial", material: "iron", amount: 3 },
+      ],
+    };
+    const run = parseActiveRun(
+      makeMinimalActiveRunInput({
+        activity: savedActivityFixture("mystery", {
+          event: { id: "saved", title: "Saved", art: "", narrative: "", choices: [choice] },
+          chosenChoice: null,
+        }),
+      }),
+    );
+    expect(run?.activity.kind).toBe("mystery");
+    if (run?.activity.kind !== "mystery") throw new Error("Expected Mystery activity");
+    expect(run.activity.data?.event.choices[0]?.effects).toEqual([
+      { kind: "gainGold", amount: 0 },
+      { kind: "gainMaterial", material: "wood", amount: 0 },
+      { kind: "gainMaterial", material: "iron", amount: 3 },
+    ]);
+  });
+
+  it("clears pending Labyrinth locks that cannot be completed", () => {
+    const map = gridLabyrinthMapFixture();
+    const reachable = Object.values(map.nodes).find((node) => canEnterLabyrinthNode(map, node.id))!;
+    const parse = (node: string) =>
+      parseActiveRun(
+        makeMinimalActiveRunInput({
+          contentSystemType: "labyrinth",
+          labyrinthMap: map,
+          labyrinthPendingNode: node,
+          activity: savedActivityFixture("battle", { battleState: battle() }),
+        }),
+      );
+    expect(parse(reachable.id)?.labyrinthPendingNode).toBe(reachable.id);
+    expect(parse(map.currentNodeId)?.labyrinthPendingNode).toBeNull();
+    const distant = Object.values(map.nodes).find((node) => !node.cleared && !canEnterLabyrinthNode(map, node.id))!;
+    expect(parse(distant.id)?.labyrinthPendingNode).toBeNull();
+  });
   it("does not let an unsafe timestamp replace a newer playable save", () => {
     const fresh = saveEnvelopeFixture({ lastSavedAt: 20, gold: 80 });
     const damaged = saveEnvelopeFixture({ lastSavedAt: Number.MAX_VALUE, gold: 5 });
