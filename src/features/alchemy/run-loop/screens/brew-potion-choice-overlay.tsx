@@ -46,8 +46,6 @@ function PotionChoices({
             ariaLabel={i18n.text("ui.wish-overlay.1", "Choose {{value0}}", {
               value0: i18n.read(() => getCardDisplayTitle(card)),
             })}
-            shimmerActive={false}
-            shimmerToken={undefined}
             className="w-full"
             wrapperClassName={cn("flex min-w-0 shrink justify-center", collectionTileWidthClass)}
             shineColor={getCardInspectionShineColors(card)}

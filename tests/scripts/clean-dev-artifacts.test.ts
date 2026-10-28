@@ -1,23 +1,11 @@
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync, symlinkSync, lstatSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { temporaryDirectories } from "../helpers/script-fixtures";
+import { mkdirSync, writeFileSync, existsSync, symlinkSync, lstatSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { listArtifactDirsToRemove, measurePath, removePath } from "../../scripts/lib/clean-dev-artifacts.mjs";
 import { parseCleanArgs } from "../../scripts/clean-dev-artifacts.mjs";
 
-const tempRoots: string[] = [];
-
-afterEach(() => {
-  for (const root of tempRoots.splice(0)) {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-function makeRoot() {
-  const root = mkdtempSync(join(tmpdir(), "alchemy-clean-"));
-  tempRoots.push(root);
-  return root;
-}
+const makeRoot = temporaryDirectories("alchemy-clean-");
 
 describe("clean-dev-artifacts helpers", () => {
   it("preserves evidence and environments unless their explicit selectors are requested", () => {

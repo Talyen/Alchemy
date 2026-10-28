@@ -1,6 +1,6 @@
 import { resolveBattleSequence } from "../battle-sequence";
 import { applyPotionMultiplier, cardPotionMultiplier } from "../amount-helpers";
-import { mergeCombatText } from "../combat-text-events";
+import { mergeCombatText, emitNoticeText } from "../combat-text-events";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
 import { hasEncounterBenefit } from "../encounter-trait-state";
@@ -134,11 +134,7 @@ function resolveSingleEffect(
   }
 
   if (effect.kind === "repeat-over-turns") {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "notice",
-      stat: "scheduled",
-      text: "",
+    emitNoticeText(combatTexts, "player", "scheduled", "", {
       ...(context.feedback ? { feedback: context.feedback } : {}),
     });
     return {

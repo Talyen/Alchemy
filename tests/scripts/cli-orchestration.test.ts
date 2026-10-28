@@ -1,30 +1,26 @@
+import { temporaryDirectories, runNode } from "../helpers/script-fixtures";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveViteBin } from "../../scripts/lib/command-invocation.mjs";
 
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
 import { isolatedTestResources } from "../helpers/isolated-test-resources";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
-const temporary: string[] = [];
+
 function fixture() {
-  const directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-cli-orchestration-")));
-  temporary.push(directory);
+  const directory = fs.realpathSync(createTemporaryDirectory("alchemy-cli-orchestration-"));
+
   return directory;
 }
-afterEach(() => {
-  for (const directory of temporary.splice(0)) fs.rmSync(directory, { recursive: true, force: true });
-});
 
 // Probe CLI orchestration without starting simulations, downloads, builds, or browser tests.
 function probe(script: string, args: string[], cwd: string, interception: string) {
   const filename = path.join(ROOT, "scripts", script);
-  return spawnSync(
-    process.execPath,
+  return runNode(
     [
       "--input-type=module",
       "-e",
@@ -37,9 +33,11 @@ function probe(script: string, args: string[], cwd: string, interception: string
        try { await import(${JSON.stringify(pathToFileURL(filename).href)}); }
        catch (error) { console.error(error.message); process.exitCode = 1; }`,
     ],
-    { cwd, encoding: "utf8", timeout: 10_000 },
+    { cwd, timeout: 10_000 },
   );
 }
+
+const createTemporaryDirectory = temporaryDirectories();
 
 describe("CLI launch paths", () => {
   it("keeps discovery seeds fresh by default and preserves explicit uint32 replay seeds", () => {
@@ -270,14 +268,9 @@ describe("CLI validation before side effects", () => {
     );
     const envrc = path.join(directory, ".envrc");
     fs.writeFileSync(envrc, "existing configuration\n");
-    const result = spawnSync(
-      process.execPath,
-      [path.join(directory, "scripts/setup-git-safety.mjs"), "--repo", "--bogus"],
-      {
-        cwd: directory,
-        encoding: "utf8",
-      },
-    );
+    const result = runNode([path.join(directory, "scripts/setup-git-safety.mjs"), "--repo", "--bogus"], {
+      cwd: directory,
+    });
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("Unknown option");
     expect(fs.readFileSync(envrc, "utf8")).toBe("existing configuration\n");

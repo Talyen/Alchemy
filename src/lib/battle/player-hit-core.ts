@@ -4,7 +4,7 @@ import { applyDrawResult, drawFromState } from "./draw";
 import { gainManaWithCombatText } from "./player-rewards";
 import type { BattleState, CombatTextEvent } from "./types";
 import { damageEnemyHealth } from "./health-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 
 /** Eligibility is captured before reactions; Health belongs to the actual target of this hit. */
@@ -25,11 +25,7 @@ export function reportEnemyHitDamage(
   feedback?: CombatTextEvent["feedback"],
 ): void {
   if (facts.resolvedDamage <= 0) return;
-  mergeCombatText(texts, {
-    target: "enemy",
-    kind: "damage",
-    stat: damageType,
-    amount: facts.resolvedDamage,
+  emitDamageText(texts, "enemy", damageType, facts.resolvedDamage, {
     ...(feedback ? { feedback } : {}),
     ...(facts.healthDamage !== facts.resolvedDamage ? { healthLost: facts.healthDamage } : {}),
     ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),

@@ -5,7 +5,7 @@ import {
   LABYRINTH_MODIFIER_CONFIG,
   PERCENT_DENOMINATOR,
 } from "../game-constants";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { paceCombatDamage } from "./fight-pacing";
 import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -117,11 +117,7 @@ export function calculateBlockAndArmorMitigation(
         : Math.min(state.playerStatuses.block, Math.round(blockAbsorb / blockMultiplier));
   remainingDamage -= blockAbsorb;
   if (blockSpent > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "block",
-      amount: blockSpent,
+    emitDamageText(combatTexts, "player", "block", blockSpent, {
       ...(blockAbsorb !== blockSpent ? { absorbedDamage: blockAbsorb } : {}),
     });
   }
@@ -137,13 +133,7 @@ export function calculateBlockAndArmorMitigation(
       : 0;
   const totalExtraBlock = extraBreak + extraStrip;
   if (totalExtraBlock > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "block",
-      amount: totalExtraBlock,
-      impact: false,
-    });
+    emitDamageText(combatTexts, "player", "block", totalExtraBlock, { impact: false });
   }
   const actualDamage = computeMitigatedDamage(state, effect, remainingDamage, options, protectionState);
   return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage };

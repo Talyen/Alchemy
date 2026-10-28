@@ -27,7 +27,7 @@ Definitions of common terms used in the Alchemy codebase.
 - **Death's Door** — Prevents fatal damage once per battle, leaving the player at 1 HP with 2 grace turns (extendable). Healing does not end the window. While active, lethal hits floor at 1 HP (multi-hit and DoT ticks included). The enemy phase that spends the last grace still floors; damage becomes lethal on a later hit.
 - **Fight pacing** — Hidden combat scaler (not a player-facing rule). Live default on; `ALCHEMY_BALANCE_PACING=off` disables it for the [balance simulation](./SIMULATION.md#balance-simulation).
 - **Homestead** — Between-run hub; spend **Materials** on permanent upgrades.
-- **Mana** — Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring).
+- **Mana** — Resource to play cards; resets to `maxMana` each turn, then receives applicable turn-start bonuses. Wellspring adds 1 if the player ended the previous turn with any unspent Mana; it does not carry over the entire remainder.
 - **Materials** — Meta currency for homestead upgrades.
 - **Screen** — Route union (`menu`, `battle`, `rewards`, …) on `navigation.screen` — not a map node.
 - **Companion Bond** — Per-companion Homestead upgrade; improves its turn-start effects above the unbonded baseline. Progression follows [Companion Bond](./GAME_RULES.md#companion-bond).

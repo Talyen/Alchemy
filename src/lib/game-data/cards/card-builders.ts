@@ -27,37 +27,28 @@ type DamageCardInput = CardBaseInput & {
   tags?: KeywordId[];
 };
 export function damageCard({ damageType, amount, lifesteal = false, ...base }: DamageCardInput): BattleCard {
-  return effectsCard({
-    ...base,
-    effects: [{ kind: "damage", damageType, amount, ...(lifesteal ? { lifesteal: true } : {}) }],
-  });
+  return effectsCard(
+    base.id,
+    [{ kind: "damage", damageType, amount, ...(lifesteal ? { lifesteal: true } : {}) }],
+    base,
+  );
 }
 
 type PlayerStatusCardInput = CardBaseInput & { status: "block" | "armor" | "thorns" | "forge"; amount: number };
 export function playerStatusCard({ status, amount, ...base }: PlayerStatusCardInput): BattleCard {
-  return effectsCard({
-    ...base,
-    effects: [{ kind: "player-status", status, amount }],
-  });
+  return effectsCard(base.id, [{ kind: "player-status", status, amount }], base);
 }
 
-type EffectsCardInput<E extends BattleCardEffect[]> = CardBaseInput & {
-  effects: E;
+type EffectsCardOptions<E extends BattleCardEffect[]> = Omit<CardBaseInput, "id"> & {
   describe?: (effects: E) => CardDescription;
   tags?: KeywordId[];
   consume?: boolean;
 };
-export function effectsCard<const E extends BattleCardEffect[]>({
-  id,
-  definitionVersion,
-  title,
-  art,
-  effects,
-  tags,
-  consume = false,
-  describe,
-  cost = 1,
-}: EffectsCardInput<E>): BattleCard {
+export function effectsCard<const E extends BattleCardEffect[]>(
+  id: BattleCard["id"],
+  effects: E,
+  { definitionVersion, title, art, tags, consume = false, describe, cost = 1 }: EffectsCardOptions<E> = {},
+): BattleCard {
   const description = [...(describe ? describe(effects) : createEffectDescription(effects))];
   appendCardDescriptionTrailer(description, tags, consume);
   return withCardDescription(

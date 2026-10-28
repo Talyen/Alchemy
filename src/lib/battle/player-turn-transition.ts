@@ -1,6 +1,6 @@
 import { expireCcReactions } from "./elemental-reaction-state";
 import { resetTurnFlags } from "./combat-flags";
-import { mergeCombatText } from "./combat-text-events";
+import { emitNoticeText, emitDamageText } from "./combat-text-events";
 import { resolveSecondaryAction } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
@@ -38,9 +38,9 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
   if (removed <= 0) return state;
   const poison = state.playerStatuses.poison - removed;
   if (poison === 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "poison", signal: "cleanse", text: "" });
+    emitNoticeText(combatTexts, "player", "poison", "", { signal: "cleanse" });
   } else {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: removed, impact: false });
+    emitDamageText(combatTexts, "player", "poison", removed, { impact: false });
   }
   const reduced = { ...state, playerStatuses: { ...state.playerStatuses, poison } };
   const cleansed = resolvePendingBattleReactions(

@@ -12,7 +12,7 @@ import {
 import { setPlayerStatus } from "../status-state";
 import { dealSelfDamage } from "../status-helpers";
 import { resolveFollowUpHit } from "../follow-up-hit-resolution";
-import { mergeCombatText } from "../combat-text-events";
+import { emitNoticeText } from "../combat-text-events";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 
 export const UTILITY_HANDLERS = createCardUtilityHandlers({
@@ -35,14 +35,7 @@ export const UTILITY_HANDLERS = createCardUtilityHandlers({
   cleanse: (state, amount, texts, feedback) => removeHarmfulPlayerStatuses(state, amount, texts, { feedback }),
   cleanseStatus: (state, status, texts, feedback) => {
     if (state.playerStatuses[status] <= 0) return state;
-    mergeCombatText(texts, {
-      target: "player",
-      kind: "notice",
-      stat: status,
-      signal: "cleanse",
-      text: "",
-      ...(feedback ? { feedback } : {}),
-    });
+    emitNoticeText(texts, "player", status, "", { signal: "cleanse", ...(feedback ? { feedback } : {}) });
     return applyCleanseHeals(setPlayerStatus(state, status, 0), texts);
   },
   gold: (state, amount, texts, feedback) => addGoldWithCombatText(state, amount, texts, { feedback }),

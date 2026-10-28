@@ -2,7 +2,7 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { clampHealth } from "./health-state";
 import { halveRounded } from "./amount-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { mergeCombatText } from "./combat-text-events";
+import { emitHealText } from "./combat-text-events";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { getBattleOutcome } from "./battle-outcome";
@@ -20,7 +20,7 @@ export function applyEnemyHealingWithCombatText(
   const nextHealth = clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth);
   const actualHeal = nextHealth - state.enemyHealth;
   if (actualHeal <= 0) return state;
-  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualHeal });
+  emitHealText(combatTexts, "enemy", "health", actualHeal);
   return { ...state, enemyHealth: nextHealth };
 }
 

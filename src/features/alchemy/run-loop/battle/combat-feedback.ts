@@ -19,8 +19,6 @@ export interface CombatFeedbackState {
   floatingCombatBursts: CombatTextBurst[];
   reactionAnnouncements: ReactionAnnouncement[];
   cardRejection: { cardKey: string; mana: boolean } | null;
-  enemyShaking: boolean;
-  playerShaking: boolean;
   companionShaking: boolean;
   playerImpactCue: CombatImpactCue | null;
   enemyImpactCue: CombatImpactCue | null;
@@ -34,8 +32,6 @@ export interface CombatFeedbackState {
 
 export interface CombatFeedbackActions {
   rejectCardPlay: (cardKey: string, mana: boolean) => boolean;
-  shakeEnemy: () => void;
-  shakePlayer: () => void;
   shakeCompanion: () => void;
   telegraphAttack: (side: Combatant) => void;
   telegraphCast: (side: Combatant) => void;
@@ -48,8 +44,6 @@ export function createCombatFeedbackState(): CombatFeedbackState {
     floatingCombatBursts: [],
     reactionAnnouncements: [],
     cardRejection: null,
-    enemyShaking: false,
-    playerShaking: false,
     companionShaking: false,
     playerImpactCue: null,
     enemyImpactCue: null,
@@ -78,7 +72,7 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
   const rejectionTimers = new TimerGroup();
   const lastImpact = new Map<string, number>();
   let rejecting = false;
-  const shakeCancels = new Map<Combatant, () => void>();
+  let cancelCompanionShake: (() => void) | undefined;
   let generation = 0;
   let actionId = 0;
   let impactSequence = 0;
@@ -113,18 +107,14 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
     );
   }
 
-  function shake(side: Combatant) {
-    const key = `${side}Shaking` as const;
-    shakeCancels.get(side)?.();
+  function shakeCompanion() {
+    cancelCompanionShake?.();
     // Arm before publishing: a synchronous subscriber may reset presentation.
-    shakeCancels.set(
-      side,
-      shakeTimers.setTimeout(() => {
-        shakeCancels.delete(side);
-        update(() => ({ [key]: false }));
-      }, SHAKE_DURATION_MS),
-    );
-    update(() => ({ [key]: true }));
+    cancelCompanionShake = shakeTimers.setTimeout(() => {
+      cancelCompanionShake = undefined;
+      update(() => ({ companionShaking: false }));
+    }, SHAKE_DURATION_MS);
+    update(() => ({ companionShaking: true }));
   }
 
   function telegraph(kind: "Attack" | "Cast", side: Combatant) {
@@ -139,7 +129,7 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
       rejectionTimers.clearAll();
       rejecting = false;
       lastImpact.clear();
-      shakeCancels.clear();
+      cancelCompanionShake = undefined;
     },
     actions: {
       rejectCardPlay: (cardKey, mana) => {
@@ -152,9 +142,7 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         update(() => ({ cardRejection: { cardKey, mana } }));
         return true;
       },
-      shakeEnemy: () => shake("enemy"),
-      shakePlayer: () => shake("player"),
-      shakeCompanion: () => shake("companion"),
+      shakeCompanion,
       telegraphAttack: (side) => telegraph("Attack", side),
       telegraphCast: (side) => telegraph("Cast", side),
       showCombatTexts: (events) => {

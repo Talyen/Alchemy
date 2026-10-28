@@ -13,8 +13,6 @@ function makePresentation() {
   return {
     setDisplayedBattle: vi.fn(),
     showCombatTexts: vi.fn(),
-    shakeEnemy: vi.fn(),
-    shakePlayer: vi.fn(),
     telegraphAttack: vi.fn(),
     telegraphCast: vi.fn(),
     shakeCompanion: vi.fn(),

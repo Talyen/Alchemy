@@ -3,15 +3,10 @@ import * as cardBuilders from "../card-builders";
 import { cardMagnitude } from "../../card-description-model";
 
 export const archeryCards: BattleCard[] = [
-  cardBuilders.effectsCard({
-    id: "fire-arrow",
-    tags: ["archery"],
-    effects: [{ kind: "damage", damageType: "burn", amount: 1 }],
-  }),
-  cardBuilders.effectsCard({
-    id: "ice-shot",
-    tags: ["archery"],
-    effects: [
+  cardBuilders.effectsCard("fire-arrow", [{ kind: "damage", damageType: "burn", amount: 1 }], { tags: ["archery"] }),
+  cardBuilders.effectsCard(
+    "ice-shot",
+    [
       {
         kind: "damage",
         damageType: "freeze",
@@ -20,33 +15,33 @@ export const archeryCards: BattleCard[] = [
         amountIfTargetFrozen: 4,
       },
     ],
-  }),
-  cardBuilders.effectsCard({
-    id: "venom-arrow",
-    tags: ["archery"],
-    effects: [{ kind: "damage", damageType: "poison", damageTypePool: ["poison", "physical"], amount: 2 }],
-  }),
+    { tags: ["archery"] },
+  ),
+  cardBuilders.effectsCard(
+    "venom-arrow",
+    [{ kind: "damage", damageType: "poison", damageTypePool: ["poison", "physical"], amount: 2 }],
+    { tags: ["archery"] },
+  ),
   cardBuilders.damageCard({
     id: "serrated-arrowhead",
     damageType: "bleed",
     amount: 2,
     tags: ["archery"],
   }),
-  cardBuilders.effectsCard({
-    id: "concussive-shot",
-    tags: ["archery"],
-    effects: [{ kind: "damage", damageType: "stun", damageTypePool: ["stun", "physical"], amount: 2 }],
-  }),
+  cardBuilders.effectsCard(
+    "concussive-shot",
+    [{ kind: "damage", damageType: "stun", damageTypePool: ["stun", "physical"], amount: 2 }],
+    { tags: ["archery"] },
+  ),
   cardBuilders.damageCard({
     id: "lightning-arrow",
     damageType: "nature",
     amount: 3,
     tags: ["archery"],
   }),
-  cardBuilders.effectsCard({
-    id: "bounty-shot",
-    tags: ["archery"],
-    effects: [
+  cardBuilders.effectsCard(
+    "bounty-shot",
+    [
       { kind: "damage", damageType: "physical", amount: 2 },
       {
         kind: "chance",
@@ -55,21 +50,24 @@ export const archeryCards: BattleCard[] = [
         failureEffects: [],
       },
     ],
-    describe: () => [
-      {
-        role: "effect",
-        parts: ["Deal ", cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }), " Physical damage"],
-      },
-      {
-        role: "effect",
-        parts: [
-          "10% chance to Steal ",
-          cardMagnitude({ effectIndex: 1, effectPath: [0], kind: "gain-gold", field: "amount" }),
-          " Gold",
-        ],
-      },
-    ],
-  }),
+    {
+      tags: ["archery"],
+      describe: () => [
+        {
+          role: "effect",
+          parts: ["Deal ", cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }), " Physical damage"],
+        },
+        {
+          role: "effect",
+          parts: [
+            "10% chance to Steal ",
+            cardMagnitude({ effectIndex: 1, effectPath: [0], kind: "gain-gold", field: "amount" }),
+            " Gold",
+          ],
+        },
+      ],
+    },
+  ),
   cardBuilders.damageCard({
     id: "sap-arrow",
     damageType: "nature",
@@ -77,17 +75,14 @@ export const archeryCards: BattleCard[] = [
     lifesteal: true,
     tags: ["archery"],
   }),
-  cardBuilders.effectsCard({
-    id: "gamblers-shot",
-    title: "Gambler's Shot",
-    tags: ["archery"],
-    effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["stun", "physical", "bleed"] }],
-  }),
-  cardBuilders.effectsCard({
-    id: "astral-arrow",
-    consume: true,
-    tags: ["archery"],
-    effects: [
+  cardBuilders.effectsCard(
+    "gamblers-shot",
+    [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["stun", "physical", "bleed"] }],
+    { title: "Gambler's Shot", tags: ["archery"] },
+  ),
+  cardBuilders.effectsCard(
+    "astral-arrow",
+    [
       {
         kind: "damage",
         damageType: "holy",
@@ -95,5 +90,6 @@ export const archeryCards: BattleCard[] = [
         amount: 4,
       },
     ],
-  }),
+    { consume: true, tags: ["archery"] },
+  ),
 ];

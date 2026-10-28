@@ -1,7 +1,7 @@
+import { temporaryDirectories, runNode, copyFixtureFiles, playwrightSuite } from "../helpers/script-fixtures";
 import { createCleanup } from "@/lib/cleanup";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
@@ -21,16 +21,10 @@ import { parseAssetArgs } from "../../scripts/assets.mjs";
 import { isolatedTestResources } from "../helpers/isolated-test-resources";
 
 const ROOT = process.cwd();
-const temporary: string[] = [];
-function fixture() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-scripts-"));
-  temporary.push(root);
-  return root;
-}
+
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
-  for (const root of temporary.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 function git(root: string, ...args: string[]) {
   const result = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], {
@@ -40,6 +34,9 @@ function git(root: string, ...args: string[]) {
   });
   if (result.status !== 0) throw new Error(result.stderr || result.error?.message);
   return result.stdout.trim();
+}
+function runGitGuard(root: string, args: string[], env = process.env) {
+  return runNode([path.join(ROOT, "scripts/git-safety-guard.mjs"), ...args], { cwd: root, env });
 }
 function repository() {
   const root = fixture();
@@ -63,6 +60,8 @@ function descendantCommand(root: string, delayMs = 1000) {
   const parent = `require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(descendant)}], {stdio: 'inherit'}); setInterval(() => {}, 1000);`;
   return { marker, ready, parent };
 }
+
+const fixture = temporaryDirectories("alchemy-scripts-");
 
 describe("script execution reliability", () => {
   it("resolves installed tools through Node and never downloads unknown tools", () => {
@@ -127,8 +126,8 @@ describe("script execution reliability", () => {
   it("rejects unsupported generation arguments before rewriting release files", () => {
     const root = repository();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
-    fs.copyFileSync(path.join(ROOT, ".versionrc.json"), path.join(root, ".versionrc.json"));
-    fs.copyFileSync(path.join(ROOT, "game-edition.mjs"), path.join(root, "game-edition.mjs"));
+    copyFixtureFiles(root, [".versionrc.json"]);
+    copyFixtureFiles(root, ["game-edition.mjs"]);
     fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "1.2.3" }));
     const changelog = path.join(root, "CHANGELOG.md");
     const metadata = path.join(root, "src/lib/validation/metadata.generated.ts");
@@ -148,10 +147,7 @@ describe("script execution reliability", () => {
       "sync-steam-appid.mjs",
     ]) {
       for (const arg of ["--chek", "unexpected", "-x"]) {
-        const result = spawnSync(process.execPath, [path.join(root, "scripts", script), arg], {
-          cwd: root,
-          encoding: "utf8",
-        });
+        const result = runNode([path.join(root, "scripts", script), arg], { cwd: root });
         expect(result.status, result.stderr).toBe(2);
         expect(files.map((file) => fs.readFileSync(file, "utf8"))).toEqual(before);
       }
@@ -166,7 +162,7 @@ describe("script execution reliability", () => {
       syncBuiltinESMExports();
       process.argv.push('--live');
       await import('./scripts/run-ship-unit.mjs');`;
-    const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], { cwd: ROOT, encoding: "utf8" });
+    const result = runNode(["--input-type=module", "-e", source], { cwd: ROOT });
     expect(result.status, result.stderr).toBe(1);
     expect(result.stdout).toContain("interrupted test process");
     expect(result.stderr).not.toContain("Local test lane is occupied");
@@ -225,15 +221,11 @@ describe("script execution reliability", () => {
           : option === "--config-env"
             ? ["-C", target, "--config-env", "review.marker=ALCHEMY_GIT_MARKER"]
             : ["--git-dir", path.join(target, ".git"), "--work-tree", target];
-      const result = spawnSync(
-        process.execPath,
-        [path.join(ROOT, "scripts/git-safety-guard.mjs"), ...prelude, "reset", "--hard"],
-        {
-          cwd: caller,
-          encoding: "utf8",
-          env: { ...process.env, LEFTHOOK: "0", ALCHEMY_GIT_MARKER: "preserved" },
-        },
-      );
+      const result = runGitGuard(caller, [...prelude, "reset", "--hard"], {
+        ...process.env,
+        LEFTHOOK: "0",
+        ALCHEMY_GIT_MARKER: "preserved",
+      });
       expect(result.status).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
       expect(fs.readFileSync(path.join(target, "game.ts"), "utf8")).toBe("target work");
@@ -248,20 +240,12 @@ describe("script execution reliability", () => {
   );
 
   it("preserves caller-supplied Git configuration when forwarding safe commands", () => {
-    const result = spawnSync(
-      process.execPath,
-      [path.join(ROOT, "scripts/git-safety-guard.mjs"), "config", "--get", "review.marker"],
-      {
-        cwd: repository(),
-        encoding: "utf8",
-        env: {
-          ...process.env,
-          GIT_CONFIG_COUNT: "1",
-          GIT_CONFIG_KEY_0: "review.marker",
-          GIT_CONFIG_VALUE_0: "preserved",
-        },
-      },
-    );
+    const result = runGitGuard(repository(), ["config", "--get", "review.marker"], {
+      ...process.env,
+      GIT_CONFIG_COUNT: "1",
+      GIT_CONFIG_KEY_0: "review.marker",
+      GIT_CONFIG_VALUE_0: "preserved",
+    });
     expect(result.status).toBe(0);
     expect(result.stdout.trim()).toBe("preserved");
   });
@@ -275,15 +259,7 @@ describe("script execution reliability", () => {
     fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
     fs.writeFileSync(path.join(root, "untracked.txt"), "unfinished source");
     const operands = command === "reset" ? [] : [git(root, "branch", "--show-current")];
-    const result = spawnSync(
-      process.execPath,
-      [path.join(ROOT, "scripts/git-safety-guard.mjs"), command, option, ...operands],
-      {
-        cwd: root,
-        encoding: "utf8",
-        env: { ...process.env, LEFTHOOK: "0" },
-      },
-    );
+    const result = runGitGuard(root, [command, option, ...operands], { ...process.env, LEFTHOOK: "0" });
     expect(result.status, result.stderr).toBe(1);
     expect(result.stderr).toContain("blocked: destructive git command");
     expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
@@ -296,15 +272,7 @@ describe("script execution reliability", () => {
     (...operands) => {
       const root = repository();
       fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
-      const result = spawnSync(
-        process.execPath,
-        [path.join(ROOT, "scripts/git-safety-guard.mjs"), "checkout", ...operands],
-        {
-          cwd: root,
-          encoding: "utf8",
-          env: { ...process.env, LEFTHOOK: "0" },
-        },
-      );
+      const result = runGitGuard(root, ["checkout", ...operands], { ...process.env, LEFTHOOK: "0" });
       expect(result.status, result.stderr).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
       expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
@@ -318,10 +286,7 @@ describe("script execution reliability", () => {
     commit(root);
     git(root, "branch", "topic");
     fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
-    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/git-safety-guard.mjs"), "checkout", "topic"], {
-      cwd: root,
-      encoding: "utf8",
-    });
+    const result = runGitGuard(root, ["checkout", "topic"]);
     expect(result.status, result.stderr).toBe(0);
     expect(git(root, "branch", "--show-current")).toBe("topic");
     expect(git(root, "stash", "list")).toBe("");
@@ -340,11 +305,7 @@ describe("script execution reliability", () => {
       fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
       expect(git(root, "status", "--porcelain", "--untracked-files=all")).toBe("");
 
-      const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/git-safety-guard.mjs"), "reset", "--hard"], {
-        cwd: root,
-        encoding: "utf8",
-        env: { ...process.env, LEFTHOOK: "0" },
-      });
+      const result = runGitGuard(root, ["reset", "--hard"], { ...process.env, LEFTHOOK: "0" });
       expect(result.status, result.stderr).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
       expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
@@ -383,10 +344,7 @@ describe("script execution reliability", () => {
           process.emit('SIGINT');
         }
       }, 10);`;
-    const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], {
-      encoding: "utf8",
-      timeout: 5_000,
-    });
+    const result = runNode(["--input-type=module", "-e", source], { timeout: 5_000 });
     expect(result.stdout).toContain("descendant ready");
     expect(result.status).toBe(130);
     await delay(600);
@@ -425,10 +383,7 @@ describe("script execution reliability", () => {
       const {captureSourceDigest} = await import('./scripts/check.mjs');
       try { captureSourceDigest(); process.exitCode = 9; }
       catch (error) { console.log(error.message); }`;
-      const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], {
-        cwd: ROOT,
-        encoding: "utf8",
-      });
+      const result = runNode(["--input-type=module", "-e", source], { cwd: ROOT });
       expect(result.status, result.stderr).toBe(0);
       expect(result.stdout).toMatch(/cannot|Could not/);
     },
@@ -532,7 +487,7 @@ describe("script execution reliability", () => {
       const {expandRepositoryPaths} = await import(${JSON.stringify(pathToFileURL(path.join(ROOT, "scripts/lib/repository-paths.mjs")).href)});
       const root = ${JSON.stringify(root)};
       console.log(JSON.stringify({selected: expandRepositoryPaths(root, ['.'])}));`;
-    const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], { encoding: "utf8" });
+    const result = runNode(["--input-type=module", "-e", source]);
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(result.stdout)).toEqual({ selected: ["alive.ts", "game.ts"] });
   });
@@ -541,10 +496,7 @@ describe("script execution reliability", () => {
     const root = repository();
     fs.writeFileSync(path.join(root, "game.ts"), "work in progress");
     fs.writeFileSync(path.join(root, "untracked.txt"), "keep me");
-    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/git-safety-guard.mjs"), "clean", "-ndf"], {
-      cwd: root,
-      encoding: "utf8",
-    });
+    const result = runGitGuard(root, ["clean", "-ndf"]);
     expect(result.status, result.stderr).toBe(0);
     expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("work in progress");
     expect(fs.readFileSync(path.join(root, "untracked.txt"), "utf8")).toBe("keep me");
@@ -625,8 +577,7 @@ describe("script execution reliability", () => {
       expect(() => parsePerformanceArgs(argv)).toThrow();
     expect(parsePerformanceArgs(["--runs", "2"])).toMatchObject({ runs: 2 });
     for (const args of [["prepare"], ["--prepare", "--optimize"]]) {
-      const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/assets.mjs"), ...args], {
-        encoding: "utf8",
+      const result = runNode([path.join(ROOT, "scripts/assets.mjs"), ...args], {
         env: { ...process.env, ALCHEMY_SKIP_ASSETS: "1" },
       });
       expect(result.status, result.stderr).toBe(2);
@@ -639,10 +590,7 @@ describe("script execution reliability", () => {
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
     for (const script of ["optimize-assets.mjs", "optimize-music.mjs", "optimize-sounds.mjs"]) {
       for (const arg of ["--chek", "unexpected"]) {
-        const result = spawnSync(process.execPath, [path.join(root, "scripts", script), arg], {
-          cwd: root,
-          encoding: "utf8",
-        });
+        const result = runNode([path.join(root, "scripts", script), arg], { cwd: root });
         expect(result.status, result.stderr).toBe(2);
         expect(result.stderr).toMatch(/Unknown option|Unexpected optimization arguments/);
       }
@@ -663,9 +611,8 @@ describe("script execution reliability", () => {
       `export const musicAssets = [{source: "Music/theme.ogg", target: "theme.ogg"}]; export async function validateMusicRegistry(files) { return files; }`,
     );
     const run = (script: string, ...args: string[]) =>
-      spawnSync(process.execPath, [path.join(root, "scripts", script), ...args], {
+      runNode([path.join(root, "scripts", script), ...args], {
         cwd: root,
-        encoding: "utf8",
         env: { ...process.env, ASSET_LIBRARY_ROOT: path.join(root, "nonexistent external library") },
       });
 
@@ -684,9 +631,8 @@ describe("script execution reliability", () => {
   });
 
   it("requires an explicit library for optional replacement sound auditions", () => {
-    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/audio-review.mjs"), "--check"], {
+    const result = runNode([path.join(ROOT, "scripts/audio-review.mjs"), "--check"], {
       cwd: ROOT,
-      encoding: "utf8",
       env: { ...process.env, ASSET_LIBRARY_ROOT: "/nonexistent/shared-library" },
     });
     expect(result.status).toBe(1);
@@ -709,23 +655,21 @@ describe("script execution reliability", () => {
     await sharp({ create: { width: 32, height: 32, channels: 4, background: "red" } })
       .png()
       .toFile(path.join(library, "chosen/icon.png"));
-    const generated = spawnSync(process.execPath, [path.join(root, "scripts/generate-icons.mjs")], {
+    const generated = runNode([path.join(root, "scripts/generate-icons.mjs")], {
       cwd: root,
-      encoding: "utf8",
       env: { ...process.env, ASSET_LIBRARY_ROOT: library },
     });
     expect(generated.status, generated.stderr).toBe(0);
     const receipt = path.join(root, "desktop/icons/.asset-hashes.json");
     expect(fs.existsSync(receipt)).toBe(true);
     fs.rmSync(library, { recursive: true });
-    const checked = spawnSync(
-      process.execPath,
+    const checked = runNode(
       [
         "--input-type=module",
         "-e",
         "import { checkIconAssets } from './scripts/assets/icon-assets.mjs'; await checkIconAssets(process.cwd(), { outputsOnly: true });",
       ],
-      { cwd: root, encoding: "utf8", env: { ...process.env, ASSET_LIBRARY_ROOT: library } },
+      { cwd: root, env: { ...process.env, ASSET_LIBRARY_ROOT: library } },
     );
     expect(checked.status, checked.stderr).toBe(0);
   });
@@ -761,9 +705,8 @@ describe("E2E audit outcomes", () => {
       const time = new Date(Date.now() + (state === "expired" ? -2 : 2) * 60 * 60 * 1000);
       fs.utimesSync(report, time, time);
     }
-    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/analyze-e2e.mjs"), "--reuse-timings"], {
+    const result = runNode([path.join(ROOT, "scripts/analyze-e2e.mjs"), "--reuse-timings"], {
       cwd: root,
-      encoding: "utf8",
       timeout: 10_000,
     });
     expect(result.status, result.stderr).toBe(1);
@@ -780,7 +723,7 @@ describe("E2E audit outcomes", () => {
     { name: "unexpected test", report: JSON.stringify({ suites: [], stats: { unexpected: 1 } }), failed: true },
     {
       name: "missing test outcome",
-      report: JSON.stringify({ suites: [{ specs: [{ title: "unfinished test", tests: [{}] }] }] }),
+      report: JSON.stringify({ suites: [playwrightSuite({ title: "unfinished test" }, [{}])] }),
       failed: true,
     },
     {
@@ -793,9 +736,8 @@ describe("E2E audit outcomes", () => {
     const root = fixture();
     fs.mkdirSync(path.join(root, "reports"));
     fs.writeFileSync(path.join(root, "reports/e2e-results.json"), report);
-    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/analyze-e2e.mjs"), "--reuse-timings"], {
+    const result = runNode([path.join(ROOT, "scripts/analyze-e2e.mjs"), "--reuse-timings"], {
       cwd: root,
-      encoding: "utf8",
       env: { ...process.env, ALCHEMY_RUN_ID: "audit-outcome-test" },
       timeout: 10_000,
     });

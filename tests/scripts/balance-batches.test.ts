@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runNode } from "../helpers/script-fixtures";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,7 +7,7 @@ import { expect, it } from "vitest";
 it("resumes completed groups and rejects incompatible or concurrent checkpoints", () => {
   const checkpoint = mkdtempSync(join(tmpdir(), "alchemy-balance-batch-"));
   const run = (overrides: Record<string, string> = {}) =>
-    spawnSync(process.execPath, ["scripts/run-balance-batches.mjs"], {
+    runNode(["scripts/run-balance-batches.mjs"], {
       cwd: process.cwd(),
       env: {
         ...process.env,
@@ -16,7 +16,6 @@ it("resumes completed groups and rejects incompatible or concurrent checkpoints"
         ALCHEMY_BALANCE_ITERATIONS: "1",
         ...overrides,
       },
-      encoding: "utf8",
       timeout: 12000,
     });
   try {
@@ -48,7 +47,7 @@ it("resumes completed groups and rejects incompatible or concurrent checkpoints"
 it("assigns deterministic groups to shards without changing their results", () => {
   const root = mkdtempSync(join(tmpdir(), "alchemy-balance-assignment-"));
   const run = (checkpoint: string, overrides: Record<string, string> = {}) =>
-    spawnSync(process.execPath, ["scripts/run-balance-batches.mjs"], {
+    runNode(["scripts/run-balance-batches.mjs"], {
       cwd: process.cwd(),
       env: {
         ...process.env,
@@ -57,7 +56,6 @@ it("assigns deterministic groups to shards without changing their results", () =
         ALCHEMY_BALANCE_ITERATIONS: "1",
         ...overrides,
       },
-      encoding: "utf8",
       timeout: 12000,
     });
   try {

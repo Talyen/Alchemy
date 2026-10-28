@@ -117,13 +117,13 @@ describe("battle-presentation-store", () => {
 
   it("restarts a shake timer so an older hit cannot clear a newer shake", async () => {
     vi.useFakeTimers();
-    battlePresentation.getState().shakeEnemy();
+    battlePresentation.getState().shakeCompanion();
     await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS - 100);
-    battlePresentation.getState().shakeEnemy();
+    battlePresentation.getState().shakeCompanion();
     await vi.advanceTimersByTimeAsync(150);
-    expect(battlePresentation.getState().enemyShaking).toBe(true);
+    expect(battlePresentation.getState().companionShaking).toBe(true);
     await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS - 149);
-    expect(battlePresentation.getState().enemyShaking).toBe(false);
+    expect(battlePresentation.getState().companionShaking).toBe(false);
     vi.useRealTimers();
   });
 
@@ -161,7 +161,7 @@ describe("battle-presentation-store", () => {
   it("clearBattlePresentationUi resets full presentation VFX", () => {
     const show = activateBattle();
     show([{ target: "player", kind: "damage", stat: "physical", amount: 5 }]);
-    battlePresentation.getState().shakeEnemy();
+    battlePresentation.getState().shakeCompanion();
     battlePresentation.getState().telegraphAttack("enemy");
     battlePresentation.getState().spawnCardGhost({
       art: "test.webp",
@@ -174,7 +174,7 @@ describe("battle-presentation-store", () => {
     const s = battlePresentation.getState();
     expect(s.cardGhosts).toEqual([]);
     expect(s.playerImpactCue).toBeNull();
-    expect(s.enemyShaking).toBe(false);
+    expect(s.companionShaking).toBe(false);
     expect(s.playerAttackToken).toBe(0);
     expect(s.enemyAttackToken).toBe(0);
     expect(s.floatingCombatBursts).toEqual([]);

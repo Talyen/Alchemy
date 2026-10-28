@@ -1,5 +1,5 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { runCommand } from "../../scripts/lib/run-command.mjs";
@@ -10,17 +10,17 @@ import {
   assertLocalTestAllowed,
 } from "../../scripts/lib/verification/local-execution-policy.mjs";
 
-const roots: string[] = [];
 beforeEach(() => vi.stubEnv("ALCHEMY_OUTPUT_CAPTURED", undefined));
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
+const createTemporaryDirectory = temporaryDirectories();
+
 it("preserves literal arguments, complete logs and exit codes while bounding failures", async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-command-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("compact-command-");
+
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
   const error = vi.spyOn(console, "error").mockImplementation(() => {});
   const arg = "spaces and $(touch surprise)";
@@ -46,8 +46,8 @@ it("preserves literal arguments, complete logs and exit codes while bounding fai
 });
 
 it("prints known counts and handles successful, missing and invalid commands", async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-command-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("compact-command-");
+
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
   expect(completionCounts("  3 passed (2s)\n  1 skipped\nordinary noise")).toBe("3 passed (2s)\n1 skipped");
@@ -58,8 +58,8 @@ it("prints known counts and handles successful, missing and invalid commands", a
 });
 
 it("lets an outer capture retain raw diagnostics without nesting compact logs", () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-nested-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("compact-nested-");
+
   vi.stubEnv("ALCHEMY_COMPACT_PARENT_ONLY", "parent");
   const env = { ...process.env };
   delete env.ALCHEMY_COMPACT_PARENT_ONLY;
@@ -86,8 +86,8 @@ it("lets an outer capture retain raw diagnostics without nesting compact logs", 
 });
 
 it("streams explicit live output without changing the child arguments or exit status", async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-live-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("compact-live-");
+
   expect(
     await runCompact(
       ["--live", process.execPath, "-e", 'process.exit(process.argv[1] === "--literal" ? 7 : 9)', "--", "--literal"],
@@ -98,8 +98,8 @@ it("streams explicit live output without changing the child arguments or exit st
 });
 
 it("rejects a missing path in a mixed unit selection before starting a process or reserving a lane", async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-unit-selection-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("compact-unit-selection-");
+
   fs.mkdirSync(path.join(root, "tests"));
   fs.writeFileSync(path.join(root, "tests/real.test.ts"), "");
   await expect(runCompact(["vitest", "run", "tests/real.test.ts", "tests/typo.test.ts"], root)).rejects.toThrow(
@@ -117,8 +117,8 @@ it("rejects heavy local tests before creating reports or reserving resources, ev
   vi.stubEnv("GITHUB_ACTIONS", undefined);
   vi.stubEnv("CI", "true");
   vi.stubEnv("ALCHEMY_ALLOW_HEAVY_LOCAL", undefined);
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-ci-policy-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("compact-ci-policy-");
+
   for (const args of [
     ["vitest", "run"],
     ["vitest", "related", "src/App.tsx"],

@@ -12,7 +12,7 @@ import {
   TRAIT_DAMAGE_WEAKNESS_MULTIPLIER,
 } from "../game-constants";
 import { addPlayerStatusWithCombatText } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPlayerCombatDamage, mitigatePlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
@@ -138,13 +138,7 @@ export function dealSelfDamage(
   );
   const healthLost = playerHealthLostToDamage(state, postDamage);
   if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: statLabel,
-      amount: healthLost,
-      impact: false,
-    });
+    emitDamageText(combatTexts, "player", statLabel, healthLost, { impact: false });
   }
   return {
     state: healthCost
@@ -169,7 +163,7 @@ export function applyPoisonDamageArmorRider(
   const nextState = reduceEnemyArmor(state, damage);
   const removed = state.enemyMitigation.armor - nextState.enemyMitigation.armor;
   if (removed > 0 && combatTexts) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
+    emitDamageText(combatTexts, "enemy", "armor", removed, { impact: false });
   }
   return nextState;
 }

@@ -1,3 +1,4 @@
+import { assetPipelineFixture } from "../helpers/asset-pipeline-mock";
 import { mkdtempSync, rmSync } from "node:fs";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -7,24 +8,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { computeOutputHash } from "../../scripts/assets/asset-manifest-cache.mjs";
 
 const fixture = vi.hoisted(() => ({
-  root: "",
   icon: { source: "icon.png", target: "icon.webp", width: 16, quality: 80, requiresTransparency: true },
 }));
-vi.mock("../../scripts/lib/repository-paths.mjs", () => ({
-  get REPO_ROOT() {
-    return fixture.root;
-  },
-}));
-vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
-  const { pathToFileURL } = await import("node:url");
-  return {
-    ...original,
-    resolveRootDir: () => fixture.root,
-    resolvePipelinePaths: (_url: string, options: { managedKey: "art" | "sounds" | "music" }) =>
-      original.resolvePipelinePaths(pathToFileURL(path.join(fixture.root, "scripts", "mock-entry.mjs")).href, options),
-  };
-});
 vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/assets/asset-manifest.mjs")>()),
   staticAssets: [fixture.icon],
@@ -39,10 +24,10 @@ vi.mock("../../scripts/assets/gear-assets.mjs", () => ({
   })),
 }));
 
-fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-alpha-"));
+assetPipelineFixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-alpha-"));
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
-const rawDir = path.join(fixture.root, "assets/sources");
-const outputDir = path.join(fixture.root, "src/assets/optimized");
+const rawDir = path.join(assetPipelineFixture.root, "assets/sources");
+const outputDir = path.join(assetPipelineFixture.root, "src/assets/optimized");
 const source = path.join(rawDir, "icon.png");
 const output = path.join(outputDir, "icon.webp");
 const manifest = path.join(outputDir, ".asset-hashes.json");
@@ -75,9 +60,9 @@ async function snapshotOutputs() {
   );
 }
 
-afterAll(() => rmSync(fixture.root, { recursive: true, force: true }));
+afterAll(() => rmSync(assetPipelineFixture.root, { recursive: true, force: true }));
 beforeEach(async () => {
-  rmSync(fixture.root, { recursive: true, force: true });
+  rmSync(assetPipelineFixture.root, { recursive: true, force: true });
   fixture.icon.width = 16;
   fixture.icon.requiresTransparency = true;
   const slots = path.join(rawDir, "Gear/Gear Slot Backgrounds");

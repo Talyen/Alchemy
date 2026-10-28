@@ -43,7 +43,7 @@ Homestead battle keys in `HOMESTEAD_BATTLE_*_KEYS` are **added** onto talent val
 
 Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/lib/battle/damage-modifiers.ts`. Enemy attacks scale once in `computeMitigatedDamage`; player DoTs scale once in `status-ticks.ts`. Do not also scale in `applyPlayerCombatDamage`.
 
-Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
+Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage without an explicit type pool grants all eight damage keywords; an explicit pool grants every listed type. Talent XP follows those effect-derived keywords, not only the type rolled for one hit. Never count combat text or award XP again while resuming a pending transition.
 
 ## Reset Homestead
 

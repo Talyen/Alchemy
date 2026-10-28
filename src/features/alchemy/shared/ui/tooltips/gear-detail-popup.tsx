@@ -8,10 +8,8 @@ import { getPlasmaColorPairForGear } from "../../config";
 export function GearDetailPopup({
   definition,
   instance,
-  triggerRef,
-  visible,
-  padding,
   notice,
+  ...tooltipProps
 }: {
   definition: GearDefinition | undefined;
   instance: GearInstance;
@@ -23,11 +21,9 @@ export function GearDetailPopup({
   if (!definition) return null;
   return (
     <PortaledTooltip
-      triggerRef={triggerRef}
-      visible={visible}
+      {...tooltipProps}
       className="rounded-shell-tooltip"
       plasmaColorPair={getPlasmaColorPairForGear(instance)}
-      {...(padding !== undefined ? { padding } : {})}
     >
       <GearTooltipContent definition={definition} instance={instance} />
       {notice ? <p className="mt-3 text-sm text-warning">{notice}</p> : null}

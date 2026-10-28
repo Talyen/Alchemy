@@ -129,8 +129,6 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             ariaLabel={i18n.text("ui.corruption-screen.7", "Original: {{value0}}", {
               value0: i18n.read(() => getCardDisplayTitle(result.originalCard)),
             })}
-            shimmerActive={false}
-            shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(result.originalCard)}
             className={viewCardWidthClass}
           />
@@ -145,8 +143,6 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             ariaLabel={i18n.text("ui.corruption-screen.8", "Result: {{value0}}", {
               value0: i18n.read(() => getCardDisplayTitle(result.corruptedCard)),
             })}
-            shimmerActive={false}
-            shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(result.corruptedCard)}
             className={viewCardWidthClass}
           />
