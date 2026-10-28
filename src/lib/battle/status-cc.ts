@@ -15,19 +15,9 @@ import { addEnemyMitigation } from "./enemy-mitigation-state";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { isCcControlled, type ActiveCcKeyword } from "./crowd-control-policy";
 
-export type ActiveCcKeyword = "stun" | "freeze";
 const CC_TRIGGER_ORDER = ["stun", "freeze"] as const;
-
-export function getActiveCcKeyword(cc: CcState): ActiveCcKeyword | null {
-  if (cc.stunSkipTurns > 0) return "stun";
-  if (cc.freezeSkipTurns > 0) return "freeze";
-  return null;
-}
-
-export function isCcControlled(cc: CcState): boolean {
-  return cc.stunSkipTurns > 0 || cc.freezeSkipTurns > 0;
-}
 
 export function finalizeCcSkipTurnDecrement(prev: CcState, next: CcState): CcState {
   if (isCcControlled(prev) && !isCcControlled(next)) {

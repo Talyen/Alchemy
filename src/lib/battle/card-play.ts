@@ -11,7 +11,7 @@ import { getBattleRng, rollPercent } from "@/lib/rng";
 import { finishUniqueCardDamage, prepareUniqueCardPlay } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
 import { countRemovableHarmfulStatuses } from "./status-player";
-import { isCcControlled } from "./status-cc";
+import { isCcControlled } from "./crowd-control-policy";
 import { applyResonantChimeTrinket, resolveCardEffectChain, shouldElementalTalentRepeat } from "./card-play-effects";
 import { cardHasKeyword } from "./card-classification";
 import { applyBlockReward, gainManaWithCombatText } from "./player-rewards";

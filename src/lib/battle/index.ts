@@ -11,15 +11,19 @@ export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";
 export { getBattleCardAnimationTarget } from "./card-animation-target";
 export { computeCardPayment } from "./card-cost-rules";
 export { canPlayCard, type CardPlayOptions } from "./card-play";
-export { mergeCombatText } from "./combat-text-events";
+export { canMergeCombatText, mergeCombatText } from "./combat-text-events";
 export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
 export { applyCardEffects } from "./effect-handlers";
-export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";
+export {
+  getActiveCcKeyword,
+  isCcControlled,
+  isStunFreezeBuildupBlocked,
+  type ActiveCcKeyword,
+} from "./crowd-control-policy";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export type * from "./types/state-types";
 export { battleSnapshot } from "./battle-snapshot";
-export { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 // Barrel surface: only symbols consumed through the barrel live here.
 // Internal callers import mechanics from their domain owners, never the type boundary.
 export { addEnemyStatus, addPlayerStatus } from "./status-state";
