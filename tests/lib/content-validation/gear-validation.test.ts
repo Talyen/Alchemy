@@ -2,6 +2,8 @@ import { expect, it } from "vitest";
 import {
   buildEligibleAffixPool,
   gearAffixCatalog,
+  gearBaseItems,
+  type GearBaseItemDefinition,
   gearDefinitionList,
   gearDefinitions,
   uniqueItemList,
@@ -15,6 +17,7 @@ import { validateGear, type GearValidationData } from "@/lib/content-validation/
 import type { ContentValidationIssue } from "@/lib/content-validation/types";
 
 interface GearDamage {
+  baseItems: Record<string, GearBaseItemDefinition>;
   definitions: Record<string, GearDefinition>;
   definitionList: GearDefinition[];
   affixCatalog: Record<string, GearAffixDefinition>;
@@ -28,6 +31,7 @@ function collectGearIssues(
   // Damaged clones keep the live catalogs untouched, so cases cannot leak
   // into each other and no restore step exists to forget.
   const data: GearDamage = {
+    baseItems: structuredClone(gearBaseItems),
     definitions: structuredClone(gearDefinitions),
     definitionList: structuredClone(gearDefinitionList),
     affixCatalog: structuredClone(gearAffixCatalog),
@@ -133,4 +137,92 @@ it.each([
 ])("rejects damaged gear because $requirement", ({ damage, extra, message }) => {
   const issues = collectGearIssues(damage, extra);
   expect(issues).toContainEqual(expect.objectContaining({ severity: "error", area: "gear", message }));
+});
+
+it("accepts the canonical gear catalogs", () => {
+  expect(collectGearIssues().filter((issue) => issue.severity === "error")).toEqual([]);
+});
+
+it.each([
+  {
+    requirement: "base item record identity",
+    damage: (data: GearDamage) => {
+      data.baseItems.alias = data.baseItems[Object.keys(data.baseItems)[0]!]!;
+    },
+    message: "Base item record key does not match id",
+  },
+  {
+    requirement: "affix record identity",
+    damage: (data: GearDamage) => {
+      data.affixCatalog.alias = data.affixCatalog["flat-physical"]!;
+    },
+    message: "Gear affix record key does not match id",
+  },
+  {
+    requirement: "definition record identity",
+    damage: (data: GearDamage) => {
+      data.definitions.alias = data.definitionList[0]!;
+    },
+    message: "Gear definition record key does not match id",
+  },
+  {
+    requirement: "registered definitions remain enumerable",
+    damage: (data: GearDamage) => {
+      data.definitionList.shift();
+    },
+    message: "Registered gear definition is missing from definition list",
+  },
+  {
+    requirement: "enumerated definitions remain addressable",
+    damage: (data: GearDamage) => {
+      delete data.definitions[data.definitionList[0]!.id];
+    },
+    message: "Listed gear definition is missing from definition record",
+  },
+  {
+    requirement: "definitions reference real base items",
+    damage: (data: GearDamage) => {
+      delete data.baseItems[data.definitionList[0]!.baseItemId];
+    },
+    message: "Gear definition references unknown base item",
+  },
+  {
+    requirement: "unique definitions retain unique rarity",
+    damage: (data: GearDamage) => {
+      data.definitions[data.uniques[0]!.id]!.rarity = "basic";
+    },
+    message: "Generated unique definition does not match canonical rarity and base item",
+  },
+  {
+    requirement: "unique definitions retain their canonical base",
+    damage: (data: GearDamage) => {
+      data.definitions[data.uniques[0]!.id]!.baseItemId = data.uniques[1]!.baseItemId;
+    },
+    message: "Generated unique definition does not match canonical rarity and base item",
+  },
+  {
+    requirement: "unique definitions have canonical affixes",
+    damage: (data: GearDamage) => {
+      data.uniques.shift();
+    },
+    message: "Unique gear definition has no canonical unique item",
+  },
+  {
+    requirement: "invalid rarities produce diagnostics instead of crashing",
+    damage: (data: GearDamage) => {
+      Object.assign(data.definitionList[0]!, { rarity: "invalid" });
+    },
+    message: "rarity:",
+  },
+  {
+    requirement: "missing and null affix rolls produce diagnostics instead of crashing",
+    damage: (data: GearDamage) => {
+      Object.assign(data.affixCatalog["wardbreaker-purge"]!, { roll: { basic: null } });
+    },
+    message: "roll.basic:",
+  },
+])("protects $requirement", ({ damage, message }) => {
+  expect(collectGearIssues(damage)).toContainEqual(
+    expect.objectContaining({ severity: "error", area: "gear", message: expect.stringContaining(message) }),
+  );
 });

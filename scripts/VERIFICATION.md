@@ -291,7 +291,7 @@ Do not trade away path exceptions or diagnostic precision to reduce process coun
 
 ## Component and hook conventions
 
-Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Vitest defaults and ship suites retain the four-worker ceiling, leaving one CPU free on smaller hosts. Completion gates use one worker for full-repository and dependency-related selections. CLI worker overrides remain available for focused diagnosis.
+Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Vitest defaults and ship suites retain the four-worker ceiling, leaving one CPU free on smaller hosts. Completion gates use one worker for full-repository and dependency-related selections. Managed focused runs also force one worker, overriding supplied CLI worker counts.
 
 Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; Oxlint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
 
@@ -339,6 +339,9 @@ worktrees; they retain prepared art, audio, icons and manifests. The asset-integ
 job still checks out source masters for freshness validation. Windows package
 uploads disable archive compression because the installer and media are already
 compressed. Release packaging retains full Git history for patch notes.
+The React Compiler Babel pass generates intermediate source maps only for development
+or when the resolved build requests maps (including CLI overrides). Ordinary web
+builds avoid that discarded mapping work; desktop hidden maps remain enabled.
 Build preflight overlaps localization and generated-output validation, waits for both
 to settle, and rejects either failure before starting Vite.
 

@@ -245,9 +245,10 @@ necessary stack movement eases between heights, preserves an interrupted ease's
 position and respects reduced motion.
 
 Transmutation first shows the selected original card beside an empty,
-question-mark slot with the Potion Brewing dashed frame. Up to three icon-only
-keyword buttons stay centered below the full comparison, with equal gaps above
-and below. No alteration is selected initially. Buttons retain translated
+question-mark slot with the Potion Brewing dashed frame. Normally, up to three
+icon-only keyword buttons stay centered below the full comparison, with equal gaps
+above and below. Prismatic Crucible offers every compatible keyword; the buttons
+wrap as needed. No alteration is selected initially. Buttons retain translated
 accessible names, opaque fills, hover/focus illumination, press feedback and a
 selected 2px keyword Shine Border, without hover tooltips; inspect the card for
 its effects.
@@ -305,7 +306,7 @@ starts fresh. Reduced or disabled motion keeps the selected frame and dimming.
 Display groups Display Mode (desktop only), Brightness, Game Size and Tooltip
 Size. Background groups Background Glow and Background Particles.
 
-Gameplay Options contains Auto-End Turn and Remember Auto-Battle Preference. The former Controls instructions are removed. Failed local saves show the shared non-modal warning and Retry action; progression waits for local acknowledgement under [pending saves and action feedback](./UI.md#pending-saves-and-action-feedback).
+Gameplay Options contains Auto-End Turn, Remember Auto-Battle Preference and Auto Equip. The former Controls instructions are removed. Failed local saves show the shared non-modal warning and Retry action; progression waits for local acknowledgement under [pending saves and action feedback](./UI.md#pending-saves-and-action-feedback).
 
 Options opened from either end-run outcome returns to that same recap through Back or Escape, including after changing Game Size.
 

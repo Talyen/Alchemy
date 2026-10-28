@@ -41,8 +41,9 @@ license or receipt when redistribution terms are not public.
 | Inter font (`public/fonts/Inter.woff2`)              | [The Inter Project Authors](https://github.com/rsms/inter/tree/66647c0bb)        | SIL Open Font License 1.1                                  | Preserve license notice                      | [Local license copy](./public/licenses/inter-ofl.txt)                                                |
 | Noto Sans SC (`public/fonts/noto-sans-sc.ttf`)       | [Noto Sans SC authors](https://github.com/google/fonts/tree/main/ofl/notosanssc) | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-sc-ofl.txt)                                         |
 | Noto Sans (`public/fonts/noto-sans.ttf`)             | [Noto Sans authors](https://github.com/google/fonts/tree/main/ofl/notosans)      | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-ofl.txt)                                            |
+| Noto Sans JP (`public/fonts/noto-sans-jp.ttf`)       | Adobe; see local copyright notice                                                | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-jp-ofl.txt)                                         |
 | Registered and curated game sound effects            | Sources listed by the [sound asset registry](./scripts/assets/sound-assets.mjs)  | Owner-created using AI; commercial use confirmed           | No third-party source attribution identified | [Approved source ledger](./Docs/design/audio-review/approved-choices.json); Owner confirmation above |
-| Thirteen Suno-generated music tracks                 | [Track links below](#music-source-links)                                         | Commercial-use entitlement at creation confirmed           | No third-party source attribution identified | Owner confirmation above; embedded song IDs and creation dates                                       |
+| Registered game music                                | [Track links below](#music-source-links)                                         | Commercial-use entitlement at creation confirmed           | No third-party source attribution identified | Owner confirmation above; source registry and embedded metadata where present                        |
 
 Files whose provenance is not represented above are not cleared for public
 distribution merely because they exist in `assets/sources/`, `public/`,
@@ -61,27 +62,32 @@ above establishes the supplied source and commercial-use history.
 
 ### Music source links
 
-The selected music masters in `assets/sources/`, listed by
-[`music-assets.mjs`](./scripts/assets/music-assets.mjs), embed a Suno song URL,
-a creator account, and a creation timestamp. Prepared copies ship in `public/Music/`.
-These links retain source traceability; the commercial-use confirmation above
-covers the selected tracks.
+[`music-assets.mjs`](./scripts/assets/music-assets.mjs) lists the selected music
+masters in `assets/sources/`; unchanged prepared copies ship in `public/Music/`.
+The thirteen Suno links below come from embedded source metadata. The additional
+Blood Countess, Seraph and Stone Titan recordings have no song URL in their prepared
+metadata, so their rows link to the registered masters instead. Source locations
+retain traceability; the commercial-use confirmation above is the separate
+owner-supplied provenance evidence.
 
-| Local track             | Embedded source                                                         |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `Battle 1.mp3`          | [Suno song](https://suno.com/song/d0104fa8-abc9-4d82-b1fd-e032313684b6) |
-| `Battle 2.mp3`          | [Suno song](https://suno.com/song/588cd1f3-2984-476f-b6c4-2a7ad0317e3c) |
-| `Battle 3.mp3`          | [Suno song](https://suno.com/song/99b91287-19d6-46c0-a686-98d0a5ff1188) |
-| `Battle 4.mp3`          | [Suno song](https://suno.com/song/640c6881-690e-4818-b625-485213fc6c36) |
-| `Battle 5.mp3`          | [Suno song](https://suno.com/song/b4eea5d8-88d5-41fd-a2dd-2b9fc872645e) |
-| `Menu 1.mp3`            | [Suno song](https://suno.com/song/823cecec-5b96-4bf6-86f4-3c3dfa943379) |
-| `Menu 2.mp3`            | [Suno song](https://suno.com/song/60c919cd-7d21-41d4-9215-b4e3cddabd04) |
-| `Menu 3.mp3`            | [Suno song](https://suno.com/song/e6e503af-b130-42a8-9ec8-9765c6d6e7d9) |
-| `Menu 4.mp3`            | [Suno song](https://suno.com/song/9adb2888-287e-4197-9446-0fd9e887b318) |
-| `The Blight Treant.mp3` | [Suno song](https://suno.com/song/bc54dd77-7abe-4452-ac3b-e8bbfe596aff) |
-| `The Forge Golem.mp3`   | [Suno song](https://suno.com/song/60848f6d-f340-4292-8f42-f37c05e2123a) |
-| `The Frostwarden.mp3`   | [Suno song](https://suno.com/song/1267aaba-6058-4782-bef0-ee59d5978128) |
-| `The Iron Bear.mp3`     | [Suno song](https://suno.com/song/b5c55082-0a7e-4067-b827-64791bc13275) |
+| Local track                                        | Source evidence                                                              |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `Battle 1.mp3`                                     | [Suno song](https://suno.com/song/d0104fa8-abc9-4d82-b1fd-e032313684b6)      |
+| `Battle 2.mp3`                                     | [Suno song](https://suno.com/song/588cd1f3-2984-476f-b6c4-2a7ad0317e3c)      |
+| `Battle 3.mp3`                                     | [Suno song](https://suno.com/song/99b91287-19d6-46c0-a686-98d0a5ff1188)      |
+| `Battle 4.mp3`                                     | [Suno song](https://suno.com/song/640c6881-690e-4818-b625-485213fc6c36)      |
+| `Battle 5.mp3`                                     | [Suno song](https://suno.com/song/b4eea5d8-88d5-41fd-a2dd-2b9fc872645e)      |
+| `Menu 1.mp3`                                       | [Suno song](https://suno.com/song/823cecec-5b96-4bf6-86f4-3c3dfa943379)      |
+| `Menu 2.mp3`                                       | [Suno song](https://suno.com/song/60c919cd-7d21-41d4-9215-b4e3cddabd04)      |
+| `Menu 3.mp3`                                       | [Suno song](https://suno.com/song/e6e503af-b130-42a8-9ec8-9765c6d6e7d9)      |
+| `Menu 4.mp3`                                       | [Suno song](https://suno.com/song/9adb2888-287e-4197-9446-0fd9e887b318)      |
+| `The Blight Treant.mp3`                            | [Suno song](https://suno.com/song/bc54dd77-7abe-4452-ac3b-e8bbfe596aff)      |
+| `The Forge Golem.mp3`                              | [Suno song](https://suno.com/song/60848f6d-f340-4292-8f42-f37c05e2123a)      |
+| `The Frostwarden.mp3`                              | [Suno song](https://suno.com/song/1267aaba-6058-4782-bef0-ee59d5978128)      |
+| `The Iron Bear.mp3`                                | [Suno song](https://suno.com/song/b5c55082-0a7e-4067-b827-64791bc13275)      |
+| `The Blood Countess - Boss Track.mp3`              | [Registered master](./scripts/assets/music-assets.mjs); no embedded song URL |
+| `The Seraph - Be Not Afraid - Boss Song.mp3`       | [Registered master](./scripts/assets/music-assets.mjs); no embedded song URL |
+| `The Stone Titan - Stone Reclaims - Boss Song.mp3` | [Registered master](./scripts/assets/music-assets.mjs); no embedded song URL |
 
 ## Release review
 
