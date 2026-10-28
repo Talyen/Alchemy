@@ -20,6 +20,10 @@ export function sanitizeWildwoodBossId(value: string | null | undefined): Wildwo
   return typeof value === "string" && isWildwoodBossId(value) ? value : null;
 }
 
-export function sanitizeWildwoodBossIds(values: readonly string[]): WildwoodBossId[] {
-  return values.filter(isWildwoodBossId);
+export function sanitizeWildwoodBossIds(values: readonly unknown[]): WildwoodBossId[] {
+  const validIds = new Set<WildwoodBossId>();
+  for (const value of values) {
+    if (typeof value === "string" && isWildwoodBossId(value)) validIds.add(value);
+  }
+  return [...validIds];
 }

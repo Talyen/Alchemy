@@ -114,18 +114,13 @@ export const LabyrinthMapSchema = z
   .refine(isValidLabyrinthMap, { message: "Invalid labyrinth map structure" })
   .transform((map): LabyrinthMap => {
     const currentNode = map.nodes[map.currentNodeId];
-    // Safe by construction: isValidLabyrinthMap refine above rejects maps
-    // without an entrance on the current floor, so find always succeeds here.
-    // If the refine is ever relaxed, this becomes a silent null-map fallback.
-    const entrance = Object.values(map.nodes).find(
-      (node) => node.floor === map.currentFloor && node.type === "entrance",
-    );
     return {
       ...map,
       currentNodeId:
         currentNode?.floor === map.currentFloor && currentNode.cleared
           ? currentNode.id
-          : (entrance?.id ?? map.currentNodeId),
+          : (Object.values(map.nodes).find((node) => node.floor === map.currentFloor && node.type === "entrance")?.id ??
+            map.currentNodeId),
     };
   })
   .nullable()

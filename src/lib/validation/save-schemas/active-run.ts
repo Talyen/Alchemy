@@ -88,7 +88,7 @@ const CorruptionResultPersistSchema = z
   .nullable()
   .catch(null);
 
-const WildwoodBossIdListSchema = z.array(z.string()).transform((ids) => sanitizeWildwoodBossIds(ids));
+const WildwoodBossIdListSchema = z.array(z.unknown()).transform((ids) => sanitizeWildwoodBossIds(ids));
 const OptionalWildwoodBossIdSchema = z
   .string()
   .nullable()
