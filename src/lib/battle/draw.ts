@@ -18,12 +18,14 @@ function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidCha
   )
     return state.uniqueGear;
   // Echoed archery cards need no remap: echoes replay by reference, not by uid.
-  const remappedUids = new Map<number, number>();
+  let remappedUids: Map<number, number> | undefined;
   for (const { previous, next } of changes) {
     // Match the first draw if malformed input repeats an old UID.
-    if (previous !== undefined && !remappedUids.has(previous)) remappedUids.set(previous, next);
+    if (previous !== undefined && !remappedUids?.has(previous)) (remappedUids ??= new Map()).set(previous, next);
   }
-  const remapUid = (uid: number | null) => (uid === null ? null : (remappedUids.get(uid) ?? uid));
+  if (!remappedUids) return state.uniqueGear;
+  const uidMap = remappedUids;
+  const remapUid = (uid: number | null) => (uid === null ? null : (uidMap.get(uid) ?? uid));
   const uniqueGear = state.uniqueGear;
   let returningFlightUids = uniqueGear.returningFlightUids;
   for (let index = 0; index < uniqueGear.returningFlightUids.length; index++) {

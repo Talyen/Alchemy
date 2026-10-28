@@ -142,8 +142,8 @@ export function applyResonantChimeTrinket(state: BattleState, combatTexts: Comba
   if (
     resonantChimeCardsRequired > 0 &&
     resonantChimeMana > 0 &&
-    !readCombatFlag(state, "resonantChimeUsedThisTurn") &&
-    state.cardsPlayedThisTurn >= resonantChimeCardsRequired
+    state.cardsPlayedThisTurn >= resonantChimeCardsRequired &&
+    !readCombatFlag(state, "resonantChimeUsedThisTurn")
   ) {
     const afterMana = gainManaWithCombatText(state, resonantChimeMana, combatTexts);
     if (afterMana.mana <= state.mana) return state;

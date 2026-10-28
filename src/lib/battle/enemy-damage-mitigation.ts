@@ -77,8 +77,8 @@ export function prepareEnemyDamage(
     let damage = Math.max(0, amount + (options.flatBonus ?? 0)) * (options.amountMultiplier ?? 1);
     if (
       effect.damageType === "physical" &&
-      hasEnemyTrait(state, "executioner") &&
-      state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
+      state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR &&
+      hasEnemyTrait(state, "executioner")
     )
       damage *= LABYRINTH_MODIFIER_CONFIG.double;
     return Math.round(paceCombatDamage(state, damage, "enemy"));

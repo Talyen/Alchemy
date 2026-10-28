@@ -136,9 +136,9 @@ function resolveEnemyDamageEffectCore(
 
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
-  if (!options.skipTraitReactions) {
+  if (!options.skipTraitReactions && isBlockDepleted) {
     const traitSet = options.traitSet ?? getEnemyTraitSet(nextState);
-    if (hasEnemyTrait(nextState, "earth-elemental", traitSet) && isBlockDepleted) {
+    if (hasEnemyTrait(nextState, "earth-elemental", traitSet)) {
       nextState = processEnemyDamageEffect(
         nextState,
         { kind: "damage", damageType: "physical", amount: scaleByRoomMultiplier(nextState, 1) },

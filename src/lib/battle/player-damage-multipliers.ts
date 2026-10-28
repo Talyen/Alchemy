@@ -47,7 +47,7 @@ function computeTypeSpecificDamageBonus(
     bonus += (state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR;
   }
   if (effect.damageType === "physical") {
-    if (isBelowHalfHealth(state) && state.talentEffects.physicalDoubledBelowHalfHealth) bonus += 1;
+    if (state.talentEffects.physicalDoubledBelowHalfHealth && isBelowHalfHealth(state)) bonus += 1;
     if (
       state.talentEffects.physicalDoubledBelowQuarterHealth &&
       state.enemyHealth * PERCENT_DENOMINATOR < state.enemyMaxHealth * 25
