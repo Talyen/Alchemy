@@ -1,7 +1,7 @@
 import { makeTestCard } from "../../../../fixtures/cards";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CorruptionScreen } from "@/features/alchemy/run-loop/screens/corruption-screen";
 import type { BattleCard } from "@/lib/game-data";
 import type { CorruptionResult } from "@/lib/corruption";
@@ -33,6 +33,11 @@ const testCorruptedCard: BattleCard = {
 describe("CorruptionScreen", () => {
   installDisabledAnimationsForTests();
 
+  beforeEach(() => {
+    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(100);
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
@@ -45,10 +50,10 @@ describe("CorruptionScreen", () => {
     const { rerender } = render(
       <CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={onCorrupt} onExit={onExit} />,
     );
-    await user.click(screen.getByRole("button", { name: "Corrupt a Card" }));
-    await user.click(screen.getByRole("button", { name: "Select Slash" }));
+    await user.click(await screen.findByRole("button", { name: "Corrupt a Card" }));
+    await user.click(await screen.findByRole("button", { name: "Select Slash" }));
     rerender(<CorruptionScreen runDeck={[testStab]} result={null} onCorrupt={onCorrupt} onExit={onExit} />);
-    const confirm = screen.getByRole("button", { name: "Corrupt" });
+    const confirm = await screen.findByRole("button", { name: "Corrupt" });
     expect(confirm).toHaveProperty("disabled", true);
     expect(screen.getByRole("status").textContent).toContain("Your deck changed");
     await user.click(confirm);
@@ -66,9 +71,10 @@ describe("CorruptionScreen", () => {
     const onCorrupt = vi.fn();
     render(<CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={onCorrupt} onExit={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
+    await user.click(await screen.findByRole("button", { name: /Corrupt a Card/i }));
 
-    expect(screen.getByText("The altar may weaken, strengthen, or remake your card.")).toBeTruthy();
+    expect(await screen.findByText("The altar may weaken, strengthen, or remake your card.")).toBeTruthy();
+    await screen.findByRole("button", { name: /Select Slash/i });
 
     const corruptConfirmBtn = screen.getByRole("button", { name: "Corrupt" });
     expect(corruptConfirmBtn).toHaveProperty("disabled", true);
@@ -84,10 +90,10 @@ describe("CorruptionScreen", () => {
 
   it.each([testCorruptedCard, { ...testSlash, transmuted: "burn" as const, title: "Burning Slash" }])(
     "disables corruption when no eligible cards remain",
-    (card) => {
+    async (card) => {
       render(<CorruptionScreen runDeck={[card]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
 
-      expect(screen.getByRole("button", { name: /Corrupt a Card/i })).toHaveProperty("disabled", true);
+      expect(await screen.findByRole("button", { name: /Corrupt a Card/i })).toHaveProperty("disabled", true);
       expect(screen.getByRole("button", { name: "Leave" })).toHaveProperty("disabled", false);
       expect(screen.getByText("No eligible cards remain.")).toBeTruthy();
     },
@@ -134,7 +140,7 @@ describe("CorruptionScreen", () => {
     const { rerender } = render(
       <CorruptionScreen runDeck={[testSlash]} result={null} onCorrupt={onCorrupt} onExit={onExit} />,
     );
-    await user.click(screen.getByRole("button", { name: "Corrupt a Card" }));
+    await user.click(await screen.findByRole("button", { name: "Corrupt a Card" }));
     await user.click(await screen.findByRole("button", { name: "Select Slash" }));
     const heading = screen.getByRole("heading", { name: "Altar of Corruption" });
     await user.click(screen.getByRole("button", { name: "Corrupt" }));
@@ -155,12 +161,45 @@ describe("CorruptionScreen", () => {
     expect(onExit).toHaveBeenCalledOnce();
   });
 
+  it("retains the illustration until picker artwork is ready and blocks outgoing or decoding controls", async () => {
+    localStorage.removeItem("alchemy-disable-animations");
+    const user = userEvent.setup();
+    const onCorrupt = vi.fn();
+    const onExit = vi.fn();
+    const { container } = render(
+      <CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={onCorrupt} onExit={onExit} />,
+    );
+    const enter = await screen.findByRole("button", { name: "Corrupt a Card" });
+    const leave = screen.getByRole("button", { name: "Leave" });
+    const heading = screen.getByRole("heading", { name: "Altar of Corruption" });
+    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(false);
+    await user.click(enter);
+    const intro = container.querySelector('[data-corruption-entry-panel="intro"]')!;
+    const picker = container.querySelector('[data-corruption-entry-panel="picker"]')!;
+    expect(intro.getAttribute("style")).toBe("opacity: 1;");
+    expect(intro.hasAttribute("inert")).toBe(true);
+    expect(picker.hasAttribute("data-artwork-pending")).toBe(true);
+    expect(screen.getByRole("heading", { name: "Altar of Corruption" })).toBe(heading);
+    fireEvent.click(leave);
+    fireEvent.keyDown(leave, { key: "Enter" });
+    fireEvent.click(picker.querySelector("button")!);
+    expect(onExit).not.toHaveBeenCalled();
+    expect(onCorrupt).not.toHaveBeenCalled();
+    for (const image of picker.querySelectorAll("img")) fireEvent.load(image);
+    await screen.findByRole("button", { name: "Select Slash" });
+    expect(picker.hasAttribute("inert")).toBe(false);
+    expect(intro.getAttribute("style")).toBe("opacity: 0;");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await screen.findByRole("button", { name: "Corrupt a Card" });
+    expect(onCorrupt).not.toHaveBeenCalled();
+  });
+
   it.each(["button", "Escape"])("resets selection when canceling with %s and re-entering", async (method) => {
     const user = userEvent.setup();
     render(<CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
-    await user.click(screen.getByRole("button", { name: /Select Stab/i }));
+    await user.click(await screen.findByRole("button", { name: /Corrupt a Card/i }));
+    await user.click(await screen.findByRole("button", { name: /Select Stab/i }));
 
     const corruptConfirmBtn = screen.getByRole("button", { name: "Corrupt" });
     expect(corruptConfirmBtn).toHaveProperty("disabled", false);
@@ -170,8 +209,8 @@ describe("CorruptionScreen", () => {
     expect(await screen.findByRole("button", { name: "Corrupt a Card" })).toBeTruthy();
 
     // Re-entering picker should have selection cleared
-    await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
-    const newCorruptBtn = screen.getByRole("button", { name: "Corrupt" });
+    await user.click(await screen.findByRole("button", { name: /Corrupt a Card/i }));
+    const newCorruptBtn = await screen.findByRole("button", { name: "Corrupt" });
     expect(newCorruptBtn).toHaveProperty("disabled", true);
   });
 });
