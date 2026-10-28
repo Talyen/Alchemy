@@ -105,7 +105,8 @@ lookahead, while output trimming preserves the source duration rounded to the ne
 motion: interpolation synthesizes frames and can introduce distortion. Commit masters, prepared files
 under `src/assets/boss-idles/`, and their hash manifest together.
 
-`src/lib/game-data/boss-idle-assets.ts` explicitly maps prepared URLs to boss IDs.
+`src/lib/game-data/boss-idle-assets.ts` selects ordered clips by boss ID and resolves
+their prepared URLs through an eager video glob. Missing selected variants fail at startup.
 Battle presentation alone consumes this map. Videos never join `allGameArt` or
 startup image loading; only the current boss's two playback buffers load clips.
 Each clip lists ascending resolution variants. Battle presentation selects by the
@@ -181,8 +182,9 @@ optimized files directly. Oxlint enforces that boundary.
 art under [boot and loading](./ARCHITECTURE.md#boot-and-loading).
 
 `assets.generated.ts` has explicit named exports derived by `toAssetExportName`
-/ `kebabToCamel`. Only `catalog-art.ts` uses a narrow eager `import.meta.glob`
-with `import: "default"` for Gear URLs. `gearArtByDefinitionId` and slot backgrounds
+/ `kebabToCamel`. `catalog-art.ts` uses a narrow eager `import.meta.glob`
+with `import: "default"` for Gear URLs; boss idle video URLs use a separate eager glob.
+`gearArtByDefinitionId` and slot backgrounds
 derive from that registry; no second generated Gear map needs synchronization.
 Card/enemy builders resolve conventional art by content ID through `getCatalogArt`;
 use an explicit override for shared or renamed art. Trinkets follow their catalog

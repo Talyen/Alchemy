@@ -18,12 +18,14 @@ function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidCha
   )
     return state.uniqueGear;
   // Echoed archery cards need no remap: echoes replay by reference, not by uid.
-  const remappedUids = new Map<number, number>();
+  let remappedUids: Map<number, number> | undefined;
   for (const { previous, next } of changes) {
     // Match the first draw if malformed input repeats an old UID.
-    if (previous !== undefined && !remappedUids.has(previous)) remappedUids.set(previous, next);
+    if (previous !== undefined && !remappedUids?.has(previous)) (remappedUids ??= new Map()).set(previous, next);
   }
-  const remapUid = (uid: number | null) => (uid === null ? null : (remappedUids.get(uid) ?? uid));
+  if (!remappedUids) return state.uniqueGear;
+  const uidMap = remappedUids;
+  const remapUid = (uid: number | null) => (uid === null ? null : (uidMap.get(uid) ?? uid));
   const uniqueGear = state.uniqueGear;
   let returningFlightUids = uniqueGear.returningFlightUids;
   for (let index = 0; index < uniqueGear.returningFlightUids.length; index++) {
@@ -71,14 +73,11 @@ export function deliverPendingHandCards(state: BattleState): BattleState {
 
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
   const received = { ...card, uid: state.nextCardUid };
-  const slots = Math.max(0, MAX_HAND_SIZE - state.hand.length);
-  const hand = slots > 0 ? [...state.hand] : state.hand;
-  const pendingHandCards = state.pendingHandCards.slice(slots);
-  const delivered = Math.min(slots, state.pendingHandCards.length);
-  for (let index = 0; index < delivered; index++) hand.push(state.pendingHandCards[index]!);
-  if (slots > state.pendingHandCards.length) hand.push(received);
-  else pendingHandCards.push(received);
-  return { ...state, hand, pendingHandCards, nextCardUid: state.nextCardUid + 1 };
+  return {
+    ...state,
+    ...distributeHandCards(state.hand, [...state.pendingHandCards, received]),
+    nextCardUid: state.nextCardUid + 1,
+  };
 }
 
 export function drawCards(

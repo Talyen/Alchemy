@@ -53,9 +53,10 @@ function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { s
     damageState = { ...damageState, flags: { ...damageState.flags, nextStunAttackBonus: 0 } };
   }
 
+  const armedPhysicalBonus = readCombatFlag(damageState, "nextHitPhysicalBonus");
   let physicalBonus = 0;
-  if (readCombatFlag(damageState, "nextHitPhysicalBonus") > 0) {
-    physicalBonus = readCombatFlag(damageState, "nextHitPhysicalBonus");
+  if (armedPhysicalBonus > 0) {
+    physicalBonus = armedPhysicalBonus;
     damageState = {
       ...damageState,
       flags: { ...damageState.flags, nextHitPhysicalBonus: 0 },
@@ -134,7 +135,7 @@ export function dealDamageToEnemy(
   // Echoes are secondary actions, so capture the turn's earned sequence bonus
   // before their scope suppresses it. Other damage modifiers remain live.
   const sequenceBonus =
-    card.tags?.includes("archery") && readCombatFlag(state, "archerySecondCardActive")
+    context?.damageEffects && card.tags?.includes("archery") && readCombatFlag(state, "archerySecondCardActive")
       ? state.talentEffects.archerySecondCardDamage
       : 0;
   const captureDamageEffect = (packet: DamageEffect) =>
