@@ -1,4 +1,3 @@
-import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
 import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/commands/destination-offer-command";
 import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
@@ -21,34 +20,10 @@ import { sessionFeedback } from "@/features/alchemy/shared/stores/session/sessio
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { cloneBattleCard, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
-import { applyRunStartToDraft, createDraftRunStartSnapshot } from "./run-start-command";
-
-interface StartSnapshotOptions {
-  difficultyId?: DifficultyId | null;
-  draftedDeck?: BattleCard[];
-}
-
-function createStartSnapshot(
-  draft: RunTransaction,
-  characterId: CharacterId,
-  contentSystemType: ContentSystemId,
-  options: StartSnapshotOptions = {},
-): RunStartSnapshot {
-  const resolvedDraft =
-    options.draftedDeck ??
-    (characterId === "wildcard"
-      ? snapshotTransactionValue(draft.run.activeRun.runDeck).map(cloneBattleCard)
-      : undefined);
-  return createDraftRunStartSnapshot(draft, {
-    characterId,
-    contentSystemType,
-    difficultyId: options.difficultyId,
-    draftedDeck: resolvedDraft,
-  });
-}
+import { startRunInDraft } from "./run-start-command";
 
 // Card hover clears universally on navigation (see run-flow-engine), so run
 // starts only commit state here and play committed side effects afterwards.
@@ -71,8 +46,11 @@ function commitRunStart(
 
 export function createNewRunInitialization(deps: ContentSystemNavigationDeps, gameSession: GameSession) {
   function prepareCampaign(draft: RunTransaction, characterId: CharacterId, difficultyId: DifficultyId) {
-    const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, { difficultyId });
-    applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
+    startRunInDraft(
+      draft,
+      { characterId, contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, difficultyId },
+      { discoverDeck: true },
+    );
     setStarterDraftChoices(draft, null);
     sampleAndApplyDestinationOffer(draft);
   }
@@ -109,8 +87,7 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
   function initializeLabyrinthRun(characterId: CharacterId) {
     commitRunStart(
       (draft) => {
-        const snapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.LABYRINTH);
-        applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
+        startRunInDraft(draft, { characterId, contentSystemType: CONTENT_SYSTEMS.LABYRINTH }, { discoverDeck: true });
         setLabyrinthMap(
           draft,
           generateLabyrinthMap(
@@ -129,8 +106,7 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
   function initializeWildwoodRun(characterId: CharacterId) {
     commitRunStart(
       (draft) => {
-        const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.WILDWOOD, { draftedDeck: [] });
-        applyRunStartToDraft(draft, startSnapshot);
+        startRunInDraft(draft, { characterId, contentSystemType: CONTENT_SYSTEMS.WILDWOOD, draftedDeck: [] });
         setStarterDraftChoices(draft, null);
         setWildwoodDraft(
           draft,
@@ -147,8 +123,7 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
   function initializeStarterDraftRun(contentSystemType: ContentSystemId) {
     commitRunStart(
       (draft) => {
-        const startSnapshot = createStartSnapshot(draft, "wildcard", contentSystemType, { draftedDeck: [] });
-        applyRunStartToDraft(draft, startSnapshot);
+        startRunInDraft(draft, { characterId: "wildcard", contentSystemType, draftedDeck: [] });
         setPendingCharacterId(draft, "wildcard");
         setStarterDraftChoices(draft, createStarterDraftChoices([], createDraftRunRandomSource(draft, "rewards")));
         setRunProgressActivity(draft, "draft-deck");
