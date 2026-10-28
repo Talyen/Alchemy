@@ -198,6 +198,11 @@ Screen-specific geometry belongs in [Browsing](./UI_BROWSING.md),
 
 ## Display sizing
 
+Text wraps at ordinary language-appropriate boundaries without discretionary
+hyphenation or inserted word breaks. Keep intentional compound-word hyphens and
+keyword formatting. Let content grow rather than splitting prose or shrinking its
+type to fit. Technical error logs may wrap long opaque tokens to prevent overflow.
+
 On macOS, both desktop fullscreen modes fill the entire display, including the area beside the camera notch, using Electron simple fullscreen. They stay on the current desktop rather than opening a native fullscreen Space. Windowed mode restores the standard movable, resizable window. Do not request native or HTML fullscreen on macOS: it reserves a black strip at the notch.
 
 The virtual stage owns available-space geometry and battle coordinates. It

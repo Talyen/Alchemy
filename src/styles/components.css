@@ -342,8 +342,6 @@
     font-size: calc(1.5 * var(--content-rem, 1rem));
     font-weight: 700;
     line-height: 1.15;
-    overflow-wrap: anywhere;
-    hyphens: auto;
   }
 
   .talent-node-description {
@@ -352,8 +350,6 @@
     font-size: calc(1.275 * var(--content-rem, 1rem));
     line-height: 1.35;
     text-wrap: pretty;
-    overflow-wrap: anywhere;
-    hyphens: auto;
   }
 
   .talent-node-keyword {

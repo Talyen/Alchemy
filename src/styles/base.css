@@ -8,7 +8,6 @@
 html:lang(ja) {
   --font-sans: "Inter", "Alchemy Japanese", "Alchemy Cyrillic", "Alchemy Chinese", sans-serif;
   line-break: strict;
-  overflow-wrap: anywhere;
 }
 
 [lang="ja"] {
@@ -35,7 +34,6 @@ html:lang(ja) {
 
 html:lang(zh-Hans) {
   line-break: strict;
-  overflow-wrap: anywhere;
 }
 
 @layer base {
@@ -64,6 +62,10 @@ html:lang(zh-Hans) {
 
   html {
     font-size: 16px;
+    -webkit-hyphens: none;
+    hyphens: none;
+    overflow-wrap: normal;
+    word-break: normal;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
