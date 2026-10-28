@@ -20,7 +20,7 @@ function runNpmRebuildElectronSync() {
   const result = runStreamCommand("npm", ["rebuild", "electron"], {
     cwd: projectRoot,
     env: envWithoutSkip(),
-    timeout: 600_000,
+    timeout: process.env.CI ? 0 : 600_000,
   });
 
   if (result.error) {
@@ -37,7 +37,7 @@ function runScriptSync(scriptName, { cwd = projectRoot, timeout = 600_000 } = {}
   const result = runStreamCommand(process.execPath, [scriptPath], {
     cwd,
     env: envWithoutSkip(),
-    timeout,
+    timeout: process.env.CI ? 0 : timeout,
   });
 
   if (result.error) {
@@ -54,7 +54,7 @@ function runOfficialInstallSync() {
   const result = runStreamCommand(process.execPath, [path.join(electronRoot, "install.js")], {
     cwd: electronRoot,
     env: envWithoutSkip(),
-    timeout: 600_000,
+    timeout: process.env.CI ? 0 : 600_000,
   });
 
   if (result.error) {

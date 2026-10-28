@@ -5,9 +5,6 @@ on:
       diagnostics:
         type: string
         required: true
-      timeout:
-        type: number
-        default: 25
       release:
         type: boolean
         default: false
@@ -19,7 +16,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.timeout }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:

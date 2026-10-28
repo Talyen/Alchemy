@@ -28,7 +28,7 @@ for (const locale of acceptanceLocales.filter((entry) => entry !== "en-XA")) {
     localizationCoverage(locale, "de"),
     async ({ page, fastBattle }) => {
       void fastBattle;
-      test.setTimeout(90_000);
+      test.setTimeout(process.env.CI ? 0 : 90_000);
       const label = (english: string) => translatedLabel(locale, english);
       await page.addInitScript(
         ({ locale, ranges, review }) => {

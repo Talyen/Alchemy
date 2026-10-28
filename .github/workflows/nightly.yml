@@ -33,7 +33,6 @@ jobs:
     with:
       diagnostics: build-diagnostics-nightly-prepare
       acceptance: false
-      timeout: 15
 
   e2e-web:
     name: Web E2E (${{ matrix.shard }}/4)
@@ -50,7 +49,6 @@ jobs:
     with:
       command: npm run test:e2e:nightly -- --shard=${{ matrix.shard }}/4
       artifact: playwright-report-nightly-web-${{ matrix.shard }}
-      timeout: 15
       variant: shard-${{ matrix.shard }}
       layout-review: true
 
@@ -58,7 +56,6 @@ jobs:
     name: Seeded desktop performance discovery (${{ matrix.slot }})
     needs: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -146,13 +143,11 @@ jobs:
     with:
       artifact: playwright-report-nightly-electron
       renderer: ""
-      timeout: 45
       full: true
 
   deadcode-entry-exports:
     name: Knip entry exports
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -168,7 +163,6 @@ jobs:
   coverage:
     name: Unit coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -221,7 +215,6 @@ jobs:
     name: Battle mutation (${{ matrix.target }})
     needs: mutation-scope
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

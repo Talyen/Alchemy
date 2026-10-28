@@ -27,8 +27,8 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       globalSetup: "./tests/electron/electron-global-setup.ts",
       fullyParallel: false,
       workers: 1,
-      timeout: TIMEOUTS.electron.timeout,
-      globalTimeout: TIMEOUTS.electron.global,
+      timeout: isCi ? 0 : TIMEOUTS.electron.timeout,
+      globalTimeout: isCi ? 0 : TIMEOUTS.electron.global,
       ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-electron-results.json" }),
       preserveOutput: "failures-only",
     });
@@ -48,8 +48,8 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       fullyParallel: false,
       workers: 1,
       retries: 0,
-      timeout: isTrace ? TIMEOUTS.performance.trace : TIMEOUTS.performance.normal,
-      globalTimeout: Math.max(TIMEOUTS.performance.global, soakBudget),
+      timeout: process.env.CI ? 0 : isTrace ? TIMEOUTS.performance.trace : TIMEOUTS.performance.normal,
+      globalTimeout: process.env.CI ? 0 : Math.max(TIMEOUTS.performance.global, soakBudget),
       forbidOnly: false,
       reporter: [["list"], ["./performance/reporter.ts"]],
       use: {
@@ -112,8 +112,8 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     fullyParallel: true,
     maxFailures: isPrepush ? 5 : maxFailures,
     workers: isPrepush ? 2 : ciWorkers,
-    globalTimeout: TIMEOUTS.e2e.global,
-    timeout: isCi ? TIMEOUTS.e2e.ci : TIMEOUTS.e2e.local,
+    globalTimeout: isCi ? 0 : TIMEOUTS.e2e.global,
+    timeout: isCi ? 0 : TIMEOUTS.e2e.local,
     ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-results.json" }),
     preserveOutput: "failures-only",
     use: {

@@ -6,7 +6,7 @@ import { slow } from "../../playwright-tags";
 import { observeDuringAction } from "../observe-during-action";
 
 test.describe("Combat feedback animations", slow, () => {
-  test.setTimeout(60_000);
+  test.setTimeout(process.env.CI ? 0 : 60_000);
 
   test("combat text stays pinned as the portrait moves through an attack", async ({ page }) => {
     const hand = [

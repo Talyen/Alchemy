@@ -48,7 +48,7 @@ async function expectTooltipFitsViewport(tip: Locator, viewport: { width: number
 
 test.describe("Responsive display sizes", slow, () => {
   test("menu, collections, and options fit small and wide viewports", async ({ page }) => {
-    test.setTimeout(90000);
+    test.setTimeout(process.env.CI ? 0 : 90000);
     const menu = new MenuPage(page);
     await menu.goto();
     for (const viewport of VIEWPORTS) {

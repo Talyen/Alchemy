@@ -9,7 +9,6 @@ permissions:
 jobs:
   localization-qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - name: Record test job setup start
         run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"

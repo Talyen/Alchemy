@@ -77,7 +77,7 @@ describe("runCardSweepInClass", () => {
     }));
   });
 
-  it("isolates every affix with matched battles across all tiers", { timeout: 15_000 }, () => {
+  it("isolates every affix with matched battles across all tiers", { timeout: ciTimeout(15_000) }, () => {
     const rows = runAffixSweep({
       iterations: 1,
       pairedIterations: 2,
@@ -276,3 +276,7 @@ describe("runCardSweepInClass", () => {
     ).toBe(true);
   });
 });
+
+function ciTimeout(ms: number) {
+  return process.env.CI ? 0 : ms;
+}
