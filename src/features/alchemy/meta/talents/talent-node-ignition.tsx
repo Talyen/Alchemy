@@ -9,7 +9,7 @@ interface BorderGeometry {
   radius: number;
 }
 
-/** Decorative strokes share the real border's centerline, including its rounded corners. */
+/** Unlock arcs meet at the top along the real rounded border's fixed centerline. */
 export function TalentNodeIgnition({
   frameRef,
   active,

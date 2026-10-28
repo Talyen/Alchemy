@@ -531,7 +531,7 @@
     }
   }
 
-  /* Isolated comparison C: two rounded-path arcs split from the bottom and meet at the top. */
+  /* Two rounded-path unlock arcs split from the bottom and meet at the top. */
   .talent-node-frame[data-unlocking="true"] {
     animation-name: talentTwinBorder;
   }
