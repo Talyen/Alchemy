@@ -168,10 +168,10 @@ Homestead mutation timing remains unchanged.
   - `equipped-effects.ts` owns per-item and equipped battle stat aggregation.
   - `gear-effect-manifest.ts` owns `createEmptyGearEffectManifest()`. Each live manifest owns its chance arrays; defaults are comparison data, not a mutable battle or simulation manifest. Live equipment and simulation presets both accumulate affixes with `addAffixRollEffects`.
   - Save repair imports its rule owners directly, without depending on crafting.
-- **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec), `gear-actions.ts` (draft mutations including inventory salvage), and `gear-session-command.ts` (HP-sync wrapper)
+- **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (session reads and selectors), `gear-actions.ts` (draft mutations including inventory salvage), and `gear-session-command.ts` (HP-sync wrapper)
 - **Screen** — Armory route (`meta-routes.tsx`) → `routeCommands.meta.armory` → `armory-screen.tsx`
 - **Battle** — [manifest integration](#battle-integration)
-- **Persistence** — `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry)
+- **Persistence** — `shared/stores/persistence/gear-codec.ts` owns saved field selection and hydration; `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry)
 
 ### Read paths
 

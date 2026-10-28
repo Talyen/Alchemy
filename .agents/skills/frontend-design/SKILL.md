@@ -18,6 +18,8 @@ Follow [UI copy conventions](../../../Docs/UI.md#show-dont-tell).
 
 [Visual review](../../../Docs/UI_VISUAL_REVIEW.md) owns design quality and rendered comparison requirements. Read the relevant [UI owner](../../../Docs/UI.md) sections, then inspect the current screen before choosing a change.
 
-Use the existing primitives and compare the candidate in matched game states. For artwork, follow the [asset workflow](../../../Docs/WORKFLOWS-ASSETS.md#art-style-and-generation-prompts) and inspect its actual destination size and crop. Exercise affected interactions and localized layouts.
+For changed interactions or requested mockups, describe the player flow: entry, action, visible confirmation, and cancellation or failure where relevant. Make the proposed flow reviewable in the rendered screen or prototype.
+
+Use the existing primitives and compare the candidate in matched game states. Capture the original before editing; use the [managed preview workflow](../../../CONTRIBUTING.md#agent-preview-ownership) and [reproducible scenarios](../../../Docs/UI_VISUAL_REVIEW.md#reproducible-scenarios) where they fit. For artwork, follow the [asset workflow](../../../Docs/WORKFLOWS-ASSETS.md#art-style-and-generation-prompts) and inspect its actual destination size and crop. Exercise affected interactions and localized layouts.
 
 Use [localization](../localization/SKILL.md) after finalizing changed text. [CONTRIBUTING](../../../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and execution permissions.
