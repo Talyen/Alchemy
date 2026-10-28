@@ -1,4 +1,6 @@
 import path from "node:path";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import { open, realpath } from "node:fs/promises";
 import { REPO_ROOT } from "../lib/repository-paths.mjs";
 
@@ -15,8 +17,83 @@ export function resolveAssetSource(source) {
   return resolved;
 }
 
+// Restore only missing, explicitly sparse index entries. Publish a completed
+// checkout atomically without replacing a file created by another process.
+function restoreSparseSources(entries) {
+  const safeParent = (file) => {
+    let directory = REPO_ROOT;
+    for (const part of path.relative(REPO_ROOT, path.dirname(file)).split(path.sep)) {
+      directory = path.join(directory, part);
+      if (fs.lstatSync(directory, { throwIfNoEntry: false })?.isSymbolicLink()) return false;
+    }
+    return true;
+  };
+  const missing = entries.flatMap(({ source }) => {
+    const file = resolveAssetSource(source);
+    return !/trailer/iu.test(source) && safeParent(file) && !fs.lstatSync(file, { throwIfNoEntry: false })
+      ? [path.relative(REPO_ROOT, file).replaceAll(path.sep, "/")]
+      : [];
+  });
+  if (!missing.length) return;
+  const gitOptions = ["--literal-pathspecs", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"];
+  const enabled = spawnSync("git", [...gitOptions, "config", "--bool", "core.sparseCheckout"], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  });
+  if (enabled.status !== 0 || enabled.stdout.trim() !== "true") return;
+  const inventory = spawnSync("git", [...gitOptions, "ls-files", "-t", "-z", "--", ...missing], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  });
+  if (inventory.status !== 0) return;
+  const missingSet = new Set(missing);
+  const sparse = inventory.stdout
+    .split("\0")
+    .filter((entry) => entry.startsWith("S ") && missingSet.has(entry.slice(2)))
+    .map((entry) => entry.slice(2));
+  if (!sparse.length) return;
+  const cache = path.join(REPO_ROOT, ".cache");
+  let temporary;
+  try {
+    fs.mkdirSync(cache, { recursive: true });
+    const cacheStat = fs.lstatSync(cache);
+    if (!cacheStat.isDirectory() || cacheStat.isSymbolicLink()) return;
+    temporary = fs.mkdtempSync(path.join(cache, "source-restore-"));
+    const checkout = spawnSync(
+      "git",
+      [
+        ...gitOptions,
+        "checkout-index",
+        "--ignore-skip-worktree-bits",
+        `--prefix=${temporary}${path.sep}`,
+        "-z",
+        "--stdin",
+      ],
+      { cwd: REPO_ROOT, input: sparse.join("\0") + "\0", encoding: "utf8" },
+    );
+    if (checkout.status !== 0) return;
+    for (const relative of sparse) {
+      const staged = path.join(temporary, relative);
+      const target = path.join(REPO_ROOT, relative);
+      if (!fs.lstatSync(staged, { throwIfNoEntry: false })?.isFile() || !safeParent(target)) continue;
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      if (!safeParent(target)) continue;
+      try {
+        fs.linkSync(staged, target);
+      } catch (error) {
+        if (error.code !== "EEXIST") throw error;
+      }
+    }
+  } catch {
+    // Unknown or unsupported storage falls through to the usual preflight error.
+  } finally {
+    if (temporary) fs.rmSync(temporary, { recursive: true, force: true });
+  }
+}
+
 /** Read every selected repo-local master before publishing or pruning outputs. */
 export async function requireAssetSources(entries) {
+  restoreSparseSources(entries);
   const root = path.join(await realpath(REPO_ROOT), "assets/sources");
   for (const { source } of entries) {
     const filename = resolveAssetSource(source);
