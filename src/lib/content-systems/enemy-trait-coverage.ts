@@ -22,7 +22,7 @@ export const ENEMY_TURN_START_GAINS: ReadonlyMap<string, Readonly<EnemyTurnStart
   ["iron-hide", Object.freeze({ stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN, everyOtherTurn: true })],
 ]);
 
-/** These hits occur on even turns, before the enemy selects its ability. */
+/** These hits occur on their trait's cadence before the enemy selects its ability. */
 export const ENEMY_TURN_START_DAMAGE: Readonly<Record<string, "bleed" | "holy">> = Object.freeze({
   "crimson-pulse": "bleed",
   "radiant-judgment": "holy",

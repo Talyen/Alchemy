@@ -253,7 +253,7 @@ export const enemyBestiary = [
     art: assetRefs.theBloodCountess,
     enemyType: "boss",
     traits: [
-      trait("crimson-pulse", "Crimson Pulse", "Deals 1 Bleed damage every other turn."),
+      trait("crimson-pulse", "Crimson Pulse", "Deals 1 Bleed damage every third turn."),
       trait("blood-countess", "Profane Blood", "Takes 1 Holy damage whenever the hero restores Health.", "negative"),
     ],
     abilityIds: ["fangs", "rend", "bloodthorn"],

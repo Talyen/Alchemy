@@ -1,6 +1,7 @@
 export const TRAIT_FORGE_PER_TURN = 1;
 export const IRON_HIDE_ARMOR_PER_TURN = 1;
 export const GLACIAL_SURGE_FREEZE_DAMAGE_BONUS = 1;
+export const CRIMSON_PULSE_TURN_INTERVAL = 3;
 export const LIVING_ARMOR_STARTING_ARMOR = 4;
 export const ENEMY_STARTING_BLOCK = 4;
 export const COLD_EMBRACE_HEALING = 3;

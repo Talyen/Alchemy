@@ -35,7 +35,7 @@ export const TRAIT_REQUIRED_TERMS: Record<string, ReadonlyArray<string | readonl
   inquisitor: ["holy", "below half health"],
   paladin: ["block", "stun"],
   "radiant-judgment": ["holy", "every other turn"],
-  "crimson-pulse": ["bleed", "every other turn"],
+  "crimson-pulse": ["bleed", "every third turn"],
   concussion: ["stun", "25%"],
   "self-sacrifice": ["loses", "health", "each attack hit"],
   cowardly: ["less damage", "below half health"],
