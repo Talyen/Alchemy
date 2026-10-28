@@ -56,6 +56,70 @@ describe("normalizePersistedBattleState", () => {
     expect(saved).toEqual(before);
   });
 
+  it("repairs duplicate card identities without mutating any saved pile or retaining ambiguous discounts", () => {
+    const defaults = battleSnapshot(defaultBattleState());
+    const saved = {
+      ...defaults,
+      hand: [{ ...cardById.slash!, uid: 5 }, { ...cardById.block!, uid: 5 }, { ...cardById.slash! }],
+      pendingHandCards: [{ ...cardById.block!, uid: 6 }],
+      deck: [{ ...cardById.slash!, uid: 5 }, { ...cardById.block! }],
+      discard: [{ ...cardById.slash!, uid: 7 }],
+      exhausted: [{ ...cardById.block!, uid: 8 }],
+      nextCardUid: 1,
+      uniqueGear: { ...defaults.uniqueGear, lastArcheryUid: 5, returningFlightUids: [5, 6, 6, 7] },
+    };
+    const before = structuredClone(saved);
+    const piles = ["hand", "pendingHandCards", "deck", "discard", "exhausted"] as const;
+    for (const pile of piles) {
+      for (const card of saved[pile]) Object.freeze(card);
+      Object.freeze(saved[pile]);
+    }
+    const normalized = normalizePersistedBattleState(saved);
+    expect(piles.map((pile) => normalized[pile].map((card) => card.uid))).toEqual([
+      [5, 9, 10],
+      [6],
+      [11, undefined],
+      [7],
+      [8],
+    ]);
+    expect(normalized.nextCardUid).toBe(12);
+    expect(normalized.uniqueGear.lastArcheryUid).toBeNull();
+    expect(normalized.uniqueGear.returningFlightUids).toEqual([6, 7]);
+    expect(saved).toEqual(before);
+    expect(normalizePersistedBattleState(normalized)).toEqual(normalized);
+  });
+
+  it("retains valid effect entries in order while keeping repaired manifests independent", () => {
+    const defaults = defaultBattleState();
+    const chances = [25, 0, 100, -1, Infinity, 25, "50"];
+    const multipliers = Object.fromEntries([
+      ["apple", 2],
+      ["__proto__", 3],
+      ["invalid", -1],
+    ]);
+    Object.freeze(chances);
+    Object.freeze(multipliers);
+    const saved = {
+      gearEffects: { forgeOnStunChances: chances } as unknown as typeof defaults.gearEffects,
+      talentEffects: { cardHealMultipliers: multipliers } as typeof defaults.talentEffects,
+    };
+    const normalized = normalizePersistedBattleState(saved);
+    expect(normalized.gearEffects.forgeOnStunChances).toEqual([25, 100, 25]);
+    expect(normalized.talentEffects.cardHealMultipliers).toEqual(
+      Object.fromEntries([
+        ["apple", 2],
+        ["__proto__", 3],
+      ]),
+    );
+    expect(Object.getPrototypeOf(normalized.talentEffects.cardHealMultipliers)).toBe(Object.prototype);
+    normalized.gearEffects.forgeOnStunChances.push(50);
+    normalized.talentEffects.cardHealMultipliers.apple = 99;
+    const resumed = normalizePersistedBattleState(saved);
+    expect(resumed.gearEffects.forgeOnStunChances).toEqual([25, 100, 25]);
+    expect(resumed.talentEffects.cardHealMultipliers.apple).toBe(2);
+    expect(chances).toEqual([25, 0, 100, -1, Infinity, 25, "50"]);
+  });
+
   it("retains a running battle's Health, defenses, and old roster across balance updates", () => {
     const saved = {
       ...defaultBattleState(),

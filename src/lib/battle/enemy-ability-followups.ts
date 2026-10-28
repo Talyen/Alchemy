@@ -12,7 +12,7 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { setEnemyStatus, setPlayerStatus } from "./status-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText } from "./combat-text-events";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
 
 const NATIVE_STATUS_TRAITS = [
@@ -87,7 +87,7 @@ export function applyNativeHitFollowups(
   if (getBattleOutcome(nextState) !== null) return nextState;
   if (hasEnemyTrait(nextState, "snap-shut")) {
     nextState = recordEnemyAbilityActivation(nextState, "snap-shut");
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    emitStatusText(combatTexts, "enemy", "block", 1);
     nextState = addEnemyMitigation(nextState, "block", 1);
   }
   if (getBattleOutcome(nextState) !== null) return nextState;

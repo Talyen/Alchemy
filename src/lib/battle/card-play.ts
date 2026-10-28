@@ -1,7 +1,7 @@
 import { applyEmergencyWishForEmptyDraw } from "./wish";
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, CombatTextEvent } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
@@ -218,8 +218,7 @@ function resolveCardPlay(
     },
   };
   const manaSpent = Math.min(paymentState.mana, effectiveCost);
-  if (blockCost > 0)
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost, impact: false });
+  if (blockCost > 0) emitDamageText(combatTexts, "player", "block", blockCost, { impact: false });
   let stripped: BattleState = {
     ...paymentState,
     hand: paymentState.hand.filter((_, handIndex) => handIndex !== index),

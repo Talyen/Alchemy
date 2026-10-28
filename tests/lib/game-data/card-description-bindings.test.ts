@@ -4,10 +4,13 @@ import {
   cardById,
   cloneBattleCard,
   cardMagnitude,
+  carryCardDescriptionMarks,
+  describeCardEffects,
   getCardDescription,
   renderCardDescription,
   withCardDescription,
 } from "@/lib/game-data";
+import { buildDescriptionMessage } from "@/lib/game-data/description-message";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import { applyNumericCorruption } from "@/lib/corruption/numeric";
 import { addCorruptionEffect } from "@/lib/corruption/card-edits";
@@ -284,4 +287,53 @@ describe("card description bindings", () => {
 
     expect(getEditableCorruptionTargets(loaded)[0]!.id).toBe(target.id);
   });
+});
+
+it.each([
+  { effectPath: undefined, expected: "3:amount" },
+  { effectPath: [], expected: "3:amount" },
+  { effectPath: [0, 2], expected: "3/0/2:amount" },
+])("preserves magnitude addresses for path $effectPath", ({ effectPath, expected }) => {
+  const reference = { kind: "heal" as const, effectIndex: 3, field: "amount" as const, effectPath };
+  const magnitude = cardMagnitude(reference);
+  expect(magnitude.id).toBe(expected);
+  expect(magnitude.references).toEqual([reference]);
+});
+
+it("carries both marks and identity across a shared magnitude split without mutating its source", () => {
+  const first = { kind: "heal" as const, effectIndex: 0, field: "amount" as const };
+  const second = { ...first, effectIndex: 1 };
+  const marked = cardMagnitude(first, { shared: [second], corrupted: true, distilled: true });
+  const previous = [{ role: "effect" as const, parts: [marked] }];
+  const before = structuredClone(previous);
+  const result = carryCardDescriptionMarks(previous, [
+    { role: "effect", parts: [cardMagnitude(first), " and ", cardMagnitude(second)] },
+  ]);
+  expect(result[0]!.parts[0]).toMatchObject({ id: "0:amount", corrupted: true, distilled: true });
+  expect(result[0]!.parts[2]).toMatchObject({ id: "1:amount", corrupted: true, distilled: true });
+  expect(previous).toEqual(before);
+});
+
+it("keeps localization slot order, decimal values, and numeric tag names intact", () => {
+  const message = buildDescriptionMessage([
+    { text: "Restore " },
+    { text: "12", magnitudeId: "0:amount" },
+    { text: " Health; <note7>2.5 extra</note7>." },
+  ]);
+  expect(message.template).toBe(
+    "Restore <magnitude0>{{value0}}</magnitude0> <keyword0>Health</keyword0>; <note7>{{value1}} extra</note7>.",
+  );
+  expect(message.slots).toEqual({ magnitude0: { magnitudeId: "0:amount" }, keyword0: { keywordId: "health" } });
+  expect(message.values).toEqual({ value0: 12, value1: 2.5 });
+  expect(buildDescriptionMessage([])).toMatchObject({ template: "", slots: {}, values: {} });
+});
+
+it.each([
+  [true, false, "Ignores Armor"],
+  [false, true, "Ignores Block"],
+  [true, true, "Ignores Armor and Block"],
+] as const)("retains exact bypass wording for Armor %s and Block %s", (ignoreArmor, ignoreBlock, expected) => {
+  expect(
+    describeCardEffects([{ kind: "damage", damageType: "physical", amount: 2, ignoreArmor, ignoreBlock }]),
+  ).toEqual(["Deal 2 Physical damage", expected]);
 });

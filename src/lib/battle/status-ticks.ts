@@ -17,7 +17,7 @@ import {
 } from "./status-helpers";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";
@@ -34,11 +34,7 @@ function emitDotCombatText(
   amount: number,
   healthLost = amount,
 ) {
-  mergeCombatText(combatTexts, {
-    target,
-    kind: "damage",
-    stat,
-    amount,
+  emitDamageText(combatTexts, target, stat, amount, {
     periodic: true,
     ...(healthLost !== amount ? { healthLost } : {}),
   });

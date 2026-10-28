@@ -1,24 +1,13 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
-import { rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { temporaryDirectories } from "../helpers/script-fixtures";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // oxlint-disable-next-line typescript/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore scripts are untyped JS helpers
 import { validateRegistryEntries } from "../../scripts/assets/registry-validation.mjs";
 
-const tempDirs: string[] = [];
-
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
-
-async function makeTempDir() {
-  const dir = await mkdtemp(path.join(tmpdir(), "alchemy-registry-"));
-  tempDirs.push(dir);
-  return dir;
-}
+const makeTempDir = temporaryDirectories("alchemy-registry-");
 
 describe("validateRegistryEntries", () => {
   it("returns entries when valid", async () => {
@@ -119,7 +108,7 @@ describe("validateRegistryEntries", () => {
   });
 
   it("rejects missing source files when sourceDir is provided", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     await writeFile(path.join(dir, "exists.png"), "x");
     await expect(
       validateRegistryEntries([{ source: "missing.png", target: "a.webp" }], { sourceDir: dir }),
@@ -127,7 +116,7 @@ describe("validateRegistryEntries", () => {
   });
 
   it("rejects directories masquerading as existing source files", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     await mkdir(path.join(dir, "image.png"));
     await expect(
       validateRegistryEntries([{ source: "image.png", target: "a.webp" }], { sourceDir: dir }),

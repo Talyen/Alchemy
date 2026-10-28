@@ -16,8 +16,8 @@ it("owns custom description lines so building or editing a variant cannot change
   ];
   const before = structuredClone(authored);
   const base = { id: "shared", art: "", effects: [{ kind: "heal" as const, amount: 2 }], describe: () => authored };
-  const tagged = effectsCard({ ...base, tags: ["nature"], consume: true });
-  const plain = effectsCard(base);
+  const tagged = effectsCard(base.id, base.effects, { ...base, tags: ["nature"], consume: true });
+  const plain = effectsCard(base.id, base.effects, base);
   expect(tagged.descriptionLines).toEqual(["Restore 2 Health", "Nature", "Consume"]);
   expect(plain.descriptionLines).toEqual(["Restore 2 Health"]);
   tagged.descriptionLines[0] = "Changed";
@@ -27,15 +27,14 @@ it("owns custom description lines so building or editing a variant cannot change
 });
 
 it("validates exact canonical text and still rejects edited amounts and omitted effects", () => {
-  const card = effectsCard({
-    id: "canonical",
-    art: "",
-    consume: true,
-    effects: [
+  const card = effectsCard(
+    "canonical",
+    [
       { kind: "heal", amount: 4 },
       { kind: "draw-cards", amount: 1 },
     ],
-  });
+    { art: "", consume: true },
+  );
   expect(card.descriptionLines).toEqual(["Restore 4 Health", "Draw a card", "Consume"]);
   expect(validateCardDescriptionParity(card)).toEqual([]);
   for (const descriptionLines of [

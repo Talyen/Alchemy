@@ -1,18 +1,14 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { resolveSelectedPaths, parseChangedPathsArgs } from "../../scripts/lib/verification/changed-paths.mjs";
 import { captureSourceDigest } from "../../scripts/check.mjs";
 
-const roots: string[] = [];
-afterEach(() => {
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
 function fixture() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "scoped-check-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("scoped-check-");
+
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
   git("init");
   git("config", "user.name", "Test");
@@ -26,6 +22,8 @@ function fixture() {
   const digest = () => captureSourceDigest({ rootDir: root, paths: ["owned"], inputs: ["harness.ts"] }).hash;
   return { root, git, digest };
 }
+const createTemporaryDirectory = temporaryDirectories();
+
 it("accepts unrelated edits and identical content while guarding owned membership, modes and dependencies", () => {
   const { root, digest } = fixture();
   const before = digest();

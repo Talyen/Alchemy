@@ -1,6 +1,6 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText } from "./combat-text-events";
 import {
   ENEMY_TURN_START_DAMAGE,
   ENEMY_TURN_START_GAINS,
@@ -44,7 +44,7 @@ export function processEnemyTraits(state: BattleState, combatTexts: CombatTextEv
       continue;
     }
     if (gain.everyOtherTurn && state.turn % 2 !== 0) continue;
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: gain.stat, amount: gain.amount });
+    emitStatusText(combatTexts, "enemy", gain.stat, gain.amount);
     nextState = recordEnemyAbilityActivation(addEnemyMitigation(nextState, gain.stat, gain.amount), trait.id);
   }
   return nextState;

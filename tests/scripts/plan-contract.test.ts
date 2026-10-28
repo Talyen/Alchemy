@@ -1,18 +1,14 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { finishTerminalPlans } from "../../scripts/finish-plans.mjs";
 import { parsePlanMetadata } from "../../scripts/lib/plan-checks.mjs";
 import { createPlan, planTemplate, safePlanName } from "../../scripts/new-plan.mjs";
 
-const roots: string[] = [];
-afterEach(() => {
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
 function fixture() {
-  const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plans-"));
-  roots.push(plansDir);
+  const plansDir = createTemporaryDirectory("alchemy-plans-");
+
   const write = (name: string, status: string) =>
     fs.writeFileSync(
       path.join(plansDir, name),
@@ -25,6 +21,8 @@ function fixture() {
   fs.writeFileSync(path.join(plansDir, "Unrelated.md"), "unfinished metadata");
   return { plansDir, write };
 }
+
+const createTemporaryDirectory = temporaryDirectories();
 
 it("deletes only named terminal plans, with a non-mutating preview and no archive", () => {
   const { plansDir } = fixture();

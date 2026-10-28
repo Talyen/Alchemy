@@ -27,7 +27,7 @@ import { observeAttackPower } from "./resolution-observer";
 import { applyNativeHitFollowups } from "./enemy-ability-followups";
 import { applyBlockDepletionRewards } from "./player-rewards";
 import { setPlayerStatus } from "./status-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { damageEnemyHealth } from "./health-state";
 import { applyHitEpilogue } from "./player-rewards";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
@@ -178,15 +178,7 @@ export function applyAbilityDamage(
     const block = state.enemyMitigation.block;
     const spent = Math.min(block, Math.max(0, scalePercent(block, effect.equalToBlockPercent ?? 100)));
     state = addEnemyMitigation(state, "block", -spent);
-    if (spent > 0)
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "block",
-        amount: spent,
-        impact: false,
-        feedback: "secondary",
-      });
+    if (spent > 0) emitDamageText(combatTexts, "enemy", "block", spent, { impact: false, feedback: "secondary" });
   }
   if (state.observer)
     observeAttackPower(
@@ -242,7 +234,7 @@ export function applyAbilityDamage(
   if (result.landed && getBattleOutcome(nextState) === null && hasEnemyTrait(nextState, "self-sacrifice")) {
     const before = nextState.enemyHealth;
     nextState = damageEnemyHealth(recordEnemyAbilityActivation(nextState, "self-sacrifice"), 1).state;
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "health", amount: 1 });
+    emitDamageText(combatTexts, "enemy", "health", 1);
     nextState = applyHitEpilogue(nextState, before, before > 0, combatTexts);
   }
   return nextState;
@@ -252,6 +244,6 @@ function applyHitPilfer(state: BattleState, texts: CombatTextEvent[]): BattleSta
   if (!hasEnemyTrait(state, "pilfer") || state.playerStatuses.block <= 0) return state;
   let next = setPlayerStatus(state, "block", state.playerStatuses.block - 1);
   next = recordEnemyAbilityActivation(addEnemyMitigationWithCombatText(next, "block", 1, texts), "pilfer");
-  mergeCombatText(texts, { target: "player", kind: "damage", stat: "block", amount: 1, impact: false });
+  emitDamageText(texts, "player", "block", 1, { impact: false });
   return resolvePendingBattleReactions(applyBlockDepletionRewards(state, next, texts), texts);
 }

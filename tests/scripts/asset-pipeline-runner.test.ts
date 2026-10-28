@@ -1,7 +1,7 @@
-import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { temporaryDirectories } from "../helpers/script-fixtures";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   ensureOutputDir,
@@ -11,18 +11,7 @@ import {
   runManifestPipeline,
 } from "../../scripts/assets/asset-pipeline-runner.mjs";
 
-const tempDirs: string[] = [];
-afterEach(async () => {
-  for (const dir of tempDirs.splice(0)) {
-    await rm(dir, { recursive: true, force: true });
-  }
-});
-
-async function makeTempDir() {
-  const dir = await mkdtemp(path.join(tmpdir(), "alchemy-runner-"));
-  tempDirs.push(dir);
-  return dir;
-}
+const makeTempDir = temporaryDirectories("alchemy-runner-");
 
 describe("resolvePipelinePaths", () => {
   it("derives matching output and manifest paths per pipeline", () => {
@@ -47,7 +36,7 @@ describe("resolvePipelinePaths", () => {
 });
 
 it("ensureOutputDir creates the directory for mutating runs but never in check mode", async () => {
-  const dir = await makeTempDir();
+  const dir = makeTempDir();
   const created = path.join(dir, "nested", "out");
   await ensureOutputDir(created);
   expect((await readdir(path.join(dir, "nested"))).sort()).toEqual(["out"]);
@@ -58,7 +47,7 @@ it("ensureOutputDir creates the directory for mutating runs but never in check m
 
 describe("runManifestPipeline", () => {
   it("publishes the manifest and sweeps orphans with the shared manifest name", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const outputDir = path.join(dir, "out");
     await mkdir(outputDir, { recursive: true });
     const manifestPath = path.join(outputDir, ".asset-hashes.json");
@@ -82,7 +71,7 @@ describe("runManifestPipeline", () => {
   });
 
   it("holds publication for commit:false callers and still reports failures", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const outputDir = path.join(dir, "out");
     await mkdir(outputDir, { recursive: true });
     const manifestPath = path.join(outputDir, ".asset-hashes.json");

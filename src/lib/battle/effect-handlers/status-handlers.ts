@@ -2,7 +2,7 @@ import type { EffectHandlers } from "./handler-types";
 import { applyPotionMultiplier } from "../amount-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import { addEnemyStatus } from "../status-state";
-import { mergeCombatText } from "../combat-text-events";
+import { emitMultiplyText } from "../combat-text-events";
 import { UTILITY_HANDLERS } from "./utility-handlers";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../stun-leech-resolution";
@@ -30,11 +30,7 @@ export const STATUS_HANDLERS = {
       attackBuildup: false,
       combatTexts,
     });
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "multiply",
-      stat: effect.status,
-      amount: nextState.enemyStatuses[effect.status] - current,
+    emitMultiplyText(combatTexts, "enemy", effect.status, nextState.enemyStatuses[effect.status] - current, {
       ...(context?.feedback ? { feedback: context.feedback } : {}),
     });
 

@@ -9,7 +9,7 @@ import { dealSelfDamage, mitigatePlayerStatusDamage } from "../status-helpers";
 import { addPlayerStatus, setPlayerStatus } from "../status-state";
 import { applyBlockDepletionRewards } from "../player-rewards";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
-import { mergeCombatText } from "../combat-text-events";
+import { emitDamageText } from "../combat-text-events";
 import { rangeBoundsError } from "./simple-handlers";
 import { resolvePlayerCrowdControlTriggers } from "../status-cc";
 
@@ -22,15 +22,7 @@ export const DAMAGE_HANDLERS = {
       const spent = Math.min(block, Math.max(0, scalePercent(block, effect.equalToBlockPercent ?? 100)));
       const before = state;
       state = setPlayerStatus(state, "block", block - spent);
-      if (spent > 0)
-        mergeCombatText(combatTexts, {
-          target: "player",
-          kind: "damage",
-          stat: "block",
-          amount: spent,
-          impact: false,
-          feedback: "secondary",
-        });
+      if (spent > 0) emitDamageText(combatTexts, "player", "block", spent, { impact: false, feedback: "secondary" });
       state = resolvePendingBattleReactions(applyBlockDepletionRewards(before, state, combatTexts), combatTexts);
       // Pay before Dodge/mitigation. Recorded hit echoes retain the paid amount,
       // while a full card replay grants and spends Block again.

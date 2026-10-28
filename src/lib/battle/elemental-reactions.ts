@@ -4,7 +4,7 @@ import type { DamageType } from "@/lib/game-data";
 import { REACTION_DEFINITIONS, type ReactionId } from "./reaction-definitions";
 import { getReactionBonus } from "./elemental-reaction-state";
 import { getBattleOutcome } from "./battle-outcome";
-import { mergeCombatText } from "./combat-text-events";
+import { mergeCombatText, emitDamageText } from "./combat-text-events";
 import { damageEnemyHealth } from "./health-state";
 import { applyHitEpilogue } from "./player-rewards";
 import { decayArmorAfterDamage } from "./status-helpers";
@@ -73,10 +73,8 @@ export function applyShatter(state: BattleState, texts: CombatTextEvent[]): Batt
     reactions: { ...state.reactions, shatterDamage: 0 },
   };
   announceReaction(texts, "shatter");
-  if (block > 0)
-    mergeCombatText(texts, { target: "enemy", kind: "damage", stat: "block", amount: block, impact: false });
-  if (armor > 0)
-    mergeCombatText(texts, { target: "enemy", kind: "damage", stat: "armor", amount: armor, impact: false });
+  if (block > 0) emitDamageText(texts, "enemy", "block", block, { impact: false });
+  if (armor > 0) emitDamageText(texts, "enemy", "armor", armor, { impact: false });
   return next;
 }
 
@@ -97,11 +95,7 @@ export function applyElementalReactionDamage(
   if (payoff.id !== "shatter") announceReaction(texts, payoff.id);
   const hit = damageEnemyHealth(marked, payoff.damage);
   const damaged = decayArmorAfterDamage(hit.state, payoff.damage, "enemy", texts);
-  mergeCombatText(texts, {
-    target: "enemy",
-    kind: "damage",
-    stat: feedback.stat,
-    amount: payoff.damage,
+  emitDamageText(texts, "enemy", feedback.stat, payoff.damage, {
     additive: false,
     reactionId: payoff.id,
     ...(hit.healthDamage !== payoff.damage ? { healthLost: hit.healthDamage } : {}),

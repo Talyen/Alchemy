@@ -1,7 +1,7 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, processContagion } from "./enemy-healing";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { computeLeechHeal } from "./stun-leech-resolution";
 import { scaleByRoomMultiplier } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -70,14 +70,7 @@ function resolveEnemyDamageEffectCore(
           playerStatuses: { ...state.playerStatuses, block: state.playerStatuses.block - preDamageBlockStrip },
         }
       : state;
-  if (preDamageBlockStrip > 0)
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "block",
-      amount: preDamageBlockStrip,
-      impact: false,
-    });
+  if (preDamageBlockStrip > 0) emitDamageText(combatTexts, "player", "block", preDamageBlockStrip, { impact: false });
 
   const mitigation = calculateBlockAndArmorMitigation(hitState, effect, incomingDamage, combatTexts, options, state);
 

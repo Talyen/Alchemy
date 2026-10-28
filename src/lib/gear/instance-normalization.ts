@@ -1,9 +1,8 @@
-import { normalizeAffixRolls } from "./affixes";
-import { gearAffixCatalog } from "./affix-catalog";
+import { forEachNormalizedAffixRoll } from "./affixes";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { isRecord } from "@/lib/utils";
 import { gearDefinitions } from "./definitions";
-import type { GearInstance } from "./types";
+import type { GearAffixRoll, GearInstance } from "./types";
 
 export function normalizeGearInstance(raw: unknown): GearInstance | null {
   if (!isRecord(raw)) return null;
@@ -20,15 +19,17 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
   }
 
   const seen = new Set<string>();
-  const affixes = normalizeAffixRolls(Array.isArray(raw.affixes) ? raw.affixes : undefined, definition.rarity);
-  let kept = 0;
-  for (const roll of affixes) {
-    if (seen.has(roll.id) || gearAffixCatalog[roll.id].uniqueOnly) continue;
-    seen.add(roll.id);
-    affixes[kept++] = roll;
-    if (kept === GEAR_AFFIX_COUNT[definition.rarity].max) break;
-  }
-  affixes.length = kept;
+  const affixes: GearAffixRoll[] = [];
+  const limit = GEAR_AFFIX_COUNT[definition.rarity].max;
+  forEachNormalizedAffixRoll(
+    Array.isArray(raw.affixes) ? raw.affixes : undefined,
+    definition.rarity,
+    (affix, value) => {
+      if (affixes.length >= limit || seen.has(affix.id) || affix.uniqueOnly) return;
+      seen.add(affix.id);
+      affixes.push({ id: affix.id, value });
+    },
+  );
   return {
     instanceId,
     definitionId,

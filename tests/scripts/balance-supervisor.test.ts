@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runNode } from "../helpers/script-fixtures";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,7 +13,7 @@ it("retries a timed out lease, completes, and releases its own supervisor lock",
     `import pathlib, sys\np = pathlib.Path(${JSON.stringify(counter)})\nif not p.exists():\n p.write_text('1')\n sys.exit(124)\nprint('Balance report complete: test')\n`,
   );
   try {
-    const result = spawnSync(process.execPath, ["scripts/run-balance-supervisor.mjs"], {
+    const result = runNode(["scripts/run-balance-supervisor.mjs"], {
       cwd: process.cwd(),
       env: {
         ...process.env,
@@ -21,7 +21,6 @@ it("retries a timed out lease, completes, and releases its own supervisor lock",
         ALCHEMY_HEAVY_LANE: fakeLane,
         ALCHEMY_BALANCE_CHECKPOINT: root,
       },
-      encoding: "utf8",
       timeout: 5000,
     });
     expect(result.status, result.stderr).toBe(0);
