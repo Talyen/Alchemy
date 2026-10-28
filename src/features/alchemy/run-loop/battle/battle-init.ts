@@ -30,7 +30,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       presentCompanionAction(presentationStore, battleState.activeCompanion);
     }
     presentCombatTexts(presentationStore, startingTexts, focalSound);
-    if (outcome) session.handleVictoryDefeat?.(outcome);
+    if (outcome) session.checkBattleEnd(battleState, ctx.playback.id);
   }
 
   return ctx.battle.createStartCommands(presentBattleStart);

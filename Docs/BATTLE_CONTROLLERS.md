@@ -220,6 +220,17 @@ Wishes wait for active card transfers. Draw-and-Wish cards show draws first;
 queued Wishes also wait for the prior chosen card to reach the hand. Use the
 existing transfer-in-progress signal without delaying gameplay commits.
 
+### Companion action playback
+
+The engine retains each Companion action's actual feedback and before/after Health,
+including successful Bond repeats. These execution-only facts are not saved and
+never draw additional RNG. The feedback owner queues independent attack/cast beats
+and publishes each action's chips and display-only Health at its impact. Other card
+results keep their ordinary timing. Manual input and terminal navigation wait for
+this queue; cancellation settles its waiters and removes pending impacts. Mana,
+statuses and hand contents still read the committed result rather than simulating
+another combat state in presentation.
+
 ### Outcome timing
 
 Defeat settles synchronously in transition `prepare`; only navigation waits.

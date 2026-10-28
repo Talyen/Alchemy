@@ -59,8 +59,12 @@ export function createBattleCardPlay(
       deps: transferDeps.getDrawSequenceDeps(sessionNum),
       errorContext: `handle ${errorContext} draw sequence`,
       onSettled: () => {
-        finishDraw();
-        finishDrawSequence(sessionNum);
+        void getPresentation()
+          .waitForCompanionActions()
+          .then(() => {
+            finishDraw();
+            finishDrawSequence(sessionNum);
+          });
       },
     });
   }
@@ -73,6 +77,7 @@ export function createBattleCardPlay(
       ctx.playback.canPlayCard() &&
       state.turnPhase === "player" &&
       !state.wishOptions &&
+      !presentation.companionActionCue &&
       !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
     );
   }
@@ -165,7 +170,6 @@ export function createBattleCardPlay(
     getPresentation().setDisplayedBattle(null);
     if (visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion"))
       getPresentation().clearCompanionActions();
-    session.checkBattleEnd(played.state, sessionNum);
     if (!ctx.playback.isCurrent(sessionNum)) return true;
     // Victory grace permits the accepted card feedback while finishing.
     if (!ctx.playback.finishing && !ctx.playback.beginAction(sessionNum)) return true;
@@ -188,6 +192,7 @@ export function createBattleCardPlay(
       () => {
         getPresentation().enqueueCompanionActions(played.companionActions ?? []);
         presentCombatTexts(getPresentation(), played.combatTexts, focalSound);
+        session.checkBattleEnd(played.state, sessionNum);
       },
       sessionNum,
       "play card",

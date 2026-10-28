@@ -17,6 +17,7 @@ function makePresentation() {
     telegraphAttack: vi.fn(),
     telegraphCast: vi.fn(),
     enqueueCompanionActions: vi.fn(),
+    waitForCompanionActions: vi.fn().mockResolvedValue(undefined),
   } as unknown as BattlePresentationPort;
 }
 
@@ -109,7 +110,7 @@ describe("playTurnFrames", () => {
     expect(onHandDrawn).toHaveBeenCalledTimes(1);
   });
 
-  it("calls onHandDrawn to unblock card plays and delays companion attack by 0.5s", async () => {
+  it("keeps card input gated until delayed Companion playback completes", async () => {
     vi.useFakeTimers();
     using _scopeCleanup = createCleanup(() => vi.useRealTimers());
 
@@ -136,8 +137,8 @@ describe("playTurnFrames", () => {
     const playPromise = playTurnFrames([companionFrame], 3, deps, presentation, { onHandDrawn });
     await vi.advanceTimersByTimeAsync(0);
 
-    // Hand draw completed, unblocking card play
-    expect(onHandDrawn).toHaveBeenCalledTimes(1);
+    // The hand is visible, but its Companion action still owns playback.
+    expect(onHandDrawn).not.toHaveBeenCalled();
     // Companion attack has not triggered yet before 500ms
     expect(presentation.telegraphAttack).not.toHaveBeenCalled();
 
@@ -145,12 +146,13 @@ describe("playTurnFrames", () => {
     await vi.advanceTimersByTimeAsync(500);
     await playPromise;
 
+    expect(onHandDrawn).toHaveBeenCalledTimes(1);
     expect(presentation.setDisplayedBattle).toHaveBeenCalledWith(companionFrame.companion.state);
     expect(presentation.enqueueCompanionActions).toHaveBeenCalledWith([expect.objectContaining({ kind: "attack" })]);
     expect(presentation.showCombatTexts).toHaveBeenCalledWith(expect.arrayContaining([...companionTexts]));
   });
 
-  it("does not overwrite displayedBattle if a card play began during companion delay", async () => {
+  it("does not overwrite an externally superseded display during companion delay", async () => {
     vi.useFakeTimers();
     using _scopeCleanup = createCleanup(() => vi.useRealTimers());
 
@@ -172,7 +174,7 @@ describe("playTurnFrames", () => {
     };
     const presentation = makePresentation();
     const deps = makeDrawSequenceDeps({ isSessionActive: () => true });
-    let cardPlayInProgress = false;
+    let cardPlayInProgress = true;
 
     const playPromise = playTurnFrames([companionFrame], 3, deps, presentation, {
       onHandDrawn: () => {

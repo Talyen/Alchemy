@@ -122,7 +122,7 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
       now: () => Date.now(),
       isCompanionCurrent: (cue) => {
         const battle = readBattle(gameSession).battleState;
-        return battle.activeCompanion?.id === cue.companionId && battle.playerHealth > 0;
+        return battle.activeCompanion?.id === cue.companionId;
       },
     });
     const actions: Omit<BattlePresentationStateWithActions, keyof (BattlePresentationState & CombatFeedbackState)> = {

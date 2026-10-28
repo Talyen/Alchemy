@@ -81,11 +81,13 @@ export async function playTurnFrames(
       }
       presentation.setDisplayedBattle({ ...(turn.afterAbilityState ?? turn.state), hand: [], turnPhase: "enemy" });
       presentTurnResolution(frame, presentation);
+      await presentation.waitForCompanionActions();
       if (!(await deps.playback.waitForDelay(sessionNum, ENEMY_ATTACK_RECOVERY_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
       markBattleStage("enemy-end");
     } else {
       presentTurnResolution(frame, presentation);
+      await presentation.waitForCompanionActions();
     }
     await runHandDrawSequence(
       before.hand,
@@ -95,7 +97,7 @@ export async function playTurnFrames(
       deps,
     );
     if (!deps.isSessionActive(sessionNum)) return;
-    if (!turn.playerTurnSkipped) options?.onHandDrawn?.();
+    if (!turn.playerTurnSkipped && !companion) options?.onHandDrawn?.();
     if (companion) {
       if (!(await deps.playback.waitForDelay(sessionNum, COMPANION_ATTACK_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
@@ -103,6 +105,9 @@ export async function playTurnFrames(
         presentation.setDisplayedBattle(companion.state);
       }
       presentCompanionResolution(frame, presentation, true);
+      await presentation.waitForCompanionActions();
+      if (!deps.isSessionActive(sessionNum)) return;
+      if (!turn.playerTurnSkipped) options?.onHandDrawn?.();
     }
   }
 }
@@ -119,6 +124,7 @@ export function createBattleEndTurnUi(
     if (
       expected !== currentState ||
       !ctx.playback.canEndTurn() ||
+      !!presentation.companionActionCue ||
       isBattlePlaybackBlocked({
         screen: ctx.screen,
         battleState: currentState,
@@ -148,8 +154,12 @@ export function createBattleEndTurnUi(
       }
       presentation.setDisplayedBattle(null);
       presentation.resetHandTransferUi();
-      ctx.playback.completeAction(sessionNum);
-      session.checkBattleEnd(result.state, sessionNum);
+      void presentation.waitForCompanionActions().then(() => {
+        session.runIfSessionActive(sessionNum, () => {
+          ctx.playback.completeAction(sessionNum);
+          session.checkBattleEnd(result.state, sessionNum);
+        });
+      });
       return;
     }
     presentation.setDisplayedBattle(currentState);

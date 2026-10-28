@@ -1,7 +1,8 @@
+import { mergeCombatText } from "./combat-text-events";
 import { rollBattleChance } from "./chance-roll";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import type { BattleState, CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent, CompanionActionCue } from "./types";
 import { applyScaledLeechHealing, computeLeechHeal } from "./stun-leech-resolution";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
@@ -32,14 +33,21 @@ export function resolveCompanionTurnStart(
 
   if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 
+  const sequence = state.companionActionSequence ?? { current: 0 };
+  state = { ...state, companionActionSequence: sequence };
+  const health = (s: BattleState) => ({ playerHealth: s.playerHealth, enemyHealth: s.enemyHealth });
+  const groups: Array<NonNullable<CompanionActionCue["resolution"]>> = [
+    { id: ++sequence.current, before: health(state), after: health(state), texts: [] },
+  ];
+  let currentGroup = groups[0]!;
+  const texts: CombatTextEvent[] = [];
   const cue = { companionId: state.activeCompanion.id, kind: isAttackCard(companionCard) ? "attack" : "cast" } as const;
-  if (companionCard.effects.length) state.onCompanionAction?.(cue);
   // Owl/Moth Bond repeats are resolved inside this action's chance effect.
   // Observe the actual roll; presentation must neither reroll it nor infer success.
   const repeat =
     cue.companionId === "library-owl" || cue.companionId === "mana-moth" ? companionCard.effects[1] : undefined;
 
-  return resolveSecondaryAction(state, "companion", (s) => {
+  const resolved = resolveSecondaryAction(state, "companion", (s) => {
     const burningEnemy = s.enemyStatuses.burn > 0;
     const companionAttackBonus = { amount: s.flags.companionNextAttackBonus };
     const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
@@ -47,7 +55,7 @@ export function resolveCompanionTurnStart(
     let damageDealt = 0;
     let damagePackets = 0;
     let afterEffects = processEncounterTraitCardAction(
-      applyEffects(s, companionCard, combatTexts, {
+      applyEffects(s, companionCard, texts, {
         manaAtStart: s.mana,
         companionAttackBonus,
         origin: "companion",
@@ -58,11 +66,19 @@ export function resolveCompanionTurnStart(
           if (amount > 0) damagePackets += 1;
         },
         onChanceResolved: (effect, success) => {
-          if (success && effect === repeat) s.onCompanionAction?.(cue);
+          if (success && effect === repeat) {
+            currentGroup = { id: ++sequence.current, before: currentGroup.after, after: currentGroup.after, texts: [] };
+            groups.push(currentGroup);
+          }
+        },
+        onEffectResolved: (_effect, before, after, events) => {
+          if (currentGroup !== groups[0] && currentGroup.texts.length === 0) currentGroup.before = health(before);
+          for (const event of events) event.companionActionId ??= currentGroup.id;
+          currentGroup.after = health(after);
         },
       }),
       companionCard,
-      combatTexts,
+      texts,
       damageEffects.length > 0 || attackAttempted.value,
       { cardPlayed: false },
     );
@@ -79,7 +95,7 @@ export function resolveCompanionTurnStart(
           (total, chance) => total + Number(rollBattleChance(chance, afterEffects)),
           0,
         ),
-        combatTexts,
+        texts,
       );
     }
     if (
@@ -90,11 +106,7 @@ export function resolveCompanionTurnStart(
       (s.playerHealth < s.playerMaxHealth / HALF_DIVISOR ||
         afterEffects.playerHealth < afterEffects.playerMaxHealth / HALF_DIVISOR)
     ) {
-      afterEffects = applyHealingWithCombatText(
-        afterEffects,
-        afterEffects.gearEffects.healOnCompanionAttack,
-        combatTexts,
-      );
+      afterEffects = applyHealingWithCombatText(afterEffects, afterEffects.gearEffects.healOnCompanionAttack, texts);
     }
 
     if (damageDealt > 0 && afterEffects.enemyHealth > 0 && state.talentEffects.companionStunChance > 0) {
@@ -102,23 +114,34 @@ export function resolveCompanionTurnStart(
         afterEffects = resolveFollowUpHit(
           afterEffects,
           { source: "talent-derived", damageType: "stun", amount: damageDealt },
-          combatTexts,
+          texts,
         );
       }
     }
 
     if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {
       if (rollBattleChance(state.talentEffects.companionLeechChance, state)) {
-        afterEffects = applyScaledLeechHealing(afterEffects, computeLeechHeal(damageDealt), combatTexts);
+        afterEffects = applyScaledLeechHealing(afterEffects, computeLeechHeal(damageDealt), texts);
       }
     }
 
     for (let index = 0; index < damagePackets; index += 1) {
       if (rollBattleChance(afterEffects.talentEffects.companionManaChance, afterEffects)) {
-        afterEffects = gainManaWithCombatText(afterEffects, 1, combatTexts);
+        afterEffects = gainManaWithCombatText(afterEffects, 1, texts);
       }
     }
 
-    return resolvePendingBattleReactions(afterEffects, combatTexts);
+    return resolvePendingBattleReactions(afterEffects, texts);
   });
+  currentGroup.after = health(resolved);
+  for (const event of texts) {
+    event.companionActionId ??= currentGroup.id;
+    const group = groups.find((item) => item.id === event.companionActionId);
+    group?.texts.push({ ...event });
+    mergeCombatText(combatTexts, event);
+  }
+  if (companionCard.effects.length) {
+    for (const resolution of groups) state.onCompanionAction?.({ ...cue, resolution });
+  }
+  return resolved;
 }

@@ -1,6 +1,7 @@
+import type { CompanionActionCue } from "@/lib/battle";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ATTACK_LUNGE_DURATION_MS, CAST_BRACE_DURATION_MS } from "@/lib/game-constants";
+import { ATTACK_LUNGE_DURATION_MS, ATTACK_SWING_APEX_MS, CAST_BRACE_DURATION_MS } from "@/lib/game-constants";
 import {
   createCompanionActionPlayback,
   type CompanionPlaybackCue,
@@ -120,5 +121,77 @@ describe("independent Companion action playback", () => {
     queue.enqueue([{ companionId: "mana-moth", kind: "cast" }]);
     act(() => vi.advanceTimersByTime(160));
     expect(seen).toHaveBeenLastCalledWith(null);
+  });
+  it("publishes actual chips and Health only at each impact, then releases completion", async () => {
+    let state = createCombatFeedbackState();
+    const feedback = createCombatFeedback({
+      update: (reduce) => {
+        state = { ...state, ...reduce(state) };
+      },
+      isVisible: () => true,
+      now: () => Date.now(),
+    });
+    feedback.actions.enqueueCompanionActions(
+      [0, 1].map(
+        (index): CompanionActionCue => ({
+          companionId: "wolf",
+          kind: "attack",
+          resolution: {
+            id: index + 1,
+            before: { playerHealth: 30, enemyHealth: 54 - index * 2 },
+            after: { playerHealth: 30, enemyHealth: 52 - index * 2 },
+            texts: [
+              {
+                target: "enemy",
+                kind: "damage",
+                stat: "physical",
+                amount: 2,
+                healthLost: 2,
+                companionActionId: index + 1,
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    let completed = false;
+    void feedback.actions.waitForCompanionActions().then(() => {
+      completed = true;
+    });
+    expect(state.companionHealth?.enemyHealth).toBe(54);
+    expect(state.floatingCombatBursts).toHaveLength(0);
+    vi.advanceTimersByTime(ATTACK_SWING_APEX_MS);
+    expect(state.companionHealth?.enemyHealth).toBe(52);
+    expect(
+      state.floatingCombatBursts
+        .flatMap((burst) => burst.entries)
+        .map((entry) => (entry.kind === "notice" ? null : entry.amount)),
+    ).toEqual([2]);
+    vi.advanceTimersByTime(ATTACK_LUNGE_DURATION_MS);
+    expect(state.companionHealth?.enemyHealth).toBe(50);
+    expect(
+      state.floatingCombatBursts
+        .flatMap((burst) => burst.entries)
+        .map((entry) => (entry.kind === "notice" ? null : entry.amount)),
+    ).toEqual([2, 2]);
+    expect(completed).toBe(false);
+    vi.advanceTimersByTime(ATTACK_LUNGE_DURATION_MS);
+    await Promise.resolve();
+    expect(completed).toBe(true);
+    expect(state.companionHealth).toBeNull();
+    feedback.cancel();
+  });
+  it("cancels pending impact feedback and resolves waiters on replacement", async () => {
+    const impact = vi.fn();
+    const queue = createCompanionActionPlayback(vi.fn(), () => true, impact);
+    queue.enqueue([
+      { companionId: "wolf", kind: "attack" },
+      { companionId: "wolf", kind: "attack" },
+    ]);
+    const done = queue.waitForIdle();
+    queue.clear();
+    await done;
+    vi.advanceTimersByTime(3000);
+    expect(impact).not.toHaveBeenCalled();
   });
 });

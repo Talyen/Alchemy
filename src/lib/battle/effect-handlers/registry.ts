@@ -225,7 +225,15 @@ export function applyCardEffects(
     state,
     card.effects,
     effectTexts,
-    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, effectTexts, context),
+    (currentState, effect) => {
+      if (!context.onEffectResolved)
+        return applySingleEffect(currentState, card, effect, potionMult, effectTexts, context);
+      const texts: CombatTextEvent[] = [];
+      const after = applySingleEffect(currentState, card, effect, potionMult, texts, context);
+      context.onEffectResolved(effect, currentState, after, texts);
+      for (const event of texts) mergeCombatText(effectTexts, event);
+      return after;
+    },
     { kind: "each-step", settle: resolvePendingBattleReactions },
   );
   const primary = card.effects[0];

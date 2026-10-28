@@ -137,6 +137,8 @@ export type CombatTextStat =
 interface CombatTextIntent {
   /** Display intent only: authored card outcomes versus costs, riders and triggered rewards. */
   feedback?: "primary" | "secondary";
+  /** Resolved Companion action owns playback; never merged with another action. */
+  companionActionId?: number;
 }
 
 export interface NumericCombatTextEvent extends CombatTextIntent {
@@ -183,12 +185,19 @@ export interface BattleResolution {
 export interface CompanionActionCue {
   companionId: CompanionDefinition["id"];
   kind: "attack" | "cast";
+  resolution?: {
+    id: number;
+    texts: CombatTextEvent[];
+    before: Pick<BattleSnapshot, "playerHealth" | "enemyHealth">;
+    after: Pick<BattleSnapshot, "playerHealth" | "enemyHealth">;
+  };
 }
 
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
   rng: Rng;
   onCompanionAction?: (cue: CompanionActionCue) => void;
+  companionActionSequence?: { current: number };
   observer?: BattleResolutionObserver;
   /** A deferred offer has pending choices but no identities until external input. */
   sampleWishOptions?: (sample: () => BattleCard[]) => { cards: BattleCard[]; deferred: boolean };

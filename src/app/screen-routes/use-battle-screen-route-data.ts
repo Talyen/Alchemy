@@ -11,14 +11,17 @@ export function useBattleScreenRouteData(presentation: BattlePresentationStore) 
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext();
   const displayedBattle = useStore(presentation, (state) => state.displayedBattle);
+  const companionHealth = useStore(presentation, (state) => state.companionHealth);
   const runBoons = useActiveRunBoons();
   const battleScreenData: BattleScreenData = useMemo(
     () => ({
-      battleState: displayedBattle ?? battleState,
+      battleState: companionHealth
+        ? { ...(displayedBattle ?? battleState), ...companionHealth }
+        : (displayedBattle ?? battleState),
       activeLabyrinthModifiers,
       runBoons,
     }),
-    [battleState, displayedBattle, activeLabyrinthModifiers, runBoons],
+    [battleState, displayedBattle, companionHealth, activeLabyrinthModifiers, runBoons],
   );
 
   // Settlement removes combat immediately; the outgoing route keeps its final

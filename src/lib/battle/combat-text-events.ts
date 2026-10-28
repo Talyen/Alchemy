@@ -59,7 +59,8 @@ export function canMergeCombatText(event: CombatTextEvent, nextEvent: CombatText
     event.target !== nextEvent.target ||
     event.stat !== nextEvent.stat ||
     event.kind !== nextEvent.kind ||
-    event.feedback !== nextEvent.feedback
+    event.feedback !== nextEvent.feedback ||
+    event.companionActionId !== nextEvent.companionActionId
   )
     return false;
   if (event.kind === "notice" && nextEvent.kind === "notice")

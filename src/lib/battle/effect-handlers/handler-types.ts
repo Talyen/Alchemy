@@ -14,6 +14,13 @@ export interface CardEffectResolutionContext {
   attackAttempted?: { value: boolean };
   onDamageDealt?: (amount: number) => void;
   onChanceResolved?: (effect: Extract<BattleCardEffect, { kind: "chance" }>, success: boolean) => void;
+  /** Top-level authored effect only; recursive branches retain their original ordering. */
+  onEffectResolved?: (
+    effect: BattleCardEffect,
+    before: BattleState,
+    after: BattleState,
+    texts: CombatTextEvent[],
+  ) => void;
   damageMultiplier?: number;
   baseDamageBonus?: number;
   guaranteedCrit?: boolean;
