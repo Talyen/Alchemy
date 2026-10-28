@@ -71,6 +71,9 @@ resource spending and discount priority; the rules below add talent reactions.
 Covering checks the hero's Block and Eagle Eye checks enemy Stun before payment
 reactions can change them. Payment retaliation settles before card-play rewards;
 a defeated hero cannot open a healing Emergency Wish from Quickfletched.
+Eagle Eye draws only for the first Archery card against a Stunned enemy each
+player turn. Its allowance is spent before drawing, survives save/resume and
+renewed Stun, and resets at the next player turn.
 
 - **Card play rewards** — Thermal Vent rolls for Forge on each Burn card play, before its effects; successful Forge uses ordinary gain bonuses. Automatically played cards qualify; repeats and scheduled effects do not roll the play reward again. Faith Barrier is a Holy-damage reward, not a card-play reward. Sacred Shield remains a separate 10%-of-Block Holy damage bonus.
 - **Automatic card rewards and discounts** — Dance of Blades grants Whistle's Companion action after summoning or buffing, and Mortar and Pestle damage after a Potion. These use the ordinary play reward paths. Mortar and Pestle also triggers for each duplicated Potion use. First-card allowances retain their established priority. After those allowances, Unique free-card effects and flat encounter/returned-card discounts apply before spending armed next-card discounts; a card already reduced to zero preserves Divine Favor and other armed next-card discounts.

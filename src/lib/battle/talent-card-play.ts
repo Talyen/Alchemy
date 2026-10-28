@@ -25,8 +25,17 @@ function applyTalentDrawTriggers(
 ): BattleState {
   let nextState = state;
   const talents = state.talentEffects;
-  if (archery && eligibility.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
-    nextState = drawCardPlayReward(nextState, talents.drawOnArcheryVsStunned, combatTexts);
+  if (
+    archery &&
+    eligibility.enemyCC.stunSkipTurns > 0 &&
+    talents.drawOnArcheryVsStunned > 0 &&
+    !nextState.flags.eagleEyeUsedThisTurn
+  ) {
+    nextState = drawCardPlayReward(
+      setFlag(nextState, "eagleEyeUsedThisTurn", true),
+      talents.drawOnArcheryVsStunned,
+      combatTexts,
+    );
     if (isPlayerDefeated(nextState)) return nextState;
   }
   if (archery && rollBattleChance(state.gearEffects.archeryDrawChance, state)) {

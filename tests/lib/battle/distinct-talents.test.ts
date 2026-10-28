@@ -7,6 +7,7 @@ import {
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
+import { resetTurnFlags } from "@/lib/battle/combat-flags";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -89,22 +90,62 @@ describe("distinct talent conditions", () => {
     expect(unmatched.playerStatuses).toMatchObject({ armor: 0, block: 0 });
   });
 
-  it("Eagle Eye draws for each Archery play against Stunned enemies", () => {
+  it("Eagle Eye rewards the first qualifying Archery card each turn and preserves the limit on resume", () => {
     const initial = battle({
       talentEffects: talents("Eagle Eye"),
-      enemyCC: { stunSkipTurns: 1 },
-      deck: [drawCard, drawCard, drawCard],
+      deck: [cardById["heal"]!, cardById["heal"]!, cardById["heal"]!],
     });
-    const first = prepareTalentCardPlay(initial, cardById["fire-arrow"]!, []);
+    const unstunned = prepareTalentCardPlay(initial, cardById["fire-arrow"]!, []);
+    expect(unstunned.hand).toHaveLength(0);
+    expect(unstunned.flags.eagleEyeUsedThisTurn).toBe(false);
+    const stunned = { ...unstunned, enemyCC: { ...unstunned.enemyCC, stunSkipTurns: 1 } };
+    const nonArchery = prepareTalentCardPlay(stunned, cardById["heal"]!, []);
+    expect(nonArchery.flags.eagleEyeUsedThisTurn).toBe(false);
+    const first = prepareTalentCardPlay(nonArchery, cardById["fire-arrow"]!, []);
     expect(first.hand).toHaveLength(1);
-    expect(prepareTalentCardPlay(first, cardById["fire-arrow"]!, []).hand).toHaveLength(2);
-    expect(
-      prepareTalentCardPlay(
-        battle({ talentEffects: initial.talentEffects, deck: [drawCard] }),
-        cardById["fire-arrow"]!,
-        [],
-      ).hand,
-    ).toHaveLength(0);
+    expect(first.flags.eagleEyeUsedThisTurn).toBe(true);
+    const resumed = { ...PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(first))), rng: () => 0.99 };
+    const second = prepareTalentCardPlay(resumed, cardById["fire-arrow"]!, []);
+    expect(second.hand).toHaveLength(1);
+    const recovered = { ...second, enemyCC: { ...second.enemyCC, stunSkipTurns: 0 } };
+    const restunned = { ...recovered, enemyCC: { ...recovered.enemyCC, stunSkipTurns: 1 } };
+    expect(prepareTalentCardPlay(restunned, cardById["fire-arrow"]!, []).hand).toHaveLength(1);
+    const nextTurn = { ...restunned, turn: restunned.turn + 1, flags: resetTurnFlags(restunned.flags) };
+    expect(prepareTalentCardPlay(nextTurn, cardById["fire-arrow"]!, []).hand).toHaveLength(2);
+  });
+
+  it("Eagle Eye spends its allowance even when the empty deck grants an Emergency Wish", () => {
+    const state = battle({
+      talentEffects: talents("Eagle Eye"),
+      enemyCC: { stunSkipTurns: 1 },
+    });
+    const result = prepareTalentCardPlay(state, cardById["fire-arrow"]!, []);
+    expect(result.flags.eagleEyeUsedThisTurn).toBe(true);
+    expect(result.wishOptions?.length).toBeGreaterThan(0);
+    const repeated = prepareTalentCardPlay(result, cardById["fire-arrow"]!, []);
+    expect(repeated.wishQueue).toHaveLength(0);
+  });
+
+  it("Eagle Eye no longer sustains the two-Sniff-Out free attack loop", () => {
+    const sniff = cardById["sniff-out"]!;
+    let state = battle({
+      mana: 1,
+      maxMana: 3,
+      talentEffects: talents("Eagle Eye"),
+      enemyCC: { stunSkipTurns: 1 },
+      hand: [
+        { ...sniff, uid: 1 },
+        { ...sniff, uid: 2 },
+      ],
+    });
+    state = playBattleCardResolved(state, sniff.id, 0).state;
+    expect(state.flags.eagleEyeUsedThisTurn).toBe(true);
+    expect(state.mana).toBe(0);
+    state = playBattleCardResolved(state, sniff.id, 0).state;
+    expect(state.cardsPlayedThisTurn).toBe(2);
+    expect(state.hand).toHaveLength(0);
+    expect(state.deck.length + state.discard.length).toBe(2);
+    expect(state.enemyCC.stunSkipTurns).toBe(1);
   });
 
   it("Flash Fire repeats the current Burn card without a second roll", () => {

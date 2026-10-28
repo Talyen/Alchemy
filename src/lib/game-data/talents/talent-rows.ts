@@ -58,7 +58,7 @@ export const talentRows = [
   ),
   archery("archery-eagle-eye", "Eagle Eye")(
     "Eye",
-    "When you play an Archery card against a Stunned enemy, draw a card",
+    "Your first Archery card against a Stunned enemy each turn draws a card",
     { drawOnArcheryVsStunned: 1 },
   ),
   archery("archery-hawk-eye", "Hawk Eye")(
