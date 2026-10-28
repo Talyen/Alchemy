@@ -163,7 +163,7 @@ export const coreCards: BattleCard[] = [
   ]),
   cardBuilders.effectsCard("briar-shield", [
     { kind: "player-status", status: "block", amount: 2 },
-    { kind: "player-status", status: "thorns", amount: 3 },
+    { kind: "player-status", status: "thorns", amount: 4 },
   ]),
   cardBuilders.effectsCard("thorn-mail", [
     { kind: "player-status", status: "armor", amount: 1 },

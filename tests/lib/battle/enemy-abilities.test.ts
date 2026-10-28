@@ -266,7 +266,7 @@ describe("enemy card effects", () => {
     expect(result.hand).toBe(state.hand);
     expect(result.talentEffects).toBe(state.talentEffects);
     expect(useAbility(state, "plate-mail").enemyMitigation.armor).toBe(2);
-    expect(useAbility(state, "briar-shield").enemyStatuses.thorns).toBe(3);
+    expect(useAbility(state, "briar-shield").enemyStatuses.thorns).toBe(4);
     expect(JSON.stringify(cardById["shield-bash"])).toBe(cardBefore);
   });
 
@@ -339,7 +339,7 @@ describe("enemy card effects", () => {
         "briar-shield",
       );
       const hit = playBattleCardResolved({ ...prepared, hand: [slash], mana: 1 }, slash.id, 0).state;
-      expect(hit.playerHealth).toBe(legacy ? 96 : 97);
+      expect(hit.playerHealth).toBe(legacy ? 95 : 96);
       expect(hit.enemyStatuses.thorns).toBe(0);
       expect(hit.flags.legacyEnemyThornsReady).toBe(false);
     }

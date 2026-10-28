@@ -80,7 +80,7 @@ export const consumableCards: BattleCard[] = [
     { kind: "wish", amount: 1 },
   ]),
   cardBuilders.effectsCard("dark-pact", [
-    { kind: "damage", damageType: "burn", amount: 3 },
+    { kind: "damage", damageType: "burn", amount: 4 },
     { kind: "lose-health", amount: 1 },
     { kind: "wish", amount: 1 },
   ]),
