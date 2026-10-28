@@ -5,7 +5,7 @@ import { resolveWishRewards } from "./wish-rewards";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   getCardEffect,
-  getOfferableCardPool,
+  getOfferableCardPoolView,
   isCompanionSummonCard,
   selectRewardCards,
   type BattleCard,
@@ -41,14 +41,9 @@ export function buildWishOptions(
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
-  const candidates = getOfferableCardPool();
-  let candidateCount = 0;
-  for (const candidate of candidates) {
-    if (candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate))) {
-      candidates[candidateCount++] = candidate;
-    }
-  }
-  candidates.length = candidateCount;
+  const candidates = getOfferableCardPoolView().filter(
+    (candidate) => candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate)),
+  );
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const battleRng = getBattleRng(state);
   let undiscovered: BattleCard[] = [];
