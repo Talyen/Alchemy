@@ -26,6 +26,7 @@ function captureBackend(backend: SaveBackend): SaveBackend {
 export class SaveStorage {
   private readonly queue = new SaveOperationQueue();
   private writeKeys: ReadonlyArray<typeof SAVE_KEY | typeof SAVE_RECOVERY_KEY> = [SAVE_KEY, SAVE_RECOVERY_KEY];
+  private preferRecovery = false;
   private demoInitialization: Promise<SaveLoadState | null> | null = null;
   private lastSavedAt = 0;
   private backend: SaveBackend;
@@ -44,6 +45,7 @@ export class SaveStorage {
     this.backend = captureBackend(backend);
     this.demoInitialization = null;
     this.writeKeys = [SAVE_KEY, SAVE_RECOVERY_KEY];
+    this.preferRecovery = false;
   }
 
   setWritesDisabled(disabled: boolean): void {
@@ -52,8 +54,8 @@ export class SaveStorage {
 
   routeWritesToRecovery(): void {
     // Recovery is a route preference, never permission to replace protected data.
+    this.preferRecovery = true;
     this.writeKeys = this.writeKeys.filter((key) => key === SAVE_RECOVERY_KEY);
-    this.setWritesDisabled(false);
   }
 
   subscribeEvents(listener: (event: SaveStorageEvent) => void): () => void {
@@ -72,6 +74,7 @@ export class SaveStorage {
     await this.queue.reset();
     this.demoInitialization = null;
     this.writeKeys = [SAVE_KEY, SAVE_RECOVERY_KEY];
+    this.preferRecovery = false;
     this.lastSavedAt = 0;
   }
 
@@ -99,6 +102,7 @@ export class SaveStorage {
       // Otherwise preserve unreadable recovery data, including after primary write failure.
       if (recoveryUnreadable && !primaryUnreadable)
         this.writeKeys = this.writeKeys.filter((key) => key !== SAVE_RECOVERY_KEY);
+      if (this.preferRecovery) this.writeKeys = this.writeKeys.filter((key) => key === SAVE_RECOVERY_KEY);
       let loaded = selection.state;
 
       if (primaryCandidates.length === 0 && recoveryCandidates.length === 0) {
@@ -120,13 +124,23 @@ export class SaveStorage {
   private async initializeDemoProgress(): Promise<SaveLoadState | null> {
     try {
       const source = await this.backend.readDemoImportSource!();
+      if (source.readFailed) {
+        this.demoInitialization = null;
+        return null;
+      }
       const snapshot = prepareDemoProgressImport(source);
       if (snapshot) {
-        if (this.queue.areWritesDisabled()) return null;
+        if (this.queue.areWritesDisabled()) {
+          this.demoInitialization = null;
+          return null;
+        }
         // Initialization already owns the operation lane through load().
         // Enqueuing another operation here would wait on this very load.
         const outcome = await this.writeSaveSnapshot(snapshot);
-        if (outcome !== "saved") return null;
+        if (outcome !== "saved") {
+          this.demoInitialization = null;
+          return null;
+        }
         try {
           await this.backend.completeDemoInitialization?.();
         } catch (error) {
@@ -136,6 +150,7 @@ export class SaveStorage {
       }
       if (!source.readFailed) await this.backend.completeDemoInitialization?.();
     } catch (error) {
+      this.demoInitialization = null;
       logStorageFailure("Demo progress initialization failed", error);
     }
     return null;
@@ -248,6 +263,7 @@ export class SaveStorage {
         const result = await this.backend.clear(SAVE_KEY, { forceLocalWipe });
         if (result.ok) {
           this.writeKeys = [SAVE_KEY, SAVE_RECOVERY_KEY];
+          this.preferRecovery = false;
           this.demoInitialization = Promise.resolve(null);
         }
         return result;

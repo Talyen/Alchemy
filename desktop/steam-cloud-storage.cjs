@@ -10,7 +10,7 @@ function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOw
     if (!isSteamCloudEnabled(client)) return null;
     if (!client.cloud.fileExists(name)) return null;
     const buffer = await client.cloud.readFile(name);
-    if (!buffer) throw new Error("Steam Cloud save could not be read");
+    if (!buffer || buffer.length === 0) throw new Error("Steam Cloud save could not be read");
     if (buffer.length > maxPayloadBytes) throw new Error(`Steam Cloud save exceeds ${maxPayloadBytes} bytes`);
     return buffer.toString("utf8");
   }

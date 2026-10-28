@@ -9,6 +9,7 @@ import { formatBytes, measurePath, removePath } from "./lib/clean-dev-artifacts.
 import { withArtifactGuard } from "./lib/artifact-guard.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { pruneFailedBuilds } from "./lib/build-retention.mjs";
+import { pruneIntegratedRuns } from "./lib/integration-retention.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Only Git diff inventories are reproducible from the current checkout. Test,
@@ -74,6 +75,7 @@ export function pruneExpiredArtifacts({
   const cutoff = now - days * 86_400_000;
   const review = dryRun ? reportRetentionPlan(rootDir, { now }) : writeRetentionReview(rootDir, { now });
   const removed = [];
+  if (transientDirs === TRANSIENT_DIRS) removed.push(...pruneIntegratedRuns(rootDir, { dryRun, now }));
   if (transientDirs === TRANSIENT_DIRS) {
     const cache = fs.lstatSync(path.join(rootDir, ".cache"), { throwIfNoEntry: false });
     if (!cache || (cache.isDirectory() && !cache.isSymbolicLink()))

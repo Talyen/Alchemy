@@ -95,8 +95,10 @@ function createDemoProgressBridge({
         for (const name of ["demo-save.json", "demo-save-recovery.json"]) {
           if (client.cloud.fileExists(name)) {
             const buffer = await client.cloud.readFile(name);
-            if (!buffer) throw new Error("Demo cloud read failed");
-            add(buffer.toString("utf8"));
+            if (!buffer || buffer.length === 0) throw new Error("Demo cloud read failed");
+            const data = buffer.toString("utf8");
+            if (!isSavePayload(data)) throw new Error("Demo cloud save exceeds the payload limit");
+            add(data);
           }
         }
       }

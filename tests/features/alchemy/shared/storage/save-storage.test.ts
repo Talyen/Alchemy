@@ -23,6 +23,76 @@ function backend() {
 }
 
 describe("SaveStorage ownership", () => {
+  it.each(["save", "saveForExit"] as const)(
+    "%s keeps an explicit write suspension when recovery is selected",
+    async (operation) => {
+      const transport = backend();
+      transport.writeSync.mockReturnValue({ ok: true });
+      const storage = new SaveStorage(transport);
+      storage.setWritesDisabled(true);
+      storage.routeWritesToRecovery();
+      expect(await storage[operation](createDefaultSaveData())).toBe("skipped");
+      expect(transport.write).not.toHaveBeenCalled();
+      expect(transport.writeSync).not.toHaveBeenCalled();
+      storage.setWritesDisabled(false);
+      expect(await storage[operation](createDefaultSaveData())).toBe("saved");
+      expect(operation === "save" ? transport.write : transport.writeSync).toHaveBeenCalledWith(
+        SAVE_RECOVERY_KEY,
+        expect.any(String),
+      );
+    },
+  );
+
+  it("keeps the recovery route across an in-flight load and later reloads", async () => {
+    const reading = deferred<void>();
+    const release = deferred<void>();
+    const transport = backend();
+    transport.readCandidates.mockImplementation(async () => {
+      reading.resolve();
+      await release.promise;
+      return { ok: true, candidates: [] };
+    });
+    const storage = new SaveStorage(transport);
+    const loading = storage.load();
+    await reading.promise;
+    storage.routeWritesToRecovery();
+    release.resolve();
+    await loading;
+    expect(await storage.save(createDefaultSaveData())).toBe("saved");
+    await storage.load();
+    expect(await storage.save(createDefaultSaveData())).toBe("saved");
+    expect(transport.write.mock.calls.map(([key]) => key)).toEqual([SAVE_RECOVERY_KEY, SAVE_RECOVERY_KEY]);
+  });
+
+  it.each(["read", "write"] as const)("retries demo import after a transient %s failure", async (failure) => {
+    const candidate = JSON.stringify({ ...createDefaultSaveData(), gold: 31 });
+    const source = vi.fn().mockResolvedValue({
+      initialized: false,
+      fullSaveExists: false,
+      readFailed: false,
+      candidates: [candidate],
+    });
+    if (failure === "read") source.mockResolvedValueOnce({ readFailed: true, candidates: [] });
+    const transport = backend();
+    if (failure === "write") {
+      transport.write.mockResolvedValueOnce({ ok: false, error: "unavailable" });
+      transport.write.mockResolvedValueOnce({ ok: false, error: "unavailable" });
+    }
+    const receipt = vi.fn().mockResolvedValue(true);
+    const storage = new SaveStorage({
+      ...transport,
+      readDemoImportSource: source,
+      completeDemoInitialization: receipt,
+    });
+    using _log = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await storage.load()).importedDemoProgress).toBeUndefined();
+    expect(receipt).not.toHaveBeenCalled();
+    const retried = await storage.load();
+    expect(retried.importedDemoProgress).toBe(true);
+    expect(retried.data.gold).toBe(31);
+    expect(source).toHaveBeenCalledTimes(2);
+    expect(receipt).toHaveBeenCalledOnce();
+  });
   it.each(["construction", "configuration"])(
     "captures backend methods at %s without losing their receiver",
     async (entry) => {
