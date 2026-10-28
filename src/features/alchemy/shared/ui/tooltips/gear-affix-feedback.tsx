@@ -6,7 +6,7 @@ import type { GearAffixTooltipEntry } from "@/lib/gear";
 const CHANGE_MS = 360;
 interface AffixRow {
   entry: GearAffixTooltipEntry;
-  change?: "added" | "removed";
+  change?: "added" | "changed" | "removed";
   revision: number;
 }
 
@@ -24,17 +24,22 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
   if (signature !== snapshot.signature) {
     const revision = snapshot.revision + 1;
     const current = new Map(entries.map((entry) => [entry.affixId, entry]));
-    const previous = new Set(snapshot.entries.map((entry) => entry.affixId));
+    const previous = new Map(snapshot.entries.map((entry) => [entry.affixId, entry]));
     const rows: AffixRow[] = reducedMotion
       ? entries.map((entry) => ({ entry, revision }))
       : [
-          ...snapshot.entries.map(
-            (entry): AffixRow => ({
-              entry: current.get(entry.affixId) ?? entry,
-              ...(current.has(entry.affixId) ? {} : { change: "removed" }),
-              revision,
+          // A reroll can reorder its payload. Keep surviving lines in their inspected
+          // positions; affix order has no gameplay meaning. Discard obsolete exits.
+          ...snapshot.rows
+            .filter((row) => row.change !== "removed")
+            .map((row): AffixRow => {
+              const entry = current.get(row.entry.affixId);
+              if (!entry) return { entry: row.entry, change: "removed", revision };
+              const old = previous.get(entry.affixId)!;
+              // Entry keys include catalog order, so they are not a visible change.
+              const changed = old.name !== entry.name || old.text !== entry.text || old.value !== entry.value;
+              return changed ? { entry, change: "changed", revision } : { ...row, entry };
             }),
-          ),
           ...entries
             .filter((entry) => !previous.has(entry.affixId))
             .map((entry): AffixRow => ({ entry, change: "added", revision })),
@@ -52,7 +57,9 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
           current.revision === revision
             ? {
                 ...current,
-                rows: current.entries.map((entry) => ({ entry, revision })),
+                rows: current.rows
+                  .filter((row) => row.change !== "removed")
+                  .map(({ entry, revision }) => ({ entry, revision })),
               }
             : current,
         ),

@@ -87,6 +87,7 @@ function GearAffixLines({
   return (
     <div className="gear-affix-lines">
       {rows.map(({ entry, change, revision }) => {
+        const reveal = change === "added" || change === "changed";
         const def = gearAffixCatalog[entry.affixId];
         const isMaxRoll = (rarity === "astral" || rarity === "unique") && entry.value === def.roll[rarity].max;
         const colors = isMaxRoll ? getGearAffixTextShineColors(def) : [];
@@ -101,18 +102,18 @@ function GearAffixLines({
           >
             <div className="gear-affix-row-clip">
               <div
-                key={change === "added" ? revision : "settled"}
+                key={revision}
                 className="gear-affix-line"
                 style={{ "--affix-glow-color": getGearAffixTextShineColors(def)[0] } as CSSProperties}
               >
-                {change === "added" ? <span className="gear-affix-glow" aria-hidden="true" /> : null}
+                {reveal ? <span className="gear-affix-glow" aria-hidden="true" /> : null}
                 <TooltipSubheader>
                   <ShineText colors={colors} fallbackClassName="text-inherit">
-                    {change === "added" ? revealAffixWords(i18n.displayText(entry.name)) : i18n.displayText(entry.name)}
+                    {reveal ? revealAffixWords(i18n.displayText(entry.name)) : i18n.displayText(entry.name)}
                   </ShineText>
                 </TooltipSubheader>
                 <p className={cn(tooltipBodyLineClass, "mt-0 pl-3")}>
-                  {change === "added"
+                  {reveal
                     ? revealAffixWords(i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text))))
                     : i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}
                 </p>
