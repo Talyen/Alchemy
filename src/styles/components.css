@@ -532,6 +532,10 @@
   }
 
   /* Isolated comparison B: the entire edge ignites; only the annulus carries the light band. */
+  .talent-metal-outline {
+    opacity: 0;
+  }
+
   .talent-node-frame[data-unlocking="true"] {
     animation-name: talentMetalBorder;
   }
