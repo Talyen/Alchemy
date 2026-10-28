@@ -344,7 +344,7 @@ boundaries as well as runtime imports.
 
 | Command                           | Role                                                                                                                                         |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (fast local static; no boundary subset double-run)                              |
+| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (CI or explicitly requested local execution; no boundary subset double-run)     |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
 | `npm run assets:check`            | Read-only repository asset source freshness check                                                                                            |

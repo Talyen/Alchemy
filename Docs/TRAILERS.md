@@ -170,7 +170,7 @@ resolved timeline and fails invalid inputs before launching a browser.
 - **Capture:** logical viewport, device scale and 30 or 60 samples per second.
   Default 1920×1080 at scale 2 captures 3840×2160 without changing the game's
   logical layout. Ordinary captures retain lossless H.264 4:4:4 at CRF 0 with
-  every frame independently seekable. The separate Steam suite runner explicitly
+  every frame independently seekable. The separate [Steam suite runner](../trailers/steam-suite-2026-10-25/README.md) explicitly
   selects H.264 4:4:4, CRF 16, `veryfast`, a two-second GOP, a 64 Mbps maximum
   rate and a 128 Mbit buffer for bounded iteration. That mode is lossy; its
   1440p canary does not qualify every 4K capture or final delivery. Compare an
