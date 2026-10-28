@@ -1,4 +1,5 @@
 import { createStarterDraftChoices } from "../starter-draft";
+import { canEnterLabyrinthNode } from "../content-systems/labyrinth/map-state";
 import { createAlchemistBrewOffers, createCampfirePotionOffers } from "@/lib/alchemist/brewing";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
@@ -164,14 +165,13 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     runMetaMaxHealth: data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : data.runMaxHealth,
     runDeck,
     labyrinthMap: data.contentSystemType === "labyrinth" ? data.labyrinthMap : null,
-    // A pending lock for a removed room cannot be entered: clear it so the
-    // map does not stay blocked. The map-screen case already clears above.
+    // Only a reachable, uncleared room on the current floor can complete a visit.
     labyrinthPendingNode:
       data.contentSystemType === "labyrinth" &&
       activity.kind !== "labyrinth-map" &&
       data.labyrinthPendingNode !== null &&
       data.labyrinthMap !== null &&
-      Object.hasOwn(data.labyrinthMap.nodes, data.labyrinthPendingNode)
+      canEnterLabyrinthNode(data.labyrinthMap, data.labyrinthPendingNode)
         ? data.labyrinthPendingNode
         : null,
     activeLabyrinthModifiers: data.contentSystemType === "labyrinth" ? data.activeLabyrinthModifiers : [],

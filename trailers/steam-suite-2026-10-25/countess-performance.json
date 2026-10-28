@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "id": "countess-first-chorus-performance",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 1,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 0,
+    "lyrics": true,
+    "fadeIn": 0,
+    "fadeOut": 2
+  },
+  "clips": [
+    {
+      "id": "countess-performance",
+      "scene": "boss",
+      "boss": "blood-countess",
+      "hero": "knight",
+      "seed": 42,
+      "duration": 88.5,
+      "actions": [
+        {
+          "at": 1.5,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 3.1,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 4.7,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 6.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 7.9,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 9.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 11.1,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 12.7,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 14.2,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 18.5,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 20.1,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 21.7,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 23.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 24.9,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 26.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 28.1,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 29.7,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 31.2,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 35.5,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 37.1,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 38.7,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 40.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 41.9,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 43.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 45.1,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 46.7,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 48.2,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 52.5,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 54.1,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 55.7,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 57.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 58.9,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 60.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 62.1,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 63.7,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 65.2,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 69.5,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 71.1,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 72.7,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 74.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 75.9,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 77.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 79.1,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 80.7,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 82.2,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "clip": "countess-performance",
+      "duration": 88.5
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}

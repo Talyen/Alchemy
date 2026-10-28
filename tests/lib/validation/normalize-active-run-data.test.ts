@@ -5,6 +5,7 @@ import { createMixedPotion } from "@/lib/alchemist";
 import { cardById } from "@/lib/game-data";
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { createSeededRng } from "@/lib/rng";
 import {
   baseActiveRunInput,
@@ -282,7 +283,7 @@ describe("ActiveRunDataSchema normalize", () => {
 
   it("clears a stale Labyrinth pending node that is missing from the map", () => {
     const map = generateLabyrinthMap(createSeededRng(1));
-    const validNode = Object.keys(map.nodes)[0]!;
+    const validNode = Object.values(map.nodes).find((node) => canEnterLabyrinthNode(map, node.id))!.id;
     const valid = parseActiveRunData({
       contentSystemType: "labyrinth",
       labyrinthMap: map,

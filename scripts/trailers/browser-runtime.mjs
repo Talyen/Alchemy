@@ -229,5 +229,6 @@ export async function sampleVisualTime(timeMs) {
       }
     }),
   );
+  // Capture the native scene order: card flights stay above feedback and lyrics.
   state.initialized = true;
 }

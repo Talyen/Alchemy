@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "id": "wizard-three-spell-turn",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 1,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 0,
+    "lyrics": false
+  },
+  "clips": [
+    {
+      "id": "wizard-turn",
+      "scene": "combat",
+      "hero": "wizard",
+      "seed": 42,
+      "duration": 16,
+      "lyrics": false,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": [
+              "Meteor",
+              "Fireball",
+              "Ray of Frost",
+              "Frostbolt",
+              "Stargaze",
+              "Mana Crystals",
+              "Mana Shield"
+            ]
+          }
+        },
+        {
+          "at": 2.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 4.4,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": [
+              "Meteor",
+              "Fireball",
+              "Ray of Frost",
+              "Frostbolt",
+              "Stargaze",
+              "Mana Crystals",
+              "Mana Shield"
+            ]
+          }
+        },
+        {
+          "at": 6.1000000000000005,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 8.0,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": [
+              "Meteor",
+              "Fireball",
+              "Ray of Frost",
+              "Frostbolt",
+              "Stargaze",
+              "Mana Crystals",
+              "Mana Shield"
+            ]
+          }
+        },
+        {
+          "at": 9.7,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 11.8,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "clip": "wizard-turn",
+      "duration": 16
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}

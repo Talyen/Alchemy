@@ -60,8 +60,14 @@ export async function openTrailerScene(page: Page, clip: Scene, checkpoint?: Rec
       masterVolume: 100,
     });
     await navigateToGame(page);
-    if (checkpoint.activeRun) await resumeInjectedRun(page);
-    if (clip.boss) await waitForBattleReady(page);
+    // A menu take records the real Continue input and route reveal instead of
+    // staging past them. Its isolated save still owns the resumed battle.
+    if (clip.scene === "menu") {
+      await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeEnabled();
+    } else {
+      if (checkpoint.activeRun) await resumeInjectedRun(page);
+      if (clip.boss) await waitForBattleReady(page);
+    }
   } else if (clip.scene === "labyrinth") {
     await injectExactSave(
       page,

@@ -128,8 +128,8 @@ export const EMPTY_COMPLETED_DIFFICULTIES: Record<CharacterId, DifficultyId[]> =
 function normalizeArrayInput(arr: unknown[]): Record<string, number> {
   const result: Record<string, number> = {};
   for (const rawId of arr) {
-    const id = typeof rawId === "string" ? rawId : String(rawId);
-    result[id] = (result[id] ?? 0) + 1;
+    if (typeof rawId !== "string") continue;
+    result[rawId] = (Object.hasOwn(result, rawId) ? result[rawId]! : 0) + 1;
   }
   return result;
 }
