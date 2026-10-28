@@ -51,10 +51,10 @@ AAC. Every cut preserves source speed. Native lyric clock mismatches fail before
 rendering. Existing final filenames cannot be overwritten; use a new revision.
 
 ```sh
-python3 scripts/edit.py graphics --project /absolute/path/to/project
-python3 scripts/edit.py render --project /absolute/path/to/project \
+python3 trailers/steam-suite-2026-10-25/edit.py graphics --project /absolute/path/to/project
+python3 trailers/steam-suite-2026-10-25/edit.py render --project /absolute/path/to/project \
   --timeline 01-every-card-counts --revision v2
-python3 scripts/edit.py review --project /absolute/path/to/project \
+python3 trailers/steam-suite-2026-10-25/edit.py review --project /absolute/path/to/project \
   --timeline 01-every-card-counts --revision v2
 ```
 
