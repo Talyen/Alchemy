@@ -10,11 +10,13 @@ export const COMPANION_BOND_TIERS = Object.freeze(
 
 export const COMPANION_MAX_TIER = COMPANION_BOND_TIERS.length;
 
+const companionTiers = Object.freeze(COMPANION_BOND_TIERS.map((cost) => Object.freeze({ cost })));
+
 export const companionTierItems: ReadonlyArray<TieredItem<CompanionId>> = Object.freeze(
   Object.keys(companionLibrary).map((id) =>
     Object.freeze({
       id: id as CompanionId,
-      tiers: Object.freeze(COMPANION_BOND_TIERS.map((cost) => Object.freeze({ cost }))),
+      tiers: companionTiers,
     }),
   ),
 );

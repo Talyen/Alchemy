@@ -1,7 +1,7 @@
 import { cloneBattleCard, getStandardPotionPoolView, isPotionCard, type BattleCard } from "@/lib/game-data";
 import { CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
-import { doublePotionPotency } from ".";
+import { doublePotionPotency } from "./potion-scaling";
 import type { EncounterRewardTraitId } from "../content-systems/encounter-traits";
 
 export { strengthenPotion } from "./potion-scaling";

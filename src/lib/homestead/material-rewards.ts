@@ -107,6 +107,6 @@ export function computeMysteryMaterialReward(input: {
   effects: MaterialFindEffects;
 }): MaterialInventory {
   const found = emptyInventory();
-  found[input.material] = input.amount;
-  return applyMaterialFindBonus(found, input.effects);
+  found[input.material] = applyRewardFindBonus(input.amount, input.effects[MATERIAL_FIND_KEYS[input.material]]);
+  return found;
 }
