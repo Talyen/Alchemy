@@ -142,7 +142,7 @@ export function processEncounterTraitCardAction(
     nextState = addEnemyMitigationWithCombatText(nextState, "block", scaleByRoomMultiplier(nextState, 1), combatTexts);
   }
   if (attackAttempted && nextState.enemyHealth > 0) {
-    if (hasEnemyTrait(nextState, "thorns") && nextState.flags.legacyEnemyThornsReady) {
+    if (nextState.flags.legacyEnemyThornsReady && hasEnemyTrait(nextState, "thorns")) {
       nextState = recordEnemyAbilityActivation(nextState, "thorns");
       nextState = setEnemyStatus(
         setFlag(nextState, "legacyEnemyThornsReady", false),
@@ -151,7 +151,7 @@ export function processEncounterTraitCardAction(
       );
       nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
     }
-    if (hasEnemyTrait(nextState, "holy-retribution") && !readCombatFlag(nextState, "holyRetributionUsedThisTurn"))
+    if (!readCombatFlag(nextState, "holyRetributionUsedThisTurn") && hasEnemyTrait(nextState, "holy-retribution"))
       nextState = dealTraitDamage(
         setFlag(recordEnemyAbilityActivation(nextState, "holy-retribution"), "holyRetributionUsedThisTurn", true),
         "holy",
@@ -185,14 +185,14 @@ export function processEncounterTraitsForCardCopies(
 
 export function applyEncounterThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.enemyHealth <= 0 || state.enemyStatuses.thorns <= 0) return state;
+  const legacyThorns = state.flags.legacyEnemyThornsReady ? 1 : 0;
+  const amount = Math.max(0, state.enemyStatuses.thorns - legacyThorns);
+  if (amount === 0) return state;
   const id = hasEnemyTrait(state, "briar-crown")
     ? "briar-crown"
     : hasEnemyTrait(state, "thornhide")
       ? "thornhide"
       : null;
-  const legacyThorns = state.flags.legacyEnemyThornsReady ? 1 : 0;
-  const amount = Math.max(0, state.enemyStatuses.thorns - legacyThorns);
-  if (amount === 0) return state;
   return processEnemyDamageEffect(
     setEnemyStatus(id ? recordEnemyAbilityActivation(state, id) : state, "thorns", legacyThorns),
     { kind: "damage", damageType: "nature", amount },

@@ -90,16 +90,16 @@ function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamag
   const record = (id: string) => {
     activatedTraits.push(id);
   };
-  if (trait("hellhound") && state.playerStatuses.burn > 0) {
+  if (state.playerStatuses.burn > 0 && trait("hellhound")) {
     amountMultiplier *= HELLHOUND_BURN_MULTIPLIER;
     record("hellhound");
   }
-  const flatTrait = trait("dire-wolf") && state.playerStatuses.bleed > 0 ? "dire-wolf" : null;
+  const flatTrait = state.playerStatuses.bleed > 0 && trait("dire-wolf") ? "dire-wolf" : null;
   if (flatTrait) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record(flatTrait);
   }
-  if (trait("stone-golem") && state.enemyMitigation.block > 0) {
+  if (state.enemyMitigation.block > 0 && trait("stone-golem")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("stone-golem");
   }
@@ -107,11 +107,11 @@ function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamag
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("frost-elemental");
   }
-  if (effect.damageType === "burn" && trait("pyromancer") && state.playerStatuses.burn === 0) {
+  if (effect.damageType === "burn" && state.playerStatuses.burn === 0 && trait("pyromancer")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("pyromancer");
   }
-  const banditBonus = trait("bandit") && !state.flags.enemyFirstHitDoubleUsed;
+  const banditBonus = !state.flags.enemyFirstHitDoubleUsed && trait("bandit");
   if (banditBonus) amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
   // Resources already contain room scaling, but still receive ability pressure
   // and difficulty bonuses like every other damaging ability.
@@ -134,7 +134,7 @@ function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamag
     effect.equalToBlock === true || effect.forgeBonusPercent !== undefined,
   );
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
-  if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
+  if (effect.damageType === "bleed" && state.playerStatuses.bleed > 0 && trait("blood-cultist")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("blood-cultist");
   }
@@ -205,10 +205,10 @@ export function applyAbilityDamage(
     ignoreBlock: effect.ignoreBlock === true,
     amountMultiplier,
     flatBonus,
-    ...(trait("ogre") && effect.damageType === "physical"
+    ...(effect.damageType === "physical" && trait("ogre")
       ? { physicalBlockBreakMultiplier: OGRE_BLOCK_BREAK_MULTIPLIER }
       : {}),
-    ...(trait("giant-snake") && effect.damageType === "poison"
+    ...(effect.damageType === "poison" && trait("giant-snake")
       ? { extraPoisonBlockStrip: GIANT_SNAKE_EXTRA_BLOCK_STRIP }
       : {}),
   });

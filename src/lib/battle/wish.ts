@@ -38,7 +38,7 @@ export function buildWishOptions(
 ): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT +
-    (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
+    (!state.flags.encounterWishUsed && hasEncounterBenefit(state, "wishful") ? 1 : 0) +
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
   const candidates = getOfferableCardPoolView().filter(
