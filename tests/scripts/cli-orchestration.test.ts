@@ -72,6 +72,8 @@ describe("CLI launch paths", () => {
     ["run-prettier.mjs", ["--write"]],
     ["play-demo.mjs", []],
     ["run-interactions.mjs", []],
+    ["run-interactions.mjs", ["--family", "battle", "--seed", "12"]],
+    ["run-interactions.mjs", ["--family", "navigation", "--seed", "12"]],
   ] as const)("%s launches against the checkout from another directory", (script, args) => {
     // Isolate the lane too: this probe inspects launch options while the parent
     // unit runner holds the real lane. No nested test or build process starts.
@@ -91,6 +93,11 @@ describe("CLI launch paths", () => {
     const child = JSON.parse(line!.slice(6));
     expect(child.cwd).toBe(ROOT);
     if (script === "build-verified.mjs") expect(child.args[0]).toBe(resolveViteBin());
+    if (script === "run-interactions.mjs" && args.length > 0) {
+      const selectedFile = child.args[3];
+      expect(selectedFile).toMatch(/\.test\.tsx?$/);
+      expect(fs.statSync(path.join(ROOT, selectedFile)).isFile()).toBe(true);
+    }
   });
 
   it("routes profiling browsers through the shared test lane", () => {

@@ -8,6 +8,13 @@ Chromium provides inexpensive renderer coverage. WebKit is not part of this gate
 
 ## Run and replay
 
+The default task gate defers interaction units to CI. A single-family reproduction
+or replay uses one explicit unit file and one worker; keep it within the focused
+budget in [Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change).
+All-family and nightly sweeps require CI or an explicitly requested heavy local run
+under that policy. The commands below select cases; they do not grant execution
+permission.
+
 - `npm run test:interactions`: 16 fixed seeds per family, up to 40 actions each.
 - `npm run test:interactions -- --tier nightly --day 2026-10-09`: 128 seeds per
   family, up to 120 actions each. The first 64 are fixed (17–80); the other 64
@@ -54,9 +61,12 @@ screen-specific behavior. A mapping is not a claim of exhaustive action coverage
 | All initial renders and desktop windows                                       | startup              | Real startup readiness with delayed image/font/bootstrap ordering, frame delays and font timeout; Electron retains cold boot, display controls and save/relaunch coverage.                                                                  |
 
 The map is checked against the route enum. New routes require an explicit family
-and identified protection. Local verification selects affected lifecycle families for feature, routing, artwork-loading and save-backend changes. Shared application, animation and unclassified feature seams retain the full suite. Only explicitly selected suites are excluded from dependency-related selection, so import relationships can add other affected families without duplication. CI still runs every family.
-The default local smoke gate does not select it; see
-[verification tiers](../../CONTRIBUTING.md#what-to-run-when-you-change).
+and identified protection. The opt-in unit/full verification profiles select affected
+lifecycle families for feature, routing, artwork-loading and save-backend changes.
+Shared application, animation and unclassified feature seams select the full suite.
+Dependency-related selection may add other affected families without duplicating
+explicit selections. CI runs every family; default local task and integration
+gates run no unit suites. See [verification profiles](../../scripts/VERIFICATION.md#local-verification-profiles).
 
 ## Renderer and desktop checks
 
