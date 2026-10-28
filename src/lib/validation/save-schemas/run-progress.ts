@@ -15,10 +15,10 @@ import {
   MaterialInventorySchema,
   TalentXPSchema,
 } from "./schema-enums";
-import { deduplicatedStringArraySchema, savedStringArraySchema } from "./validation-utils";
+import { deduplicatedStringArraySchema, parseValidEntries, savedStringArraySchema } from "./validation-utils";
 const RunObtainedGearItemSchema = z.object({
   kind: z.literal("gear"),
-  instance: GearInstanceSchema,
+  instance: z.preprocess(normalizeGearInstance, GearInstanceSchema),
 });
 const RunObtainedTrinketItemSchema = z.object({
   kind: z.literal("trinket"),
@@ -26,29 +26,11 @@ const RunObtainedTrinketItemSchema = z.object({
 });
 const RunObtainedItemSchema = z.discriminatedUnion("kind", [RunObtainedGearItemSchema, RunObtainedTrinketItemSchema]);
 
-function normalizeRunObtainedItems(raw: unknown): Array<z.infer<typeof RunObtainedItemSchema>> {
-  if (!Array.isArray(raw)) return [];
-  // Canonical single-item normalizer is normalizeGearInstance from
-  // gear/instance-normalization (same as normalizeGearInstanceArray uses); the loop below
-  // preserves original order while dropping invalid gear, which the array
-  // wrapper alone cannot do for this heterogeneous list.
-  const items: Array<z.infer<typeof RunObtainedItemSchema>> = [];
-  for (const entry of raw) {
-    if (!entry || typeof entry !== "object") continue;
-    const record = entry as { kind?: unknown; instance?: unknown; trinketId?: unknown };
-    if (record.kind === "gear") {
-      const instance = normalizeGearInstance(record.instance);
-      if (instance) items.push({ kind: "gear", instance });
-      continue;
-    }
-    if (record.kind === "trinket" && typeof record.trinketId === "string" && record.trinketId.length > 0) {
-      items.push({ kind: "trinket", trinketId: record.trinketId });
-    }
-  }
-  return items;
-}
-
-const RunObtainedItemArraySchema = z.preprocess(normalizeRunObtainedItems, z.array(RunObtainedItemSchema));
+// Unlike inventory repair, this heterogeneous history preserves duplicates and order.
+const RunObtainedItemArraySchema = z
+  .array(z.unknown())
+  .transform((items) => parseValidEntries(items, RunObtainedItemSchema))
+  .catch([]);
 
 const RunHistoryEntrySchema = z.object({
   id: z.string().min(1),

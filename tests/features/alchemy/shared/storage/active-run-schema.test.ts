@@ -167,13 +167,18 @@ describe("active run field parsing and normalization", () => {
           { kind: "boon", trinketId: "bone-charm" },
           {
             kind: "gear",
-            instance: { instanceId: "g2", definitionId: "ruby-ring-basic", affixes: [] },
+            instance: { instanceId: "g2", definitionId: "ruby-ring-basic", affixes: [{ id: "missing", value: 1 }] },
           },
+          { kind: "trinket", trinketId: "" },
+          { kind: "trinket", trinketId: "bone-charm" },
+          { kind: "gear", instance: { instanceId: "g2", definitionId: "ruby-ring-basic", affixes: [] } },
         ],
       }),
     );
 
     expect(result?.runObtainedItems).toEqual([
+      { kind: "trinket", trinketId: "bone-charm" },
+      { kind: "gear", instance: { instanceId: "g2", definitionId: "ruby-ring-basic", affixes: [] } },
       { kind: "trinket", trinketId: "bone-charm" },
       { kind: "gear", instance: { instanceId: "g2", definitionId: "ruby-ring-basic", affixes: [] } },
     ]);
