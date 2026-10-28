@@ -1,5 +1,6 @@
+import { temporaryDirectories, playwrightSuite } from "../helpers/script-fixtures";
 import { createCleanup } from "@/lib/cleanup";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { formatVitestSummaryMarkdown, summarizeVitestReport } from "../../scripts/lib/verification/vitest-summary.mjs";
 import { parseSummaryArgs } from "../../scripts/ci-summarize.mjs";
 import {
@@ -17,20 +18,11 @@ import {
 } from "../../scripts/lib/verification/playwright-diagnostics.mjs";
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
-import os from "node:os";
 import path from "node:path";
 import { formatRecentRun, parseShowRunsArgs, readRecentRuns } from "../../scripts/show-runs.mjs";
 import PlaywrightRunReporter from "../../scripts/lib/verification/playwright-run-reporter.mjs";
 
-const temporaryRoots: string[] = [];
-function temporaryRoot(prefix: string): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  temporaryRoots.push(root);
-  return root;
-}
-afterEach(() => {
-  for (const root of temporaryRoots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
+const temporaryRoot = temporaryDirectories();
 
 describe("ci-summarize (vitest)", () => {
   it("rejects structurally invalid reports while allowing a valid empty run", () => {
@@ -177,26 +169,19 @@ describe("ci-summarize (playwright)", () => {
   it("keeps each project's failure message attached to its own test", () => {
     const report = {
       suites: [
-        {
-          specs: [
-            {
-              title: "loads save",
-              tests: [
-                {
-                  status: "unexpected",
-                  projectName: "chromium",
-                  results: [{ errors: [{ message: "\n\u001b[31mChromium failure\u001b[0m\nstack" }] }],
-                },
-                {
-                  status: "flaky",
-                  projectName: "firefox",
-                  results: [{ errors: [{ message: "Firefox retry\nstack" }] }, { errors: [] }],
-                },
-                { status: "unexpected", projectName: "webkit", results: [] },
-              ],
-            },
-          ],
-        },
+        playwrightSuite({ title: "loads save" }, [
+          {
+            status: "unexpected",
+            projectName: "chromium",
+            results: [{ errors: [{ message: "\n\u001b[31mChromium failure\u001b[0m\nstack" }] }],
+          },
+          {
+            status: "flaky",
+            projectName: "firefox",
+            results: [{ errors: [{ message: "Firefox retry\nstack" }] }, { errors: [] }],
+          },
+          { status: "unexpected", projectName: "webkit", results: [] },
+        ]),
       ],
     };
 
@@ -220,11 +205,12 @@ describe("ci-summarize (playwright)", () => {
         {
           specs: [null, {}, { title: "parent", tests: [null, false, { status: "unexpected" }] }],
           suites: [
-            {
-              specs: [
-                { title: "child", tests: [{ status: "flaky" }, { status: "expected" }, { status: "skipped" }, {}] },
-              ],
-            },
+            playwrightSuite({ title: "child" }, [
+              { status: "flaky" },
+              { status: "expected" },
+              { status: "skipped" },
+              {},
+            ]),
           ],
         },
       ],
@@ -258,15 +244,11 @@ describe("ci-summarize (playwright)", () => {
   });
 
   it("caps failure details while retaining the total count", () => {
-    const suites = Array.from({ length: 4 }, (_, index) => ({
-      specs: [
-        {
-          title: `failure ${index}`,
-          file: `tests/failure-${index}.spec.ts`,
-          tests: [{ status: "unexpected", results: [{ errors: [{ message: "TimeoutError: click\nstack" }] }] }],
-        },
-      ],
-    }));
+    const suites = Array.from({ length: 4 }, (_, index) =>
+      playwrightSuite({ title: `failure ${index}`, file: `tests/failure-${index}.spec.ts` }, [
+        { status: "unexpected", results: [{ errors: [{ message: "TimeoutError: click\nstack" }] }] },
+      ]),
+    );
     const summary = summarizePlaywrightReport(
       { stats: { expected: 0, unexpected: 4, flaky: 0, skipped: 0 }, suites },
       { maxFailures: 2 },
@@ -288,16 +270,10 @@ describe("ci-summarize (playwright)", () => {
       {
         stats: { expected: 0, unexpected: 1, flaky: 0, skipped: 0 },
         suites: [
-          {
-            specs: [
-              {
-                title: "raw animation canary",
-                file: "tests/e2e/specs/draw-discard-animations.spec.ts",
-                line: 10,
-                tests: [{ status: "unexpected", projectName: "chromium", results: [{ errors: [] }] }],
-              },
-            ],
-          },
+          playwrightSuite(
+            { title: "raw animation canary", file: "tests/e2e/specs/draw-discard-animations.spec.ts", line: 10 },
+            [{ status: "unexpected", projectName: "chromium", results: [{ errors: [] }] }],
+          ),
         ],
       },
       { rootDir: root, runId: "no-digest-run" },
@@ -567,22 +543,15 @@ describe("Playwright efficiency reporting", () => {
     },
     stats: { startTime: "2026-10-10T12:00:20Z", duration },
     suites: [
-      {
-        specs: [
-          {
-            title: "recovers",
-            tests: [
-              {
-                status: "flaky",
-                results: [
-                  { duration: 4000, retry: 0 },
-                  { duration: 1000, retry: 1 },
-                ],
-              },
-            ],
-          },
-        ],
-      },
+      playwrightSuite({ title: "recovers" }, [
+        {
+          status: "flaky",
+          results: [
+            { duration: 4000, retry: 0 },
+            { duration: 1000, retry: 1 },
+          ],
+        },
+      ]),
     ],
   });
 

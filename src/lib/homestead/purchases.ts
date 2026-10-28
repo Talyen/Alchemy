@@ -6,10 +6,15 @@ interface HomesteadPurchases {
 }
 
 export function hasHomesteadPurchases(progress: HomesteadPurchases): boolean {
-  return [
+  for (const levels of [
     progress.constructedBuildings,
     progress.plantedFarms,
     progress.completedResearch,
     progress.bondedCompanions,
-  ].some((levels) => Object.values(levels).some((level) => level > 0));
+  ]) {
+    for (const id in levels) {
+      if (Object.hasOwn(levels, id) && levels[id]! > 0) return true;
+    }
+  }
+  return false;
 }

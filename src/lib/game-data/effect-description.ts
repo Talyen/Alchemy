@@ -202,9 +202,7 @@ function damageLines(
     );
   } else lines.push(createEffectLine(effect, address));
   if (effect.ignoreArmor || effect.ignoreBlock)
-    lines.push([
-      `Ignores ${[effect.ignoreArmor ? "Armor" : "", effect.ignoreBlock ? "Block" : ""].filter(Boolean).join(" and ")}`,
-    ]);
+    lines.push([`Ignores ${effect.ignoreArmor ? (effect.ignoreBlock ? "Armor and Block" : "Armor") : "Block"}`]);
   if (effect.doubleIfEnemyBleeding) lines.push(["Doubled if the enemy was already Bleeding"]);
   if (effect.tripleIfEnemyNotBurning) lines.push(["Tripled if enemy was not Burning"]);
   if (effect.detonateAllBurn) lines.push(["Detonate all Burn"]);

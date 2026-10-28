@@ -1,29 +1,11 @@
+import { assetPipelineFixture } from "../helpers/asset-pipeline-mock";
 import { mkdtempSync, rmSync } from "node:fs";
 import { mkdir, readFile, readdir, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const fixture = vi.hoisted(() => ({ root: "", convert: vi.fn<(args: string[]) => Promise<void>>() }));
-vi.mock("../../scripts/lib/repository-paths.mjs", () => ({
-  get REPO_ROOT() {
-    return fixture.root;
-  },
-}));
-vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
-  const { pathToFileURL } = await import("node:url");
-  const nodePath = await import("node:path");
-  return {
-    ...original,
-    resolveRootDir: () => fixture.root,
-    resolvePipelinePaths: (_url: string, options: { managedKey: "art" | "sounds" | "music" }) =>
-      original.resolvePipelinePaths(
-        pathToFileURL(nodePath.join(fixture.root, "scripts", "mock-entry.mjs")).href,
-        options,
-      ),
-  };
-});
+const fixture = vi.hoisted(() => ({ convert: vi.fn<(args: string[]) => Promise<void>>() }));
 vi.mock("../../scripts/assets/sound-assets.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/assets/sound-assets.mjs")>()),
   generatedSoundAssets: [{ source: "raw.ogg", target: "generated.ogg" }],
@@ -42,10 +24,10 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return { ...original, writeFile: vi.fn(original.writeFile) };
 });
 
-fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-sounds-"));
+assetPipelineFixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-sounds-"));
 const { optimizeSounds } = await import("../../scripts/optimize-sounds.mjs");
-const sourceDir = path.join(fixture.root, "assets/sources");
-const outputDir = path.join(fixture.root, "public", "sounds");
+const sourceDir = path.join(assetPipelineFixture.root, "assets/sources");
+const outputDir = path.join(assetPipelineFixture.root, "public", "sounds");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 const manifestWrites = () => vi.mocked(writeFile).mock.calls.filter(([file]) => file === manifestPath);
 
@@ -56,7 +38,7 @@ async function convert(args: string[]) {
 
 describe("sound manifest publication", () => {
   beforeEach(async () => {
-    rmSync(fixture.root, { recursive: true, force: true });
+    rmSync(assetPipelineFixture.root, { recursive: true, force: true });
     await mkdir(sourceDir, { recursive: true });
     await mkdir(outputDir, { recursive: true });
     await writeFile(path.join(sourceDir, "raw.ogg"), "raw audio");
@@ -68,7 +50,7 @@ describe("sound manifest publication", () => {
     vi.mocked(writeFile).mockClear();
   });
 
-  afterAll(() => rmSync(fixture.root, { recursive: true, force: true }));
+  afterAll(() => rmSync(assetPipelineFixture.root, { recursive: true, force: true }));
 
   it("writes one complete manifest and performs no writes or conversions on an unchanged run", async () => {
     await expect(optimizeSounds()).resolves.toEqual({ ok: true });

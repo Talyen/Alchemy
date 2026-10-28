@@ -54,10 +54,11 @@ health and controls clear. Backgrounds fill the frame.
 
 ## Boss idle artwork
 
-Battle portraits for Blight Treant, Blood Countess, Seraph and Stone Titan play
-muted idle clips continuously. Each next clip is selected randomly excluding the
-current clip. Two video elements preload the next clip. Playback starts its
-replacement 240 ms before the end, retains the outgoing image until the incoming
+Battle portraits with registered [idle clips](../src/lib/game-data/boss-idle-assets.ts)
+play them muted and continuously. The catalog covers Forge Golem, Frostwarden,
+Iron Bear, Blight Treant, Blood Countess, Seraph and Stone Titan. Each next clip
+is selected randomly excluding the current clip. Two video elements preload the
+next clip. Playback starts its replacement 240 ms before the end, retains the outgoing image until the incoming
 decoder is ready, then blends opacity for 180 ms. Native looping keeps the
 outgoing video moving if loading or a busy main thread delays that handoff. The
 outgoing buffer is paused and rewound before reuse, including when the next

@@ -1,8 +1,9 @@
+import { runNode } from "../helpers/script-fixtures";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { expect, it } from "vitest";
 import { pruneTransientArtifacts } from "../../scripts/prune-transient-artifacts.mjs";
@@ -131,9 +132,8 @@ it.skipIf(process.platform === "win32")(
     try {
       const python = path.join(root, "python");
       fs.writeFileSync(python, '#!/bin/sh\ntouch "$ALCHEMY_TEST_FONT_MARKER"\necho wrong-version\n', { mode: 0o755 });
-      const result = spawnSync(process.execPath, [path.join(process.cwd(), "scripts/localization/subset-fonts.mjs")], {
+      const result = runNode([path.join(process.cwd(), "scripts/localization/subset-fonts.mjs")], {
         cwd: root,
-        encoding: "utf8",
         env: {
           ...process.env,
           ALCHEMY_FONT_PYTHON: python,
@@ -179,11 +179,7 @@ it.skipIf(process.platform === "win32")(
       const childEnv: NodeJS.ProcessEnv = { ...process.env, ALCHEMY_TEST_FONT_MARKER: path.join(root, "called") };
       delete childEnv.ALCHEMY_FONT_PYTHON;
       delete childEnv.ALCHEMY_FONT_LOCK_FD;
-      const result = spawnSync(process.execPath, [path.join(root, "scripts/localization/subset-fonts.mjs")], {
-        cwd: root,
-        encoding: "utf8",
-        env: childEnv,
-      });
+      const result = runNode([path.join(root, "scripts/localization/subset-fonts.mjs")], { cwd: root, env: childEnv });
       expect(result.status).not.toBe(0);
       expect(result.stderr).toContain("Font regeneration requires fonttools==4.60.1");
       expect(fs.existsSync(path.join(root, "called"))).toBe(true);

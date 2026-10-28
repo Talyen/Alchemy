@@ -1,23 +1,16 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   captureVerificationInputs,
   createVerificationCache,
 } from "../../scripts/lib/verification/verification-cache.mjs";
 
-const roots: string[] = [];
 const command = { key: "unit-changed", command: "npx", args: ["vitest", "run", "tests/example.test.ts"] };
-function temporaryRoot() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "verification-cache-"));
-  roots.push(root);
-  return root;
-}
-afterEach(() => {
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
+
+const temporaryRoot = temporaryDirectories("verification-cache-");
 
 describe("local unit verification reuse", () => {
   it("reuses only exact coverage and expires without renewing a reused result", () => {
