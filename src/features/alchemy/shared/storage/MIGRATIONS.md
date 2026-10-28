@@ -434,6 +434,9 @@ Draining and backend replacement account for all queued operations, including lo
 initialization writes, failure notifications and progress receipts from immediate
 saves with no awaiting caller. Loads and successful clears resume writes only when
 no newer explicit permission decision intervened; selecting recovery grants no permission.
+An explicit recovery route survives later loads, subject to protected-slot checks,
+until a successful clear or backend replacement. Failed demo-source reads and
+import writes remain retryable on a later load and do not consume the import receipt.
 
 Clear follows the session's [completion lifecycle](../../../../../Docs/RUN_STATE.md#completion-lifecycle):
 snapshots are revoked immediately, pending progress survives failure, and overlapping
