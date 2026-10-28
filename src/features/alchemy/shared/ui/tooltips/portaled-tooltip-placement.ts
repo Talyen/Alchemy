@@ -105,8 +105,8 @@ export function usePortaledTooltipPlacement(
             }),
           shift({
             boundary: stage,
-            // Fixed-side panels still shift inward when translated content reaches an edge.
-            crossAxis: !allowFlip,
+            // A tall panel can flip to a side that lacks horizontal room; keep it on screen too.
+            crossAxis: true,
             padding: { top: padding, bottom: padding, left: horizontalInset, right: horizontalInset },
           }),
         ],
