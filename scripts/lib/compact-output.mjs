@@ -71,12 +71,21 @@ export function commandExposure({
  * @returns {string}
  */
 export function firstOutputLine(output) {
-  return (
-    sanitizeOutput(output)
-      .split(/\r?\n/u)
-      .map((line) => line.trim())
-      .find(Boolean) ?? "(no diagnostic output)"
-  );
+  const normalized = sanitizeOutput(output);
+  for (let start = 0; start < normalized.length; ) {
+    const newline = normalized.indexOf("\n", start);
+    const line = normalized.slice(start, newline === -1 ? undefined : newline).trim();
+    if (line) return line;
+    if (newline === -1) break;
+    start = newline + 1;
+  }
+  return "(no diagnostic output)";
+}
+
+function assertByteBudget(maxBytes) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) {
+    throw new RangeError("Output byte budget must be a non-negative safe integer");
+  }
 }
 
 /**
@@ -87,6 +96,8 @@ export function firstOutputLine(output) {
  * @returns {string}
  */
 export function tailOutput(output, maxBytes = 4_000) {
+  assertByteBudget(maxBytes);
+  if (maxBytes === 0) return "";
   const normalized = sanitizeOutput(output).trim();
   const rawBytes = Buffer.byteLength(normalized, "utf8");
   if (rawBytes <= maxBytes) return normalized;
@@ -95,6 +106,15 @@ export function tailOutput(output, maxBytes = 4_000) {
   // Only the tail can fit. Two UTF-16 units per code point keep the slice
   // boundary out of the retained suffix without expanding the entire log.
   const codePoints = Array.from(normalized.slice(-maxBytes * 2)).slice(-maxBytes);
+  // Tiny budgets cannot fit the omission marker; retain useful tail text instead.
+  if (Buffer.byteLength(prefix, "utf8") > maxBytes) {
+    let start = codePoints.length;
+    let bytes = 0;
+    while (start > 0 && bytes + Buffer.byteLength(codePoints[start - 1], "utf8") <= maxBytes) {
+      bytes += Buffer.byteLength(codePoints[--start], "utf8");
+    }
+    return codePoints.slice(start).join("");
+  }
   for (let pass = 0; pass < 2; pass += 1) {
     let remaining = Math.max(0, maxBytes - Buffer.byteLength(prefix, "utf8"));
     let start = codePoints.length;
@@ -172,7 +192,9 @@ function diagnosticExcerpt(lines, maxBytes) {
   const budget = maxBytes - 100;
   for (const { text, index, lastIndex, count } of prioritized) {
     const excerpt =
-      Buffer.byteLength(text) > 700 ? Array.from(text).slice(0, 150).join("") + " […line clipped; see full log]" : text;
+      Buffer.byteLength(text) > 700
+        ? Array.from(text.slice(0, 300)).slice(0, 150).join("") + " […line clipped; see full log]"
+        : text;
     const repeats = count > 1 ? ` (${count} occurrences; last L${lastIndex + 1})` : "";
     const line = `L${index + 1}${repeats}: ${excerpt}`;
     const lineBytes = Buffer.byteLength(line, "utf8") + (result.length > 0 ? 1 : 0);
@@ -185,10 +207,12 @@ function diagnosticExcerpt(lines, maxBytes) {
   }
   const output = result.sort((a, b) => a.index - b.index).map((entry) => entry.line);
   if (omitted) output.push(`${omitted} diagnostic lines omitted; see full log.`);
-  return output.join("\n");
+  return tailOutput(output.join("\n"), maxBytes);
 }
 
 export function failureSummary(output, maxBytes = 4_000) {
+  assertByteBudget(maxBytes);
+  if (maxBytes === 0) return "";
   const rawLines = sanitizeOutput(String(output ?? "")).split(/\r?\n/u);
   const groups = new Map();
   for (const [index, raw] of rawLines.entries()) {
@@ -202,12 +226,14 @@ export function failureSummary(output, maxBytes = 4_000) {
   }
   // concurrently reports aggregate exits too. Prefer failed leaf checkers so
   // wrapper failures cannot crowd out the actual diagnostics.
-  const failed = [...groups.values()].filter(
-    (group) =>
-      group.failed &&
-      group.key &&
-      ![...groups.values()].some((other) => other.failed && other.key.startsWith(group.key + "/")),
-  );
+  const failedGroups = [...groups.values()].filter((group) => group.failed && group.key);
+  const parentKeys = new Set();
+  for (const { key } of failedGroups) {
+    for (let slash = key.indexOf("/"); slash !== -1; slash = key.indexOf("/", slash + 1)) {
+      parentKeys.add(key.slice(0, slash));
+    }
+  }
+  const failed = failedGroups.filter((group) => !parentKeys.has(group.key));
   if (!failed.length) {
     const selected = diagnosticIndexes(rawLines.map((text, index) => ({ text, index })));
     return selected.length ? diagnosticExcerpt(selected, maxBytes) : tailOutput(output, maxBytes);
