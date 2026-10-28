@@ -148,7 +148,7 @@ export class SaveStorage {
         }
         return { data: { ...snapshot, lastSavedAt: 0 }, status: { kind: "ok" }, importedDemoProgress: true };
       }
-      if (!source.readFailed) await this.backend.completeDemoInitialization?.();
+      if ((await this.backend.completeDemoInitialization?.()) === false) this.demoInitialization = null;
     } catch (error) {
       this.demoInitialization = null;
       logStorageFailure("Demo progress initialization failed", error);

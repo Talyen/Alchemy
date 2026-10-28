@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { selectSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
+import { SaveStorage } from "@/features/alchemy/shared/storage/save-storage";
 import { defaultBattleState } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
@@ -9,7 +10,9 @@ import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { createRunRngState, createRunStateRng, createRunStreamRng } from "@/lib/rng";
 import { ActiveRunDataSchema, parseActiveRun, SaveDataSchema } from "@/lib/validation";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
-import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
+import { LabyrinthMapSchema } from "@/lib/validation/save-schemas/labyrinth-schemas";
+import { makeMinimalActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
+import { createSaveBackend } from "../../helpers/save-backend";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { saveEnvelopeFixture } from "../../fixtures/saves";
 import { buildings } from "@/lib/homestead/data";
@@ -28,6 +31,56 @@ function battleSave(patch: Record<string, unknown> = {}) {
 }
 
 describe("progress recovery regressions", () => {
+  it("retains a Wildwood run when its boss bag contains a malformed entry", () => {
+    const run = parseActiveRun(
+      makeMinimalActiveRunInput({
+        contentSystemType: "wildwood",
+        activity: savedActivityFixture("draft-deck"),
+        wildwoodDraft: makeWildwoodDraft({ remainingBossIds: ["forge-golem", null, 7, "iron-bear"] }),
+      }),
+    );
+    expect(run?.wildwoodDraft?.remainingBossIds).toEqual(["forge-golem", "iron-bear"]);
+  });
+
+  it("removes repeated bosses from a restored Wildwood bag without reordering it", () => {
+    const run = parseActiveRun(
+      makeMinimalActiveRunInput({
+        contentSystemType: "wildwood",
+        activity: savedActivityFixture("draft-deck"),
+        wildwoodDraft: makeWildwoodDraft({
+          remainingBossIds: ["iron-bear", "forge-golem", "iron-bear", "retired-boss"],
+        }),
+      }),
+    );
+    expect(run?.wildwoodDraft?.remainingBossIds).toEqual(["iron-bear", "forge-golem"]);
+  });
+
+  it("retries a failed demo initialization receipt on the next load", async () => {
+    const readDemoImportSource = vi.fn().mockResolvedValue({
+      initialized: false,
+      fullSaveExists: false,
+      readFailed: false,
+      candidates: [],
+    });
+    const completeDemoInitialization = vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true);
+    const storage = new SaveStorage(createSaveBackend({ readDemoImportSource, completeDemoInitialization }));
+    await storage.load();
+    await storage.load();
+    await storage.load();
+    expect(readDemoImportSource).toHaveBeenCalledTimes(2);
+    expect(completeDemoInitialization).toHaveBeenCalledTimes(2);
+  });
+
+  it("preserves a cleared Labyrinth position and repairs a missing or uncleared one", () => {
+    const map = gridLabyrinthMapFixture();
+    const node = Object.values(map.nodes).find((entry) => !entry.cleared)!;
+    map.nodes[node.id] = { ...node, cleared: true };
+    expect(LabyrinthMapSchema.parse({ ...map, currentNodeId: node.id })?.currentNodeId).toBe(node.id);
+    expect(LabyrinthMapSchema.parse({ ...map, currentNodeId: "missing" })?.currentNodeId).toBe(map.currentNodeId);
+    map.nodes[node.id] = node;
+    expect(LabyrinthMapSchema.parse({ ...map, currentNodeId: node.id })?.currentNodeId).toBe(map.currentNodeId);
+  });
+
   it("keeps valid Homestead purchases when malformed list entries cannot be converted to strings", () => {
     const building = buildings[0]!;
     const raw = saveEnvelopeFixture({ constructedBuildings: [building.id, { toString: null }, null] });
