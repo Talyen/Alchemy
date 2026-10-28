@@ -1,20 +1,13 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import { createElement, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
-import { ShineBorder } from "@/components/ui/shine-border";
-import {
-  cardInteractiveGlowClass,
-  cardShineFrameClass,
-  getKeywordShineColors,
-  getTalentIcon,
-} from "@/features/alchemy/shared/config";
-import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
-import { keywordDefinitions, TALENT_ROW_SIZES, chunkIntoRows } from "@/lib/game-data";
+import { getKeywordShineColors } from "@/features/alchemy/shared/config";
+import { TALENT_ROW_SIZES, chunkIntoRows } from "@/lib/game-data";
 import type { TalentDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { renderColoredKeywords } from "../../shared/ui/cards/card-description-ui";
 import { TalentUnlockBurst } from "./talent-unlock-burst";
+import { TalentNodeFace, TALENT_NODE_UNLOCK_MS } from "./talent-node-face";
 
 export interface TalentTreeProps {
   allTalents: TalentDefinition[];
@@ -46,12 +39,10 @@ const TalentCard = memo(function TalentCard({
   onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
 }) {
   const i18n = useGameTranslation();
-  const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const accentColor = shineColors[0];
   const interactive = isAllocatable && canAfford && !isUnlocking;
-  const showShine = interactive;
-  const isLockedLook = !isUnlocked && !interactive && !isUnlocking;
+  const nodeState = isUnlocking ? "unlocking" : isUnlocked ? "unlocked" : interactive ? "available" : "locked";
 
   const style = accentColor ? ({ "--talent-accent": accentColor } as CSSProperties) : undefined;
 
@@ -73,14 +64,11 @@ const TalentCard = memo(function TalentCard({
         onHoverTalent?.(null);
       }}
       className={cn(
-        "talent-node relative flex min-h-[calc(10.5*var(--content-rem,1rem))] w-[calc(20.5*var(--content-rem,1rem))] shrink-0 rounded-lg bg-stone-900",
-        showShine && "talent-card-available",
-        cardInteractiveGlowClass,
-        cardShineFrameClass,
-        isLockedLook && "talent-hover-scale-only",
+        "talent-node relative flex min-h-[calc(13.5*var(--content-rem,1rem))] w-[calc(20.5*var(--content-rem,1rem))] shrink-0 rounded-lg",
         interactive && "cursor-pointer",
       )}
       style={style}
+      data-node-state={nodeState}
     >
       <span className="sr-only">
         {i18n.displayText(
@@ -94,43 +82,7 @@ const TalentCard = memo(function TalentCard({
         )}
       </span>
       <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
-      <div
-        className={cn(
-          "talent-card-face relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-lg border-2 px-5 py-4 text-center transition-all duration-300 ease-[var(--ease-out-expo)] outline-none select-none",
-          isUnlocked || isUnlocking
-            ? "talent-card-unlocked bg-stone-900"
-            : interactive
-              ? "border-transparent bg-stone-950 shadow-[0_4px_14px_rgba(0,0,0,0.4)]"
-              : "border-border/30 bg-stone-950",
-        )}
-      >
-        <div
-          className={cn(
-            "flex flex-col items-center justify-center gap-1.5",
-            isLockedLook ? "opacity-50" : interactive ? "opacity-80" : undefined,
-          )}
-        >
-          <div className="flex max-w-full items-center justify-center gap-2">
-            <span className={cn("shrink-0", def?.colorClass)}>
-              {i18n.displayText(createElement(getTalentIcon(talent), { className: "h-7 w-7 sm:h-8 sm:w-8" }))}
-            </span>
-            <span
-              className={cn(
-                "max-w-[calc(15*var(--content-rem,1rem))] min-w-0 text-xl leading-tight font-bold [overflow-wrap:anywhere] hyphens-auto sm:text-2xl",
-                def?.colorClass,
-              )}
-            >
-              {i18n.displayText(talent.name ?? "Talent")}
-            </span>
-          </div>
-          <p className="mt-1 text-base leading-snug text-balance text-foreground/90 sm:text-lg">
-            {i18n.displayText(i18n.read(() => renderColoredKeywords(talent.description)))}
-          </p>
-        </div>
-      </div>
-      {showShine ? (
-        <ShineBorder shineColor={shineColors} borderWidth={2} duration={8} className="z-10 rounded-lg" />
-      ) : null}
+      <TalentNodeFace talent={talent} title={i18n.displayText(talent.name ?? "Talent")} state={nodeState} />
     </button>
   );
 });
@@ -180,7 +132,7 @@ export function TalentTree({
         unlockingTalentIdRef.current = null;
         setUnlockingTalentId(null);
         unlockTimerRef.current = null;
-      }, TALENT_UNLOCK_ANIMATION_MS);
+      }, TALENT_NODE_UNLOCK_MS);
     },
     [allocatableIds, hasUnspentPoints, onUnlock, onUnlockBegin, unlockedSet],
   );

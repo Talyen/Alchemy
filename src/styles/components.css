@@ -255,29 +255,150 @@
     transform: rotateY(180deg);
   }
 
+  /* Talent content stays fixed; only its native rounded frame celebrates an unlock. */
   .talent-node {
-    box-shadow: 0 0 0 transparent;
-    transition:
-      opacity 500ms var(--ease-out-expo),
-      box-shadow 500ms var(--ease-out-expo);
+    --talent-readable-accent: color-mix(in srgb, var(--talent-accent) 45%, #f6eddf);
+    background: #171918;
+    outline: none;
+    isolation: isolate;
+    transform: none;
+    scale: none;
+    translate: none;
   }
 
-  .talent-card-available {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--talent-accent) 35%, transparent);
-    animation: talentAllocatableIdle 3.4s ease-in-out infinite;
+  .talent-node-frame {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    border: 2px solid #68716b;
+    border-radius: inherit;
+    background: #171918;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+    pointer-events: none;
   }
 
-  .talent-card-available:hover {
-    animation: none;
+  .talent-node-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    flex: 1;
+    align-self: stretch;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(0.75 * var(--content-rem, 1rem));
+    overflow: hidden;
+    padding: calc(1.2 * var(--content-rem, 1rem)) calc(1.35 * var(--content-rem, 1rem));
+    border: 2px solid transparent;
+    border-radius: inherit;
+    background: #171918;
+    background-clip: padding-box;
+    text-align: center;
   }
 
-  .talent-card-unlocked {
-    border-color: var(--talent-accent);
-    box-shadow:
-      inset 0 0 0 999px color-mix(in srgb, var(--talent-accent) 14%, transparent),
-      inset 0 1px 0 0 color-mix(in srgb, var(--talent-accent) 22%, transparent),
-      0 0 10px color-mix(in srgb, var(--talent-accent) 25%, transparent),
-      0 4px 16px rgba(0, 0, 0, 0.5);
+  .talent-node-header {
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(0.75 * var(--content-rem, 1rem));
+  }
+
+  .talent-node-icon-wrap {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    color: var(--talent-readable-accent);
+  }
+
+  .talent-node-icon {
+    width: calc(2.1 * var(--content-rem, 1rem));
+    height: calc(2.1 * var(--content-rem, 1rem));
+  }
+
+  .talent-node-title {
+    min-width: 0;
+    color: #f1eee7;
+    font-size: calc(1.5 * var(--content-rem, 1rem));
+    font-weight: 700;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  .talent-node-description {
+    display: block;
+    color: #dfdfd8;
+    font-size: calc(1.275 * var(--content-rem, 1rem));
+    line-height: 1.35;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  .talent-node-keyword {
+    color: color-mix(in srgb, var(--talent-keyword-source) 45%, #f6eddf);
+  }
+
+  .talent-node[data-node-state="locked"] .talent-node-title {
+    color: #c6c7c1;
+  }
+
+  .talent-node[data-node-state="locked"] .talent-node-description {
+    color: #bec0b9;
+  }
+
+  .talent-node:is([data-node-state="unlocked"], [data-node-state="unlocking"]) .talent-node-frame {
+    border-color: var(--talent-readable-accent);
+  }
+
+  .talent-node:focus-visible {
+    outline: 3px double #e6dfce;
+    outline-offset: 4px;
+  }
+
+  .talent-node-frame[data-unlocking="true"] {
+    animation:
+      talentFramePop 400ms cubic-bezier(0.2, 0.75, 0.3, 1) both,
+      talentFrameGlow 400ms ease-out both;
+  }
+
+  @supports (color: oklch(from #000 l c h)) {
+    .talent-node {
+      --talent-readable-accent: oklch(from var(--talent-accent) max(l, 0.76) c h);
+    }
+    .talent-node-keyword {
+      color: oklch(from var(--talent-keyword-source) max(l, 0.76) c h);
+    }
+  }
+
+  @keyframes talentFramePop {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.04);
+    }
+  }
+
+  @keyframes talentFrameGlow {
+    0%,
+    100% {
+      box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+    }
+    40% {
+      box-shadow:
+        0 0 12px color-mix(in srgb, var(--talent-readable-accent) 35%, transparent),
+        0 4px 14px rgb(0 0 0 / 35%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .talent-node-frame {
+      animation: none !important;
+    }
   }
 
   .surface {
@@ -435,15 +556,6 @@
   .companion-enter {
     animation: companionEnter 360ms var(--ease-out-expo) both;
     will-change: transform, opacity;
-  }
-
-  /* Talent entrance composes over the prop-driven 8s shine loop (see
-     talent-tree.tsx duration={8}): this adds the allocatable settle without
-     changing the loop both must share. */
-  .talent-card-available > .shine-border {
-    animation:
-      shine 8s linear infinite,
-      talentAllocatableShineIn 500ms var(--ease-out-expo) both;
   }
 }
 
@@ -919,14 +1031,6 @@
   );
 }
 
-.card-interactive-glow.talent-hover-scale-only:hover,
-.group:hover .card-interactive-glow.talent-hover-scale-only {
-  border-color: transparent;
-  --card-interaction-frame-color: transparent;
-  box-shadow: none;
-  filter: none;
-}
-
 .card-interactive-glow:active:not(:disabled) {
   scale: 0.98;
 }
@@ -996,8 +1100,7 @@
   filter: none;
 }
 
-.surface:has(> .shine-border),
-.talent-node:has(> .shine-border) {
+.surface:has(> .shine-border) {
   overflow: visible;
   filter: none;
 }

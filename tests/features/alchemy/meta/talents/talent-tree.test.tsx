@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TalentTree } from "@/features/alchemy/meta/talents/talent-tree";
-import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
+import { TALENT_NODE_UNLOCK_MS } from "@/features/alchemy/meta/talents/talent-node-face";
 import { getTalentsForKeyword } from "@/lib/game-data";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
@@ -42,7 +42,7 @@ describe("TalentTree sequential unlocks", () => {
     vi.useRealTimers();
   });
 
-  it.each([0, TALENT_UNLOCK_ANIMATION_MS])("accepts consecutive unlocks under StrictMode after %i ms", (delay) => {
+  it.each([0, TALENT_NODE_UNLOCK_MS])("accepts consecutive unlocks under StrictMode after %i ms", (delay) => {
     vi.useFakeTimers();
     const onUnlock = vi.fn();
     render(
@@ -84,16 +84,16 @@ describe("TalentTree sequential unlocks", () => {
     ).toBe("true");
   });
 
-  it("retains keyboard focus after unlocking and prevents another purchase", async () => {
+  it.each(["{Enter}", " "])("retains focus and prevents another purchase with %s", async (key) => {
     const user = userEvent.setup();
     const onUnlock = vi.fn();
     render(<SequentialTree onUnlock={onUnlock} />);
     const button = screen.getByRole("button", { name: new RegExp(second.name!) });
     act(() => button.focus());
-    await user.keyboard("{Enter}");
+    await user.keyboard(key);
     expect(document.activeElement).toBe(button);
     expect(screen.getByRole("button", { name: new RegExp(second.name!) })).toBe(button);
-    await user.keyboard("{Enter}");
+    await user.keyboard(key);
     expect(onUnlock).toHaveBeenCalledExactlyOnceWith(second.id);
   });
 });
