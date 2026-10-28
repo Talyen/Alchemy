@@ -287,8 +287,8 @@ export const talentRows = [
   forge("forge-to-holy", "Sanctify")("Sun", "Holy damage is increased by 25% of your Forge", {
     forgeHolyDamagePercent: 25,
   }),
-  forge("forge-to-block", "Tempered Guard")("Shield", "Block gained is increased by 25% of your Forge", {
-    forgeBlockPercent: 25,
+  forge("forge-to-block", "Tempered Guard")("Shield", "Block gained is increased by 15% of your Forge", {
+    forgeBlockPercent: 15,
   }),
   forge("forge-burn-burst", "Overheat")(
     "Thermometer",

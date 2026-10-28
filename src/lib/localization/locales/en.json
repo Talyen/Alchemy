@@ -2193,7 +2193,7 @@
   "catalog.talentPool.forge-strength-5.name": {"text":"Desperate Forge","context":"Game catalog: talentPool.forge-strength-5.name","aliasOf":"description.686e5ce43d581a16","values":{},"terms":["Forge"]},
   "catalog.talentPool.forge-strength-6.description": {"text":"Gain 1 Forge when an enemy attack depletes your Block","context":"Game catalog: talentPool.forge-strength-6.description","aliasOf":"description.e0ad34d11475862d","values":{"value0":1},"terms":["Block","Forge"]},
   "catalog.talentPool.forge-strength-6.name": {"text":"Forged Bulwark","context":"Game catalog: talentPool.forge-strength-6.name","terms":[]},
-  "catalog.talentPool.forge-to-block.description": {"text":"Block gained is increased by 25% of your Forge","context":"Game catalog: talentPool.forge-to-block.description","aliasOf":"description.eea73920f7318f52","values":{"value0":25},"terms":["Block","Forge"]},
+  "catalog.talentPool.forge-to-block.description": {"text":"Block gained is increased by 15% of your Forge","context":"Game catalog: talentPool.forge-to-block.description","aliasOf":"description.eea73920f7318f52","values":{"value0":15},"terms":["Block","Forge"]},
   "catalog.talentPool.forge-to-block.name": {"text":"Tempered Guard","context":"Game catalog: talentPool.forge-to-block.name","terms":[]},
   "catalog.talentPool.forge-to-burn.description": {"text":"Burn damage is increased by 25% of your Forge","context":"Game catalog: talentPool.forge-to-burn.description","aliasOf":"description.fbee97a1fb1dcc5b","values":{"value0":25},"terms":["Burn","Forge"]},
   "catalog.talentPool.forge-to-burn.name": {"text":"Ignite","context":"Game catalog: talentPool.forge-to-burn.name","terms":[]},

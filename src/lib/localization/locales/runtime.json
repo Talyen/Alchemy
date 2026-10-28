@@ -3735,7 +3735,7 @@
   "catalog.talentPool.forge-strength-5.description": {"id":"description.f4d81ed0ab0213fa","values":{"value0":25,"value1":1}},
   "catalog.talentPool.forge-strength-5.name": {"id":"description.686e5ce43d581a16","values":{}},
   "catalog.talentPool.forge-strength-6.description": {"id":"description.e0ad34d11475862d","values":{"value0":1}},
-  "catalog.talentPool.forge-to-block.description": {"id":"description.eea73920f7318f52","values":{"value0":25}},
+  "catalog.talentPool.forge-to-block.description": {"id":"description.eea73920f7318f52","values":{"value0":15}},
   "catalog.talentPool.forge-to-burn.description": {"id":"description.fbee97a1fb1dcc5b","values":{"value0":25}},
   "catalog.talentPool.forge-to-holy.description": {"id":"description.e473e3c43fee2162","values":{"value0":25}},
   "catalog.talentPool.freeze-block-grant.description": {"id":"description.fa3d209051664d40","values":{}},
