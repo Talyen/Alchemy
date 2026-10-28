@@ -116,7 +116,11 @@ directory within an edition, so run them sequentially.
 `-- --reports` to explicitly select diagnostics/evidence, `-- --caches` for tool
 environments, or `-- --builds` for build outputs; preview with `--dry-run`.
 `npm run clean:all` selects all of these and Alchemy-owned test-server processes.
-`npm run prune:transient` expires only reproducible diff inventories after 24 hours.
+`npm run prune:transient` applies guarded retention to reproducible diff inventories,
+expired verification receipts, eligible managed runs and tool environments, and
+recorded failed local packaging attempts. Retained evidence and ownership
+protections follow the [cleanup policy](../scripts/README.md#cleanup-clean--explicit-reset-prunetransient--expiry);
+inspect candidates with `npm run prune:transient -- --dry-run`.
 `npm run storage:report -- --json reports/storage/baseline.json` measures existing
 files without building or deleting them. [Cleanup details](../scripts/README.md#cleanup-clean--explicit-reset-prunetransient--expiry)
 own ownership guards and preservation rules.

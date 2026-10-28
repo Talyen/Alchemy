@@ -30,10 +30,6 @@ function scoreFinding(finding: BalanceFinding): number {
   }
 }
 
-function compareFindings(a: BalanceFinding, b: BalanceFinding): number {
-  return scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id);
-}
-
 export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap: number): BalanceFindingsReport {
   const byKey = new Map<string, BalanceFinding>();
   for (const finding of candidates) {
@@ -41,7 +37,10 @@ export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap
     const existing = byKey.get(key);
     if (!existing || SEVERITY_RANK[finding.severity] < SEVERITY_RANK[existing.severity]) byKey.set(key, finding);
   }
-  const ranked = [...byKey.values()].sort(compareFindings);
+  const ranked = [...byKey.values()]
+    .map((finding) => ({ finding, score: scoreFinding(finding) }))
+    .sort((a, b) => b.score - a.score || a.finding.id.localeCompare(b.finding.id))
+    .map(({ finding }) => finding);
   const collapsed = collapseMatchupClusters(ranked);
   const selected = selectDiverseFindings(collapsed, cap);
   const shownByBucket = emptyBucketCounts();
@@ -97,12 +96,20 @@ function collapseMatchupClusters(ranked: readonly BalanceFinding[]): BalanceFind
 }
 
 function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): BalanceFinding[] {
-  const buckets = FINDING_BUCKET_ORDER.map((bucket) => ranked.filter((finding) => finding.bucket === bucket));
+  const byBucket = new Map<FindingBucket, BalanceFinding[]>(FINDING_BUCKET_ORDER.map((bucket) => [bucket, []]));
+  for (const finding of ranked) byBucket.get(finding.bucket)!.push(finding);
+  const buckets = [...byBucket.values()];
   const selected = new Set<BalanceFinding>();
   for (let round = 0; selected.size < cap; round++) {
-    const next = buckets.flatMap((bucket) => bucket[round] ?? []);
-    if (next.length === 0) break;
-    for (const finding of next.slice(0, cap - selected.size)) selected.add(finding);
+    const previousSize = selected.size;
+    const roundLimit = Math.floor(cap - selected.size);
+    if (roundLimit <= 0) break;
+    for (const bucket of buckets) {
+      const finding = bucket[round];
+      if (finding) selected.add(finding);
+      if (selected.size - previousSize >= roundLimit) break;
+    }
+    if (selected.size === previousSize) break;
   }
   // The same buckets own fair selection and display order; no second grouping.
   return buckets.flatMap((bucket) => bucket.filter((finding) => selected.has(finding)));

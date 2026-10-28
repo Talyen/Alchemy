@@ -90,9 +90,12 @@ export function summarizeCoreRates(
   const enemies = [...byEnemy].map(([id, matching]) => ({ id, rates: ratesByTier(matching) }));
   const classes = reportCharacterIds().map((id) => {
     const matching = byCharacter.get(id) ?? [];
+    const cellsByTier = reportTierRecord(
+      (): Record<ReportEnemyType, RateCell[]> => ({ normal: [], elite: [], boss: [] }),
+    );
+    for (const row of matching) cellsByTier[row.tier][row.enemyType].push(row.cell);
     const ratesByType = reportTierRecord((tier) => {
-      const byType: Record<ReportEnemyType, RateCell[]> = { normal: [], elite: [], boss: [] };
-      for (const row of matching) if (row.tier === tier) byType[row.enemyType].push(row.cell);
+      const byType = cellsByTier[tier];
       return {
         normal: combineRateCells(byType.normal),
         elite: combineRateCells(byType.elite),

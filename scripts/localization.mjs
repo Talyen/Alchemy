@@ -92,8 +92,7 @@ function compiled(messages, glossary) {
   return locales;
 }
 
-function steamExports(messages, glossary) {
-  const locales = compiled(messages, glossary);
+function steamExports(messages, locales) {
   const store = {};
   const presence = [];
   for (const [locale, { steam: steamLanguage }] of Object.entries(languages)) {
@@ -114,7 +113,7 @@ function steamExports(messages, glossary) {
   return { store: serialize(store), presence: `"lang"\n{\n${presence.join("\n")}\n}\n` };
 }
 function writeSteamExports(messages, glossary) {
-  const output = steamExports(messages, glossary);
+  const output = steamExports(messages, compiled(messages, glossary));
   fs.writeFileSync(path.join(ROOT, "steam/localized-store-copy.json"), output.store);
   fs.writeFileSync(path.join(ROOT, "steam/rich-presence.vdf"), output.presence);
 }
@@ -266,13 +265,13 @@ function checkCatalogs(messages, glossary, issues) {
     );
     if (glyphs.length) failures.push(`${requirement.locale} font lacks: ${glyphs.join("")}; run npm run i18n:fonts`);
   }
-  const steam = steamExports(messages, glossary);
+  const steam = steamExports(messages, catalogs);
   if (
     fs.readFileSync(path.join(ROOT, "steam/localized-store-copy.json"), "utf8") !== steam.store ||
     fs.readFileSync(path.join(ROOT, "steam/rich-presence.vdf"), "utf8") !== steam.presence
   )
     failures.push("Steam localization exports are stale; run npm run i18n:extract");
-  const packed = runtimeCatalog(messages, glossary);
+  const packed = packCatalogs(catalogs, messages);
   if (fs.readFileSync(path.join(directory, "runtime.json"), "utf8") !== serializeRuntime(packed))
     failures.push("Runtime catalogs are stale; run npm run i18n:extract");
   if (!isDeepStrictEqual(unpackCatalogs(packed), catalogs))
