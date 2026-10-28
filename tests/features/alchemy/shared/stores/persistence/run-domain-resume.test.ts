@@ -66,6 +66,16 @@ const setCompanionRewardCards = bindGameplayMutationForTest(mutateCompanionRewar
 const initializeActiveBattle = bindGameplayMutationForTest(restoreActiveBattle);
 const setScreen = bindGameplayMutationForTest(mutateSetScreen);
 
+function restoreSnapshot(overrides: Partial<ActiveRunData>) {
+  const saved = { ...snapshotRun(defaultGameSession), ...overrides };
+  restoreRun(saved, {}, {}, defaultGameSession);
+  return saved;
+}
+
+function currentMystery() {
+  return readActivityData(readRunSession(defaultGameSession).activity, "mystery");
+}
+
 beforeEach(() => {
   resetRunDomainStore();
 });
@@ -111,39 +121,6 @@ describe("session facade API", () => {
         lastVictoryContentSystem: null,
       }),
     });
-  });
-
-  it("snapshots pending rewards on the rewards screen whenever choices are present", () => {
-    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
-    setRewardState({
-      ...createEmptyRewardState(),
-      rewardType: "gear",
-      choices: [instance],
-      gold: 5,
-    });
-    const snap = snapshotRun(defaultGameSession);
-    expect(snap.activity).toEqual(
-      expect.objectContaining({
-        kind: "rewards",
-        data: expect.objectContaining({
-          rewardType: "gear",
-          gearChoices: [instance],
-          gold: 5,
-        }),
-      }),
-    );
-  });
-
-  it("retains an unconsumed reward while a claim lock is held", () => {
-    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
-    setRewardState({ ...createEmptyRewardState(["Campfire"]), rewardType: "gear", choices: [instance], gold: 5 });
-    beginRewardClaim();
-    const snap = snapshotRun(defaultGameSession);
-    expect(snap.activity).toMatchObject({
-      kind: "rewards",
-      data: { gearChoices: [instance], gold: 5 },
-    });
-    expect(snap.activity.kind).toBe("rewards");
   });
 
   it("preserves an empty boss reward so Skip can finish the act after reload", () => {
@@ -248,26 +225,21 @@ describe("session facade API", () => {
     expect(snapshotRun(defaultGameSession).rng).toEqual(saved.rng);
   });
 
-  it("snapshots and restores pending gear rewards on the rewards screen", () => {
-    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
+  it.each([false, true])("snapshots and restores gear rewards with claim lock %s", (claimed) => {
+    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic", affixes: [] };
     setRewardState({
-      ...createEmptyRewardState(),
+      ...createEmptyRewardState(claimed ? ["Campfire"] : []),
       rewardType: "gear",
       choices: [instance],
       gold: 5,
     });
+    if (claimed) beginRewardClaim();
     const snap = snapshotRun(defaultGameSession);
-    expect(snap.activity).toEqual(
-      expect.objectContaining({
-        kind: "rewards",
-        data: expect.objectContaining({
-          rewardType: "gear",
-          gearChoices: [instance],
-          gold: 5,
-        }),
-      }),
-    );
-
+    expect(snap.activity.kind).toBe("rewards");
+    expect(snap.activity).toMatchObject({
+      kind: "rewards",
+      data: { rewardType: "gear", gearChoices: [instance], gold: 5 },
+    });
     setRewardState(createEmptyRewardState());
     restoreRun(snap, {}, {}, defaultGameSession);
     expect(readRunSession(defaultGameSession).rewardFlow.state.rewardType).toBe("gear");
@@ -308,78 +280,44 @@ describe("session facade API", () => {
     ]);
   });
 
-  it("restores wildwood gear rewards from interruptedFlow", () => {
-    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
+  it.each(["gear", "card"] as const)("restores a Wildwood %s reward and its routing", (rewardType) => {
+    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic", affixes: [] };
+    const cardIds = ["slash", "bash", "block"];
     const activeRun = {
       ...snapshotRun(defaultGameSession),
+      ...(rewardType === "card" ? { contentSystemType: "wildwood" as const } : {}),
       wildwoodDraft: {
         phase: "reward" as const,
         draftChoices: [],
-        remainingBossIds: ["iron-bear"] as Array<"forge-golem" | "frostwarden" | "blight-treant" | "iron-bear">,
+        remainingBossIds: ["iron-bear" as const],
         previousBossId: null,
         currentBossId: null,
         currentCombatTraitIds: [],
         currentRewardTraitIds: [],
       },
       activity: savedActivityFixture("rewards", {
-        rewardType: "gear" as const,
-        gearChoices: [instance],
+        rewardType,
+        ...(rewardType === "gear" ? { gearChoices: [instance] } : { choiceIds: cardIds }),
         companionChoiceIds: [],
         selectedId: null,
         gold: 0,
         materials: emptyInventory(),
         destinations: [],
         selectedBossId: null,
-        lastVictoryEnemyType: null,
-        lastVictoryContentSystem: "wildwood" as const,
+        lastVictoryEnemyType: rewardType === "card" ? "boss" : null,
+        lastVictoryContentSystem: "wildwood",
       }),
     };
-
-    setRewardState(createEmptyRewardState());
+    if (rewardType === "gear") setRewardState(createEmptyRewardState());
     restoreRun(activeRun, {}, {}, defaultGameSession);
-    expect(readRunSession(defaultGameSession).rewardFlow.state.rewardType).toBe("gear");
-    expect(readRunSession(defaultGameSession).rewardFlow.state.choices).toEqual([instance]);
-  });
-
-  it("resumes a Wildwood card reward onto the Victory screen from interruptedFlow", () => {
-    restoreRun(
-      {
-        ...snapshotRun(defaultGameSession),
-        contentSystemType: "wildwood",
-        wildwoodDraft: {
-          phase: "reward",
-          draftChoices: [],
-          remainingBossIds: ["iron-bear"] as Array<"forge-golem" | "frostwarden" | "blight-treant" | "iron-bear">,
-          previousBossId: null,
-          currentBossId: null,
-          currentCombatTraitIds: [],
-          currentRewardTraitIds: [],
-        },
-        activity: savedActivityFixture("rewards", {
-          rewardType: "card",
-          choiceIds: ["slash", "bash", "block"],
-          companionChoiceIds: [],
-          selectedId: null,
-          gold: 0,
-          materials: emptyInventory(),
-          destinations: [],
-          selectedBossId: null,
-          lastVictoryEnemyType: "boss",
-          lastVictoryContentSystem: "wildwood",
-        }),
-      },
-      {},
-      {},
-      defaultGameSession,
-    );
-
-    expect(readActiveRunScreen(defaultGameSession)).toBe(ROUTE_SCREENS.REWARDS);
-    expect(readActiveRun(defaultGameSession).contentSystemType).toBe("wildwood");
-    expect(readRunSession(defaultGameSession).wildwoodDraft?.phase).toBe("reward");
-    const rewardState = readRunSession(defaultGameSession).rewardFlow.state;
-    expect(rewardState.rewardType).toBe("card");
-    if (rewardState.rewardType === "card") {
-      expect(rewardState.choices.map((choice) => choice.id)).toEqual(["slash", "bash", "block"]);
+    const reward = readRunSession(defaultGameSession).rewardFlow.state;
+    expect(reward.rewardType).toBe(rewardType);
+    if (rewardType === "gear") expect(reward.choices).toEqual([instance]);
+    else {
+      expect(readActiveRunScreen(defaultGameSession)).toBe(ROUTE_SCREENS.REWARDS);
+      expect(readActiveRun(defaultGameSession).contentSystemType).toBe("wildwood");
+      expect(readRunSession(defaultGameSession).wildwoodDraft?.phase).toBe("reward");
+      if (reward.rewardType === "card") expect(reward.choices.map((choice) => choice.id)).toEqual(cardIds);
     }
   });
 
@@ -407,27 +345,19 @@ describe("session facade API", () => {
   });
 
   it("restores a mystery visit including the chosen summary phase", () => {
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    restoreSnapshot({
       activity: savedActivityFixture("mystery", ANCIENT_ALTAR_MYSTERY_VISIT),
-    };
-
-    restoreRun(activeRun, {}, {}, defaultGameSession);
+    });
 
     expect(readActiveRunScreen(defaultGameSession)).toBe("mystery");
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent?.id).toBe(
-      "ancient-altar",
-    );
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.label).toBe(
-      "Take the Offering",
-    );
+    expect(currentMystery().mysteryEvent?.id).toBe("ancient-altar");
+    expect(currentMystery().mysteryChosenChoice?.label).toBe("Take the Offering");
   });
 
   it("restores a mid-visit mystery card picker", () => {
     const [slash] = getStartingDeck("knight");
     if (!slash) throw new Error("Knight starting deck fixture is incomplete");
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    restoreSnapshot({
       activity: savedActivityFixture("mystery", {
         event: findMysteryEvent("ancient-altar")!,
         chosenChoice: { label: "Browse", effects: [{ kind: "chooseCard" }] },
@@ -435,36 +365,25 @@ describe("session facade API", () => {
         grantedGear: [],
         chosenCardId: "slash",
       }),
-    };
-
-    restoreRun(activeRun, {}, {}, defaultGameSession);
+    });
 
     expect(readActiveRunScreen(defaultGameSession)).toBe("mystery");
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent?.id).toBe(
-      "ancient-altar",
-    );
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices).toEqual([
-      slash,
-    ]);
-    expect(
-      readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedGearInstances,
-    ).toEqual([]);
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenCardId).toBe("slash");
+    expect(currentMystery().mysteryEvent?.id).toBe("ancient-altar");
+    expect(currentMystery().mysteryCardChoices).toEqual([slash]);
+    expect(currentMystery().mysteryGrantedGearInstances).toEqual([]);
+    expect(currentMystery().mysteryChosenCardId).toBe("slash");
   });
 
   it("restores the destination offer when a saved Mystery visit is missing", () => {
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    restoreSnapshot({
       lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
       completedDestinations: ["Mystery"],
       destinationIndexInAct: 1,
       activity: savedActivityFixture("mystery", null),
-    };
-
-    restoreRun(activeRun, {}, {}, defaultGameSession);
+    });
 
     expect(readActiveRunScreen(defaultGameSession)).toBe("destination");
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent).toBeNull();
+    expect(currentMystery().mysteryEvent).toBeNull();
     expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([
       "Mystery",
       "Campfire",
@@ -479,15 +398,12 @@ describe("session facade API", () => {
     const node = Object.values(map.nodes).find((entry) => entry.type === "mystery")!;
     map.currentNodeId = "labyrinth-floor-1-n4";
     map.nodes[map.currentNodeId]!.cleared = true;
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    const activeRun = restoreSnapshot({
       contentSystemType: "labyrinth",
       labyrinthMap: map,
       labyrinthPendingNode: node.id,
       activity: savedActivityFixture("mystery", null),
-    };
-
-    restoreRun(activeRun, {}, {}, defaultGameSession);
+    });
 
     expect(readActiveRunScreen(defaultGameSession)).toBe("labyrinth-map");
     const session = readRunSession(defaultGameSession);
@@ -500,8 +416,7 @@ describe("session facade API", () => {
   });
 
   it("restores overgrown-temple random gear without introducing trinkets", () => {
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    restoreSnapshot({
       activity: savedActivityFixture("mystery", {
         event: findMysteryEvent("overgrown-temple")!,
         chosenChoice: null,
@@ -509,20 +424,15 @@ describe("session facade API", () => {
         grantedGear: [],
         chosenCardId: null,
       }),
-    };
+    });
 
-    restoreRun(activeRun, {}, {}, defaultGameSession);
-
-    const search = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent?.choices.find(
-      (choice) => choice.label === "Search the Crypt",
-    );
+    const search = currentMystery().mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
     expect(search?.effects).toContainEqual({ kind: "gainRandomGear" });
     expect(search?.effects.some((effect) => effect.kind === "gainTrinket")).toBe(false);
   });
 
   it("resumes a saved Mystery offer after its event leaves the live pool", () => {
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    restoreSnapshot({
       lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
       completedDestinations: ["Mystery"],
       destinationIndexInAct: 1,
@@ -530,33 +440,24 @@ describe("session facade API", () => {
         ...ANCIENT_ALTAR_MYSTERY_VISIT,
         event: { ...ANCIENT_ALTAR_MYSTERY_VISIT.event, id: "removed-mystery-event" },
       }),
-    };
-
-    restoreRun(activeRun, {}, {}, defaultGameSession);
+    });
 
     expect(readActiveRunScreen(defaultGameSession)).toBe("mystery");
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent?.id).toBe(
-      "removed-mystery-event",
-    );
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.label).toBe(
-      "Take the Offering",
-    );
+    expect(currentMystery().mysteryEvent?.id).toBe("removed-mystery-event");
+    expect(currentMystery().mysteryChosenChoice?.label).toBe("Take the Offering");
     expect(readActiveRun(defaultGameSession).completedDestinations).toEqual(["Mystery"]);
     expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(1);
   });
 
   it("infers battle screen when currentScreen is null and combat is active", () => {
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    restoreSnapshot({
       activity: savedActivityFixture("battle", {
         battleState: { ...defaultBattleState(), enemyHealth: 12 },
 
         activeLabyrinthModifiers: [],
         activeLabyrinthRewardModifiers: [],
       }),
-    };
-
-    restoreRun(activeRun, {}, {}, defaultGameSession);
+    });
 
     expect(readActiveRunScreen(defaultGameSession)).toBe("battle");
   });
@@ -564,17 +465,14 @@ describe("session facade API", () => {
   it("restores a corruption result so the altar cannot re-roll", () => {
     const [slash] = getStartingDeck("knight");
     if (!slash) throw new Error("Knight starting deck fixture is incomplete");
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(defaultGameSession),
+    restoreSnapshot({
       activity: savedActivityFixture("corruption", {
         originalCard: slash,
         corruptedCard: { ...slash, corrupted: true },
         transformed: false,
         delta: -1,
       }),
-    };
-
-    restoreRun(activeRun, {}, {}, defaultGameSession);
+    });
 
     expect(readActivityData(readRunSession(defaultGameSession).activity, "corruption")).toMatchObject({
       originalCard: { id: slash.id },

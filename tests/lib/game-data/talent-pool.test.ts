@@ -7,6 +7,7 @@ import {
   getTalentRows,
   normalizeUnlockedTalents,
   computeTalentEffects,
+  DEFAULT_TALENT_EFFECTS,
   canUnlockTalent,
   tryUnlockTalent,
   getTalentTreeKeywordIds,
@@ -63,9 +64,21 @@ describe("canUnlockTalent", () => {
 
 describe("computeTalentEffects", () => {
   it("owns nested talent values so one battle cannot change later battles or the catalog", () => {
-    const unlocked = { armor: ["armor-mitigate-stun"], consume: ["consume-feast"] };
+    const empty = computeTalentEffects({});
+    expect(empty).toEqual(DEFAULT_TALENT_EFFECTS);
+    empty.cardHealMultipliers.slash = 999;
+    empty.companionBondLevels.wolf = 999;
+    empty.healthThresholdArmor.push({ threshold: 25, amount: 999 });
+    expect(computeTalentEffects({})).toEqual(DEFAULT_TALENT_EFFECTS);
+
+    const unlocked = {
+      armor: ["armor-mitigate-stun"],
+      consume: ["consume-feast"],
+      dodge: ["dodge-lightfoot", "dodge-unburdened"],
+    };
     const first = computeTalentEffects(unlocked);
     const expected = structuredClone(first);
+    expect(first).toMatchObject({ dodgeChance: 5, cleanseCcOnDodge: true });
     first.healthThresholdArmor[0]!.amount = 999;
     first.healthThresholdArmor.push({ threshold: 25, amount: 999 });
     first.cardHealMultipliers.apple = 999;

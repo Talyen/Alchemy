@@ -7,6 +7,7 @@ describe("globToRegExp", () => {
     expect(re.test("foo.ts")).toBe(true);
     expect(re.test("src/foo.ts")).toBe(true);
     expect(re.test("src/lib/foo.ts")).toBe(true);
+    expect(re.test("src/new\nfolder/foo.ts")).toBe(true);
     expect(re.test("src/bar.ts")).toBe(false);
   });
 
@@ -15,6 +16,7 @@ describe("globToRegExp", () => {
     expect(re.test("tests/foo.test.ts")).toBe(true);
     expect(re.test("tests/lib/foo.test.ts")).toBe(true);
     expect(re.test("tests/lib/deep/foo.test.ts")).toBe(true);
+    expect(re.test("tests/new\nfolder/foo.test.ts")).toBe(true);
     expect(re.test("other/tests/foo.test.ts")).toBe(false);
     expect(re.test("tests/foo.ts")).toBe(false);
   });
@@ -24,6 +26,7 @@ describe("globToRegExp", () => {
     expect(re.test("Docs")).toBe(true);
     expect(re.test("Docs/Plans")).toBe(true);
     expect(re.test("Docs/Plans/Example.md")).toBe(true);
+    expect(re.test("Docs/new\nfolder/Example.md")).toBe(true);
     expect(re.test("Other/Docs/foo.md")).toBe(false);
   });
 

@@ -66,18 +66,22 @@ export function getCompanionDescriptionLines(
 ): string[] {
   const modifiers = typeof damageBonus === "number" ? { damageBonus, damageMultiplier: 1 } : damageBonus;
   const effects = getModifiedCompanionEffects(companion, bondLevel, modifiers);
-  const lines = effects.map(companionAction);
+  const firstAction = effects[0] ? companionAction(effects[0]) : null;
   const bonus = effects[1];
   const overflow = effects.some((effect) => effect.kind === "restore-mana" && effect.allowOverflow)
     ? ", allowing overflow"
     : "";
-  if (bonus?.kind === "chance" && bonus.failureEffects.length === 0 && lines[0]) {
+  if (bonus?.kind === "chance" && bonus.failureEffects.length === 0 && firstAction) {
     const action = companion.id === "mana-moth" ? "grant" : "draw";
     return [
-      `${lines[0]} each turn, with a ${Math.round(bonus.probability * 100)}% chance to ${action} 1 more${overflow}`,
+      `${firstAction} each turn, with a ${Math.round(bonus.probability * 100)}% chance to ${action} 1 more${overflow}`,
     ];
   }
-  const actions = lines.filter((line): line is string => line != null);
+  const actions: string[] = [];
+  for (let index = 0; index < effects.length; index++) {
+    const action = index === 0 ? firstAction : companionAction(effects[index]!);
+    if (action != null) actions.push(action);
+  }
   if (actions.length === 0) return ["Acts at the start of each turn"];
   return [
     `${actions.map((action, index) => (index === 0 ? action : action.charAt(0).toLowerCase() + action.slice(1))).join(" and ")} each turn${overflow}`,

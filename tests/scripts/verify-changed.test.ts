@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   commandExposure,
   firstOutputLine,
+  failureSummary,
   outputStats,
   sanitizeOutput,
   tailOutput,
@@ -272,9 +273,44 @@ describe("verification diagnostics", () => {
     expect(log.split("\n")[800]).toBe("Error: repeated failure");
   });
 
+  it("bounds Unicode diagnostics even when the budget cannot fit an omission marker", () => {
+    const output = "Error: " + "😀é".repeat(1000);
+    for (const budget of [0, 1, 10, 25, 64, 4000]) {
+      for (const summarize of [tailOutput, failureSummary]) {
+        const result = summarize(output, budget);
+        expect(Buffer.byteLength(result)).toBeLessThanOrEqual(budget);
+        expect(result).not.toContain("\uFFFD");
+      }
+    }
+    for (const budget of [NaN, Infinity, -1, 1.5]) {
+      expect(() => tailOutput(output, budget)).toThrow("byte budget");
+      expect(() => failureSummary(output, budget)).toThrow("byte budget");
+    }
+  });
+
+  it("retains failed leaf checker causes and clips huge individual lines", () => {
+    const output = [
+      "[checks] Error: wrapper failure",
+      "[checks] exited with code 1",
+      "[checks] [types] TypeError: actual compiler cause",
+      "[checks] [types] exited with code 1",
+      "[checks] [lint] Error: " + "😀".repeat(10000),
+      "[checks] [lint] exited with code 1",
+    ].join("\n");
+    const result = failureSummary(output);
+    expect(result).toContain("actual compiler cause");
+    expect(result).toContain("Failed [checks]/[lint]");
+    expect(result).toContain("line clipped");
+    expect(result).not.toContain("wrapper failure");
+    expect(Buffer.byteLength(result)).toBeLessThanOrEqual(4000);
+  });
+
   it("keeps compact output useful", () => {
     expect(firstOutputLine("\nTimeoutError: locator.click\nstack")).toBe("TimeoutError: locator.click");
-    expect(tailOutput("x".repeat(30), 10)).toContain("bytes omitted");
+    expect(firstOutputLine(" \r\n\x1b[31m  useful  \x1b[0m\r\n" + "noise\n".repeat(1000))).toBe("useful");
+    expect(firstOutputLine(" \n\t\r\n")).toBe("(no diagnostic output)");
+    expect(tailOutput("x".repeat(30), 10)).toBe("x".repeat(10));
+    expect(tailOutput("x".repeat(300), 100)).toContain("bytes omitted");
     expect(sanitizeOutput("\u001b[31mError\u001b[0m\u0000\nnext")).toBe("Error\nnext");
   });
 });

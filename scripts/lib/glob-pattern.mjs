@@ -1,3 +1,5 @@
+// Generated selectors must not retain an unbounded number of compiled patterns.
+const MAX_CACHED_PATTERNS = 512;
 const CACHE = new Map();
 
 export function globToRegExp(glob) {
@@ -10,12 +12,12 @@ export function globToRegExp(glob) {
       index += 2;
       continue;
     }
-    if (glob.slice(index).startsWith("/**/")) {
+    if (glob.startsWith("/**/", index)) {
       source += "/(?:.*/)?";
       index += 3;
       continue;
     }
-    if (glob.slice(index) === "/**") {
+    if (index === glob.length - 3 && glob.startsWith("/**", index)) {
       source += "(?:/.*)?";
       index += 2;
       continue;
@@ -32,7 +34,8 @@ export function globToRegExp(glob) {
       source += char.replace(/[.+^${}()|[\]\\]/gu, "\\$&");
     }
   }
-  const regex = new RegExp(`${source}$`, "u");
+  const regex = new RegExp(`${source}$`, "su");
+  if (CACHE.size >= MAX_CACHED_PATTERNS) CACHE.delete(CACHE.keys().next().value);
   CACHE.set(glob, regex);
   return regex;
 }

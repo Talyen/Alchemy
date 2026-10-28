@@ -10,6 +10,16 @@ import { setTimeout as delay } from "node:timers/promises";
  */
 export async function waitForHttp(url, options = {}) {
   const { timeoutMs = 60_000, pollMs = 250, requestTimeoutMs = 1_000, accept = (response) => response.ok } = options;
+  for (const [name, value, minimum] of [
+    ["timeoutMs", timeoutMs, 0],
+    ["pollMs", pollMs, 0],
+    ["requestTimeoutMs", requestTimeoutMs, 1],
+  ]) {
+    // Node timers overflow above a signed 32-bit delay and fire after 1ms instead.
+    if (!Number.isInteger(value) || value < minimum || value > 2_147_483_647) {
+      throw new RangeError(`${name} must be an integer between ${minimum} and 2147483647`);
+    }
+  }
   const deadline = Date.now() + timeoutMs;
   let lastError;
 
@@ -22,6 +32,9 @@ export async function waitForHttp(url, options = {}) {
       let accepted = false;
       try {
         accepted = accept(response);
+        if (!accepted) {
+          lastError = new Error(`HTTP ${response.status} ${response.statusText} rejected by readiness check`.trim());
+        }
       } finally {
         if (!accepted) await response.body?.cancel();
       }
