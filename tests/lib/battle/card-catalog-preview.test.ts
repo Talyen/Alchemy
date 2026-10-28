@@ -232,11 +232,11 @@ describe("complete catalog deterministic preview coverage", () => {
     expect(getBattleCardDescriptionInspection(pack, state).descriptionLines).toEqual([
       "Your Companion acts twice",
       "If you don't have a Companion, Wish for one",
-      "Gain 7 Block",
+      "Gain 6 Block",
     ]);
     const played = playBattleCardResolved({ ...state, rng: () => 0.99 }, pack.id, 0);
     expect(played.state.enemyHealth).toBeLessThan(state.enemyHealth);
-    expect(played.state.playerStatuses.block - state.playerStatuses.block).toBe(7);
+    expect(played.state.playerStatuses.block - state.playerStatuses.block).toBe(6);
     expect(
       getEffectiveCardDescriptionLines(cardById["wolf-companion"]!, {
         companionBondLevels: { wolf: 2 },

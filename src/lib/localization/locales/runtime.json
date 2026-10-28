@@ -3085,7 +3085,7 @@
   "catalog.cardLibrary.molten-bulwark.line1": {"id":"description.4bf7638d4bccd71d","values":{"value0":1}},
   "catalog.cardLibrary.pack-tactics.line0": {"id":"description.698542c81ed1b164","values":{}},
   "catalog.cardLibrary.pack-tactics.line1": {"id":"description.5a69d1fa9b9de404","values":{}},
-  "catalog.cardLibrary.pack-tactics.line2": {"id":"description.3982b18759b2f2f9","values":{"value0":4}},
+  "catalog.cardLibrary.pack-tactics.line2": {"id":"description.3982b18759b2f2f9","values":{"value0":3}},
   "catalog.cardLibrary.panacea-potion.line1": {"id":"description.82c6a67b41298ce5","values":{"value0":2}},
   "catalog.cardLibrary.panacea-potion.line2": {"id":"description.f5658490977dada6","values":{}},
   "catalog.cardLibrary.panther-companion.line0": {"id":"description.303d8a437774ba3d","values":{"value0":1}},
