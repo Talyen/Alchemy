@@ -1027,7 +1027,7 @@
   "catalog.cardLibrary.stargaze.line0": {"text":"Deal 1 Freeze damage","context":"Game catalog: cardLibrary.stargaze description","aliasOf":"description.6fc4a95b18d127bd","values":{"value0":1},"terms":["Freeze"]},
   "catalog.cardLibrary.stargaze.line1": {"text":"Wish 1","context":"Game catalog: cardLibrary.stargaze description","aliasOf":"description.b6b1a842bc1e8274","values":{"value0":1},"terms":["Wish"]},
   "catalog.cardLibrary.stargaze.title": {"text":"Stargaze","context":"Game catalog: cardLibrary.stargaze.title","terms":[]},
-  "catalog.cardLibrary.steal.line0": {"text":"Deal 1 Stun damage","context":"Game catalog: cardLibrary.steal description","aliasOf":"description.99a0616cea9dc98a","values":{"value0":1},"terms":["Stun"]},
+  "catalog.cardLibrary.steal.line0": {"text":"Deal 2 Stun damage","context":"Game catalog: cardLibrary.steal description","aliasOf":"description.99a0616cea9dc98a","values":{"value0":2},"terms":["Stun"]},
   "catalog.cardLibrary.steal.line1": {"text":"Steal 1 Gold","context":"Game catalog: cardLibrary.steal description","aliasOf":"description.6d1ce8409b1aebde","values":{"value0":1},"terms":["Gold"]},
   "catalog.cardLibrary.steal.title": {"text":"Steal","context":"Game catalog: cardLibrary.steal.title","terms":[]},
   "catalog.cardLibrary.stoneskin-potion.line0": {"text":"Gain 4 Armor","context":"Game catalog: cardLibrary.stoneskin-potion description","aliasOf":"description.f67c52545b3a933","values":{"value0":4},"terms":["Armor"]},

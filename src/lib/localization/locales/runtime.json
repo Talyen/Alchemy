@@ -3147,7 +3147,7 @@
   "catalog.cardLibrary.stab.line1": {"id":"description.f3cd67c11846df2f","values":{}},
   "catalog.cardLibrary.stargaze.line0": {"id":"description.6fc4a95b18d127bd","values":{"value0":1}},
   "catalog.cardLibrary.stargaze.line1": {"id":"description.b6b1a842bc1e8274","values":{"value0":1}},
-  "catalog.cardLibrary.steal.line0": {"id":"description.99a0616cea9dc98a","values":{"value0":1}},
+  "catalog.cardLibrary.steal.line0": {"id":"description.99a0616cea9dc98a","values":{"value0":2}},
   "catalog.cardLibrary.steal.line1": {"id":"description.6d1ce8409b1aebde","values":{"value0":1}},
   "catalog.cardLibrary.stoneskin-potion.line0": {"id":"description.f67c52545b3a933","values":{"value0":4}},
   "catalog.cardLibrary.stoneskin-potion.line1": {"id":"description.f5658490977dada6","values":{}},

@@ -110,7 +110,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard(
     "steal",
     [
-      { kind: "damage", damageType: "stun", amount: 1 },
+      { kind: "damage", damageType: "stun", amount: 2 },
       { kind: "gain-gold", amount: 1 },
     ],
     {

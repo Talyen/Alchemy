@@ -33,6 +33,14 @@ function play(id: string, patch: BattleStatePatch = {}) {
 }
 
 describe("thematic card effects", () => {
+  it("Steal deals Stun damage and grants Gold with matching card text", () => {
+    const result = play("steal");
+    expect(result.enemyHealth).toBe(98);
+    expect(result.enemyStatuses.stun).toBe(2);
+    expect(result.gold).toBe(1);
+    expect(cardById.steal!.descriptionLines).toEqual(["Deal 2 Stun damage", "Steal 1 Gold"]);
+  });
+
   it.each([
     ["combustion", "burn", 2],
     ["hemorrhage", "bleed", 4],
