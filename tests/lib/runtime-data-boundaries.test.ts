@@ -9,11 +9,66 @@ import { SaveOperationQueue } from "@/features/alchemy/shared/storage/save-opera
 import { logStorageFailure } from "@/lib/storage-logging";
 import { isRecord } from "@/lib/utils";
 import { createFakeAudioElement } from "../helpers/fake-audio";
-import { cardHasKeyword, isCompanionSummonCard, isEnemyAbilityCard } from "@/lib/game-data";
+import {
+  cardById,
+  cardHasKeyword,
+  enemyById,
+  isCompanionSummonCard,
+  isEnemyAbilityCard,
+  trinketById,
+} from "@/lib/game-data";
 import { cardHasDamageType } from "@/lib/battle/card-classification";
 import { makeTestCard } from "../fixtures/cards";
+import { getEnemyTraitSet, hasEnemyTrait } from "@/lib/battle/encounter-trait-state";
+import { getEnemyTraitDamageMultiplier } from "@/lib/battle/status-helpers";
+import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
+import {
+  hasInspectableBoons,
+  uniqueRunBoons,
+} from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
+import { getPlasmaKeywordsForMysteryReward } from "@/features/alchemy/run-loop/screens/mystery/mystery-choice-utils";
+import { patchBattleState } from "../fixtures/battle";
 
 afterEach(() => vi.restoreAllMocks());
+
+it("ignores inherited Trinket IDs in boon and Mystery lookups", () => {
+  expect(trinketById["constructor"]).toBeUndefined();
+  expect(getTrinketKeywords("toString")).toEqual([]);
+  expect(hasInspectableBoons(["toString"])).toBe(false);
+  expect(uniqueRunBoons(["toString", "bone-charm"]).map((entry) => entry.id)).toEqual(["bone-charm"]);
+});
+
+it("ignores inherited card IDs when resolving Mystery rewards", () => {
+  expect(cardById["constructor"]).toBeUndefined();
+  expect(
+    getPlasmaKeywordsForMysteryReward({
+      choice: { label: "damaged", effects: [{ kind: "addCard", cardId: "toString" }] },
+      findCard: (id) => cardById[id],
+      grantedGearInstances: [],
+      chosenCardId: null,
+    }),
+  ).toEqual([]);
+});
+
+it("keeps inherited keys out of the enemy catalog", () => {
+  expect(enemyById["constructor"]).toBeUndefined();
+  expect(enemyById["toString"]).toBeUndefined();
+  expect(enemyById.goblin?.id).toBe("goblin");
+});
+
+it("updates trait and damage lookups when an owned enemy trait list changes", () => {
+  const state = patchBattleState({ currentEnemy: { traits: [] } });
+  const original = getEnemyTraitSet(state);
+  expect(getEnemyTraitDamageMultiplier(state, "poison")).toBe(1);
+  state.currentEnemy.traits.push({ id: "venom-ward", title: "Ward", description: "" });
+  expect(hasEnemyTrait(state, "venom-ward")).toBe(true);
+  expect(getEnemyTraitDamageMultiplier(state, "poison")).toBe(0.5);
+  expect(getEnemyTraitSet(state)).not.toBe(original);
+  state.currentEnemy.traits[0]!.id = "crimson-ward";
+  expect(hasEnemyTrait(state, "venom-ward")).toBe(false);
+  expect(getEnemyTraitDamageMultiplier(state, "poison")).toBe(1);
+  expect(getEnemyTraitDamageMultiplier(state, "bleed")).toBe(0.5);
+});
 
 it("recomputes classifications when an owned effect tree changes, including below a frozen outer array", () => {
   const card = makeTestCard({

@@ -53,6 +53,9 @@ Opportunities last until used or battle end unless the item says otherwise. Cost
 | Wildheart’s Favor    | Each hero Dodge prepares one free Nature card whose damage hits all critically hit. Further Dodges do not accumulate uses; automatic plays do not spend it.                                                                                                                                                                                       |
 | The Golden Crucible  | Each positive combat Gold award rolls 25% for 1 Forge through the ordinary gain owner, including gain bonuses and Smithguard. Holy damage gains rounded half Forge, or a stronger applicable conversion, without stacking permissions. Gold and Forge are preserved.                                                                              |
 
+Returning Flight consumes the recovered card’s discount on its next play, even
+when another effect waives that play’s Mana cost.
+
 The Unclosing Wound retains the remaining Bleed Leech stacks after each halved
 tick. Rimeheart checks pre-hit Block when deciding whether Freeze damage grants
 Block. The Final Spark requires a card with damage effects; Smelling Salts does

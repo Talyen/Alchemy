@@ -14,7 +14,10 @@ export type TrinketId = TrinketCatalogEntry["id"];
 type EnemyById = { [Entry in EnemyEntry as Entry["id"]]: Entry } & Record<string, EnemyEntry | undefined>;
 type TrinketById = { [Entry in TrinketCatalogEntry as Entry["id"]]: Entry } & Record<string, TrinketEntry | undefined>;
 
-export const enemyById = Object.fromEntries(enemyBestiary.map((enemy) => [enemy.id, enemy])) as EnemyById;
+export const enemyById = Object.assign(
+  Object.create(null) as EnemyById,
+  Object.fromEntries(enemyBestiary.map((enemy) => [enemy.id, enemy])),
+);
 
 export function isEnemyId(value: string): value is EnemyId {
   return Object.hasOwn(enemyById, value);
@@ -31,7 +34,10 @@ export const bossEnemies = enemiesByType.boss;
 
 export const encounterEnemies = enemyBestiary;
 
-export const trinketById = Object.fromEntries(trinketLibrary.map((trinket) => [trinket.id, trinket])) as TrinketById;
+export const trinketById = Object.assign(
+  Object.create(null) as TrinketById,
+  Object.fromEntries(trinketLibrary.map((trinket) => [trinket.id, trinket])),
+);
 
 export function isTrinketId(value: string): value is TrinketId {
   return Object.hasOwn(trinketById, value);

@@ -6,6 +6,22 @@ import { cardById } from "@/lib/game-data";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("gameplay interaction regressions", () => {
+  it("retires Returning Flight's card-specific discount when Leyline makes that play free", () => {
+    const card = { ...cardById["bounty-shot"]!, cost: 3, uid: 19 };
+    const state = patchBattleState({
+      hand: [card],
+      mana: 2,
+      uniqueGear: { returningFlightUids: [19, 20] },
+      flags: { nextCardCostReduction: 1 },
+      gearEffects: { recoverLastArcheryCard: 1 },
+      talentEffects: { homesteadFreeManaChance: 100 },
+      rng: () => 0.99,
+    });
+    const played = playBattleCardResolved(state, card.id, 0).state;
+    expect(played.mana).toBe(2);
+    expect(played.uniqueGear.returningFlightUids).toEqual([20]);
+    expect(played.flags.nextCardCostReduction).toBe(1);
+  });
   it("Leyline's free cast preserves Block used as missing Mana", () => {
     const card = cardById["cold-snap"]!;
     const state = patchBattleState({

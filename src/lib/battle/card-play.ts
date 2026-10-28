@@ -198,7 +198,14 @@ function resolveCardPlay(
     rollPercent(state.talentEffects.homesteadFreeManaChance, getBattleRng(state));
   const effectiveCost = freeMana ? 0 : payment.effectiveCost;
   const blockCost = freeMana ? 0 : payment.blockCost;
-  const costState = freeMana ? state : consumeCardDiscounts(state, payment);
+  // Returning Flight follows this card for its next play, even if another
+  // effect waives payment. Independent armed discounts remain untouched.
+  const returningFlightUids = payment.uniqueDiscounts.returningFlightUids;
+  const costState = freeMana
+    ? returningFlightUids
+      ? { ...state, uniqueGear: { ...state.uniqueGear, returningFlightUids } }
+      : state
+    : consumeCardDiscounts(state, payment);
 
   const existingPlayTwice = readCombatFlag(costState, "playNextCardTwice");
   const playTwice = existingPlayTwice || shouldElementalTalentRepeat(costState, card);
