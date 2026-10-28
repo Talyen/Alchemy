@@ -166,13 +166,15 @@ describe("CorruptionScreen", () => {
     const user = userEvent.setup();
     const onCorrupt = vi.fn();
     const onExit = vi.fn();
+    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockImplementation(function (this: HTMLImageElement) {
+      return this.alt === "Altar of Corruption";
+    });
     const { container } = render(
       <CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={onCorrupt} onExit={onExit} />,
     );
     const enter = await screen.findByRole("button", { name: "Corrupt a Card" });
     const leave = screen.getByRole("button", { name: "Leave" });
     const heading = screen.getByRole("heading", { name: "Altar of Corruption" });
-    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(false);
     await user.click(enter);
     const intro = container.querySelector('[data-corruption-entry-panel="intro"]')!;
     const picker = container.querySelector('[data-corruption-entry-panel="picker"]')!;

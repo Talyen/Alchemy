@@ -6,7 +6,6 @@ import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
-import { MOTION_FADE_MS } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import { canCorruptCard, type CorruptionResult } from "@/lib/corruption";
 import {
@@ -24,7 +23,7 @@ import { ShineAccentButton } from "../../shared/ui/shine-accent-button";
 import { cn } from "@/lib/utils";
 import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
 import { useArtworkReady } from "../../shared/ui/use-artwork-ready";
-import { fadePhaseClass, useFadePresence, useHeldWhile } from "../../shared/ui/use-fade";
+import { fadePhaseClass, useHeldWhile } from "../../shared/ui/use-fade";
 
 type EntryView = "intro" | "picker";
 
@@ -53,16 +52,14 @@ function CorruptionEntryPanel({
   onReady: (view: EntryView) => void;
   children: ReactNode;
 }) {
-  const { mounted } = useFadePresence(requested || shown, reducedMotion ? 0 : MOTION_FADE_MS);
-  const { ref, pending } = useArtworkReady(`${view}-${mounted ? "mounted" : "idle"}`, {
+  const { ref, pending } = useArtworkReady(view, {
     initialRevealOnly: true,
   });
   const heldChildren = useHeldWhile(requested, children);
   const heldPending = useHeldWhile(requested, pending);
   useEffect(() => {
-    if (mounted && requested && !pending) onReady(view);
-  }, [mounted, requested, pending, view, onReady]);
-  if (!mounted) return null;
+    if (requested && !pending) onReady(view);
+  }, [requested, pending, view, onReady]);
 
   const visible = shown && !heldPending;
   const interactive = requested && visible;
@@ -90,6 +87,8 @@ function CorruptionEntry({ selecting, intro, picker }: { selecting: boolean; int
   const [shown, setShown] = useState<EntryView>(target);
   const reducedMotion = useReducedMotionPreference();
   return (
+    // Both panels reserve the same grid footprint, so revealing the picker
+    // does not reposition the heading or the outgoing illustration.
     <div className="grid w-full min-w-0">
       <CorruptionEntryPanel
         view="intro"
@@ -308,7 +307,7 @@ export function CorruptionScreen({
 
   return (
     <TitledScreenShell title={i18n.text("ui.corruption-screen.10", "Altar of Corruption")}>
-      <div className={cn("flex flex-col items-center gap-6 text-center", result || selecting ? "mt-3" : "mt-6")}>
+      <div className="mt-3 flex flex-col items-center gap-6 text-center">
         {result ? (
           <CorruptionResultView result={result} revealChange={selecting} onContinue={handleExit} />
         ) : (
