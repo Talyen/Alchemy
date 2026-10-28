@@ -44,7 +44,7 @@ complete transitive lockfile.
 npm run lyrics:tool -- separate.py
 npm run lyrics:tool -- align.py --audio reports/boss-lyrics/vocals.wav --output reports/boss-lyrics/alignment-vocals.json
 npm run lyrics:tool -- phrase-align.py
-.cache/lyrics/venv/bin/python -m unittest discover -s scripts/lyrics-trial -p 'test_*.py'
+python3.11 -m unittest discover -s scripts/lyrics-trial -p 'test_*.py'
 ```
 
 [Phrase matching](./phrase_match.py) owns word/gap/confidence rules;
