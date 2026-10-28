@@ -4,7 +4,7 @@ import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init
 import { battleEventSounds } from "@/lib/audio/sound-registry";
 import * as controllerUtils from "@/features/alchemy/run-loop/battle/controller-utils";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { computeTalentEffects } from "@/lib/game-data";
+import { companionLibrary, computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { enemyBestiary } from "@/lib/game-data";
 import {
@@ -12,6 +12,7 @@ import {
   resetRunDomainStore,
   setRunSession,
   setRunProgress,
+  initializeBattleForTest,
 } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readBattle, readRunRevision } from "@/features/alchemy/shared/stores/session/run-reads";
 import { battlePresentation } from "@/app/battle-presentation";
@@ -20,6 +21,7 @@ import type { createBattleSession } from "@/features/alchemy/run-loop/battle/bat
 import { createRunRngState } from "@/lib/rng";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
+import { patchBattleState } from "../../../../fixtures/battle";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -42,6 +44,19 @@ describe("createBattleInit", () => {
 
     return createBattleInit(ctx, session);
   }
+
+  it.each(["library-owl", "wolf"] as const)("presents an opening %s action without a false attack cue", (id) => {
+    const init = makeInit();
+    mutateGameplayForTest((draft) =>
+      initializeBattleForTest(draft, patchBattleState({ activeCompanion: companionLibrary[id] })),
+    );
+    const before = battlePresentation.getState();
+    init.presentBattleStart({ companionId: id, startingTexts: [], openingCardIds: [], outcome: null });
+    const after = battlePresentation.getState();
+    const utility = id === "library-owl";
+    expect(after.playerAttackToken - before.playerAttackToken).toBe(utility ? 0 : 1);
+    expect(after.playerCastToken - before.playerCastToken).toBe(utility ? 1 : 0);
+  });
 
   it("derives current talent and homestead manifests from the battle-start draft", () => {
     setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });

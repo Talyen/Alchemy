@@ -21,6 +21,7 @@ import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
+import { companionLibrary } from "@/lib/game-data";
 
 vi.mock("@/lib/animation/animation-prefs", () => ({
   isAnimationDisabled: () => false,
@@ -33,7 +34,11 @@ beforeEach(() => {
   useUiStore.getState().setCardInspection(null);
 });
 
-function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => void) {
+function makeUi(
+  rejectDraw = false,
+  onDraw?: (ctx: BattleControllerContext) => void,
+  companionId?: "library-owl" | "wolf",
+) {
   const initial = patchBattleState({
     playerHealth: 1000,
     playerMaxHealth: 1000,
@@ -41,6 +46,7 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
     enemyMaxHealth: 1000,
     hand: slashDeck(3),
     deck: slashDeck(8),
+    activeCompanion: companionId ? companionLibrary[companionId] : null,
   });
   mutateGameplayForTest((draft) => initializeActiveBattle(draft, initial));
   let releaseDiscard!: () => void;
@@ -91,6 +97,22 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
 }
 
 describe("End Turn execution and playback", () => {
+  it.each(["library-owl", "wolf"] as const)("presents %s using its actual action type", async (companionId) => {
+    vi.useFakeTimers();
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+    const { ui, releaseDiscard } = makeUi(false, undefined, companionId);
+    const before = battlePresentation.getState();
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
+    const committed = readGameplayState(defaultGameSession);
+    releaseDiscard();
+    await vi.runAllTimersAsync();
+    const after = battlePresentation.getState();
+    const utility = companionId === "library-owl";
+    expect(after.playerAttackToken - before.playerAttackToken).toBe(utility ? 0 : 1);
+    expect(after.playerCastToken - before.playerCastToken).toBe(utility ? 1 : 0);
+    expect(readGameplayState(defaultGameSession)).toBe(committed);
+  });
+
   it("commits before discard playback and blocks a second End Turn", () => {
     const { ui, ctx } = makeUi();
     const before = readGameplayState(defaultGameSession);
