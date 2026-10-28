@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
@@ -20,11 +21,7 @@ describe("combat feedback regressions", () => {
   it("acknowledges an ineffective attack on the enemy without claiming a hit", () => {
     const state = regressionBattle();
     const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0 }] }),
-      texts,
-    );
+    const result = applyCardEffects(state, makeDamageCard("physical", 0), texts);
     expect(result.enemyHealth).toBe(state.enemyHealth);
     expect(texts).toEqual([{ target: "enemy", kind: "damage", stat: "physical", amount: 0, impact: false }]);
   });

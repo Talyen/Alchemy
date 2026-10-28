@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
@@ -71,13 +72,7 @@ describe("gameplay regressions", () => {
   });
 
   it("Bloomwoven rolls for each Nature damage packet", () => {
-    const card = makeTestCard({
-      cost: 0,
-      effects: [
-        { kind: "damage", damageType: "nature", amount: 1 },
-        { kind: "damage", damageType: "nature", amount: 1 },
-      ],
-    });
+    const card = makeDamageCard("nature", [1, 1], { cost: 0 });
     const state = regressionBattle({
       mana: 0,
       hand: [card],

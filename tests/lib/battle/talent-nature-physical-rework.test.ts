@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -37,13 +38,7 @@ describe("Nature and Physical Talent reworks", () => {
   });
 
   it("repeats a Nature card's effects once while paying and consuming once", () => {
-    const card = makeTestCard({
-      id: "nature-repeat",
-      tags: ["nature"],
-      cost: 1,
-      consume: true,
-      effects: [{ kind: "damage", damageType: "nature", amount: 2 }],
-    });
+    const card = makeDamageCard("nature", 2, { id: "nature-repeat", tags: ["nature"], cost: 1, consume: true });
     const state = patchBattleState({
       hand: [card],
       mana: 1,
@@ -168,11 +163,7 @@ describe("Nature and Physical Talent reworks", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
     });
-    const dodged = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      [],
-    );
+    const dodged = applyEnemyAbility(state, makeDamageCard("physical", 8), []);
     const holy = dealDamage(dodged, makeTestCard({ effects: [makeEffect("holy", 2)] }));
     const physical = dealDamage(holy, makeTestCard({ effects: [makeEffect("physical", 5)] }));
 

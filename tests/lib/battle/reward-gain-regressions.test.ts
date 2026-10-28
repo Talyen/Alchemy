@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
@@ -45,11 +46,7 @@ describe("rewards track actual gains", () => {
       enemyMaxHealth: 100,
       rng: () => 0.05,
     });
-    const next = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(state, makeDamageCard("physical", 2), []);
     expect(next.playerStatuses.armor).toBe(0);
     expect(next.playerStatuses.block).toBe(3);
     expect(next.enemyHealth).toBe(98);
@@ -67,11 +64,7 @@ describe("rewards track actual gains", () => {
       gearEffects: { armorOnThornsDamage: 2, healOnFirstThornsDamageEachTurn: 3, poisonOnThornsDamage: 2 },
       rng: () => 0.99,
     });
-    const next = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(state, makeDamageCard("physical", 1), []);
     expect(next.flags.secondWindTriggered).toBe(true);
     expect(next.enemyHealth).toBeGreaterThan(state.enemyHealth);
     expect(next.playerStatuses.armor).toBe(2);
@@ -89,11 +82,7 @@ describe("rewards track actual gains", () => {
       gearEffects: { armorOnThornsDamage: 2, healOnFirstThornsDamageEachTurn: 3, poisonOnThornsDamage: 2 },
       rng: () => 0.99,
     });
-    const next = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(state, makeDamageCard("physical", 1), []);
     expect(next.playerStatuses.armor).toBe(0);
     expect(next.playerHealth).toBe(19);
     expect(next.flags.spitefulHealedThisTurn).toBe(false);

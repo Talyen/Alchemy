@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it, vi } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
@@ -46,12 +47,7 @@ it.each([
   { cost: 2, mana: 5, remaining: 3 },
   { cost: 0, mana: 0, remaining: 0 },
 ])("pays $cost Mana once and refills the empty draw pile with the reusable card", ({ cost, mana, remaining }) => {
-  const card = makeTestCard({
-    id: "slash",
-    corrupted: true,
-    cost,
-    effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-  });
+  const card = makeDamageCard("physical", 6, { id: "slash", corrupted: true, cost });
   const state = makeState({ hand: [card], mana, rng: () => 0.99 });
   const result = playBattleCardResolved(state, card.id, 0).state;
   expect(result.mana).toBe(remaining);
@@ -97,13 +93,7 @@ it("keeps next-hit Poison through a failed chance and spends it on only the firs
       },
     ],
   });
-  const attack = makeTestCard({
-    id: "two-hits",
-    effects: [
-      { kind: "damage", damageType: "physical", amount: 2 },
-      { kind: "damage", damageType: "physical", amount: 2 },
-    ],
-  });
+  const attack = makeDamageCard("physical", [2, 2], { id: "two-hits" });
   const state = makeState({ hand: [uncertain, attack], rng: () => 0.99, flags: { nextHitPoison: true } });
   const missed = playBattleCardResolved(state, uncertain.id, 0).state;
   expect(missed.flags.nextHitPoison).toBe(true);
@@ -206,7 +196,7 @@ it("a repeated Mana conversion cannot spend the same Mana twice", () => {
 });
 
 it("Hawk Eye stays armed through full mitigation and is spent on the next damaging packet", () => {
-  const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+  const card = makeDamageCard("physical", 4);
   const state = patchBattleState({
     hand: [card],
     enemyHealth: 100,

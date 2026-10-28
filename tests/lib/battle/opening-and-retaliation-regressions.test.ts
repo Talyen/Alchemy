@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { resolveBattleStart } from "@/lib/battle/battle-start";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -14,11 +15,7 @@ const onEmptyDraw = (
 
 describe("nested combat boundaries", () => {
   it("does not grant Icebreaker Forge after a fatal Bleed detonation", () => {
-    const card = makeTestCard({
-      cost: 0,
-      tags: ["archery"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
-    });
+    const card = makeDamageCard("physical", 1, { cost: 0, tags: ["archery"] });
     const state = regressionBattle({
       playerHealth: 1,
       deathsDoorUsed: true,

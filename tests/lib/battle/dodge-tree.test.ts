@@ -1,4 +1,4 @@
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { tryDodgeEnemyAttackPacket, tryDodgePlayerAttackPacket } from "@/lib/battle/dodge";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
@@ -73,16 +73,7 @@ describe("Dodge tree rewards", () => {
       rng: () => 0,
       gearEffects: { healOnDodge: 2, armorOnDodge: 3 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({
-        effects: [
-          { kind: "damage", damageType: "physical", amount: 8 },
-          { kind: "damage", damageType: "physical", amount: 8 },
-        ],
-      }),
-      [],
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("physical", [8, 8]), []);
     expect(result.playerDodgeCount).toBe(2);
     expect(result.playerHealth).toBe(52);
     expect(result.playerStatuses).toMatchObject({ armor: 5, forge: 2, thorns: 2 });
@@ -95,11 +86,7 @@ describe("Dodge tree rewards", () => {
       playerStatuses: { burn: 1, poison: 2, bleed: 1, freeze: 3, stun: 3 },
       talentEffects: { cleanseStacksOnDodge: 1, healOnStatusCleanse: 4 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      [],
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("physical", 8), []);
     expect(result.playerStatuses).toMatchObject({ burn: 0, poison: 1, bleed: 0, freeze: 3, stun: 3 });
     expect(result.playerHealth).toBe(54);
     const partial = applyEnemyAbility(
@@ -108,7 +95,7 @@ describe("Dodge tree rewards", () => {
         playerStatuses: { burn: 3, poison: 3, bleed: 3 },
         talentEffects: state.talentEffects,
       }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      makeDamageCard("physical", 8),
       [],
     );
     expect(partial.playerHealth).toBe(50);
@@ -122,12 +109,8 @@ describe("Dodge tree rewards", () => {
       rng: () => 0,
     });
     const dodged = applyEnemyAbility(
-      applyEnemyAbility(
-        state,
-        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-        [],
-      ),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      applyEnemyAbility(state, makeDamageCard("physical", 8), []),
+      makeDamageCard("physical", 8),
       [],
     );
     expect(dodged.flags.nextHitPhysicalBonus).toBe(14);

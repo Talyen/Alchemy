@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyScaledLeechHealing, resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
@@ -217,10 +218,7 @@ describe("resolveStunTrigger", () => {
 describe("resolveStunTrigger via applyCardEffects", () => {
   it("resolves and triggers stun when stun is added from burn damage riders", () => {
     const talentEffects = { ...defaultTalentEffects, burnStunChance: 100 };
-    const card = makeTestCard({
-      id: "fireball",
-      effects: [{ kind: "damage", damageType: "burn", amount: 12 }],
-    });
+    const card = makeDamageCard("burn", 12, { id: "fireball" });
     const state = makeStateWithFailedRolls({
       mana: 10,
       talentEffects,

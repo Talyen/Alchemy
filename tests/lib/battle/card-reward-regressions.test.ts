@@ -1,4 +1,4 @@
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -20,7 +20,7 @@ describe("card reward interactions", () => {
         gearEffects: { dodgeDrawAndPlay: 1 },
         talentEffects: { companionActsOnCard: true },
       }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      makeDamageCard("physical", 8),
       [],
     );
     expect(result.activeCompanion).toEqual(companionLibrary["mana-moth"]);
@@ -38,7 +38,7 @@ describe("card reward interactions", () => {
         gearEffects: { dodgeDrawAndPlay: 1 },
         trinketEffects: { mortarPestlePoisonOnPotionUse: 1 },
       }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      makeDamageCard("physical", 8),
       [],
     );
     expect(result.enemyHealth).toBe(99);
@@ -56,19 +56,14 @@ describe("card reward interactions", () => {
       talentEffects: { holyLifestealPercent: 10, leechHealingBonus: 1 },
       gearEffects: { leechHealBonusPercent: 50 },
     });
-    const result = dealDamage(state, makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 20 }] }));
+    const result = dealDamage(state, makeDamageCard("holy", 20));
     expect(result.playerHealth).toBe(14);
   });
 
   it.each(["talent", "encounter"] as const)(
     "preserves Divine Favor when %s already makes the Holy card free",
     (source) => {
-      const card = makeTestCard({
-        cost: 1,
-        consume: true,
-        tags: ["burn"],
-        effects: [{ kind: "damage", damageType: "holy", amount: 2 }],
-      });
+      const card = makeDamageCard("holy", 2, { cost: 1, consume: true, tags: ["burn"] });
       const state = patchBattleState({
         hand: [card],
         mana: 0,

@@ -1,15 +1,12 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("overlapping card discounts", () => {
   it("preserves The Knight's Answer when Wildheart already makes a Physical Nature card free", () => {
-    const nature = makeTestCard({
-      id: "physical-nature",
-      tags: ["nature"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
-    });
-    const physical = makeTestCard({ id: "physical", effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    const nature = makeDamageCard("physical", 1, { id: "physical-nature", tags: ["nature"] });
+    const physical = makeDamageCard("physical", 1, { id: "physical" });
     const state = patchBattleState({
       mana: 0,
       hand: [nature, physical],
