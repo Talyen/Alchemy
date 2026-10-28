@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { selectRewardCards } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data";
 import { createSeededRng } from "@/lib/rng";
+import { REWARD_SELECTION_CONFIG } from "@/lib/game-constants";
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {
   return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
@@ -150,4 +151,20 @@ it("constrained Companion rewards fills all available choices even when owned-Co
   const rng = () => (calls++ === 0 ? 0 : 0.99);
   const selected = selectRewardCards([companionCard("owned")], pool, 3, [], rng);
   expect(new Set(selected.map((entry) => entry.id))).toEqual(new Set(pool.map((entry) => entry.id)));
+});
+
+it("honors companion weights above two while retaining all other candidates", () => {
+  const config = REWARD_SELECTION_CONFIG as { companionlessRandomWeight: number };
+  const original = config.companionlessRandomWeight;
+  config.companionlessRandomWeight = 3;
+  try {
+    const rng = vi.fn(() => 0);
+    const choices = selectRewardCards([], [companionCard("wolf"), card({ id: "plain" })], 1, [], rng);
+    expect(choices).toHaveLength(1);
+    // Four weighted entries require three shuffle draws; the two-card affinity
+    // pool, pool choice, and selection each require one more.
+    expect(rng).toHaveBeenCalledTimes(6);
+  } finally {
+    config.companionlessRandomWeight = original;
+  }
 });

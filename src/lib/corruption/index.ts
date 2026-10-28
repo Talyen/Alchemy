@@ -47,12 +47,10 @@ export function corruptCard(
   let groups = getCorruptionMutationGroups(selectedCard, singleModifiers);
   if (pure && groups.length === 0) return null;
   let transformed = false;
-  const candidates = pure
-    ? []
-    : library.filter(
-        (card) => card.id !== selectedCard.id && !card.corrupted && !card.transmuted && !isSpecialCorruptionCard(card),
-      );
-  if (groups.length === 0 || (!pure && candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE_FRACTION)) {
+  const isCandidate = (card: BattleCard) =>
+    card.id !== selectedCard.id && !card.corrupted && !card.transmuted && !isSpecialCorruptionCard(card);
+  if (groups.length === 0 || (!pure && library.some(isCandidate) && rng() < CORRUPTION_TRANSFORM_CHANCE_FRACTION)) {
+    const candidates = pure ? [] : library.filter(isCandidate);
     const options: CorruptionMutationGroup[][] = [];
     for (const card of candidates) {
       const entries = getCorruptionMutationGroups(card, singleModifiers);

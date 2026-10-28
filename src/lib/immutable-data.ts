@@ -15,7 +15,8 @@ export function isDeeplyFrozenData(value: object): boolean {
     if (Array.isArray(current) ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)
       return false;
     seen.add(current);
-    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(current))) {
+    for (const key of Reflect.ownKeys(current)) {
+      const descriptor = Object.getOwnPropertyDescriptor(current, key)!;
       if (!("value" in descriptor)) return false;
       const child: unknown = descriptor.value;
       if (typeof child === "function") return false;
