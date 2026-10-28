@@ -14,7 +14,8 @@ export interface CoreRateRow {
 }
 
 export function sumCardPlayCounts(counts: ReadonlyArray<Readonly<Record<string, number>>>): Record<string, number> {
-  const total: Record<string, number> = {};
+  // Card IDs are dictionary keys, including names inherited by ordinary objects.
+  const total = Object.create(null) as Record<string, number>;
   for (const batch of counts) {
     for (const [id, count] of Object.entries(batch)) total[id] = (total[id] ?? 0) + count;
   }

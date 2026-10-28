@@ -38,33 +38,46 @@ export function formatAffixDescription(template: string, value: number): string 
   return template.replaceAll("{value}", String(value));
 }
 
-// Identity and affinity stay together; the second stage preserves the literal
-// effect key so the catalog can define the combat manifest without a second list.
+// Named tuples keep identity/affinity separate from mechanics without building
+// an intermediate function for every catalog row. Literal IDs and effect keys
+// still infer the saved-ID and combat-manifest unions from the catalog.
+type AffixIdentity<Id extends string> = [
+  id: Id,
+  name: string,
+  keywordId: KeywordId,
+  secondaryKeywordId?: KeywordId | undefined,
+];
+type AffixMechanics<Effect extends string> = [effectKey: Effect, roll: AffixRollRange, descriptionTemplate: string];
+type UniqueMechanics<Effect extends string> = [effectKey: Effect, descriptionTemplate: string, rollValue?: number];
+
 function affixFor(aspect: GearAffixAspect) {
-  return <const Id extends string>(id: Id, name: string, keywordId: KeywordId, secondaryKeywordId?: KeywordId) =>
-    <const Effect extends string>(effectKey: Effect, roll: AffixRollRange, descriptionTemplate: string) => ({
-      id,
-      name,
-      aspect,
-      keywordId,
-      ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
-      effectKey,
-      roll,
-      descriptionTemplate,
-    });
+  return <const Id extends string, const Effect extends string>(
+    [id, name, keywordId, secondaryKeywordId]: AffixIdentity<Id>,
+    [effectKey, roll, descriptionTemplate]: AffixMechanics<Effect>,
+  ) => ({
+    id,
+    name,
+    aspect,
+    keywordId,
+    ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
+    effectKey,
+    roll,
+    descriptionTemplate,
+  });
 }
 
 export const offensiveAffix = affixFor("offensive");
 export const defensiveAffix = affixFor("defensive");
 
 function uniqueAffixFor(aspect: GearAffixAspect) {
-  return <const Id extends string>(id: Id, name: string, keywordId: KeywordId, secondaryKeywordId?: KeywordId) => {
-    const define = affixFor(aspect)(id, name, keywordId, secondaryKeywordId);
-    return <const Effect extends string>(effectKey: Effect, descriptionTemplate: string, rollValue = 1) => ({
-      ...define(effectKey, rollRange(rollValue, rollValue, rollValue, rollValue), descriptionTemplate),
-      uniqueOnly: true,
-    });
-  };
+  const define = affixFor(aspect);
+  return <const Id extends string, const Effect extends string>(
+    identity: AffixIdentity<Id>,
+    [effectKey, descriptionTemplate, rollValue = 1]: UniqueMechanics<Effect>,
+  ) => ({
+    ...define(identity, [effectKey, rollRange(rollValue, rollValue, rollValue, rollValue), descriptionTemplate]),
+    uniqueOnly: true,
+  });
 }
 
 export const offensiveUnique = uniqueAffixFor("offensive");
@@ -76,10 +89,9 @@ export function resistAffix<const T extends string, const E extends string>(
   keywordId: KeywordId,
   effectKey: E,
 ): AffixRowInput & { id: T; effectKey: E } {
-  return defensiveAffix(id, name, keywordId)(
-    effectKey,
-    ROLL_RESIST,
-    `Reduce ${affixLabel(keywordId)} damage taken by {value}%`,
+  return defensiveAffix(
+    [id, name, keywordId],
+    [effectKey, ROLL_RESIST, `Reduce ${affixLabel(keywordId)} damage taken by {value}%`],
   );
 }
 
@@ -99,11 +111,9 @@ export function flatDamageAffix<const T extends string, const E extends string>(
   secondaryKeywordId?: KeywordId,
 ): AffixRowInput & { id: T; effectKey: E } {
   return offensiveAffix(
-    id,
-    name,
-    keywordId,
-    secondaryKeywordId,
-  )(effectKey, roll, `Increases ${affixLabel(keywordId)} damage by {value}`);
+    [id, name, keywordId, secondaryKeywordId],
+    [effectKey, roll, `Increases ${affixLabel(keywordId)} damage by {value}`],
+  );
 }
 
 // "Gain {value} {Keyword} at the start of combat" rows. Restore/Deal wordings
@@ -117,9 +127,7 @@ export function startOfCombatAffix<const T extends string, const E extends strin
   secondaryKeywordId?: KeywordId,
 ): AffixRowInput & { id: T; effectKey: E } {
   return defensiveAffix(
-    id,
-    name,
-    keywordId,
-    secondaryKeywordId,
-  )(effectKey, roll, `Gain {value} ${affixLabel(keywordId)} at the start of combat`);
+    [id, name, keywordId, secondaryKeywordId],
+    [effectKey, roll, `Gain {value} ${affixLabel(keywordId)} at the start of combat`],
+  );
 }

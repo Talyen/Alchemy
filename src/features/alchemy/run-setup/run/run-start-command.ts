@@ -6,29 +6,45 @@ import {
   IS_DEMO,
 } from "@/lib/game-edition";
 import { isCharacterUnlocked } from "@/lib/game-data";
-import { type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
-import type { ContentSystemId } from "@/lib/content-systems/types";
+import type { CharacterId } from "@/lib/game-data";
+import type { RunActivity } from "@/lib/active-run-session";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/session/profile-store";
 import type { RunTransaction } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import { applyRunStartSnapshot } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
-import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
+import {
+  createRunStartSnapshot,
+  type RunStartInput,
+  type RunStartSnapshot,
+} from "@/features/alchemy/shared/run-flow/run-start";
 
-interface CreateRunStartSnapshotInput {
-  characterId: CharacterId;
-  contentSystemType: ContentSystemId;
-  difficultyId?: DifficultyId | null | undefined;
-  draftedDeck?: BattleCard[] | undefined;
+type RunStartRequest = Pick<RunStartInput, "characterId" | "contentSystemType" | "difficultyId" | "draftedDeck">;
+type RunIdentity = Pick<RunStartSnapshot, "characterId" | "contentSystemType">;
+
+/** Only this run's own Wildcard draft may replace unfinished progress. */
+export function canReplaceRunForStart(current: RunIdentity, activity: RunActivity["kind"], next: RunIdentity): boolean {
+  return (
+    activity === "inactive" ||
+    (current.characterId === "wildcard" &&
+      next.characterId === "wildcard" &&
+      current.contentSystemType === next.contentSystemType &&
+      (activity === "draft-deck" || activity === "difficulty-select"))
+  );
 }
 
-interface ApplyRunStartOptions {
-  discoverDeck?: boolean;
+export function isDifficultySelectContinuation(
+  characterId: CharacterId | null,
+  activity: RunActivity["kind"],
+): boolean {
+  return characterId === "wildcard" && activity === "difficulty-select";
 }
 
-export function createDraftRunStartSnapshot(
+/** Validate, prepare and apply a start in the same transaction. */
+export function startRunInDraft(
   draft: RunTransaction,
-  { characterId, contentSystemType, difficultyId, draftedDeck }: CreateRunStartSnapshotInput,
-): RunStartSnapshot {
+  { characterId, contentSystemType, difficultyId, draftedDeck }: RunStartRequest,
+  options: { discoverDeck?: boolean } = {},
+): void {
   if (
     !isEditionCharacterAvailable(characterId) ||
     !isEditionModeAvailable(contentSystemType) ||
@@ -37,95 +53,29 @@ export function createDraftRunStartSnapshot(
   ) {
     throw new Error("This run is unavailable");
   }
-  const talentXP = draft.runProfile.talentXP;
   const gearMaxHealthBonus = computeGearManifest(
     characterId,
     flattenGearInventories(snapshotTransactionValue(draft.gear.inventories)),
     draft.gear.loadouts,
   ).maxHealth;
-  const homesteadMaxHealthBonus = draft.runProfile.effects.runMaxHealthBonus;
-  return createRunStartSnapshot({
+  const snapshot = createRunStartSnapshot({
     characterId,
     contentSystemType,
     difficultyId,
-    talentXP,
-    draftedDeck,
+    talentXP: draft.runProfile.talentXP,
+    draftedDeck:
+      draftedDeck ?? (characterId === "wildcard" ? snapshotTransactionValue(draft.run.activeRun.runDeck) : undefined),
     gearMaxHealthBonus,
-    homesteadMaxHealthBonus,
+    homesteadMaxHealthBonus: draft.runProfile.effects.runMaxHealthBonus,
   });
-}
-
-export interface RunReplaceInput {
-  isFreshStart: boolean;
-  activeCharacterId: CharacterId | null;
-  snapshotCharacterId: CharacterId;
-  activeContentSystemType: ContentSystemId | null;
-  snapshotContentSystemType: ContentSystemId;
-  hasActiveBattle: boolean;
-  activityKind: string;
-}
-
-/**
- * Single owner of the "may a start snapshot replace the current run?" rule.
- * Fresh starts always qualify; otherwise only completing this run's own
- * Wildcard starter draft (at draft confirm or difficulty select, outside
- * battle) may re-apply its snapshot.
- */
-export function canReplaceRunForStart(input: RunReplaceInput): boolean {
-  if (input.isFreshStart) return true;
-  return (
-    input.activeCharacterId === "wildcard" &&
-    input.snapshotCharacterId === "wildcard" &&
-    input.activeContentSystemType === input.snapshotContentSystemType &&
-    !input.hasActiveBattle &&
-    (input.activityKind === "draft-deck" || input.activityKind === "difficulty-select")
-  );
-}
-
-/**
- * Narrower companion to canReplaceRunForStart for the difficulty screen: only
- * a Wildcard run already waiting at difficulty select (outside battle) may
- * proceed. Anything else must resume instead of starting over.
- */
-export function isDifficultySelectContinuation(input: {
-  characterId: CharacterId | null;
-  activityKind: string;
-  hasActiveBattle: boolean;
-}): boolean {
-  return input.characterId === "wildcard" && input.activityKind === "difficulty-select" && !input.hasActiveBattle;
-}
-
-export function applyRunStartToDraft(
-  draft: RunTransaction,
-  snapshot: RunStartSnapshot,
-  options: ApplyRunStartOptions = {},
-): void {
-  if (
-    !isEditionCharacterAvailable(snapshot.characterId) ||
-    !isEditionModeAvailable(snapshot.contentSystemType) ||
-    (snapshot.selectedDifficulty != null && !isEditionDifficultyAvailable(snapshot.selectedDifficulty))
-  ) {
-    throw new Error("This run is unavailable");
-  }
-  const isFreshStart = draft.session.activity.kind === "inactive";
-  if (
-    !canReplaceRunForStart({
-      isFreshStart,
-      activeCharacterId: isFreshStart ? null : draft.run.activeRun.characterId,
-      snapshotCharacterId: snapshot.characterId,
-      activeContentSystemType: isFreshStart ? null : draft.run.activeRun.contentSystemType,
-      snapshotContentSystemType: snapshot.contentSystemType,
-      hasActiveBattle: draft.session.activity.kind === "battle",
-      activityKind: draft.session.activity.kind,
-    })
-  ) {
+  if (!canReplaceRunForStart(draft.run.activeRun, draft.session.activity.kind, snapshot)) {
     throw new Error("Cannot replace an unfinished run");
   }
   applyRunStartSnapshot(draft, snapshot);
-  if (options.discoverDeck || snapshot.characterId === "wildcard") {
+  if (options.discoverDeck || characterId === "wildcard") {
     discoverCardIds(
       draft,
-      snapshot.freshDeck.map((card) => card.id),
+      snapshot.runDeck.map((card) => card.id),
     );
   }
 }
