@@ -1,9 +1,9 @@
+import { makeDamageCard, makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import { describe, expect, it } from "vitest";
 import { enemyById } from "@/lib/game-data";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 
 describe("applyEnemyAbility: status", () => {
   it("applies burn status rider on burn damage dealt", () => {
@@ -11,11 +11,7 @@ describe("applyEnemyAbility: status", () => {
       playerHealth: 30,
       playerStatuses: { block: 0 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 4 }] }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("burn", 4), makeTexts());
     expect(result.playerStatuses.burn).toBe(4);
     expect(result.playerHealth).toBe(26);
   });
@@ -26,11 +22,7 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 0, armor: 0 },
       talentEffects: { receiveHalfFreezeDamage: true },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 10 }] }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("freeze", 10), makeTexts());
 
     expect(result.playerHealth).toBe(25);
     expect(result.playerStatuses.freeze).toBe(5);
@@ -42,11 +34,7 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 0, armor: 0 },
       talentEffects: { receiveHalfBurnDamage: true },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 4 }] }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("burn", 4), makeTexts());
     expect(result.playerHealth).toBe(28);
     expect(result.playerStatuses.burn).toBe(2);
   });
@@ -57,11 +45,7 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 0 },
       enemyStatuses: { burnBonus: 2 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 4 }] }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("burn", 4), makeTexts());
     expect(result.playerHealth).toBe(24);
   });
 
@@ -71,18 +55,13 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 0 },
       enemyStatuses: { freezeBonus: 2 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 4 }] }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("freeze", 4), makeTexts());
     expect(result.playerHealth).toBe(24);
     expect(result.playerStatuses.freeze).toBe(6);
   });
 
   it("Glacial Surge adds exactly one Freeze damage from turn one and never increases other damage", () => {
-    const card = (damageType: "freeze" | "burn") =>
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType, amount: 4 }] });
+    const card = (damageType: "freeze" | "burn") => makeDamageCard(damageType, 4);
     for (const turn of [1, 2, 4, 20]) {
       const state = patchBattleState({
         currentEnemy: enemyById.frostwarden,
@@ -119,11 +98,7 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 0, armor: 0 },
     });
     const texts = makeTexts();
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] }),
-      texts,
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("stun", 20), texts);
     expect(result.playerStatuses.stun).toBe(0);
     expect(result.playerCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
@@ -136,11 +111,7 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 4, armor: 0 },
       talentEffects: { blockPreventsStun: true },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 8 }] }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("stun", 8), makeTexts());
     expect(result.playerStatuses.stun).toBe(0);
     expect(result.playerCC.stunSkipTurns).toBe(0);
   });
@@ -152,11 +123,7 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 3, armor: 0 },
       talentEffects: { blockPreventsStun: true },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 10 }] }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("stun", 10), makeTexts());
     expect(result.playerStatuses.block).toBe(0);
     expect(result.playerStatuses.stun).toBe(0);
     expect(result.playerCC.stunSkipTurns).toBe(0);
@@ -169,11 +136,7 @@ describe("applyEnemyAbility: status", () => {
       playerStatuses: { block: 0, armor: 0 },
     });
     const texts = makeTexts();
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 20 }] }),
-      texts,
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("freeze", 20), texts);
     expect(result.playerStatuses.freeze).toBe(0);
     expect(result.playerCC.freezeSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "freeze", text: "Frozen" });

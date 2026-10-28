@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/player-rewards";
 import type { CombatTextEvent } from "@/lib/battle/types";
@@ -234,10 +235,7 @@ it("does not grant armorOnConsume when playing a summon-companion card", () => {
 });
 
 it("grants armorOnConsume when playing an ordinary consume card", () => {
-  const regularCard = makeTestCard({
-    consume: true,
-    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-  });
+  const regularCard = makeDamageCard("physical", 5, { consume: true });
   const state = patchBattleState({
     playerStatuses: { armor: 0 },
     gearEffects: { armorOnConsume: 3 },

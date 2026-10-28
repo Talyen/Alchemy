@@ -154,6 +154,13 @@ ports, build edition and concurrency details for focused local execution.
 
 ### Browser and Electron commands
 
+These automated suites are CI-owned, including a single browser spec. For an
+explicitly requested local run, set `ALCHEMY_ALLOW_HEAVY_LOCAL=1` on that command
+and use the shared Mac host lane under
+[Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change). Development mode
+changes the source being served; it does not bypass this requirement. Ordinary
+interactive visual review uses the [managed preview](../../CONTRIBUTING.md#agent-preview-ownership).
+
 Install browser-test Chromium once before the first run:
 
 ```sh

@@ -8,7 +8,8 @@ Gate composition, CI tiers, and reuse policy live in
 | Concern                                   | Implementation owner                                                                                                                                                                                 |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Completion orchestration                  | `check.mjs` + `lib/verification/check-plan.mjs`                                                                                                                                                      |
-| Task and opt-in full test selection       | `verify-changed.mjs` + `run-local-tests.mjs`                                                                                                                                                         |
+| Task and opt-in full test selection       | `verify-changed.mjs` + `lib/verification/change-routes.mjs`                                                                                                                                          |
+| Fixed Node smoke                          | `run-local-tests.mjs` + `vitest.local.config.ts`                                                                                                                                                     |
 | Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                    |
 | Path parsing and classification           | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                          |
 | Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`finish-plans.mjs` shares that lib) |
@@ -174,8 +175,12 @@ execution policy above:
 | `verify:unit`                | Selected unit routes only                                                |
 | `verify:full`                | Selected units, documentation and broader report/asset routes            |
 
-`check:all` includes every unit suite; [local profiles](#local-verification-profiles)
-own its runner behavior. Pre-push selection and guards follow [Git hooks](#git-hook-implementation).
+The complete unit command uses [vitest.config.ts](../vitest.config.ts), which
+excludes `tests/balance/` and `tests/playthrough/`. `check:all` combines that unit
+run with applicable report/asset routes, including the separate balance report
+check; it does not run the dedicated headless-career suite. Use the
+[simulation guide](../Docs/SIMULATION.md#owners-and-verification) for that suite
+and its hosted workflow. [Local profiles](#local-verification-profiles) own gate behavior. Pre-push selection and guards follow [Git hooks](#git-hook-implementation).
 
 The compact runner rejects nonexistent path-shaped selectors before `vitest run`,
 including mixed valid/missing file selections. Legacy bare substring filters remain
@@ -339,6 +344,9 @@ worktrees; they retain prepared art, audio, icons and manifests. The asset-integ
 job still checks out source masters for freshness validation. Windows package
 uploads disable archive compression because the installer and media are already
 compressed. Release packaging retains full Git history for patch notes.
+The React Compiler Babel pass generates intermediate source maps only for development
+or when the resolved build requests maps (including CLI overrides). Ordinary web
+builds avoid that discarded mapping work; desktop hidden maps remain enabled.
 Build preflight overlaps localization and generated-output validation, waits for both
 to settle, and rejects either failure before starting Vite.
 

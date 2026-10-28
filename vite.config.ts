@@ -3,8 +3,8 @@ import { fileURLToPath, URL } from "node:url";
 import { resolve } from "node:path";
 
 import tailwind from "@tailwindcss/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import babel from "@rolldown/plugin-babel";
+import react from "@vitejs/plugin-react";
+import { reactCompilerPlugin } from "./scripts/lib/vite-react-compiler.mjs";
 import { defineConfig, type Plugin } from "vite";
 import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
 import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/verification/bundle-budget.mjs";
@@ -75,11 +75,7 @@ export default defineConfig(async ({ mode, command }) => {
       } satisfies Plugin,
       tailwind(),
       react(),
-      !process.env.VITEST &&
-        babel({
-          include: /\.(?:[jt]sx|ts)$/,
-          presets: [reactCompilerPreset()],
-        }),
+      !process.env.VITEST && reactCompilerPlugin(),
       command === "serve" &&
         process.env.ALCHEMY_ENABLE_CHECKER === "1" &&
         process.env.ALCHEMY_SKIP_CHECKER !== "1" &&

@@ -40,41 +40,41 @@ export function buildDescriptionMessage(
   let keywordIndex = 0;
   let magnitudeIndex = 0;
   let valueIndex = 0;
-  const source = parts
-    .map((part) => {
-      const words = part.text.replace(pattern, (word) => {
-        const normalizedWord = word.toLowerCase();
-        const resourceId = resources ? RESOURCE_IDS.get(normalizedWord) : undefined;
-        if (resourceId) {
-          const name = `resource${resourceIndex++}`;
-          slots[name] = { resourceId };
-          return `<${name}>${word}</${name}>`;
-        }
-        const keywordId = keywordAliasMap.get(normalizedWord);
-        if (!keywordId) return word;
-        const name = `keyword${keywordIndex++}`;
-        slots[name] = { keywordId };
-        return `<${name}>${CANONICAL_KEYWORDS.get(normalizedWord) ?? word}</${name}>`;
-      });
-      if (!part.magnitudeId) return words;
+  let source = "";
+  for (const part of parts) {
+    const words = part.text.replace(pattern, (word) => {
+      const normalizedWord = word.toLowerCase();
+      const resourceId = resources ? RESOURCE_IDS.get(normalizedWord) : undefined;
+      if (resourceId) {
+        const name = `resource${resourceIndex++}`;
+        slots[name] = { resourceId };
+        return `<${name}>${word}</${name}>`;
+      }
+      const keywordId = keywordAliasMap.get(normalizedWord);
+      if (!keywordId) return word;
+      const name = `keyword${keywordIndex++}`;
+      slots[name] = { keywordId };
+      return `<${name}>${CANONICAL_KEYWORDS.get(normalizedWord) ?? word}</${name}>`;
+    });
+    if (!part.magnitudeId) source += words;
+    else {
       const name = `magnitude${magnitudeIndex++}`;
       slots[name] = { magnitudeId: part.magnitudeId };
-      return `<${name}>${words}</${name}>`;
-    })
-    .join("");
+      source += `<${name}>${words}</${name}>`;
+    }
+  }
   // Numbers in explanatory prose are presentation values, never editable effect
   // references. Keep tag names intact while parameterizing these values too.
-  const template = source
-    .split(/(<[^>]+>)/g)
-    .map((part) =>
-      part.startsWith("<")
-        ? part
-        : part.replace(/\d+(?:\.\d+)?/g, (value) => {
-            const name = `value${valueIndex++}`;
-            values[name] = Number(value);
-            return `{{${name}}}`;
-          }),
-    )
-    .join("");
+  const templateParts = source.split(/(<[^>]+>)/g);
+  for (let index = 0; index < templateParts.length; index++) {
+    const part = templateParts[index]!;
+    if (part.startsWith("<")) continue;
+    templateParts[index] = part.replace(/\d+(?:\.\d+)?/g, (value) => {
+      const name = `value${valueIndex++}`;
+      values[name] = Number(value);
+      return `{{${name}}}`;
+    });
+  }
+  const template = templateParts.join("");
   return { id: descriptionMessageId(template), template, slots, values };
 }

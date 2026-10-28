@@ -1,3 +1,5 @@
+import { makeDamageCard } from "../../fixtures/cards";
+import { enemyState } from "../../fixtures/enemy-battle";
 import { describe, expect, it, vi } from "vitest";
 import {
   cardById,
@@ -10,32 +12,14 @@ import {
 } from "@/lib/game-data";
 import { applyEnemyAbility, processEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
-import { getEnemyAbilityPressure, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
+import { scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
+import { makeTestCard, seededRng } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
-
-function enemyState(id = "skeleton", overrides: Partial<BattleState> = {}): BattleState {
-  const state = makeTestBattleState({
-    currentEnemy: enemyById[id],
-    playerHealth: 100,
-    playerMaxHealth: 100,
-    enemyHealth: 100,
-    enemyMaxHealth: 100,
-    rng: () => 0.99,
-    ...overrides,
-  });
-  return {
-    ...state,
-    difficultyModifiers: state.difficultyModifiers.some((modifier) => modifier.kind === "enemy-damage-multiplier")
-      ? state.difficultyModifiers
-      : [{ kind: "enemy-damage-multiplier", amount: 1 / getEnemyAbilityPressure(state) }, ...state.difficultyModifiers],
-  };
-}
 
 function useAbility(state: BattleState, id: string, texts: CombatTextEvent[] = []) {
   return applyEnemyAbility(state, getEnemyAbilityCard(id), texts);
@@ -70,12 +54,7 @@ describe("enemy repertoire", () => {
       enemyMitigation: { block: 0, armor: 0, forge: 1 },
       playerStatuses: defaultPlayerStatusValues({ block: 100 }),
     });
-    const card = makeTestCard({
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 4 },
-        { kind: "damage", damageType: "physical", amount: 4 },
-      ],
-    });
+    const card = makeDamageCard("physical", [4, 4]);
     const result = applyEnemyAbility(state, card, []);
     expect(result.enemyMitigation.forge).toBe(1);
     expect(result.playerHealth).toBe(state.playerHealth);
@@ -580,12 +559,7 @@ describe("native trait pairs", () => {
 
   it.each(["fire-imp", "giant-spider", "winter-wolf"])("%s rewards every blocked hit", (id) => {
     const state = enemyState(id, { playerStatuses: defaultPlayerStatusValues({ block: 100 }) });
-    const card = makeTestCard({
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 2 },
-      ],
-    });
+    const card = makeDamageCard("physical", [2, 2]);
     const result = applyEnemyAbility(state, card, []);
     expect(result.playerHealth).toBe(100);
     if (id === "fire-imp") expect(result.playerStatuses.burn).toBe(2);
@@ -598,12 +572,7 @@ describe("native trait pairs", () => {
 
   it("Self-Sacrifice charges each hit and a lethal recoil stops the remaining hits", () => {
     const state = enemyState("zealot", { enemyHealth: 1 });
-    const card = makeTestCard({
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 2 },
-      ],
-    });
+    const card = makeDamageCard("physical", [2, 2]);
     const result = applyEnemyAbility(state, card, []);
     expect(result.enemyHealth).toBe(0);
     expect(result.playerHealth).toBe(98);
@@ -613,12 +582,7 @@ describe("native trait pairs", () => {
     const base = enemyState("will-o-wisp", { flags: { ...enemyState().flags, enemyAttackDamageReduction: 1 } });
     const guarded = useAbility(base, "block");
     expect(guarded.flags.enemyAttackDamageReduction).toBe(1);
-    const attack = makeTestCard({
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 2 },
-      ],
-    });
+    const attack = makeDamageCard("physical", [2, 2]);
     const result = applyEnemyAbility(guarded, attack, []);
     expect(result.playerHealth).toBe(97);
     expect(result.flags.enemyAttackDamageReduction).toBe(0);
@@ -630,14 +594,7 @@ describe("native trait pairs", () => {
       cost: 0,
       effects: [{ kind: "player-status", status: "block", amount: 1 }],
     });
-    const attack = makeTestCard({
-      id: "double",
-      cost: 0,
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 4 },
-        { kind: "damage", damageType: "physical", amount: 4 },
-      ],
-    });
+    const attack = makeDamageCard("physical", [4, 4], { id: "double", cost: 0 });
     let state = enemyState("brawler", {
       hand: [utility, attack],
       flags: { ...enemyState().flags, concussionReady: true },

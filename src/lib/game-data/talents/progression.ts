@@ -24,11 +24,11 @@ export function computeTalentPoints(xp: number): number {
 }
 
 function computeTotalTalentPoints(talentXP: TalentXP): number {
-  return Object.entries(talentXP).reduce(
-    (sum, [keyword, xp]) =>
-      TALENT_TREE_KEYWORD_IDS.has(keyword as KeywordId) ? sum + computeTalentPoints(xp ?? 0) : sum,
-    0,
-  );
+  let total = 0;
+  for (const keyword of Object.keys(talentXP) as KeywordId[]) {
+    if (TALENT_TREE_KEYWORD_IDS.has(keyword)) total += computeTalentPoints(talentXP[keyword] ?? 0);
+  }
+  return total;
 }
 
 export function computeStartingMaxHealth(talentXP: TalentXP): number {
@@ -51,9 +51,10 @@ export function addTalentXP(xp: TalentXP, keywordIds: KeywordId[], amount = 1): 
 
 export function computeRunEndTalentXPSnapshot(runTalentXP: TalentXP, multiplier: number): TalentXP {
   const next: TalentXP = {};
-  for (const [kw, amount] of Object.entries(runTalentXP)) {
+  for (const kw of Object.keys(runTalentXP) as KeywordId[]) {
+    const amount = runTalentXP[kw];
     if (typeof amount === "number") {
-      next[kw as KeywordId] = Math.min(Number.MAX_SAFE_INTEGER, Math.round(amount * multiplier));
+      next[kw] = Math.min(Number.MAX_SAFE_INTEGER, Math.round(amount * multiplier));
     }
   }
   return next;
@@ -61,8 +62,9 @@ export function computeRunEndTalentXPSnapshot(runTalentXP: TalentXP, multiplier:
 
 export function mergeTalentXPAwards(talentXP: TalentXP, awards: TalentXP): TalentXP {
   const nextTalentXP = { ...talentXP };
-  for (const [kw, bonus] of Object.entries(awards)) {
-    const keyword = kw as KeywordId;
+  for (const keyword of Object.keys(awards) as KeywordId[]) {
+    const bonus = awards[keyword];
+    if (bonus === undefined) continue;
     nextTalentXP[keyword] = Math.min(Number.MAX_SAFE_INTEGER, (nextTalentXP[keyword] ?? 0) + bonus);
   }
   return nextTalentXP;

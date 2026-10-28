@@ -11,7 +11,16 @@ import { battleSnapshot } from "@/lib/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
-import { emptyHydratedMysteryVisit, readActivityData, type ActiveRunData } from "@/lib/active-run-session";
+import {
+  emptyHydratedMysteryVisit,
+  emptyShopState,
+  emptyAlchemistState,
+  emptyTrinketShopState,
+  emptyEquipmentShopState,
+  readActivityData,
+  type RunActivity,
+  type ActiveRunData,
+} from "@/lib/active-run-session";
 import {
   decodeRunResumeSnapshot,
   encodeRunResumeSnapshot,
@@ -63,45 +72,23 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result).toEqual({
-      runHistory: [],
-      runHistoryPartial: false,
-      runGoldEarned: 0,
-      characterId: "knight",
-      runDeck,
-      runPlayerHealth: 18,
-      runMaxHealth: 32,
-      runMetaMaxHealth: readActiveRun(defaultGameSession).runMetaMaxHealth,
-      roomsEncountered: 4,
-      currentAct: 2,
-      destinationIndexInAct: 1,
-      completedDestinations: ["Normal Combat", "Campfire"],
-      lastOfferedDestinations: ["Mystery", "Campfire", "Card Shop"],
-      destinationRoundsSinceOffered: { Mystery: 2 },
-      runBoons: ["bone-charm"],
-      encounteredRunEnemyIds: ["goblin"],
-      runTalentXP: {},
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      rng: readActiveRun(defaultGameSession).rng,
-      labyrinthMap: null,
-      labyrinthPendingNode: null,
-      activeLabyrinthModifiers: [],
-      activeLabyrinthRewardModifiers: [],
-      wildwoodDraft: null,
-      starterDraftChoices: null,
-      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
-      runCurrenciesEarned: {
-        "discordant-dice": 0,
-        "sprig-of-growth": 0,
-        voidstone: 0,
-        "ascension-seal": 0,
-        "severance-maw": 0,
-        "smiths-whetstone": 0,
-      },
-      runObtainedItems: [],
-      activity: savedActivityFixture("destination"),
-    });
+    expect(result).toEqual(
+      makeActiveRunData({
+        runDeck,
+        runPlayerHealth: 18,
+        runMaxHealth: 32,
+        runMetaMaxHealth: readActiveRun(defaultGameSession).runMetaMaxHealth,
+        roomsEncountered: 4,
+        currentAct: 2,
+        destinationIndexInAct: 1,
+        completedDestinations: ["Normal Combat", "Campfire"],
+        lastOfferedDestinations: ["Mystery", "Campfire", "Card Shop"],
+        destinationRoundsSinceOffered: { Mystery: 2 },
+        runBoons: ["bone-charm"],
+        encounteredRunEnemyIds: ["goblin"],
+        rng: readActiveRun(defaultGameSession).rng,
+      }),
+    );
   });
 
   it("drops shop offerings once the player leaves the shop activity", () => {
@@ -122,84 +109,37 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it.each([
-    {
-      screen: "shop" as const,
-      seed: () => {
-        const card = getStartingDeck("knight")[0]!;
-        setRunSession({
-          activity: {
-            kind: "shop",
-            data: { ...readActivityData(readRunSession(defaultGameSession).activity, "shop"), cards: [card] },
-          },
-        });
-      },
-      active: (encoded: ActiveRunData) => savedActivityData(encoded, "shop")?.cards?.length === 1,
-      idle: (encoded: ActiveRunData) =>
-        savedActivityData(encoded, "alchemist") === null &&
-        savedActivityData(encoded, "trinket-shop") === null &&
-        savedActivityData(encoded, "equipment-shop") === null,
-    },
-    {
-      screen: "alchemist" as const,
-      seed: () => {
-        const card = getStartingDeck("knight")[0]!;
-        setRunSession({
-          activity: {
-            kind: "alchemist",
-            data: { ...readActivityData(readRunSession(defaultGameSession).activity, "alchemist"), potions: [card] },
-          },
-        });
-      },
-      active: (encoded: ActiveRunData) => savedActivityData(encoded, "alchemist")?.potions?.length === 1,
-      idle: (encoded: ActiveRunData) =>
-        savedActivityData(encoded, "shop") === null &&
-        savedActivityData(encoded, "trinket-shop") === null &&
-        savedActivityData(encoded, "equipment-shop") === null,
-    },
-    {
-      screen: "trinket-shop" as const,
-      seed: () => {
-        const trinket = trinketLibrary[0]!;
-        setRunSession({
-          activity: {
-            kind: "trinket-shop",
-            data: {
-              ...readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop"),
-              trinkets: [trinket],
-            },
-          },
-        });
-      },
-      active: (encoded: ActiveRunData) => savedActivityData(encoded, "trinket-shop")?.trinketIds?.length === 1,
-      idle: (encoded: ActiveRunData) =>
-        savedActivityData(encoded, "shop") === null &&
-        savedActivityData(encoded, "alchemist") === null &&
-        savedActivityData(encoded, "equipment-shop") === null,
-    },
-    {
-      screen: "equipment-shop" as const,
-      seed: () => {
-        setRunSession({
-          activity: {
-            kind: "equipment-shop",
-            data: {
-              ...readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop"),
-              gear: [{ instanceId: "shelf-1", definitionId: "leather-armor-basic", affixes: [] }],
-            },
-          },
-        });
-      },
-      active: (encoded: ActiveRunData) => savedActivityData(encoded, "equipment-shop")?.gear?.length === 1,
-      idle: (encoded: ActiveRunData) =>
-        savedActivityData(encoded, "shop") === null &&
-        savedActivityData(encoded, "alchemist") === null &&
-        savedActivityData(encoded, "trinket-shop") === null,
-    },
-  ])("keeps only $screen offerings", ({ seed, active, idle }) => {
-    seed();
+    ["shop", () => ({ kind: "shop", data: { ...emptyShopState(), cards: [getStartingDeck("knight")[0]!] } })],
+    [
+      "alchemist",
+      () => ({ kind: "alchemist", data: { ...emptyAlchemistState(), potions: [getStartingDeck("knight")[0]!] } }),
+    ],
+    [
+      "trinket-shop",
+      () => ({ kind: "trinket-shop", data: { ...emptyTrinketShopState(), trinkets: [trinketLibrary[0]!] } }),
+    ],
+    [
+      "equipment-shop",
+      () => ({
+        kind: "equipment-shop",
+        data: {
+          ...emptyEquipmentShopState(),
+          gear: [{ instanceId: "shelf-1", definitionId: "leather-armor-basic", affixes: [] }],
+        },
+      }),
+    ],
+  ] satisfies Array<[string, () => RunActivity]>)("keeps only %s offerings", (screen, activity) => {
+    const visit = activity();
+    setRunSession({ activity: visit });
     const encoded = encodeState();
-    expect(active(encoded)).toBe(true);
-    expect(idle(encoded)).toBe(true);
+    expect(encoded.activity).toMatchObject({
+      kind: screen,
+      data:
+        visit.kind === "trinket-shop" ? { trinketIds: visit.data.trinkets.map((trinket) => trinket.id) } : visit.data,
+    });
+    for (const other of ["shop", "alchemist", "trinket-shop", "equipment-shop"] as const) {
+      if (other !== screen) expect(savedActivityData(encoded, other)).toBeNull();
+    }
   });
 
   it("persists active campaign combat while leaving measurements in the live battle", () => {
@@ -252,32 +192,15 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 
-  it("preserves an active terminal battle until victory settles", () => {
-    writeBattle({
-      hasActiveBattle: true,
-      battleState: { ...defaultBattleState(), turn: 5, enemyHealth: 0 },
-    });
-
-    const result = encodeState();
-
-    expect(savedActivityData(result, "battle")?.battleState).toBeDefined();
-  });
-
-  it("preserves an active terminal battle until defeat settles", () => {
-    writeBattle({
-      hasActiveBattle: true,
-      battleState: {
-        ...defaultBattleState(),
-        turn: 3,
-        playerHealth: 0,
-        deathsDoorUsed: true,
-        deathsDoorActive: false,
-      },
-    });
-
-    const result = encodeState();
-
-    expect(savedActivityData(result, "battle")?.battleState).toBeDefined();
+  it.each([
+    { ending: "victory", battle: { turn: 5, enemyHealth: 0 } },
+    {
+      ending: "defeat",
+      battle: { turn: 3, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: false },
+    },
+  ])("preserves an active terminal battle until $ending settles", ({ battle }) => {
+    writeBattle({ hasActiveBattle: true, battleState: { ...defaultBattleState(), ...battle } });
+    expect(savedActivityData(encodeState(), "battle")?.battleState).toBeDefined();
   });
 
   it("persists runTalentXP", () => {
@@ -352,99 +275,65 @@ describe("encodeRunResumeSnapshot", () => {
     expect(decoded.session.starterDraftChoices).toEqual([slash, block]);
   });
 
-  it("persists a mystery visit for resume", () => {
-    setRunSession({
-      activity: {
-        kind: "mystery",
-        data: {
-          ...emptyHydratedMysteryVisit(),
-          mysteryEvent: {
-            id: "ancient-altar",
-            title: "Ancient Altar",
-            art: "",
-            narrative: "A weathered stone altar.",
-            choices: [{ label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
+  describe.each(["mystery", "corruption"] as const)("%s visit persistence", (kind) => {
+    function visit(): RunActivity {
+      if (kind === "mystery") {
+        const choice = {
+          label: "Take the Offering",
+          effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }],
+        } as const;
+        return {
+          kind,
+          data: {
+            ...emptyHydratedMysteryVisit(),
+            mysteryEvent: {
+              id: "ancient-altar",
+              title: "Ancient Altar",
+              art: "",
+              narrative: "A weathered stone altar.",
+              choices: [{ ...choice, effects: [...choice.effects] }],
+            },
+            mysteryChosenChoice: { ...choice, effects: [...choice.effects] },
           },
-          mysteryChosenChoice: {
-            label: "Take the Offering",
-            effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }],
-          },
-          mysteryCardChoices: null,
-          mysteryGrantedGearInstances: [],
-          mysteryChosenCardId: null,
-        },
-      },
+        };
+      }
+      const slash = getStartingDeck("knight")[0]!;
+      return {
+        kind,
+        data: { originalCard: slash, corruptedCard: { ...slash, corrupted: true }, transformed: false, delta: -1 },
+      };
+    }
+
+    it("persists the current result for resume", () => {
+      const activity = visit();
+      setRunSession({ activity });
+      const result = encodeState();
+      const decoded = decodeRunResumeSnapshot(result);
+      if (activity.kind === "mystery") {
+        const offered = activity.data.mysteryEvent;
+        expect(savedActivityData(result, "mystery")?.event).toEqual(offered);
+        expect(readActivityData(decoded.session.activity, "mystery").mysteryEvent).toEqual(offered);
+        expect(readActivityData(decoded.session.activity, "mystery").mysteryChosenChoice?.label).toBe(
+          "Take the Offering",
+        );
+      } else if (activity.kind === "corruption") {
+        expect(savedActivityData(result, "corruption")).toEqual(activity.data);
+        expect(readActivityData(decoded.session.activity, "corruption")).toEqual(activity.data);
+      }
     });
 
-    const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent;
-    const result = encodeState();
-    const decoded = decodeRunResumeSnapshot(result);
-
-    expect(savedActivityData(result, "mystery")?.event).toEqual(offered);
-    expect(readActivityData(decoded.session.activity, "mystery").mysteryEvent).toEqual(offered);
-    expect(readActivityData(decoded.session.activity, "mystery").mysteryChosenChoice?.label).toBe("Take the Offering");
-  });
-
-  it("does not persist a completed mystery visit after entering another activity", () => {
-    setRunSession({
-      activity: {
-        kind: "mystery",
-        data: {
-          ...emptyHydratedMysteryVisit(),
-          mysteryEvent: {
-            id: "ancient-altar",
-            title: "Ancient Altar",
-            art: "",
-            narrative: "A weathered stone altar.",
-            choices: [{ label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
-          },
-          mysteryChosenChoice: ANCIENT_ALTAR_MYSTERY_VISIT.chosenChoice,
-        },
-      },
+    it("drops a completed result after entering another activity", () => {
+      const activity = visit();
+      if (activity.kind === "mystery") activity.data.mysteryChosenChoice = ANCIENT_ALTAR_MYSTERY_VISIT.chosenChoice;
+      setRunSession({ activity });
+      setRunSession({ activity: { kind: "destination" } });
+      const result = encodeState();
+      const decoded = decodeRunResumeSnapshot(result);
+      expect(savedActivityData(result, kind)).toBeNull();
+      if (kind === "mystery") {
+        expect(readActivityData(decoded.session.activity, kind).mysteryEvent).toBeNull();
+        expect(readActivityData(decoded.session.activity, kind).mysteryChosenChoice).toBeNull();
+      } else expect(readActivityData(decoded.session.activity, kind)).toBeNull();
     });
-
-    setRunSession({ activity: { kind: "destination" } });
-    const result = encodeState();
-    const decoded = decodeRunResumeSnapshot(result);
-
-    expect(savedActivityData(result, "mystery")).toBeNull();
-    expect(readActivityData(decoded.session.activity, "mystery").mysteryEvent).toBeNull();
-    expect(readActivityData(decoded.session.activity, "mystery").mysteryChosenChoice).toBeNull();
-  });
-
-  it("persists a corruption result for resume", () => {
-    const [slash] = getStartingDeck("knight");
-    if (!slash) throw new Error("Knight starting deck fixture is incomplete");
-    const corruptionResult = {
-      originalCard: slash,
-      corruptedCard: { ...slash, corrupted: true },
-      transformed: false as const,
-      delta: -1 as const,
-    };
-    setRunSession({ activity: { kind: "corruption", data: corruptionResult } });
-
-    const result = encodeState();
-
-    expect(savedActivityData(result, "corruption")).toEqual(corruptionResult);
-    expect(readActivityData(decodeRunResumeSnapshot(result).session.activity, "corruption")).toEqual(corruptionResult);
-  });
-
-  it("does not persist a completed corruption result after entering another activity", () => {
-    const [slash] = getStartingDeck("knight");
-    if (!slash) throw new Error("Knight starting deck fixture is incomplete");
-    const corruptionResult = {
-      originalCard: slash,
-      corruptedCard: { ...slash, corrupted: true },
-      transformed: false as const,
-      delta: -1 as const,
-    };
-    setRunSession({ activity: { kind: "corruption", data: corruptionResult } });
-
-    setRunSession({ activity: { kind: "destination" } });
-    const result = encodeState();
-    const decoded = decodeRunResumeSnapshot(result);
-
-    expect(savedActivityData(result, "corruption")).toBeNull();
-    expect(readActivityData(decoded.session.activity, "corruption")).toBeNull();
   });
 });

@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -5,7 +6,7 @@ import { applyArmorStatusEffect } from "@/lib/battle/player-rewards";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyLeechHitHealing } from "@/lib/battle/stun-leech-resolution";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
-import { makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { patchBattleState } from "../../fixtures/battle";
 
 function resume(state: ReturnType<typeof patchBattleState>) {
   return { ...PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(state))), rng: () => 0.99 };
@@ -26,11 +27,7 @@ describe("balance tuning", () => {
   });
 
   it("Ironroot and Layered each pay once across repeated Nature effects and resume, then refresh next turn", () => {
-    const nature = makeTestCard({
-      id: "nature-hit",
-      cost: 0,
-      effects: [{ kind: "damage", damageType: "nature", amount: 1 }],
-    });
+    const nature = makeDamageCard("nature", 1, { id: "nature-hit", cost: 0 });
     const initial = patchBattleState({
       hand: [nature],
       enemyHealth: 1000,

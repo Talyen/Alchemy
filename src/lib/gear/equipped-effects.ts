@@ -37,7 +37,8 @@ export function computeGearManifest(
 
   for (const slot of GEAR_SLOTS) {
     const instanceId = characterLoadout[slot];
-    if (!instanceId) continue;
+    // One physical item contributes once, even before a malformed loadout is repaired.
+    if (!instanceId || !equippedIds.delete(instanceId)) continue;
     const instance = byId.get(instanceId);
     if (!instance) continue;
     const definition = gearDefinitions[instance.definitionId];

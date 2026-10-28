@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects, createBattleState, defaultTalentEffects } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -53,7 +54,7 @@ describe("new ordinary affix interactions", () => {
       },
       rng: () => 0.99,
     });
-    const attack = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 3 }] });
+    const attack = makeDamageCard("physical", 3);
     const result = applyEnemyAbility(state, attack, []);
 
     expect(result.playerStatuses).toMatchObject({ block: 0, thorns: 0, armor: 2 });
@@ -61,12 +62,7 @@ describe("new ordinary affix interactions", () => {
   });
 
   it("ticks existing Poison on Consume without clearing the stack, then pays card rewards", () => {
-    const consumed = makeTestCard({
-      id: "consumed-burn",
-      consume: true,
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "burn", amount: 1 }],
-    });
+    const consumed = makeDamageCard("burn", 1, { id: "consumed-burn", consume: true, cost: 1 });
     const drawn = makeTestCard({ id: "drawn-card" });
     const state = patchBattleState({
       mana: 1,
@@ -99,12 +95,7 @@ describe("new ordinary affix interactions", () => {
   });
 
   it("refunds Distilled only when Mana paid for a Consumed Freeze card", () => {
-    const consumed = makeTestCard({
-      id: "consumed-freeze",
-      consume: true,
-      cost: 2,
-      effects: [{ kind: "damage", damageType: "freeze", amount: 1 }],
-    });
+    const consumed = makeDamageCard("freeze", 1, { id: "consumed-freeze", consume: true, cost: 2 });
     const state = patchBattleState({
       hand: [consumed],
       mana: 0,
@@ -153,7 +144,7 @@ describe("new ordinary affix interactions", () => {
 
   it("draws from Archery, takes Covering Block, and gains Armor from Nature", () => {
     const archery = makeTestCard({ id: "archery-card", tags: ["archery"], effects: [] });
-    const nature = makeTestCard({ id: "nature-card", effects: [{ kind: "damage", damageType: "nature", amount: 1 }] });
+    const nature = makeDamageCard("nature", 1, { id: "nature-card" });
     const state = patchBattleState({
       hand: [archery],
       deck: [nature],
@@ -183,10 +174,7 @@ describe("new ordinary affix interactions", () => {
     expect(healed.playerStatuses.block).toBe(4);
     expect(applyScaledLeechHealing({ ...leeching, rng: () => 0.99 }, 4, []).playerStatuses.block).toBe(0);
 
-    const strike = makeTestCard({
-      id: "spend-forge",
-      effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-    });
+    const strike = makeDamageCard("physical", 2, { id: "spend-forge" });
     const forgeState = patchBattleState({
       hand: [strike],
       playerStatuses: { forge: 1 },

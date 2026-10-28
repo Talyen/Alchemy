@@ -3,9 +3,10 @@ import { emptyInventory } from "./inventory";
 
 // Costs grow linearly from the authored first tier. Each tier owns its inventory.
 export function scaledMaterialCosts(firstTier: Partial<MaterialInventory>, tierCount = 4): MaterialInventory[] {
+  const materials = Object.keys(firstTier) as Array<keyof MaterialInventory>;
   return Array.from({ length: tierCount }, (_, index) => {
     const cost = emptyInventory();
-    for (const material of Object.keys(firstTier) as Array<keyof MaterialInventory>) {
+    for (const material of materials) {
       cost[material] = firstTier[material]! * (index + 1);
     }
     return cost;

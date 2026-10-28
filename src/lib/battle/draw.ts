@@ -18,11 +18,12 @@ function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidCha
   )
     return state.uniqueGear;
   // Echoed archery cards need no remap: echoes replay by reference, not by uid.
-  const remapUid = (uid: number | null) => {
-    if (uid === null) return null;
-    const change = changes.find((entry) => entry.previous === uid);
-    return change ? change.next : uid;
-  };
+  const remappedUids = new Map<number, number>();
+  for (const { previous, next } of changes) {
+    // Match the first draw if malformed input repeats an old UID.
+    if (previous !== undefined && !remappedUids.has(previous)) remappedUids.set(previous, next);
+  }
+  const remapUid = (uid: number | null) => (uid === null ? null : (remappedUids.get(uid) ?? uid));
   const uniqueGear = state.uniqueGear;
   let returningFlightUids = uniqueGear.returningFlightUids;
   for (let index = 0; index < uniqueGear.returningFlightUids.length; index++) {
@@ -56,8 +57,9 @@ export function refillEmptyDrawPile(state: BattleState): BattleState {
 
 function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
   const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
-  const nextHand = [...hand];
   const delivered = Math.min(slots, queued.length);
+  if (delivered === 0) return { hand, pendingHandCards: queued };
+  const nextHand = [...hand];
   for (let index = 0; index < delivered; index++) nextHand.push(queued[index]!);
   return { hand: nextHand, pendingHandCards: queued.slice(slots) };
 }
@@ -70,7 +72,7 @@ export function deliverPendingHandCards(state: BattleState): BattleState {
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
   const received = { ...card, uid: state.nextCardUid };
   const slots = Math.max(0, MAX_HAND_SIZE - state.hand.length);
-  const hand = [...state.hand];
+  const hand = slots > 0 ? [...state.hand] : state.hand;
   const pendingHandCards = state.pendingHandCards.slice(slots);
   const delivered = Math.min(slots, state.pendingHandCards.length);
   for (let index = 0; index < delivered; index++) hand.push(state.pendingHandCards[index]!);

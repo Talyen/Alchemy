@@ -1,48 +1,21 @@
+import { enemyState as stateForEnemy } from "../../fixtures/enemy-battle";
+import { makeDamageCard, makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { cardById } from "@/lib/game-data";
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
-import { enemyBestiary } from "@/lib/game-data";
-import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
+import { getEnemyDamageMultiplier, dealSelfDamage } from "@/lib/battle/status-helpers";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
 import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
 import { processEnemyTraits, processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
 import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";
-import { dealSelfDamage } from "@/lib/battle/status-helpers";
 import { initializeEnemyState } from "@/lib/battle/battle-enemy-setup";
-import { makeTestBattleState } from "../../fixtures/battle";
 import {
   defaultCcState,
   defaultEnemyStatusValues,
   defaultPlayerStatusValues,
 } from "../../fixtures/default-battle-state";
-
-function stateForEnemy(
-  id: string,
-  overrides: Partial<ReturnType<typeof makeTestBattleState>> = {},
-): ReturnType<typeof makeTestBattleState> {
-  const enemy = enemyBestiary.find((candidate) => candidate.id === id);
-  if (!enemy) throw new Error(`Unknown enemy ${id}`);
-  const state = makeTestBattleState({
-    currentEnemy: enemy,
-    enemyHealth: 100,
-    enemyMaxHealth: 100,
-    playerHealth: 100,
-    playerMaxHealth: 100,
-    rng: () => 0.99,
-    appliesFightPacing: false,
-    ...overrides,
-  });
-  return {
-    ...state,
-    difficultyModifiers: state.difficultyModifiers.some((modifier) => modifier.kind === "enemy-damage-multiplier")
-      ? state.difficultyModifiers
-      : [{ kind: "enemy-damage-multiplier", amount: 1 / getEnemyAbilityPressure(state) }, ...state.difficultyModifiers],
-  };
-}
 
 describe("imported enemy trait damage rules", () => {
   it.each([
@@ -123,7 +96,7 @@ describe("imported enemy attack reactions", () => {
 
   it("stops adding Pyromancy damage once the hero is Burning, including later hits of one ability", () => {
     const state = stateForEnemy("pyromancer", { roomScalingMultiplier: 2 });
-    const hit = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
+    const hit = makeDamageCard("burn", 1);
     const first = applyEnemyAbility(state, hit, []);
     const repeated = applyEnemyAbility(state, { ...hit, effects: [...hit.effects, ...hit.effects] }, []);
     const withoutTrait = applyEnemyAbility({ ...first, currentEnemy: { ...first.currentEnemy, traits: [] } }, hit, []);
@@ -139,16 +112,8 @@ describe("imported enemy attack reactions", () => {
     expect(state.currentEnemy.traits.find((trait) => trait.id === "bandit")?.description).toBe(
       "Its first landed hit deals double damage.",
     );
-    const first = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType, amount: 4 }] }),
-      [],
-    );
-    const second = applyEnemyAbility(
-      first,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType, amount: 4 }] }),
-      [],
-    );
+    const first = applyEnemyAbility(state, makeDamageCard(damageType, 4), []);
+    const second = applyEnemyAbility(first, makeDamageCard(damageType, 4), []);
     expect(first.playerHealth).toBe(92);
     expect(second.playerHealth).toBe(88);
     expect(second.flags.enemyFirstHitDoubleUsed).toBe(true);
@@ -159,16 +124,8 @@ describe("imported enemy attack reactions", () => {
     const state = stateForEnemy("bandit", {
       rng: () => (calls++ === 0 ? 0 : 0.99),
     });
-    const dodged = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-      [],
-    );
-    const landed = applyEnemyAbility(
-      dodged,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-      [],
-    );
+    const dodged = applyEnemyAbility(state, makeDamageCard("physical", 4), []);
+    const landed = applyEnemyAbility(dodged, makeDamageCard("physical", 4), []);
     expect(dodged.playerHealth).toBe(100);
     expect(dodged.flags.enemyFirstHitDoubleUsed).toBe(false);
     expect(landed.playerHealth).toBe(92);
@@ -178,19 +135,11 @@ describe("imported enemy attack reactions", () => {
     const state = stateForEnemy("bandit", {
       playerStatuses: defaultPlayerStatusValues({ block: 10 }),
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-      [],
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("physical", 4), []);
     expect(result.playerStatuses.block).toBe(2);
     expect(result.playerHealth).toBe(100);
     expect(result.flags.enemyFirstHitDoubleUsed).toBe(true);
-    const second = applyEnemyAbility(
-      result,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-      [],
-    );
+    const second = applyEnemyAbility(result, makeDamageCard("physical", 4), []);
     expect(second.playerHealth).toBe(98);
     expect(second.playerStatuses.block).toBe(0);
   });
@@ -200,14 +149,14 @@ describe("imported enemy attack reactions", () => {
       stateForEnemy("ogre", {
         playerStatuses: defaultPlayerStatusValues({ block: 10 }),
       }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+      makeDamageCard("physical", 4),
       [],
     );
     const snake = applyEnemyAbility(
       stateForEnemy("giant-snake", {
         playerStatuses: defaultPlayerStatusValues({ block: 5 }),
       }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 3 }] }),
+      makeDamageCard("poison", 3),
       [],
     );
     expect(ogre.playerStatuses.block).toBe(2);
@@ -221,11 +170,7 @@ describe("imported enemy attack reactions", () => {
       playerStatuses: defaultPlayerStatusValues({ block: 5 }),
       talentEffects: { ...stateForEnemy("pyromancer").talentEffects, burnDamageReduction: 4 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }),
-      [],
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("burn", 3), []);
     expect(result.playerHealth).toBe(100);
     expect(result.playerStatuses.block).toBe(1);
   });
@@ -234,10 +179,7 @@ describe("imported enemy attack reactions", () => {
     const state = stateForEnemy("pyromancer", {
       talentEffects: { ...stateForEnemy("pyromancer").talentEffects, burnDamageReduction: 2 },
     });
-    expect(
-      applyEnemyAbility(state, makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }), [])
-        .playerHealth,
-    ).toBe(98);
+    expect(applyEnemyAbility(state, makeDamageCard("burn", 3), []).playerHealth).toBe(98);
   });
 
   it.each([
@@ -283,7 +225,7 @@ describe("imported enemy attack reactions", () => {
       stateForEnemy("banshee", {
         playerStatuses: defaultPlayerStatusValues({ block: 10, haste: 2 }),
       }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] }),
+      makeDamageCard("stun", 4),
       texts,
     );
     expect(result.playerHealth).toBe(100);
@@ -329,7 +271,7 @@ describe("imported enemy attack reactions", () => {
         ...stunned,
         enemyCC: defaultCcState(),
       },
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
+      makeDamageCard("physical", 10),
       [],
     );
     expect(result.flags.enemyBrawlerDamagePenalty).toBe(false);
@@ -346,7 +288,7 @@ describe("imported enemy attack reactions", () => {
 });
 
 describe("native enemy identities", () => {
-  const attack = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] });
+  const attack = makeDamageCard("physical", 8);
 
   it("Hollow Frame blocks direct and delayed Leech, including Leech rewards, while preserving damage", () => {
     const state = stateForEnemy("skeleton", { playerHealth: 50 });
@@ -429,7 +371,7 @@ describe("native enemy identities", () => {
 
   it("Contagion heals once per damaging Poison hit and tick, including typed self-damage", () => {
     const state = stateForEnemy("plague-doctor", { enemyHealth: 50 });
-    const poison = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 4 }] });
+    const poison = makeDamageCard("poison", 4);
     const hit = applyEnemyAbility(state, poison, []);
     expect(hit.enemyHealth).toBe(51);
     expect(tickPlayerStatuses(hit, []).enemyHealth).toBe(52);
@@ -438,7 +380,7 @@ describe("native enemy identities", () => {
 
   it("Contagion rewards blocked Poison hits but not other damage or a finished battle", () => {
     const state = stateForEnemy("plague-doctor", { enemyHealth: 50 });
-    const poison = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 4 }] });
+    const poison = makeDamageCard("poison", 4);
     const blocked = applyEnemyAbility(
       { ...state, playerStatuses: defaultPlayerStatusValues({ block: 20 }) },
       poison,
@@ -524,12 +466,7 @@ describe("native enemy identities", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 2, haste: 2 }),
       rng: () => [0.1, 0.99, 0.99][draws++ % 3],
     });
-    const fangs = makeEnemyTestCard({
-      effects: [
-        { kind: "damage", damageType: "bleed", amount: 2 },
-        { kind: "damage", damageType: "bleed", amount: 2 },
-      ],
-    });
+    const fangs = makeDamageCard("bleed", [2, 2]);
     const texts: Parameters<typeof applyEnemyAbility>[2] = [];
     const result = applyEnemyAbility(state, fangs, texts);
     expect(result.enemyHealth).toBe(49);

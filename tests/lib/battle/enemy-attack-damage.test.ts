@@ -1,3 +1,4 @@
+import { makeDamageCard, makeTestCard } from "../../fixtures/cards";
 import { processEncounterTraitActionDamage } from "@/lib/battle/encounter-trait-events";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
@@ -8,7 +9,6 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { describe, expect, it, vi } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
-import { makeTestCard } from "../../fixtures/cards";
 
 describe("enemy attack damage", () => {
   it.each(["bleed", "poison"] as const)("halves incoming %s damage while Block is present", (damageType) => {
@@ -211,11 +211,7 @@ describe("enemy attack damage", () => {
       playerStatuses: { block: 0, armor: 0 },
       talentEffects: { receiveHalfHolyDamage: true },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] }),
-      [],
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("holy", 10), []);
     expect(result.playerHealth).toBe(25);
   });
 
@@ -227,11 +223,7 @@ describe("enemy attack damage", () => {
       playerStatuses: { block: 5, armor: 0 },
       talentEffects: { blockDepletedHeal: 4 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-      texts,
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("physical", 5), texts);
     expect(result.playerHealth).toBe(30);
     expect(texts.find((t) => t.kind === "heal")).toEqual({
       target: "player",

@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import * as dodge from "@/lib/battle/dodge";
 import * as statusHelpers from "@/lib/battle/status-helpers";
 import { describe, expect, it, vi } from "vitest";
@@ -107,12 +108,7 @@ describe("CC reaction payoffs", () => {
 
   it("pays only once in a multi-hit card and cannot refresh through Haste or extended Freeze", () => {
     const state = controlled("freeze");
-    const twice = makeTestCard({
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 4 },
-        { kind: "damage", damageType: "physical", amount: 4 },
-      ],
-    });
+    const twice = makeDamageCard("physical", [4, 4]);
     const result = hit(state, twice);
     expect(result.enemyHealth).toBe(74);
     const haste = endPlayerTurn({ ...result, playerStatuses: { ...result.playerStatuses, haste: 1 } });

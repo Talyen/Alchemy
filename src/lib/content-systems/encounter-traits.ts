@@ -109,12 +109,12 @@ export type EncounterRewardTraitId = EncounterTraitIdFor<"reward">;
 function idsForCategory<Category extends EncounterTraitCategory>(
   category: Category,
 ): [EncounterTraitIdFor<Category>, ...Array<EncounterTraitIdFor<Category>>] {
-  const ids = encounterTraitList.filter((trait) => trait.category === category).map((trait) => trait.id) as Array<
-    EncounterTraitIdFor<Category>
-  >;
-  const [first, ...rest] = ids;
-  if (!first) throw new Error(`Encounter trait category ${category} must not be empty`);
-  return [first, ...rest];
+  const ids: Array<EncounterTraitIdFor<Category>> = [];
+  for (const trait of encounterTraitList) {
+    if (trait.category === category) ids.push(trait.id as EncounterTraitIdFor<Category>);
+  }
+  if (!ids[0]) throw new Error(`Encounter trait category ${category} must not be empty`);
+  return ids as [EncounterTraitIdFor<Category>, ...Array<EncounterTraitIdFor<Category>>];
 }
 
 export const COMBAT_ENCOUNTER_TRAIT_IDS = idsForCategory("combat");

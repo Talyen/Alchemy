@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyEnemyDotDamage, detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -245,10 +246,7 @@ describe("remaining-tick detonation", () => {
   ])(
     "Blackfletch's Poison Leech caps healing at Poison Health loss: $health Health, $bleed Bleed",
     ({ health, bleed, healed }) => {
-      const card = makeTestCard({
-        tags: ["archery"],
-        effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
-      });
+      const card = makeDamageCard("physical", 1, { tags: ["archery"] });
       const state = patchBattleState({
         hand: [card],
         playerHealth: 5,
@@ -267,7 +265,7 @@ describe("remaining-tick detonation", () => {
   );
 
   it("Blackfletch's Poison detonation can trigger Hemotoxin", () => {
-    const card = makeTestCard({ tags: ["archery"], effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    const card = makeDamageCard("physical", 1, { tags: ["archery"] });
     const state = patchBattleState({
       hand: [card],
       enemyHealth: 29,
