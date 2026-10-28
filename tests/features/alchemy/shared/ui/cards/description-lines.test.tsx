@@ -32,13 +32,12 @@ it("renders saved ingredient marks and removes them when the visible line no lon
   expect(container.textContent).toBe("Gain 7 Block".repeat(card.descriptionLines.length));
 });
 
-it("renders the original scaling rule without extra preview text", () => {
+it("renders Shield Bash's spending rule with its known damage", () => {
   const card = cardById["shield-bash"]!;
   const view = getBattleCardDescriptionInspection(card, patchBattleState({ playerStatuses: { block: 16 } }));
   const { container } = render(<DescriptionLines lines={view.descriptionLines} idPrefix="rules" card={view} />);
-  expect(container.textContent).toBe("Gain 2 BlockDeal Stun damage equal to half your Block");
+  expect(container.textContent).toBe("Gain 2 BlockSpend half your Block to deal 9 Stun damage");
   expect(container.textContent).not.toContain("Attack power");
-  expect(container.textContent).not.toContain("Deal 9 Stun damage");
 });
 
 it("renders known Block bonuses in the existing sentence and preserves authored magnitude marks", () => {
