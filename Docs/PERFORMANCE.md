@@ -49,6 +49,13 @@ sizes rather than shipping a speculative size reduction.
 
 ## Quick start
 
+Profiling and its renderer builds belong in CI unless the user explicitly requests
+local execution under [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
+On the shared Mac, wrap an authorized measurement in the bounded host lane
+specified there; run it before protected integration. The commands below select
+workloads, not execution permission. `--help` and comparison of existing reports
+do not launch a measurement.
+
 ```bash
 npm run perf -- --electron --seed 9
 npm run perf -- --all
