@@ -254,7 +254,11 @@ fixtures separately from earned journey checkpoints. Reuse a current build with
 - `combat-feedback-burst`: a full seven-card hand plus Burn, Poison and Bleed on
   both actors. Normal card and end-turn controls resolve authored cards and status
   ticks. A renderer observer must capture at least six concurrent numeric texts
-  and two bursts; an idle battle cannot satisfy the workload.
+  and two bursts in each of at least six measured battles; an idle battle cannot
+  satisfy the workload. Each battle needs 50 frames overall and 10 during feedback
+  overlap, giving at least 300 and 60 respectively across actual bursts. A short
+  individual battle still invalidates the aggregate. Recapture older baselines:
+  comparisons reject different measured run counts.
 
 Every measured scenario records RAM about once per second plus endpoints.
 V8's CDP heap reading supplies live renderer JS usage without the bucketed

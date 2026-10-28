@@ -13,8 +13,11 @@ test.describe("combat-feedback-burst", () => {
     await measureScenario({
       scenario: "combat-feedback-burst",
       profile: "continuous",
-      minFrames: 300,
-      segments: [{ name: "feedback-overlap", minActions: 4, minFrames: 60 }],
+      // Pool real bursts across independent battles, while rejecting each short or stalled run.
+      minimumRuns: 6,
+      minFrames: 50,
+      segments: [{ name: "feedback-overlap", minActions: 4, minFrames: 10 }],
+      timeoutMs: 600_000,
       collectObservations: async () => ({
         peakConcurrentTexts: peakTexts,
         peakConcurrentBursts: peakBursts,

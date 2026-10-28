@@ -154,6 +154,19 @@ it("keeps each pooled run's sample requirement instead of hiding an empty run in
   const pooled = aggregateRawSamples([sample(16, 200), sample(16, 0)]);
   expect(pooled).toMatchObject({ frameCount: 200, valid: false, invalidReason: "run 2: no frame samples" });
   expect(aggregateRawSamples([sample(), sample()])).toMatchObject({ frameCount: 200, valid: true });
+  expect(
+    aggregateRawSamples(
+      Array.from({ length: 6 }, () => sample(16, 50)),
+      { minFrames: 50 },
+    ),
+  ).toMatchObject({
+    frameCount: 300,
+    valid: true,
+  });
+  expect(aggregateRawSamples([sample(16, 500), sample(16, 49)], { minFrames: 50 })).toMatchObject({
+    valid: false,
+    invalidReason: "run 2: insufficient frames (49 < 50)",
+  });
 });
 
 it("resets phase attribution between runs and leaves time before the first mark idle", () => {

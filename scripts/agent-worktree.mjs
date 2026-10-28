@@ -31,6 +31,88 @@ function hasTrailerOutput(taskPath) {
   }
 }
 
+// Deduplicate only inside a newly-created private evidence bundle. Clone-on-write
+// keeps copies independent, and unknown attributes or unsupported filesystems
+// leave the original copied files untouched.
+export function evidenceDeduplicator({ platform = process.platform, attributes = null, clone = null } = {}) {
+  const bySize = new Map();
+  let remaining = 128 * 1024 * 1024;
+  const hash = (file) => {
+    const digest = createHash("sha256");
+    const fd = fs.openSync(file, "r");
+    const buffer = Buffer.allocUnsafe(256 * 1024);
+    try {
+      for (;;) {
+        const count = fs.readSync(fd, buffer, 0, buffer.length, null);
+        if (!count) break;
+        digest.update(buffer.subarray(0, count));
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+    return digest.digest("hex");
+  };
+  const metadata = (file) => {
+    if (attributes) return attributes(file);
+    const result = spawnSync("/usr/bin/xattr", ["-l", file], { timeout: 3000 });
+    const acl = spawnSync("/bin/ls", ["-lde", file], { encoding: "utf8", timeout: 3000 });
+    if (result.status !== 0 || result.stderr.length || acl.status !== 0 || acl.stderr) return null;
+    return JSON.stringify([result.stdout.toString("base64"), acl.stdout.split("\n").slice(1).join("\n")]);
+  };
+  return (file, stat, relative) => {
+    if (platform !== "darwin" || /trailer/iu.test(relative) || stat.size < 256 * 1024 || stat.size > 32 * 1024 * 1024)
+      return;
+    const previous = bySize.get(stat.size);
+    if (!previous) {
+      bySize.set(stat.size, { file, stat });
+      return;
+    }
+    if (
+      remaining < stat.size * 3 ||
+      stat.mode !== previous.stat.mode ||
+      stat.uid !== previous.stat.uid ||
+      stat.gid !== previous.stat.gid
+    )
+      return;
+    remaining -= stat.size * 3;
+    let temp;
+    try {
+      const before = fs.lstatSync(file);
+      const previousBefore = fs.lstatSync(previous.file);
+      const expectedMetadata = metadata(file);
+      if (expectedMetadata === null || metadata(previous.file) !== expectedMetadata) return;
+      const expected = hash(file);
+      if (hash(previous.file) !== expected) return;
+      temp = `${file}.${randomUUID()}.clone`;
+      if (clone) clone(previous.file, temp);
+      else {
+        // Node's forced reflink is not implemented on macOS. Use the native
+        // clonefile syscall and fail closed when it is unavailable.
+        const script =
+          "import ctypes,os,sys; lib=ctypes.CDLL('/usr/lib/libSystem.B.dylib',use_errno=True); sys.exit(0 if lib.clonefile(os.fsencode(sys.argv[1]),os.fsencode(sys.argv[2]),1)==0 else 1)";
+        const result = spawnSync("python3", ["-c", script, previous.file, temp], { timeout: 3000 });
+        if (result.status !== 0) throw new Error("Native clone unavailable");
+      }
+      if (hash(temp) !== expected || metadata(temp) !== expectedMetadata) return;
+      const unchanged = (before, after) =>
+        before.dev === after.dev &&
+        before.ino === after.ino &&
+        before.size === after.size &&
+        before.mtimeMs === after.mtimeMs &&
+        before.ctimeMs === after.ctimeMs;
+      if (!unchanged(before, fs.lstatSync(file)) || !unchanged(previousBefore, fs.lstatSync(previous.file))) return;
+      fs.chmodSync(temp, stat.mode);
+      fs.utimesSync(temp, stat.atime, stat.mtime);
+      fs.renameSync(temp, file);
+      temp = undefined;
+    } catch {
+      // Copy-on-write is optional: unsupported, changed or unreadable files keep their original copies.
+    } finally {
+      if (temp) fs.rmSync(temp, { force: true });
+    }
+  };
+}
+
 // Recovery commands remain usable from a copied single file. Creation loads
 // only its dependency-free storage helper; integration loads the task launcher.
 function isMainEntry() {
@@ -112,7 +194,10 @@ function preserveIntegrationEvidence(main, task, branch, head) {
     fs.mkdirSync(parent, { recursive: true });
   }
   const destination = fs.mkdtempSync(path.join(parent, `${branch.replaceAll("/", "-")}-${head.slice(0, 12)}-`));
+  let containsTrailer = /trailer/iu.test(branch);
+  const deduplicate = evidenceDeduplicator();
   const copy = (source, target) => {
+    if (/trailer/iu.test(path.relative(task, source))) containsTrailer = true;
     if (disposable(path.relative(task, source).replaceAll(path.sep, "/"))) return;
     const stat = fs.lstatSync(source);
     if (stat.isDirectory()) {
@@ -123,6 +208,7 @@ function preserveIntegrationEvidence(main, task, branch, head) {
       // Independent copy-on-write files save physical space where supported;
       // unsupported filesystems fall back to the ordinary copy operation.
       fs.copyFileSync(source, target, fs.constants.COPYFILE_FICLONE);
+      if (!containsTrailer) deduplicate(target, stat, path.relative(task, source));
     } else throw new Error("Unsupported evidence entry; checkout preserved");
     fs.utimesSync(target, stat.atime, stat.mtime);
   };
@@ -130,7 +216,17 @@ function preserveIntegrationEvidence(main, task, branch, head) {
     for (const relative of existing) copy(path.resolve(task, relative), path.resolve(destination, relative));
     fs.writeFileSync(
       path.join(destination, "integration.json"),
-      JSON.stringify({ branch, commit: head, originalCheckout: task, evidence: existing }, null, 2) + "\n",
+      JSON.stringify(
+        {
+          branch,
+          commit: head,
+          originalCheckout: task,
+          evidence: existing,
+          ...(!containsTrailer ? { retentionPolicy: "managed-runs-v1" } : {}),
+        },
+        null,
+        2,
+      ) + "\n",
     );
   } catch (error) {
     fs.rmSync(destination, { recursive: true, force: true });
@@ -661,6 +757,18 @@ async function runMain(argv, tracker) {
               ...(previous?.commit === head && previous.reviewBase ? { reviewBase: previous.reviewBase } : {}),
             });
             console.log(`Task finished. State: ${stateFile}`);
+            try {
+              const pruner = path.join(path.dirname(currentFile), "lib/integration-retention.mjs");
+              if (fs.existsSync(pruner)) {
+                const { pruneIntegratedRuns } = await import(pathToFileURL(pruner).href);
+                const { withArtifactGuard } = await import("./lib/artifact-guard.mjs");
+                await withArtifactGuard(root, ({ active }) => {
+                  if (!active) pruneIntegratedRuns(root);
+                });
+              }
+            } catch (error) {
+              console.error(`Evidence retention skipped: ${error.message}`);
+            }
             await showTaskStatus(task);
           } finally {
             await releaseManaged();
