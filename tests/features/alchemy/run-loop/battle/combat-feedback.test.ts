@@ -63,8 +63,6 @@ describe("combat feedback lifetime", () => {
       enemyDodgeToken: 0,
       playerImpactCue: null,
       enemyImpactCue: null,
-      playerShaking: false,
-      enemyShaking: false,
     });
     expect(feedback.store.getState().floatingCombatBursts).toHaveLength(1);
     expect(feedback.store.getState().floatingCombatBursts[0]!.entries).toEqual([expect.objectContaining(playerDodge)]);
@@ -99,38 +97,38 @@ describe("combat feedback lifetime", () => {
     const second = makeFeedback();
     first.showCombatTexts([...hit]);
     second.showCombatTexts([...hit]);
-    first.shakeEnemy();
-    second.shakeEnemy();
+    first.shakeCompanion();
+    second.shakeCompanion();
     first.reset();
     expect(first.store.getState()).toEqual(createCombatFeedbackState());
-    expect(second.store.getState().enemyShaking).toBe(true);
+    expect(second.store.getState().companionShaking).toBe(true);
     expect(second.store.getState().floatingCombatBursts).toHaveLength(1);
     vi.advanceTimersByTime(SHAKE_DURATION_MS);
-    expect(second.store.getState().enemyShaking).toBe(false);
+    expect(second.store.getState().companionShaking).toBe(false);
     vi.advanceTimersByTime(COMBAT_TEXT_LIFETIME_MS);
     expect(second.store.getState().floatingCombatBursts).toEqual([]);
   });
 
   it("clears text independently without cancelling the active shake", () => {
     const feedback = makeFeedback();
-    feedback.shakePlayer();
+    feedback.shakeCompanion();
     feedback.showCombatTexts([...hit]);
     feedback.clearFloatingCombatTexts();
     expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
     expect(feedback.store.getState().enemyImpactCue).toBeNull();
-    expect(feedback.store.getState().playerShaking).toBe(true);
+    expect(feedback.store.getState().companionShaking).toBe(true);
     vi.advanceTimersByTime(SHAKE_DURATION_MS);
-    expect(feedback.store.getState().playerShaking).toBe(false);
+    expect(feedback.store.getState().companionShaking).toBe(false);
   });
 
   it("leaves no timed work when a subscriber resets during publication", () => {
     const feedback = makeFeedback();
     feedback.store.subscribe((state) => {
-      if (state.floatingCombatBursts.length || state.reactionAnnouncements.length || state.enemyShaking)
+      if (state.floatingCombatBursts.length || state.reactionAnnouncements.length || state.companionShaking)
         feedback.reset();
     });
     feedback.showCombatTexts([...hit]);
-    feedback.shakeEnemy();
+    feedback.shakeCompanion();
     expect(feedback.store.getState()).toEqual(createCombatFeedbackState());
     expect(vi.getTimerCount()).toBe(0);
   });

@@ -48,43 +48,6 @@ export function SelectableCard(props: SelectableCardProps) {
   useGameTranslation();
   if (props.interactionKey !== undefined)
     return <KeyedSelectableCard {...props} interactionKey={props.interactionKey} />;
-  return <QuietSelectableCard {...props} />;
-}
-
-function KeyedSelectableCard(props: SelectableCardBaseProps & { interactionKey: string }) {
-  useGameTranslation();
-  const {
-    isHovered,
-    onHoverStart: baseHoverStart,
-    onHoverEnd: baseHoverEnd,
-    shimmerActive,
-    shimmerToken,
-  } = useInteractiveCard(props.interactionKey, props.card.id);
-  const { onHoverChange } = props;
-  const onHoverStart = onHoverChange
-    ? () => {
-        baseHoverStart();
-        onHoverChange(true);
-      }
-    : baseHoverStart;
-  const onHoverEnd = onHoverChange
-    ? () => {
-        baseHoverEnd();
-        onHoverChange(false);
-      }
-    : baseHoverEnd;
-  return (
-    <SelectableCardSurface
-      {...props}
-      hover={{ hovered: isHovered, onHoverStart, onHoverEnd }}
-      shimmerActive={shimmerActive}
-      shimmerToken={shimmerToken}
-    />
-  );
-}
-
-function QuietSelectableCard(props: SelectableCardProps) {
-  useGameTranslation();
   return (
     <SelectableCardSurface
       {...props}
@@ -95,6 +58,23 @@ function QuietSelectableCard(props: SelectableCardProps) {
       }
       shimmerActive={false}
       shimmerToken={undefined}
+    />
+  );
+}
+
+function KeyedSelectableCard(props: SelectableCardBaseProps & { interactionKey: string }) {
+  useGameTranslation();
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
+    props.interactionKey,
+    props.card.id,
+    props.onHoverChange,
+  );
+  return (
+    <SelectableCardSurface
+      {...props}
+      hover={{ hovered: isHovered, onHoverStart, onHoverEnd }}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
     />
   );
 }
@@ -142,15 +122,5 @@ function SelectableCardSurface({
     suppressTooltip,
   };
 
-  if (hover) {
-    return (
-      <BattleCardButton
-        {...buttonProps}
-        hovered={hover.hovered}
-        onHoverStart={hover.onHoverStart}
-        onHoverEnd={hover.onHoverEnd}
-      />
-    );
-  }
-  return <BattleCardButton {...buttonProps} />;
+  return <BattleCardButton {...buttonProps} {...hover} />;
 }

@@ -50,57 +50,33 @@ interface SurfaceProps<T extends "button" | "div"> extends SurfaceBaseProps {
 const CLIP_CONTENTS_CLASS = "surface-clip relative w-full overflow-hidden";
 
 export function Surface<T extends "button" | "div" = "div">(props: SurfaceProps<T>) {
-  const {
-    baseTransform,
-    style,
-    children,
-    className,
-    shimmerActive,
-    shimmerToken,
-    shimmerRounded,
-    selected,
-    disabled,
-    dragging,
-    onPointerDown,
-    onFocus,
-    onBlur,
-    ariaLabel,
-    ariaDisabled,
-    ariaPressed,
-    ariaCurrent,
-    buttonRef,
-    surfaceRef,
-    testId,
-    onMouseEnter,
-    onMouseLeave,
-    clipContents = true,
-    hoverScaleActive,
-    overlay,
-  } = props;
-
-  const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
+  const { buttonRef, surfaceRef, ...view } = props;
+  const surfaceStyle = {
+    "--card-base-transform": view.baseTransform ?? staticCardTransform,
+    ...view.style,
+  } as CSSProperties;
   const sharedProps = {
-    "data-testid": testId,
-    "data-hovered": hoverScaleActive ? "true" : undefined,
-    "aria-current": ariaCurrent,
-    onFocus,
-    onBlur,
-    onMouseEnter,
-    onMouseLeave,
+    "data-testid": view.testId,
+    "data-hovered": view.hoverScaleActive ? "true" : undefined,
+    "aria-current": view.ariaCurrent,
+    onFocus: view.onFocus,
+    onBlur: view.onBlur,
+    onMouseEnter: view.onMouseEnter,
+    onMouseLeave: view.onMouseLeave,
     className: cn(
       "surface",
-      selected && surfaceSelectedRingClass,
-      dragging && "opacity-0",
-      disabled && "cursor-default grayscale",
-      className,
+      view.selected && surfaceSelectedRingClass,
+      view.dragging && "opacity-0",
+      view.disabled && "cursor-default grayscale",
+      view.className,
     ),
     style: surfaceStyle,
   };
-  const onClick: MouseEventHandler<HTMLElement> | undefined = props.onClick;
+  const onClick: MouseEventHandler<HTMLElement> | undefined = view.onClick;
   const handleDivClick =
     onClick !== undefined
       ? (e: MouseEvent<HTMLDivElement>) => {
-          if (!disabled) onClick(e);
+          if (!view.disabled) onClick(e);
         }
       : undefined;
   function handleDivKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -111,26 +87,30 @@ export function Surface<T extends "button" | "div" = "div">(props: SurfaceProps<
   }
   const body = (
     <>
-      {shimmerActive !== undefined ? (
-        <ShimmerOverlay active={shimmerActive} token={shimmerToken} rounded={shimmerRounded ?? "rounded-shell-hero"} />
+      {view.shimmerActive !== undefined ? (
+        <ShimmerOverlay
+          active={view.shimmerActive}
+          token={view.shimmerToken}
+          rounded={view.shimmerRounded ?? "rounded-shell-hero"}
+        />
       ) : null}
-      {clipContents ? <div className={CLIP_CONTENTS_CLASS}>{children}</div> : children}
-      {overlay}
+      {(view.clipContents ?? true) ? <div className={CLIP_CONTENTS_CLASS}>{view.children}</div> : view.children}
+      {view.overlay}
     </>
   );
 
-  if (props.as === "button") {
+  if (view.as === "button") {
     return (
       <button
         {...sharedProps}
         ref={buttonRef}
         type="button"
-        aria-label={ariaLabel}
-        aria-disabled={ariaDisabled}
-        aria-pressed={ariaPressed}
-        disabled={disabled === true || dragging === true}
+        aria-label={view.ariaLabel}
+        aria-disabled={view.ariaDisabled}
+        aria-pressed={view.ariaPressed}
+        disabled={view.disabled === true || view.dragging === true}
         onClick={onClick}
-        onPointerDown={onPointerDown}
+        onPointerDown={view.onPointerDown}
       >
         {body}
       </button>
@@ -141,12 +121,12 @@ export function Surface<T extends "button" | "div" = "div">(props: SurfaceProps<
     <div
       {...sharedProps}
       ref={surfaceRef}
-      aria-disabled={disabled || ariaDisabled ? "true" : undefined}
+      aria-disabled={view.disabled || view.ariaDisabled ? "true" : undefined}
       onClick={handleDivClick}
       onKeyDown={handleDivClick ? handleDivKeyDown : undefined}
-      tabIndex={(handleDivClick || onFocus) && !disabled ? 0 : undefined}
-      role={handleDivClick ? "button" : onFocus ? "group" : undefined}
-      aria-label={handleDivClick || onFocus ? ariaLabel : undefined}
+      tabIndex={(handleDivClick || view.onFocus) && !view.disabled ? 0 : undefined}
+      role={handleDivClick ? "button" : view.onFocus ? "group" : undefined}
+      aria-label={handleDivClick || view.onFocus ? view.ariaLabel : undefined}
     >
       {body}
     </div>

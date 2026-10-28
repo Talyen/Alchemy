@@ -60,11 +60,9 @@ export function playResolvedCombatSound(cardId: string | undefined, events: Comb
 
 export interface CombatTextPresenter {
   showCombatTexts: (events: CombatTextEvent[]) => void;
-  shakeEnemy: () => void;
-  shakePlayer: () => void;
 }
 
-/** Single home for fight feedback: floating numbers + portrait shake + sounds. */
+/** Single home for fight feedback: floating numbers, impact cues, and sounds. */
 export function presentCombatTexts(
   presenter: CombatTextPresenter,
   combatTexts: CombatTextEvent[],
@@ -72,16 +70,6 @@ export function presentCombatTexts(
 ) {
   if (combatTexts.length === 0) return;
   presenter.showCombatTexts(combatTexts);
-  let enemyHit = false;
-  let playerHit = false;
-  for (const ct of combatTexts) {
-    if (ct.kind !== "damage" || !(ct.amount > 0) || ct.impact === false) continue;
-    if (ct.target === "enemy") enemyHit = true;
-    if (ct.target === "player") playerHit = true;
-    if (enemyHit && playerHit) break;
-  }
-  if (enemyHit) presenter.shakeEnemy();
-  if (playerHit) presenter.shakePlayer();
   playCombatTextSounds(combatTexts, focalSound);
 }
 

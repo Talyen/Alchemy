@@ -38,8 +38,8 @@ interface BattleCardButtonBaseProps {
   onPointerDown?: ((event: ReactPointerEvent<HTMLButtonElement>) => void) | undefined;
   buttonRef?: Ref<HTMLButtonElement> | undefined;
   ariaLabel: string;
-  shimmerActive: boolean;
-  shimmerToken: number | undefined;
+  shimmerActive?: boolean;
+  shimmerToken?: number | undefined;
   baseTransform?: string;
   className?: string;
   wrapperClassName?: string;
@@ -67,7 +67,7 @@ export type BattleCardButtonProps = BattleCardButtonBaseProps &
   );
 
 export function BattleCardButton(props: BattleCardButtonProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { wrapperClassName, wrapperDataCardKey, dragging = false, suppressTooltip = false } = props;
   const inheritedDescriptionContext = useCardDescriptionContext();
   const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
@@ -112,6 +112,18 @@ export function BattleCardButton(props: BattleCardButtonProps) {
     handleHoverEnd();
   }
 
+  const colors = props.shineColor ?? (props.card.transmuted ? getCardInspectionShineColors(props.card) : undefined);
+  const showShine = Boolean(hovered && !dragging && !(props.disabled ?? false) && colors?.length);
+  const artwork = (
+    <img
+      src={props.card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
+      alt={i18n.read(() => getCardDisplayTitle(props.card))}
+      className={cn("block h-auto w-full", cardArtImageClass)}
+      loading="eager"
+      decoding="async"
+    />
+  );
+
   return (
     <div
       ref={wrapperRef}
@@ -132,19 +144,42 @@ export function BattleCardButton(props: BattleCardButtonProps) {
         descriptionContext={descriptionContext}
         padding={props.tooltipPadding}
       />
-      <CardButtonSurface
-        {...props}
-        hovered={hovered}
-        onHoverStart={() => {
+      <Surface
+        as="button"
+        className={cn(
+          cardArtFrameClass,
+          "group",
+          (props.scaleOnHover ?? true) && cardHoverScaleClass,
+          showShine && "card-art-shine",
+          props.className,
+        )}
+        shimmerActive={props.shimmerActive ?? false}
+        shimmerToken={props.shimmerToken}
+        selected={props.selected ?? false}
+        {...(props.ariaPressed !== undefined ? { ariaPressed: props.ariaPressed } : {})}
+        disabled={props.disabled ?? false}
+        {...(props.ariaDisabled !== undefined ? { ariaDisabled: props.ariaDisabled } : {})}
+        dragging={dragging}
+        baseTransform={props.baseTransform}
+        hoverScaleActive={(props.scaleOnHover ?? true) && hovered && !dragging}
+        onClick={props.onClick}
+        onPointerDown={props.onPointerDown}
+        onFocus={() => {
           if (!isFocusNavigationEnabled()) return;
           focusedRef.current = true;
           handleHoverStart();
         }}
-        onHoverEnd={() => {
+        onBlur={() => {
           focusedRef.current = false;
           handleHoverEnd();
         }}
-      />
+        buttonRef={props.buttonRef}
+        ariaLabel={props.ariaLabel}
+        overlay={showShine && colors ? <ShineBorder shineColor={colors} borderWidth={2} className="z-20" /> : undefined}
+      >
+        {artwork}
+        {props.children}
+      </Surface>
     </div>
   );
 }
@@ -202,72 +237,5 @@ function CardHoverPopup({
       {...(padding !== undefined ? { padding } : {})}
       card={inspectedCard}
     />
-  );
-}
-
-function CardButtonSurface({
-  card,
-  hovered,
-  onHoverStart = () => {},
-  onHoverEnd = () => {},
-  onClick,
-  onPointerDown,
-  buttonRef,
-  ariaLabel,
-  shimmerActive,
-  shimmerToken,
-  baseTransform,
-  className,
-  children,
-  selected = false,
-  disabled = false,
-  ariaDisabled,
-  ariaPressed,
-  dragging = false,
-  scaleOnHover = true,
-  shineColor,
-}: BattleCardButtonProps) {
-  const i18n = useGameTranslation();
-  const colors = shineColor ?? (card.transmuted ? getCardInspectionShineColors(card) : undefined);
-  const showShine = Boolean(hovered && !dragging && !disabled && colors?.length);
-  const artwork = (
-    <img
-      src={card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
-      alt={i18n.read(() => getCardDisplayTitle(card))}
-      className={cn("block h-auto w-full", cardArtImageClass)}
-      loading="eager"
-      decoding="async"
-    />
-  );
-  return (
-    <Surface
-      as="button"
-      className={cn(
-        cardArtFrameClass,
-        "group",
-        scaleOnHover && cardHoverScaleClass,
-        showShine && "card-art-shine",
-        className,
-      )}
-      shimmerActive={shimmerActive}
-      shimmerToken={shimmerToken}
-      selected={selected}
-      {...(ariaPressed !== undefined ? { ariaPressed } : {})}
-      disabled={disabled}
-      {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
-      dragging={dragging}
-      baseTransform={baseTransform}
-      hoverScaleActive={Boolean(scaleOnHover && hovered && !dragging)}
-      onClick={onClick}
-      onPointerDown={onPointerDown}
-      onFocus={onHoverStart}
-      onBlur={onHoverEnd}
-      buttonRef={buttonRef}
-      ariaLabel={ariaLabel}
-      overlay={showShine && colors ? <ShineBorder shineColor={colors} borderWidth={2} className="z-20" /> : undefined}
-    >
-      {artwork}
-      {children}
-    </Surface>
   );
 }

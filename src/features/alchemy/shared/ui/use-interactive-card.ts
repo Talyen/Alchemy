@@ -3,7 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../stores/react/ui-store";
 import { getHoverId } from "../utils";
 
-export function useInteractiveCard(scope: string, itemId: string) {
+export function useInteractiveCard(scope: string, itemId: string, onHoverChange?: (hovered: boolean) => void) {
   const hoverId = getHoverId(scope, itemId);
   const setHoveredCardId = useUiStore((s) => s.setHoveredCardId);
   const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
@@ -29,8 +29,18 @@ export function useInteractiveCard(scope: string, itemId: string) {
   return {
     hoverId,
     isHovered,
-    onHoverStart,
-    onHoverEnd,
+    onHoverStart: onHoverChange
+      ? () => {
+          onHoverStart();
+          onHoverChange(true);
+        }
+      : onHoverStart,
+    onHoverEnd: onHoverChange
+      ? () => {
+          onHoverEnd();
+          onHoverChange(false);
+        }
+      : onHoverEnd,
     shimmerActive,
     shimmerToken,
   };

@@ -58,6 +58,7 @@ export function PaginationControls({
   const buttonClass = size === "sm" ? "h-11 w-11" : "h-14 w-14";
   const widthClass = size === "sm" ? "max-w-28" : "max-w-36";
   const minHeightClass = size === "sm" ? "min-h-11" : "min-h-14";
+  const arrowProps = { page, totalPages, onPageChange, className: buttonClass };
 
   if (!showControls && !reserveSpace) return null;
 
@@ -65,20 +66,8 @@ export function PaginationControls({
     <div className={cn("mt-4 flex w-full items-center justify-center gap-4", minHeightClass, widthClass, className)}>
       {showControls ? (
         <>
-          <PageArrow
-            page={page}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            direction={-1}
-            className={buttonClass}
-          />
-          <PageArrow
-            page={page}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            direction={1}
-            className={buttonClass}
-          />
+          <PageArrow {...arrowProps} direction={-1} />
+          <PageArrow {...arrowProps} direction={1} />
         </>
       ) : null}
     </div>

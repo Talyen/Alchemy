@@ -42,8 +42,6 @@ export function InspectionCardGrid({
           <BattleCardButton
             card={card}
             ariaLabel={i18n.read(() => getCardDisplayTitle(card))}
-            shimmerActive={false}
-            shimmerToken={undefined}
             className={viewCardWidthClass}
             descriptionContext={descriptionContext}
             shineColor={getCardInspectionShineColors(card)}
