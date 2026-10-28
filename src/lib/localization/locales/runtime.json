@@ -3046,7 +3046,7 @@
   "catalog.cardLibrary.holy-radiance.line0": {"id":"description.82c6a67b41298ce5","values":{"value0":2}},
   "catalog.cardLibrary.holy-radiance.line1": {"id":"description.60e43d625afbb344","values":{"value0":2}},
   "catalog.cardLibrary.holy-radiance.title": {"id":"description.693ec471905b732f","values":{}},
-  "catalog.cardLibrary.ice-shot.line0": {"id":"description.6fc4a95b18d127bd","values":{"value0":2}},
+  "catalog.cardLibrary.ice-shot.line0": {"id":"description.6fc4a95b18d127bd","values":{"value0":3}},
   "catalog.cardLibrary.ice-shot.line1": {"id":"description.f15017d464bbbc6a","values":{}},
   "catalog.cardLibrary.ice-shot.line2": {"id":"description.6299bb9c9ab5205c","values":{}},
   "catalog.cardLibrary.judgment.line0": {"id":"description.95aec24260f496a","values":{"value0":3}},

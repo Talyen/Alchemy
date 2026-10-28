@@ -149,7 +149,7 @@ describe("strategic cards", () => {
       enemyStatuses: { freeze: frozen ? 0 : 34 },
     });
     expect(result.combatTexts.find((event) => event.kind === "damage")?.stat).toBe("freeze");
-    expect(result.state.enemyHealth).toBe(frozen ? 96 : 98);
+    expect(result.state.enemyHealth).toBe(frozen ? 94 : 97);
     expect(result.state.flags.nextArcheryCardFree).toBe(false);
     if (frozen) expect(result.state.enemyCC.freezeSkipTurns).toBe(1);
   });
@@ -162,19 +162,19 @@ describe("strategic cards", () => {
     });
     expect(result.state.mana).toBe(1);
     expect(result.state.flags.nextArcheryCardFree).toBe(false);
-    expect(result.state.enemyHealth).toBe(76);
+    expect(result.state.enemyHealth).toBe(74);
   });
   it("state-aware autoplay quotes the selected base damage without spending resources", () => {
     const state = battle({ playerStatuses: { block: 2 }, enemyCC: { freezeSkipTurns: 1 } });
     expect(getEffectiveDamageScore(cardById["shield-bash"]!, state)).toBe(2);
-    expect(getEffectiveDamageScore(cardById["ice-shot"]!, state)).toBe(4);
+    expect(getEffectiveDamageScore(cardById["ice-shot"]!, state)).toBe(6);
     expect(state.playerStatuses.block).toBe(2);
   });
   it("enemies gain Block before resolving Shield Bash", () => {
     for (const [id, patch, expected] of [
       ["shield-bash", { enemyMitigation: { block: 2 } }, 2],
       ["maul", { playerStatuses: { block: 1 } }, 2],
-      ["ice-shot", { playerCC: { freezeSkipTurns: 1 } }, 4],
+      ["ice-shot", { playerCC: { freezeSkipTurns: 1 } }, 6],
     ] as const) {
       const base = battle(patch);
       const state = applyEnemyAbility(

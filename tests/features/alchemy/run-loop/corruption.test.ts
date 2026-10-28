@@ -392,9 +392,9 @@ describe("numeric effect bindings", () => {
     const card = cardById["ice-shot"]!;
     const target = getEditableCorruptionTargets(card)[0]!;
     const changed = applyNumericCorruption(card, target, 1);
-    expect(changed.descriptionLines).toContain("Deal 3 Freeze damage");
-    expect(changed.effects[0]).toMatchObject({ amount: 3, amountIfTargetFrozen: 6 });
-    expect(card.effects[0]).toMatchObject({ amount: 2, amountIfTargetFrozen: 4 });
+    expect(changed.descriptionLines).toContain("Deal 4 Freeze damage");
+    expect(changed.effects[0]).toMatchObject({ amount: 4, amountIfTargetFrozen: 8 });
+    expect(card.effects[0]).toMatchObject({ amount: 3, amountIfTargetFrozen: 6 });
   });
 
   it.each(["wishing-well", "cauterize", "ray-of-frost"])(

@@ -879,7 +879,7 @@
   "catalog.cardLibrary.holy-radiance.line0": {"text":"Restore 2 Health","context":"Game catalog: cardLibrary.holy-radiance description","aliasOf":"description.82c6a67b41298ce5","values":{"value0":2},"terms":["Health"]},
   "catalog.cardLibrary.holy-radiance.line1": {"text":"Deal 2 Holy damage","context":"Game catalog: cardLibrary.holy-radiance description","aliasOf":"description.60e43d625afbb344","values":{"value0":2},"terms":["Holy"]},
   "catalog.cardLibrary.holy-radiance.title": {"text":"Holy Radiance","context":"Game catalog: cardLibrary.holy-radiance.title","aliasOf":"description.693ec471905b732f","values":{},"terms":["Holy"]},
-  "catalog.cardLibrary.ice-shot.line0": {"text":"Deal 2 Freeze damage","context":"Game catalog: cardLibrary.ice-shot description","aliasOf":"description.6fc4a95b18d127bd","values":{"value0":2},"terms":["Freeze"]},
+  "catalog.cardLibrary.ice-shot.line0": {"text":"Deal 3 Freeze damage","context":"Game catalog: cardLibrary.ice-shot description","aliasOf":"description.6fc4a95b18d127bd","values":{"value0":3},"terms":["Freeze"]},
   "catalog.cardLibrary.ice-shot.line1": {"text":"Doubled against Frozen enemies","context":"Game catalog: cardLibrary.ice-shot description","aliasOf":"description.f15017d464bbbc6a","values":{},"terms":["Freeze"]},
   "catalog.cardLibrary.ice-shot.line2": {"text":"Archery","context":"Game catalog: cardLibrary.ice-shot description","aliasOf":"description.6299bb9c9ab5205c","values":{},"terms":["Archery"]},
   "catalog.cardLibrary.ice-shot.title": {"text":"Ice Shot","context":"Game catalog: cardLibrary.ice-shot.title","terms":[]},

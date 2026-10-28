@@ -10,9 +10,9 @@ export const archeryCards: BattleCard[] = [
       {
         kind: "damage",
         damageType: "freeze",
-        amount: 2,
+        amount: 3,
         damageTypeIfTargetFrozen: "freeze",
-        amountIfTargetFrozen: 4,
+        amountIfTargetFrozen: 6,
       },
     ],
     { tags: ["archery"] },

@@ -224,7 +224,7 @@ describe("complete catalog deterministic preview coverage", () => {
     expect(venom.descriptionLines).toEqual(["Deal 6–12 Poison, or Physical damage", "Archery"]);
     const ice = getBattleCardDescriptionInspection(cardById["ice-shot"]!, stateFor(cardById["ice-shot"]!, bonuses));
     expect(ice.descriptionLines).toEqual([
-      "Deal 7 Freeze damage; Against Frozen enemies, deal 9 Freeze instead",
+      "Deal 8 Freeze damage; Against Frozen enemies, deal 11 Freeze instead",
       "Archery",
     ]);
     const pack = cardById["pack-tactics"]!;
@@ -305,14 +305,14 @@ describe("complete catalog deterministic preview coverage", () => {
     const patch = { gearEffects: { flatFreezeDamage: 1, frozenEnemyDamageBonusPercent: 100 } };
     const state = stateFor(card, patch);
     expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
-      "Deal 3 Freeze damage; Against Frozen enemies, deal 10 Freeze instead",
+      "Deal 4 Freeze damage; Against Frozen enemies, deal 14 Freeze instead",
       "Archery",
     ]);
     const ordinary = playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0);
     const frozenState = stateFor(card, { ...patch, enemyCC: { freezeSkipTurns: 1 } });
     const frozen = playBattleCardResolved({ ...frozenState, rng: () => 0.99 }, card.id, 0);
-    expect(state.enemyHealth - ordinary.state.enemyHealth).toBe(3);
-    expect(frozenState.enemyHealth - frozen.state.enemyHealth).toBe(10);
+    expect(state.enemyHealth - ordinary.state.enemyHealth).toBe(4);
+    expect(frozenState.enemyHealth - frozen.state.enemyHealth).toBe(14);
     const mixed = createMixedPotion(cardById.block!, card);
     expect(
       getBattleCardDescriptionInspection(
@@ -321,7 +321,7 @@ describe("complete catalog deterministic preview coverage", () => {
       ).descriptionLines,
     ).toEqual([
       "Gain 5 Block",
-      "Deal 5 Freeze damage; Against Frozen enemies, deal 14 Freeze instead",
+      "Deal 6 Freeze damage; Against Frozen enemies, deal 18 Freeze instead",
       "Archery",
       "Consume",
     ]);
@@ -330,7 +330,7 @@ describe("complete catalog deterministic preview coverage", () => {
       gearEffects: { flatPoisonDamage: 2, frozenEnemyDamageBonusPercent: 100 },
     });
     expect(getBattleCardDescriptionInspection(card, prepared).descriptionLines).toEqual([
-      "Deal 4 Poison damage; Against Frozen enemies, deal 12 Poison instead",
+      "Deal 5 Poison damage; Against Frozen enemies, deal 16 Poison instead",
       "Archery",
     ]);
     expect(prepared.flags.nextHitPoison).toBe(true);
@@ -340,7 +340,7 @@ describe("complete catalog deterministic preview coverage", () => {
       talentEffects: { stunDoubleDamage: true },
     });
     expect(getBattleCardDescriptionInspection(card, stunned).descriptionLines).toEqual([
-      "Deal 6 Freeze damage; Against Frozen enemies, deal 10 Freeze instead",
+      "Deal 8 Freeze damage; Against Frozen enemies, deal 14 Freeze instead",
       "Archery",
     ]);
   });
