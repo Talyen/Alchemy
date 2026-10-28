@@ -2081,7 +2081,7 @@
   "catalog.talentPool.bleed-wound-care.name": {"text":"Wound Care","context":"Game catalog: talentPool.bleed-wound-care.name","terms":[]},
   "catalog.talentPool.block-absorb-physical.description": {"text":"Block absorbs 10% more Physical damage","context":"Game catalog: talentPool.block-absorb-physical.description","aliasOf":"description.3ecb3c077312e25","values":{"value0":10},"terms":["Block","Physical"]},
   "catalog.talentPool.block-absorb-physical.name": {"text":"Reinforce","context":"Game catalog: talentPool.block-absorb-physical.name","terms":[]},
-  "catalog.talentPool.block-depleted-heal.description": {"text":"When Block is depleted, restore 2 Health","context":"Game catalog: talentPool.block-depleted-heal.description","aliasOf":"description.1893fb4cfd0ab52c","values":{"value0":2},"terms":["Block","Health"]},
+  "catalog.talentPool.block-depleted-heal.description": {"text":"When Block is depleted, restore 1 Health","context":"Game catalog: talentPool.block-depleted-heal.description","aliasOf":"description.1893fb4cfd0ab52c","values":{"value0":1},"terms":["Block","Health"]},
   "catalog.talentPool.block-depleted-heal.name": {"text":"Second Wind","context":"Game catalog: talentPool.block-depleted-heal.name","terms":[],"aliasOf":"catalog.ENCOUNTER_TRAITS.second-wind.label"},
   "catalog.talentPool.block-prevent-bleed.description": {"text":"Take half Bleed damage while you have Block","context":"Game catalog: talentPool.block-prevent-bleed.description","aliasOf":"description.669023e39c4ee353","values":{},"terms":["Bleed","Block"]},
   "catalog.talentPool.block-prevent-bleed.name": {"text":"Blood Ward","context":"Game catalog: talentPool.block-prevent-bleed.name","terms":[]},

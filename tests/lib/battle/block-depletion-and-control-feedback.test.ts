@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardById } from "@/lib/game-data";
+import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
@@ -79,7 +79,7 @@ describe("Block depletion outside enemy hits", () => {
         playerHealth: 10,
         playerMaxHealth: 30,
         playerStatuses: { block: 1 },
-        talentEffects: { blockDepletedHeal: 2 },
+        talentEffects: computeTalentEffects({ block: ["block-depleted-heal"] }),
         gearEffects: { blockDepletedHeal: 3, dodgeSpendsPreservedBlock: source === "dodge" ? 1 : 0 },
         flags: { dodgeNextAttack: true },
         rng: () => 0.99,
@@ -94,9 +94,9 @@ describe("Block depletion outside enemy hits", () => {
                 canDodge: true,
               }).state;
       expect(next.playerStatuses.block).toBe(0);
-      expect(next.playerHealth).toBe(15);
+      expect(next.playerHealth).toBe(14);
       expect(texts).toContainEqual(
-        expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 5 }),
+        expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 4 }),
       );
     },
   );

@@ -3671,7 +3671,7 @@
   "catalog.talentPool.bleed-septic-shock.description": {"id":"description.1c53990c45aad72c","values":{"value0":10}},
   "catalog.talentPool.bleed-wound-care.description": {"id":"description.48128075c8c5133","values":{}},
   "catalog.talentPool.block-absorb-physical.description": {"id":"description.3ecb3c077312e25","values":{"value0":10}},
-  "catalog.talentPool.block-depleted-heal.description": {"id":"description.1893fb4cfd0ab52c","values":{"value0":2}},
+  "catalog.talentPool.block-depleted-heal.description": {"id":"description.1893fb4cfd0ab52c","values":{"value0":1}},
   "catalog.talentPool.block-depleted-heal.name": {"id":"catalog.ENCOUNTER_TRAITS.second-wind.label"},
   "catalog.talentPool.block-prevent-bleed.description": {"id":"description.669023e39c4ee353","values":{}},
   "catalog.talentPool.block-prevent-poison.description": {"id":"description.98c79783cc00b69d","values":{}},

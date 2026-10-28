@@ -151,8 +151,8 @@ export const talentRows = [
   bleed("bleed-rip-and-tear", "Bloodrush")("Scissors", "Dealing Bleed damage has a 10% chance to draw a card", {
     drawOnBleedDamageChance: 10,
   }),
-  block("block-depleted-heal", "Second Wind")("Wind", "When Block is depleted, restore 2 Health", {
-    blockDepletedHeal: 2,
+  block("block-depleted-heal", "Second Wind")("Wind", "When Block is depleted, restore 1 Health", {
+    blockDepletedHeal: 1,
   }),
   block("block-absorb-physical", "Reinforce")("ShieldCheck", "Block absorbs 10% more Physical damage", {
     blockAbsorbPhysicalBonus: 10,
