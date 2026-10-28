@@ -135,8 +135,13 @@ Unsafe numeric XP entries are dropped independently so valid sibling progress
 survives. Save timestamps use the same safe-integer policy for raw candidate
 ordering and parsed freshness. Crafting currencies must remain safely spendable.
 Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
-identity repair and catalog hydration restore them. Scheduled battle pulses
-retain the card effect schema's one-to-ten-turn duration limit.
+identity repair and catalog hydration restore them. Invalid optional card metadata is repaired without discarding the card; a damaged
+Consume flag falls back to the catalog or Mixed Potion rule, and valid keyword
+tags survive damaged siblings.
+Scheduled battle pulses retain valid child effects and source metadata independently,
+while keeping the card effect schema's one-to-ten-turn duration limit. Labyrinth
+battles recover encounter benefits from the active run when the battle snapshot
+loses its mode or benefits.
 Saved enemies regain their current native Traits from the catalog and retain
 only current combat encounter Traits. Reward benefits stay in their separate
 field; unsupported saved Traits cannot enter combat.

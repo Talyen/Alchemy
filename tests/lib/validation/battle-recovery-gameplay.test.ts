@@ -14,6 +14,8 @@ import { advanceToPlayerTurn, reducePlayerSkipTurns } from "@/lib/battle/player-
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ActiveRunDataSchema } from "@/lib/validation";
+import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { applyPlayerCombatDamage } from "@/lib/battle/health-state";
 import { hasPotentialLethalSelfCost } from "@/lib/battle/autoplay-policy";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
@@ -242,4 +244,62 @@ describe("playing recovered battles", () => {
       expect(state.nextCardUid).toBeGreaterThan(Math.max(...ids));
     },
   );
+});
+
+it("keeps cards with damaged optional fields and valid tags", () => {
+  const original = cardById["health-potion"]!;
+  const state = restore({
+    hand: [
+      { ...original, uid: 1, consume: "broken", corrupted: 42, baseTitle: false, tags: ["archery", "bogus", null] },
+    ],
+  });
+  expect(state.hand).toHaveLength(1);
+  expect(state.hand[0]).toMatchObject({ id: original.id, consume: true, tags: ["archery"] });
+  expect(state.hand[0]).not.toHaveProperty("corrupted");
+  expect(state.hand[0]).not.toHaveProperty("baseTitle");
+});
+
+it("preserves scheduled effects when source metadata or a sibling effect is damaged", () => {
+  const state = restore({
+    pendingTurnStartEffects: [
+      {
+        remainingTurns: 1,
+        sourceCard: { id: "blizzard", consume: "broken", tags: ["archery", "invalid"] },
+        effects: [{ kind: "damage", damageType: "freeze", amount: 2 }, { kind: "unknown" }],
+      },
+      {
+        remainingTurns: 1,
+        sourceCard: { id: 5 },
+        effects: [{ kind: "damage", damageType: "freeze", amount: 1 }],
+      },
+    ],
+  });
+  expect(state.pendingTurnStartEffects).toHaveLength(2);
+  expect(state.pendingTurnStartEffects[0]?.sourceCard).toEqual({ id: "blizzard", tags: ["archery"] });
+  expect(state.pendingTurnStartEffects[1]?.sourceCard).toBeUndefined();
+  expect(advanceToPlayerTurn({ ...state, rng }).enemyHealth).toBe(97);
+});
+
+it("retains valid Archery echoes when a saved tag is damaged", () => {
+  const echo = cardById["fire-arrow"]!;
+  const state = restore({ uniqueGear: { archeryEchoes: [{ ...echo, tags: ["archery", "invalid"] }] } });
+  expect(state.uniqueGear.archeryEchoes).toHaveLength(1);
+  expect(state.uniqueGear.archeryEchoes[0]?.tags).toEqual(["archery"]);
+});
+
+it("restores Labyrinth battle benefits from the enclosing run", () => {
+  const battleState = {
+    ...battleSnapshot(regressionBattle({ currentEnemy: enemyById.skeleton })),
+    contentSystemType: "broken",
+    encounterBenefits: ["generous"],
+  };
+  const data = ActiveRunDataSchema.parse(
+    makeMinimalActiveRunInput({
+      contentSystemType: "labyrinth",
+      labyrinthMap: gridLabyrinthMapFixture(),
+      activeLabyrinthRewardModifiers: ["generous"],
+      activity: savedActivityFixture("battle", { battleState }),
+    }),
+  );
+  expect(savedActivityData(data, "battle")?.battleState.encounterBenefits).toEqual(["generous"]);
 });
