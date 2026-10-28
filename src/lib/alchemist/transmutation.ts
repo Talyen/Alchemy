@@ -397,7 +397,7 @@ export function createTransmutationOffers(
       }
       return pool;
     });
-    const selected = prismatic ? [...available] : [];
+    const selected = prismatic ? available : [];
     const guaranteedOffer =
       prismatic || guaranteed === undefined ? undefined : available.find((offer) => offer.keyword === guaranteed);
     if (!prismatic && guaranteedOffer) selected.push(guaranteedOffer);
