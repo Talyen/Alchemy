@@ -62,6 +62,7 @@ export function computeRunEndTalentXPSnapshot(runTalentXP: TalentXP, multiplier:
 export function mergeTalentXPAwards(talentXP: TalentXP, awards: TalentXP): TalentXP {
   const nextTalentXP = { ...talentXP };
   for (const [kw, bonus] of Object.entries(awards)) {
+    if (bonus === undefined) continue;
     const keyword = kw as KeywordId;
     nextTalentXP[keyword] = Math.min(Number.MAX_SAFE_INTEGER, (nextTalentXP[keyword] ?? 0) + bonus);
   }
