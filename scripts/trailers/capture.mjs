@@ -5,7 +5,7 @@ import path from "node:path";
 import { createServer } from "vite";
 import { chromium } from "@playwright/test";
 import { pointerPath, samplePointer, prepareAction, pointerCorridor, performAction } from "./direction.mjs";
-import { nativeMusicOffsets } from "./model.mjs";
+import { captureOptionsMatch, nativeMusicOffsets } from "./model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "./browser-runtime.mjs";
 import {
   assertFrameDimensions,
@@ -619,8 +619,14 @@ export async function captureRecipe({
 }) {
   if (foregroundLyrics)
     throw new Error("Foreground lyric compositing is retired; capture native in-scene layering instead");
+  const startFile = path.join(out, "capture-start.json");
+  if (!recover && fs.existsSync(startFile)) {
+    const start = JSON.parse(fs.readFileSync(startFile, "utf8"));
+    if (!captureOptionsMatch(start, { encoderPolicy, pinVideoStart, foregroundLyrics, captureWindows }))
+      throw new Error("Existing bundle has different capture options; choose a fresh bundle");
+  }
   if (!recover)
-    writeJson(path.join(out, "capture-start.json"), {
+    writeJson(startFile, {
       recipe,
       draft,
       source,

@@ -257,3 +257,13 @@ export function compileRenderChunks(timeline) {
     to: Math.min(timeline.durationInFrames - 1, (index + 1) * frames - 1),
   }));
 }
+
+/** A resumed bundle cannot silently mix different source-capture policies. */
+export function captureOptionsMatch(start, options) {
+  return (
+    (start.encoderPolicy ?? "lossless") === (options.encoderPolicy ?? "lossless") &&
+    (start.pinVideoStart ?? false) === (options.pinVideoStart ?? false) &&
+    (start.foregroundLyrics ?? false) === (options.foregroundLyrics ?? false) &&
+    JSON.stringify(start.captureWindows ?? null) === JSON.stringify(options.captureWindows ?? null)
+  );
+}

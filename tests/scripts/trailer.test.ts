@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   compileRenderChunks,
   compileTimeline,
+  captureOptionsMatch,
   mapSoundEvents,
   nativeMusicOffsets,
   parseRecipe,
@@ -29,6 +30,13 @@ describe("trailer edit admission and synchronization", () => {
       "120",
     ]);
     expect(() => captureEncoderArgs(60, "unknown")).toThrow("Unknown capture encoder policy");
+  });
+  it("rejects capture option changes when resuming a bundle", () => {
+    expect(captureOptionsMatch({}, { encoderPolicy: "lossless" })).toBe(true);
+    expect(captureOptionsMatch({ encoderPolicy: "bounded" }, {})).toBe(false);
+    expect(captureOptionsMatch({ pinVideoStart: true }, {})).toBe(false);
+    expect(captureOptionsMatch({ captureWindows: { clip: [{ id: "a", start: 0, end: 1 }] } }, {})).toBe(false);
+    expect(captureOptionsMatch({ encoderPolicy: "bounded" }, { encoderPolicy: "bounded" })).toBe(true);
   });
   it("covers the complete cinematic edit exactly once across bounded render chunks", () => {
     const recipe = parseRecipe(
