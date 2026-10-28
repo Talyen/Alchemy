@@ -73,7 +73,7 @@ const TalentCard = memo(function TalentCard({
         onHoverTalent?.(null);
       }}
       className={cn(
-        "talent-node relative h-[calc(10.5*var(--content-rem,1rem))] w-[calc(20.5*var(--content-rem,1rem))] shrink-0 rounded-lg bg-stone-900",
+        "talent-node relative flex min-h-[calc(10.5*var(--content-rem,1rem))] w-[calc(20.5*var(--content-rem,1rem))] shrink-0 rounded-lg bg-stone-900",
         showShine && "talent-card-available",
         cardInteractiveGlowClass,
         cardShineFrameClass,
@@ -96,7 +96,7 @@ const TalentCard = memo(function TalentCard({
       <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
       <div
         className={cn(
-          "talent-card-face relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border-2 px-5 py-4 text-center transition-all duration-300 ease-[var(--ease-out-expo)] outline-none select-none",
+          "talent-card-face relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-lg border-2 px-5 py-4 text-center transition-all duration-300 ease-[var(--ease-out-expo)] outline-none select-none",
           isUnlocked || isUnlocking
             ? "talent-card-unlocked bg-stone-900"
             : interactive
@@ -110,13 +110,13 @@ const TalentCard = memo(function TalentCard({
             isLockedLook ? "opacity-50" : interactive ? "opacity-80" : undefined,
           )}
         >
-          <div className="flex items-center justify-center gap-2">
-            <span className={cn(def?.colorClass)}>
+          <div className="flex max-w-full items-center justify-center gap-2">
+            <span className={cn("shrink-0", def?.colorClass)}>
               {i18n.displayText(createElement(getTalentIcon(talent), { className: "h-7 w-7 sm:h-8 sm:w-8" }))}
             </span>
             <span
               className={cn(
-                "max-w-[calc(15*var(--content-rem,1rem))] truncate text-xl font-bold sm:text-2xl",
+                "max-w-[calc(15*var(--content-rem,1rem))] min-w-0 text-xl leading-tight font-bold [overflow-wrap:anywhere] hyphens-auto sm:text-2xl",
                 def?.colorClass,
               )}
             >
@@ -196,7 +196,7 @@ export function TalentTree({
   return (
     <div className={cn("mx-auto flex w-full flex-col items-center gap-3.5 sm:gap-4", className)}>
       {rows.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex items-center justify-center gap-3.5 sm:gap-4">
+        <div key={rowIndex} className="flex items-stretch justify-center gap-3.5 sm:gap-4">
           {row.map((talent) => {
             if (!talent) return null;
             return (
