@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { cardById, getCardDescription, type BattleCardEffect } from "@/lib/game-data";
+import { cardById, getCardDescription, getStandardPotionPoolView, type BattleCardEffect } from "@/lib/game-data";
 import { createCampfirePotionOffers, strengthenPotion } from "@/lib/alchemist/brewing";
 import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
@@ -113,4 +113,24 @@ it("offers three distinct seeded Potions including recovery or defense", () => {
   expect(new Set(offers.map((card) => card.id)).size).toBe(3);
   expect(offers.some((card) => ["health-potion", "stoneskin-potion", "panacea-potion"].includes(card.id))).toBe(true);
   expect(offers).toEqual(createCampfirePotionOffers(createSeededRng(23)));
+});
+
+it("owns brewed cards while retaining the full-shuffle RNG consumption", () => {
+  const catalog = getStandardPotionPoolView();
+  const before = structuredClone(catalog);
+  const seeded = createSeededRng(23);
+  let draws = 0;
+  const offers = createCampfirePotionOffers(() => {
+    draws++;
+    return seeded();
+  });
+  expect(draws).toBe(catalog.length - 1);
+  for (const offer of offers) {
+    const source = catalog.find((card) => card.id === offer.id)!;
+    expect(offer).toEqual(source);
+    expect(offer).not.toBe(source);
+    expect(offer.effects).not.toBe(source.effects);
+    offer.effects.length = 0;
+  }
+  expect(catalog).toEqual(before);
 });

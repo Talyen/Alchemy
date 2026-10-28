@@ -6,6 +6,9 @@ import { SOUND_PRELOAD_TIMEOUT_MS } from "../game-constants";
 
 const IDLE_PRELOAD_TIMEOUT_MS = 5000;
 
+const battleSoundNames = Object.values(battleEventSounds).filter((name) => name !== null);
+const urgentSoundNames = [...Object.values(uiSounds), battleEventSounds.drawTransfer].filter((name) => name !== null);
+
 const warmedSounds = new Set<string>();
 const pendingWarmups = new Set<() => void>();
 let preloadAllSoundsStarted = false;
@@ -60,7 +63,7 @@ export function preloadBattleSounds(handCardIds: readonly string[], abilityIds: 
   // trigger stun/freeze/heal cues, so warm everything rather than a subset.
   // Enemy abilities play through playCardSound(ability.id), so their card
   // sounds are warmed alongside the visible hand.
-  const names = new Set<string>(Object.values(battleEventSounds).filter((name) => name !== null));
+  const names = new Set<string>(battleSoundNames);
   for (const cardId of handCardIds) for (const name of getCardSounds(cardId)) names.add(name);
   for (const cardId of abilityIds) for (const name of getCardSounds(cardId)) names.add(name);
   preloadSounds([...names]);
@@ -71,8 +74,7 @@ export function preloadAllSounds() {
   if (typeof Audio === "undefined") return;
   preloadAllSoundsStarted = true;
 
-  const urgentSounds = [...Object.values(uiSounds), battleEventSounds.drawTransfer];
-  preloadSounds(urgentSounds.filter((name) => name !== null));
+  preloadSounds(urgentSoundNames);
 
   const pendingNames = allRegisteredSoundFiles().filter((name) => !warmedSounds.has(name));
   if (pendingNames.length === 0) return;
