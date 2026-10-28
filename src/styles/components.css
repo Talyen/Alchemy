@@ -374,10 +374,6 @@
     border-color: #b9bcb3;
   }
 
-  .talent-node[data-node-state="available"] .talent-node-frame:not([data-reduced-motion="true"]) {
-    animation: talentAvailableDrift 3.6s ease-in-out infinite;
-  }
-
   .talent-node:is([data-node-state="unlocked"], [data-node-state="unlocking"]) .talent-node-frame {
     border-color: var(--talent-readable-accent);
   }
@@ -406,22 +402,10 @@
 
   @keyframes talentBorderIlluminate {
     from {
-      border-color: #68716b;
+      border-color: #b9bcb3;
     }
     to {
       border-color: var(--talent-readable-accent);
-    }
-  }
-
-  @keyframes talentAvailableDrift {
-    0%,
-    100% {
-      transform: translateY(0);
-      box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
-    }
-    50% {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgb(0 0 0 / 45%);
     }
   }
 
