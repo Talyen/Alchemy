@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { injectActiveBattle, enterPrimaryRewardScreen, makeCard, makeGoblinBattleState } from "../browser-helpers";
 import { MenuPage } from "../pages/menu-page";
 import { resumeInjectedRun } from "../e2e/navigation";
+import { readSavedGame } from "../e2e/save-injection";
 import { translatedLabel, type AcceptanceLocale } from "../e2e/localization";
 
 /** Shared checkpoint for pixel baselines and ad-hoc original/candidate review. */
@@ -18,7 +19,8 @@ export async function openVisualScenario(page: Page, scenario: string, locale = 
   if (scenario === "battle" || scenario === "card-inspection") await openVisualBattle(page);
   else if (scenario === "rewards")
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"], selectedId: "bash" });
-  else if (scenario === "homestead") await new MenuPage(page).gotoWithUnlockedMeta();
+  else if (["homestead", "talents", "talent-mana", "talent-unlock"].includes(scenario))
+    await new MenuPage(page).gotoWithUnlockedMeta(scenario === "talent-unlock" ? { talentXP: { mana: 550 } } : {});
   else await new MenuPage(page).goto();
 
   // Existing injection helpers enter their checkpoint in English. Switch only
@@ -35,7 +37,28 @@ export async function openVisualScenario(page: Page, scenario: string, locale = 
     await expect(hand).toHaveCount(3);
     await expect(hand.first()).toBeVisible();
   }
-  if (scenario === "options" || scenario === "homestead") {
+  if (["talent-mana", "talent-unlock", "talents"].includes(scenario)) {
+    await page.getByRole("button", { name: label("Talents"), exact: true }).click();
+    if (scenario !== "talents") {
+      await page
+        .getByRole("button", {
+          name: label("Select {{value0}} Talents").replace("{{value0}}", label("Mana")),
+          exact: true,
+        })
+        .click();
+      await expect(page.getByRole("heading", { name: label("Mana"), exact: true })).toBeVisible();
+      if (scenario === "talent-unlock") {
+        const node = page.getByRole("button").filter({ has: page.getByText(label("Wellspring"), { exact: true }) });
+        await node.focus();
+        await expect(node).toBeFocused();
+        await node.press("Enter");
+        await expect.poll(async () => (await readSavedGame(page)).unlockedTalents.mana).toEqual(["mana-wellspring"]);
+        await expect(node).toHaveAttribute("aria-disabled", "true");
+      }
+    } else {
+      await expect(page.getByRole("heading", { name: label("Talents"), exact: true })).toBeVisible();
+    }
+  } else if (scenario === "options" || scenario === "homestead") {
     const title = label(scenario === "options" ? "Options" : "Homestead");
     await page.getByRole("button", { name: title, exact: true }).click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();

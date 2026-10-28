@@ -6,8 +6,9 @@
  * src/lib/battle yields ~8.5k mutants, which cannot complete inside the
  * nightly cap; the vitest runner keeps per-mutant cost proportional via
  * per-test coverage selection instead of re-running the whole battle suite
- * for every mutant. Expand the
- * scope only with throughput to stay inside the nightly timeout.
+ * for every mutant. Nightly runs one job per target using this list, so each
+ * target must independently meet the break threshold. Expand the scope only
+ * with throughput to stay inside the nightly timeout.
  */
 /** @type {import("@stryker-mutator/core").PartialStrykerOptions} */
 export default {

@@ -203,10 +203,29 @@ jobs:
           retention-days: 1
           if-no-files-found: ignore
 
+  mutation-scope:
+    name: Determine battle mutation scope
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.scope.outputs.targets }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          sparse-checkout: |
+            /*
+          sparse-checkout-cone-mode: false
+      - id: scope
+        run: node --input-type=module -e 'import config from "./stryker.config.mjs"; console.log(`targets=${JSON.stringify(config.mutate)}`)' >> "$GITHUB_OUTPUT"
+
   mutation:
-    name: Battle mutation
+    name: Battle mutation (${{ matrix.target }})
+    needs: mutation-scope
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.mutation-scope.outputs.targets) }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -218,12 +237,14 @@ jobs:
 
       - run: mkdir -p reports
       - name: Mutate battle damage calculation
-        run: npm run test:mutation
+        env:
+          MUTATION_TARGET: ${{ matrix.target }}
+        run: npm run test:mutation -- --mutate "$MUTATION_TARGET"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
-          name: mutation-report
+          name: mutation-report-${{ strategy.job-index }}
           path: reports/mutation/
           retention-days: 1
           if-no-files-found: ignore
