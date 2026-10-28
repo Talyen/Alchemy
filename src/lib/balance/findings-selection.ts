@@ -31,6 +31,7 @@ function scoreFinding(finding: BalanceFinding): number {
 }
 
 export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap: number): BalanceFindingsReport {
+  if (!Number.isSafeInteger(cap) || cap < 0) throw new Error("Findings cap must be a non-negative safe integer");
   const byKey = new Map<string, BalanceFinding>();
   for (const finding of candidates) {
     const key = findingKey(finding);
@@ -102,12 +103,10 @@ function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): 
   const selected = new Set<BalanceFinding>();
   for (let round = 0; selected.size < cap; round++) {
     const previousSize = selected.size;
-    const roundLimit = Math.floor(cap - selected.size);
-    if (roundLimit <= 0) break;
     for (const bucket of buckets) {
       const finding = bucket[round];
       if (finding) selected.add(finding);
-      if (selected.size - previousSize >= roundLimit) break;
+      if (selected.size === cap) break;
     }
     if (selected.size === previousSize) break;
   }
