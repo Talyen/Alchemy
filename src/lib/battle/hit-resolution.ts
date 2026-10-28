@@ -166,8 +166,8 @@ function resolveCardHit(
   if (
     facts.critical &&
     modifiedDamage > 0 &&
-    card.tags?.includes("archery") &&
-    nextState.gearEffects.archeryCritDrawsCompanion > 0
+    nextState.gearEffects.archeryCritDrawsCompanion > 0 &&
+    card.tags?.includes("archery")
   ) {
     nextState = drawKeywordCard(nextState, "companion", { combatTexts });
   }

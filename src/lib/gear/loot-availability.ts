@@ -11,8 +11,9 @@ const ALL_BASE_ITEM_ID_SET = new Set(ALL_BASE_ITEM_IDS);
 export function getOwnedUniqueDefinitionIds(inventories?: Record<string, GearInstance[]> | null): Set<string> {
   const owned = new Set<string>();
   if (!inventories) return owned;
-  for (const list of Object.values(inventories)) {
-    for (const inst of list) {
+  for (const key in inventories) {
+    if (!Object.hasOwn(inventories, key)) continue;
+    for (const inst of inventories[key]!) {
       if (gearDefinitions[inst.definitionId]?.rarity === "unique") {
         owned.add(inst.definitionId);
       }
@@ -26,7 +27,8 @@ export function getGearLootAvailability(
   baseItemIds: readonly string[] = ALL_BASE_ITEM_IDS,
 ): LootAvailability {
   if (baseItemIds.length === 0) return { basic: false, astral: false, unique: false };
-  const allowedBases = baseItemIds === ALL_BASE_ITEM_IDS ? ALL_BASE_ITEM_ID_SET : new Set(baseItemIds);
+  const allowedBases =
+    baseItemIds === ALL_BASE_ITEM_IDS ? ALL_BASE_ITEM_ID_SET : baseItemIds.length > 1 ? new Set(baseItemIds) : null;
   let basic = false;
   let astral = false;
   for (const id of baseItemIds) {
@@ -37,7 +39,11 @@ export function getGearLootAvailability(
   return {
     basic,
     astral,
-    unique: uniqueItemList.some((unique) => allowedBases.has(unique.baseItemId) && !ownedUniqueIds.has(unique.id)),
+    unique: uniqueItemList.some(
+      (unique) =>
+        (allowedBases ? allowedBases.has(unique.baseItemId) : baseItemIds[0] === unique.baseItemId) &&
+        !ownedUniqueIds.has(unique.id),
+    ),
   };
 }
 

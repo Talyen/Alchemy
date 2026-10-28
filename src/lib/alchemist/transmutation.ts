@@ -401,10 +401,12 @@ export function createTransmutationOffers(
     const guaranteedOffer =
       prismatic || guaranteed === undefined ? undefined : available.find((offer) => offer.keyword === guaranteed);
     if (!prismatic && guaranteedOffer) selected.push(guaranteedOffer);
-    for (const pool of pools) {
-      if (prismatic || pool.some((offer) => selected.includes(offer))) continue;
-      const offer = pickRandom(pool, rng);
-      if (offer) selected.push(offer);
+    if (!prismatic) {
+      for (const pool of pools) {
+        if (pool.some((offer) => selected.includes(offer))) continue;
+        const offer = pickRandom(pool, rng);
+        if (offer) selected.push(offer);
+      }
     }
     if (selected.length < 3) {
       const remaining = available.filter((offer) => !selected.includes(offer));

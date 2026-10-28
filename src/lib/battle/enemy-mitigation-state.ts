@@ -42,7 +42,7 @@ export function applySunderingArmorRemoval(state: BattleState, damageType: strin
 }
 
 export function decayEnemyArmor(state: BattleState): BattleState {
-  if (hasEnemyTrait(state, "unbreakable") || state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
+  if (state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT || hasEnemyTrait(state, "unbreakable")) {
     return state;
   }
   return reduceEnemyArmor(state, BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);

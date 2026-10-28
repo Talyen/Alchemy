@@ -130,14 +130,16 @@ export function processEncounterTraitCardAction(
   options: { cardPlayed?: boolean } = {},
 ): BattleState {
   let nextState = state;
-  const scale = (amount: number) => scaleByRoomMultiplier(nextState, amount);
   if (card.consume && hasEnemyTrait(nextState, "insatiable")) {
     nextState = recordEnemyAbilityActivation(nextState, "insatiable");
-    nextState = { ...nextState, enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scale(1) };
+    nextState = {
+      ...nextState,
+      enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scaleByRoomMultiplier(nextState, 1),
+    };
   }
   if (options.cardPlayed !== false && hasEnemyTrait(nextState, "rooted") && isNatureCard(card)) {
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
-    nextState = addEnemyMitigationWithCombatText(nextState, "block", scale(1), combatTexts);
+    nextState = addEnemyMitigationWithCombatText(nextState, "block", scaleByRoomMultiplier(nextState, 1), combatTexts);
   }
   if (attackAttempted && nextState.enemyHealth > 0) {
     if (hasEnemyTrait(nextState, "thorns") && nextState.flags.legacyEnemyThornsReady) {
@@ -170,9 +172,15 @@ export function processEncounterTraitsForCardCopies(
   const next = processEncounterTraitCardAction(state, card, combatTexts, attackAttempted);
   return repeatAttackAttempted === undefined
     ? next
-    : processEncounterTraitCardAction(next, { ...card, consume: false }, combatTexts, repeatAttackAttempted, {
-        cardPlayed: false,
-      });
+    : processEncounterTraitCardAction(
+        next,
+        card.consume ? { ...card, consume: false } : card,
+        combatTexts,
+        repeatAttackAttempted,
+        {
+          cardPlayed: false,
+        },
+      );
 }
 
 export function applyEncounterThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

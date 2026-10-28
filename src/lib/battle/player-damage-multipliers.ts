@@ -159,8 +159,8 @@ export function resolveDamageBonusMultiplier(
     state.talentEffects.leechCardDamageVsLowHealthPercent > 0 &&
     card &&
     !companionAttack &&
-    cardHasKeyword(card, "leech") &&
-    state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
+    state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR &&
+    cardHasKeyword(card, "leech")
       ? state.talentEffects.leechCardDamageVsLowHealthPercent / PERCENT_DENOMINATOR
       : 0;
   const totalBonus =

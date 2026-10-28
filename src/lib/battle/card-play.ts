@@ -25,7 +25,8 @@ function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof com
     consumedFlags.size === 0 &&
     disarmedFlags.size === 0 &&
     !spentArmedDiscount &&
-    Object.keys(uniqueDiscounts).length === 0
+    uniqueDiscounts.knightsAnswerReady === undefined &&
+    uniqueDiscounts.returningFlightUids === undefined
   ) {
     return state;
   }
