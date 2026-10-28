@@ -21,6 +21,10 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
+          sparse-checkout: |
+            /*
+            !/assets/sources/
+          sparse-checkout-cone-mode: false
       - uses: ./.github/actions/setup
         with:
           native-steamworks: "true"

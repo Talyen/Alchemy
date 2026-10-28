@@ -25,6 +25,7 @@ jobs:
         with:
           sparse-checkout: |
             /*
+            !/assets/sources/
           sparse-checkout-cone-mode: false
       - uses: ./.github/actions/setup
       - name: Verify release tag matches package.json
