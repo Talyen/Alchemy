@@ -1,7 +1,7 @@
 import {
   cardLibrary,
   companionLibrary,
-  getOfferableCardPool,
+  getOfferableCardPoolView,
   trinketLibrary,
   visitBattleCardEffects,
   type BattleCard,
@@ -29,7 +29,7 @@ export function validateCards(collector: Collector, cards: readonly BattleCard[]
   });
 
   const companionIds = new Set(Object.keys(companionLibrary));
-  const offerableIds = new Set(getOfferableCardPool().map((card) => card.id));
+  const offerableIds = new Set(getOfferableCardPoolView().map((card) => card.id));
   for (const card of cards) {
     for (const issue of validateCardDescriptionParity(card)) collector.issues.push(issue);
     visitBattleCardEffects(card.effects, (effect) => {
