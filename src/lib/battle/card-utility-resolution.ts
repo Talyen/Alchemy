@@ -105,7 +105,7 @@ export function cardHealingAmount(
   potionMult: number,
 ): number {
   const amount = applyPotionMultiplier(effect.amount, potionMult);
-  const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
+  const potionBonus = effect.amount > 0 && isPotionCard(card) ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
   const adjusted = Math.round(amount * (1 + (state.talentEffects.cardHealMultipliers[card.id] ?? 0))) + potionBonus;
   const consumeBonus = card.consume
     ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR

@@ -66,9 +66,8 @@ function computeBaseRawAmount(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
 ): number {
-  const forgeBonus = getForgeBonusForDamage(state, effect.damageType);
-
   // Explicit Forge scaling replaces the usual Forge bonus.
+  const forgeBonus = effect.forgeBonusPercent === undefined ? getForgeBonusForDamage(state, effect.damageType) : 0;
   let amount: number;
   if (effect.forgeBonusPercent !== undefined) {
     amount = effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
@@ -139,7 +138,7 @@ function conditionalAttackBonus(
   if (state.enemyHealth * PERCENT_DENOMINATOR < state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT)
     bonus += gear.attackBonusVsLowHealth;
   if (state.enemyCC.stunSkipTurns > 0) bonus += gear.attackBonusVsStunned;
-  if (card.tags?.includes("archery") && state.enemyStatuses.poison > 0) bonus += gear.archeryAttackBonusVsPoisoned;
+  if (state.enemyStatuses.poison > 0 && card.tags?.includes("archery")) bonus += gear.archeryAttackBonusVsPoisoned;
   if (damageType === "holy" && state.enemyStatuses.burn > 0) bonus += gear.holyAttackBonusVsBurning;
   if (damageType === "freeze") {
     if (state.enemyStatuses.burn > 0) bonus += gear.freezeAttackBonusVsBurning;
@@ -162,14 +161,11 @@ export function computeBaseDamage(
   } = {},
 ): number {
   // These bonuses enlarge the original packet; they do not create follow-up hits.
-  const poisonPotionBonus =
-    card && !companionAttack && isPotionCard(card) && effect.damageType === "poison"
-      ? state.talentEffects.poisonDamageOnConsume
-      : 0;
+  const potion = card && !companionAttack && isPotionCard(card);
+  const poisonPotionBonus = potion && effect.damageType === "poison" ? state.talentEffects.poisonDamageOnConsume : 0;
   const consumeBurnBonus =
     card?.consume && !companionAttack && effect.damageType === "burn" ? state.gearEffects.burnOnConsume : 0;
-  const potionBonus =
-    card && !companionAttack && isPotionCard(card) ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
+  const potionBonus = potion ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
   const rawAmount =
     computeBaseRawAmount(state, effect, card) +
     bonus +

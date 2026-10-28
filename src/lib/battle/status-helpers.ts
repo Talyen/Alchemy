@@ -201,7 +201,7 @@ function decayPlayerArmor(
   combatTexts?: CombatTextEvent[],
   onArmorLost?: (amount: number) => void,
 ): BattleState {
-  if (hasEncounterBenefit(state, "ironclad") || state.playerStatuses.armor <= MIN_ARMOR_AMOUNT) {
+  if (state.playerStatuses.armor <= MIN_ARMOR_AMOUNT || hasEncounterBenefit(state, "ironclad")) {
     return state;
   }
 

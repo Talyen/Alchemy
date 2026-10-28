@@ -48,7 +48,7 @@ export function createEnemyAbilityContext(state: BattleState, damaging: boolean)
   return {
     attackReduction: damaging
       ? state.flags.enemyAttackDamageReduction +
-        (hasEnemyTrait(state, "cowardly") && state.enemyHealth < state.enemyMaxHealth / 2 ? 1 : 0)
+        (state.enemyHealth < state.enemyMaxHealth / 2 && hasEnemyTrait(state, "cowardly") ? 1 : 0)
       : 0,
     brawlerPenalty: damaging && state.flags.enemyBrawlerDamagePenalty,
     brawlerPenaltySpent: false,
@@ -147,9 +147,9 @@ export function applyAbilityDamage(
   context: EnemyAbilityContext,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  context.vampireBonus = hasEnemyTrait(state, "vampire") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
+  context.vampireBonus = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR && hasEnemyTrait(state, "vampire");
   context.soulHarvest =
-    hasEnemyTrait(state, "soul-harvest") && state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
+    state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR && hasEnemyTrait(state, "soul-harvest")
       ? rollChance(SOUL_HARVEST_PURGE_CHANCE, getBattleRng(state))
         ? "purge"
         : "leech"
@@ -162,7 +162,7 @@ export function applyAbilityDamage(
     context.brawlerPenaltySpent = true;
     state = setFlag(state, "enemyBrawlerDamagePenalty", false);
   }
-  const condemn = hasEnemyTrait(state, "inquisitor") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
+  const condemn = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR && hasEnemyTrait(state, "inquisitor");
   // Purge is an additional trait reward; it cannot revoke the ability's own Leech.
   if (context.soulHarvest === "leech") effect = { ...effect, lifesteal: true };
   effect = resolveConditionalCardDamage(effect, state.playerCC.freezeSkipTurns > 0);
@@ -241,7 +241,7 @@ export function applyAbilityDamage(
 }
 
 function applyHitPilfer(state: BattleState, texts: CombatTextEvent[]): BattleState {
-  if (!hasEnemyTrait(state, "pilfer") || state.playerStatuses.block <= 0) return state;
+  if (state.playerStatuses.block <= 0 || !hasEnemyTrait(state, "pilfer")) return state;
   let next = setPlayerStatus(state, "block", state.playerStatuses.block - 1);
   next = recordEnemyAbilityActivation(addEnemyMitigationWithCombatText(next, "block", 1, texts), "pilfer");
   emitDamageText(texts, "player", "block", 1, { impact: false });
