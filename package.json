@@ -223,7 +223,7 @@
     "yaml": "^2.9.1",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2003",
-    "@swc/core": "1.16.13",
+    "@swc/core": "1.16.20",
     "@axe-core/playwright": "^4.14.0",
     "eslint": "^10.0.0",
     "@electron-internal/extract-zip": "^1.0.1"
