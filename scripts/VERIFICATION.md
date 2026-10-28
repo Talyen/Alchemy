@@ -334,6 +334,11 @@ CI retains this directory between static-check jobs, keyed by runner OS/architec
 Node version file, dependency lockfile, TypeScript configs and commit. A compatible
 previous commit supplies the starting cache; TypeScript still checks current inputs
 and the static gate always runs. Cache misses run normally without reused analysis.
+Renderer and package CI checkouts exclude `assets/sources/`, matching code-only
+worktrees; they retain prepared art, audio, icons and manifests. The asset-integrity
+job still checks out source masters for freshness validation. Windows package
+uploads disable archive compression because the installer and media are already
+compressed. Release packaging retains full Git history for patch notes.
 Build preflight overlaps localization and generated-output validation, waits for both
 to settle, and rejects either failure before starting Vite.
 
