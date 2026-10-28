@@ -1627,25 +1627,29 @@ html.alchemy-disable-animations .card-play-rejected::before {
   isolation: isolate;
   padding-block: 4px;
 }
-.gear-affix-word {
-  animation: gear-affix-word-enter 180ms ease-out var(--affix-word-delay, 0ms) both;
+/* Masks act on fully shaped block text: no extra word boxes or changing glyph layout. */
+.gear-affix-enter > .gear-affix-ink-line,
+.gear-affix-exit > .gear-affix-ink-line {
+  mask-image: linear-gradient(to right, #000 0%, #000 45%, transparent 55%, transparent 100%);
+  mask-size: 220% 100%;
+  mask-repeat: no-repeat;
 }
-.gear-affix-glow {
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-  inset: 6px 0;
-  border-radius: 6px;
-  box-shadow: 0 0 12px 2px var(--affix-glow-color);
-  animation: gear-affix-glow 360ms ease-out both;
+.gear-affix-enter > .gear-affix-ink-line {
+  animation: gear-affix-write 260ms ease-out both;
+}
+.gear-affix-enter > .gear-affix-ink-description {
+  animation-delay: 55ms;
+}
+.gear-affix-exit > .gear-affix-ink-line {
+  animation: gear-affix-burn 140ms ease-in both;
 }
 .gear-affix-row[data-affix-change="removed"] {
-  animation: gear-affix-remove 360ms ease-in-out both;
+  animation: gear-affix-remove 420ms ease-in-out both;
 }
 .gear-affix-row[data-affix-change="removed"] > .gear-affix-row-clip {
   overflow: hidden;
 }
-/* Rerolls share a single slot: its height is max(old,new), never their sum. */
+/* Rerolls and changed numbers share max(old,new) height, never a stacked double affix. */
 .gear-affix-replacement {
   display: grid;
   align-items: start;
@@ -1655,66 +1659,104 @@ html.alchemy-disable-animations .card-play-rejected::before {
 }
 .gear-affix-previous {
   pointer-events: none;
-  animation: gear-affix-replace-out 100ms ease-out both;
 }
-.gear-affix-replacement .gear-affix-word {
-  animation-duration: 140ms;
-  animation-delay: calc(100ms + min(var(--affix-word-delay, 0ms), 80ms));
+.gear-affix-replacement .gear-affix-enter > .gear-affix-ink-line {
+  animation-duration: 225ms;
+  animation-delay: 145ms;
 }
-.gear-affix-replacement .gear-affix-glow {
-  animation-delay: 100ms;
-  animation-duration: 260ms;
+.gear-affix-replacement .gear-affix-enter > .gear-affix-ink-description {
+  animation-delay: 195ms;
 }
-@keyframes gear-affix-replace-out {
-  from {
+@keyframes gear-affix-write {
+  0% {
+    mask-position: 100% 0;
+    opacity: 0;
+    text-shadow:
+      0 0 3px var(--affix-glow-color),
+      0 0 7px var(--affix-glow-color);
+  }
+  20% {
     opacity: 1;
   }
-  to {
-    opacity: 0;
+  65% {
+    text-shadow:
+      0 0 2px var(--affix-glow-color),
+      0 0 5px var(--affix-glow-color);
   }
-}
-@keyframes gear-affix-word-enter {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes gear-affix-glow {
-  0%,
   100% {
-    opacity: 0;
+    mask-position: 0% 0;
+    opacity: 1;
+    text-shadow: none;
   }
-  35% {
-    opacity: 0.35;
+}
+@keyframes gear-affix-burn {
+  0% {
+    mask-position: 0% 0;
+    opacity: 1;
+    text-shadow: none;
+  }
+  25% {
+    opacity: 1;
+    text-shadow:
+      0 0 2px #ffdc9a,
+      0 0 5px #e59b54;
+  }
+  100% {
+    mask-position: 100% 0;
+    opacity: 0;
+    text-shadow: 0 0 3px #e59b54;
   }
 }
 @keyframes gear-affix-remove {
-  0% {
-    opacity: 1;
-    grid-template-rows: 1fr;
-  }
-  50% {
-    opacity: 0;
+  0%,
+  55% {
     grid-template-rows: 1fr;
   }
   100% {
-    opacity: 0;
     grid-template-rows: 0fr;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .gear-affix-word,
-  .gear-affix-previous,
-  .gear-affix-glow,
-  .gear-affix-row[data-affix-change="removed"] {
-    animation: none;
+@keyframes gear-affix-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
-html.alchemy-disable-animations .gear-affix-word,
-html.alchemy-disable-animations .gear-affix-previous,
-html.alchemy-disable-animations .gear-affix-glow,
+@keyframes gear-affix-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gear-affix-enter > .gear-affix-ink-line,
+  .gear-affix-exit > .gear-affix-ink-line {
+    mask-image: none;
+    text-shadow: none;
+    animation: gear-affix-fade-in 90ms linear both;
+  }
+  .gear-affix-exit > .gear-affix-ink-line {
+    animation-name: gear-affix-fade-out;
+  }
+  .gear-affix-replacement .gear-affix-enter > .gear-affix-ink-line {
+    animation-duration: 90ms;
+    animation-delay: 90ms;
+  }
+  .gear-affix-enter > .gear-affix-ink-description {
+    animation-delay: 0ms;
+  }
+  .gear-affix-row[data-affix-change="removed"] {
+    animation-duration: 180ms;
+  }
+}
+html.alchemy-disable-animations .gear-affix-enter > .gear-affix-ink-line,
+html.alchemy-disable-animations .gear-affix-exit > .gear-affix-ink-line,
 html.alchemy-disable-animations .gear-affix-row[data-affix-change="removed"] {
+  mask-image: none;
+  text-shadow: none;
   animation: none;
 }

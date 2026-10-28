@@ -1,9 +1,10 @@
-import { Children, cloneElement, isValidElement, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { GearAffixTooltipEntry } from "@/lib/gear";
 
-const CHANGE_MS = 360;
+const CHANGE_MS = 420;
 interface AffixRow {
   entry: GearAffixTooltipEntry;
   change?: "added" | "changed" | "removed" | "replaced";
@@ -15,6 +16,7 @@ interface AffixRow {
 /** A mounted inspection owns its feedback; reopening it starts with the actual current item. */
 export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
   const reducedMotion = useReducedMotionPreference();
+  const disabled = reducedMotion && isAnimationDisabled();
   const signature = JSON.stringify(entries);
   const [snapshot, setSnapshot] = useState(() => ({
     signature,
@@ -28,7 +30,7 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
     const current = new Map(entries.map((entry) => [entry.affixId, entry]));
     const previous = new Map(snapshot.entries.map((entry) => [entry.affixId, entry]));
     const additions = entries.filter((entry) => !previous.has(entry.affixId));
-    const rows: AffixRow[] = reducedMotion
+    const rows: AffixRow[] = disabled
       ? entries.map((entry, index) => ({ entry, slot: `reduced-${revision}-${index}`, revision }))
       : [
           // A reroll can reorder its payload. Keep surviving lines in their inspected
@@ -52,7 +54,9 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
               const old = previous.get(entry.affixId)!;
               // Entry keys include catalog order, so they are not a visible change.
               const changed = old.name !== entry.name || old.text !== entry.text || old.value !== entry.value;
-              return changed ? { entry, slot: row.slot, change: "changed", revision } : { ...row, entry };
+              return changed
+                ? { entry, previous: row.entry, slot: row.slot, change: "changed", revision }
+                : { ...row, entry };
             }),
           ...additions.map(
             (entry, index): AffixRow => ({ entry, slot: `added-${revision}-${index}`, change: "added", revision }),
@@ -77,12 +81,12 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
               }
             : current,
         ),
-      reducedMotion ? 0 : CHANGE_MS,
+      disabled ? 0 : reducedMotion ? 180 : CHANGE_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [snapshot.revision, snapshot.rows, reducedMotion]);
+  }, [snapshot.revision, snapshot.rows, reducedMotion, disabled]);
 
-  return reducedMotion
+  return disabled
     ? entries.map(
         (entry, index): AffixRow => ({
           entry,
@@ -91,32 +95,4 @@ export function useGearAffixFeedback(entries: GearAffixTooltipEntry[]) {
         }),
       )
     : snapshot.rows;
-}
-
-/** Keep localized keyword spans and whitespace intact; opacity never changes glyph geometry. */
-export function revealAffixWords(content: ReactNode): ReactNode {
-  let word = 0;
-  function visit(node: ReactNode): ReactNode {
-    if (typeof node === "string" || typeof node === "number") {
-      return String(node)
-        .split(/(\s+)/u)
-        .map((part, index) =>
-          !part || /^\s+$/u.test(part) ? (
-            part
-          ) : (
-            <span
-              key={index}
-              className="gear-affix-word"
-              style={{ "--affix-word-delay": `${Math.min(word++ * 28, 140)}ms` } as CSSProperties}
-            >
-              {part}
-            </span>
-          ),
-        );
-    }
-    if (isValidElement<{ children?: ReactNode }>(node))
-      return cloneElement(node, {}, Children.map(node.props.children, visit));
-    return node;
-  }
-  return Children.map(content, visit);
 }

@@ -35,20 +35,19 @@ describe("Crafted affix inspection feedback", () => {
     vi.unstubAllGlobals();
   });
 
-  it("reveals only the added words, preserving keyword color and existing row identity", () => {
+  it("masks fully shaped incoming lettering without an inner panel, preserving keyword color and row identity", () => {
     const { rerender } = render(tooltip(before));
     const existing = row("flat-poison");
     rerender(tooltip(after));
     expect(row("flat-poison")).toBe(existing);
-    expect(existing?.querySelector(".gear-affix-word")).toBeNull();
+    expect(existing?.querySelector(".gear-affix-enter")).toBeNull();
     expect(row("flat-burn")?.getAttribute("data-affix-change")).toBe("added");
-    expect(row("flat-burn")?.querySelectorAll(".gear-affix-word").length).toBeGreaterThan(1);
-    const burnWord = [...row("flat-burn")!.querySelectorAll(".gear-affix-word")].find(
-      (node) => node.textContent === "Burn",
-    );
-    expect(burnWord?.parentElement?.className).toContain("font-semibold");
-    expect(burnWord?.parentElement?.className).toContain("text-");
-    act(() => vi.advanceTimersByTime(360));
+    expect(row("flat-burn")?.querySelectorAll(".gear-affix-ink-line")).toHaveLength(2);
+    expect(document.querySelector(".gear-affix-glow")).toBeNull();
+    const burnWord = [...row("flat-burn")!.querySelectorAll("span")].find((node) => node.textContent === "Burn");
+    expect(burnWord?.className).toContain("font-semibold");
+    expect(burnWord?.className).toContain("text-");
+    act(() => vi.advanceTimersByTime(420));
     expect(row("flat-burn")?.hasAttribute("data-affix-change")).toBe(false);
   });
 
@@ -56,7 +55,7 @@ describe("Crafted affix inspection feedback", () => {
     const { rerender } = render(tooltip(before));
     rerender(tooltip({ ...before, affixes: [] }));
     expect(row("flat-poison")?.getAttribute("aria-hidden")).toBe("true");
-    act(() => vi.advanceTimersByTime(359));
+    act(() => vi.advanceTimersByTime(419));
     expect(row("flat-poison")).not.toBeNull();
     act(() => vi.advanceTimersByTime(1));
     expect(row("flat-poison")).toBeNull();
@@ -64,13 +63,15 @@ describe("Crafted affix inspection feedback", () => {
 
   it("reveals a changed value without replaying another affix, re-entry or another item", () => {
     const mounted = render(tooltip(after));
-    expect(document.querySelector(".gear-affix-word")).toBeNull();
+    expect(document.querySelector(".gear-affix-enter")).toBeNull();
     const unchanged = row("flat-burn")?.querySelector(".gear-affix-line");
     mounted.rerender(tooltip({ ...after, affixes: [{ id: "flat-poison", value: 2 }, after.affixes[1]!] }));
     expect(row("flat-poison")?.getAttribute("data-affix-change")).toBe("changed");
     expect(row("flat-poison")?.textContent).toContain("2");
+    expect(row("flat-poison")?.querySelector(".gear-affix-exit")).not.toBeNull();
+    expect(row("flat-poison")?.querySelector(".gear-affix-replacement")).not.toBeNull();
     expect(row("flat-burn")?.querySelector(".gear-affix-line")).toBe(unchanged);
-    expect(row("flat-burn")?.querySelector(".gear-affix-word")).toBeNull();
+    expect(row("flat-burn")?.querySelector(".gear-affix-enter")).toBeNull();
     mounted.rerender(tooltip({ ...before, instanceId: "another-item" }));
     expect(document.querySelector("[data-affix-change]")).toBeNull();
     mounted.unmount();
@@ -110,7 +111,7 @@ describe("Crafted affix inspection feedback", () => {
         row(affix.id)?.getAttribute("data-affix-change") === "removed" ||
           !!document.querySelector(`[data-previous-affix-id="${affix.id}"]`),
       ).toBe(true);
-    act(() => vi.advanceTimersByTime(360));
+    act(() => vi.advanceTimersByTime(420));
     expect(document.querySelectorAll("[data-affix-id]")).toHaveLength(current.length);
     expect(document.querySelector("[data-affix-change]")).toBeNull();
     expect(actual).toEqual(saved);
@@ -128,7 +129,7 @@ describe("Crafted affix inspection feedback", () => {
     expect(current?.querySelector(".gear-affix-previous")?.getAttribute("aria-hidden")).toBe("true");
     expect(current?.querySelector(".gear-affix-row-clip")?.classList.contains("gear-affix-replacement")).toBe(true);
     expect(current?.querySelectorAll(".gear-affix-line")).toHaveLength(2);
-    act(() => vi.advanceTimersByTime(360));
+    act(() => vi.advanceTimersByTime(420));
     expect(row("resist-physical")).toBe(original);
     expect(current?.querySelectorAll(".gear-affix-line")).toHaveLength(1);
     expect(current?.querySelector(".gear-affix-previous")).toBeNull();
@@ -137,7 +138,7 @@ describe("Crafted affix inspection feedback", () => {
   it("can add the previous affix again without reusing another row's slot", () => {
     const { rerender } = render(tooltip(before));
     rerender(tooltip({ ...before, affixes: [{ id: "flat-burn", value: 1 }] }));
-    act(() => vi.advanceTimersByTime(360));
+    act(() => vi.advanceTimersByTime(420));
     const retained = row("flat-burn");
     rerender(tooltip(after));
     expect(row("flat-burn")).toBe(retained);
@@ -160,7 +161,7 @@ describe("Crafted affix inspection feedback", () => {
         ],
       }),
     );
-    act(() => vi.advanceTimersByTime(360));
+    act(() => vi.advanceTimersByTime(420));
     expect([...document.querySelectorAll("[data-affix-id]")]).toEqual([poison, burn]);
   });
 
@@ -180,7 +181,7 @@ describe("Crafted affix inspection feedback", () => {
     act(() => vi.advanceTimersByTime(100));
     rerender({ entries: [sameText("flat-poison")] });
     expect(result.current.map((entry) => [entry.entry.affixId, entry.change])).toEqual([["flat-poison", "replaced"]]);
-    act(() => vi.advanceTimersByTime(260));
+    act(() => vi.advanceTimersByTime(320));
     expect(result.current.some((entry) => entry.change)).toBe(true);
     act(() => vi.advanceTimersByTime(100));
     expect(result.current.map((entry) => [entry.entry.affixId, entry.change])).toEqual([["flat-poison", undefined]]);
@@ -192,23 +193,26 @@ describe("Crafted affix inspection feedback", () => {
     act(() => vi.advanceTimersByTime(100));
     rerender(tooltip(after));
     expect(row("flat-burn")?.getAttribute("data-affix-change")).toBe("added");
-    act(() => vi.advanceTimersByTime(260));
+    act(() => vi.advanceTimersByTime(320));
     expect(row("flat-burn")?.getAttribute("data-affix-change")).toBe("added");
     act(() => vi.advanceTimersByTime(100));
     expect(row("flat-burn")).not.toBeNull();
     expect(document.querySelector("[data-affix-change]")).toBeNull();
   });
 
-  it.each(["disabled", "reduced"])("shows the immediate canonical result when motion is %s", (preference) => {
-    if (preference === "disabled") localStorage.setItem("alchemy-disable-animations", "true");
-    else
-      vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
-    const { rerender } = render(tooltip(before));
-    rerender(tooltip(after));
-    expect(row("flat-burn")).not.toBeNull();
+  it("uses a stationary fade for reduced motion, and no transition when animations are disabled", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    const mounted = render(tooltip(before));
+    mounted.rerender(tooltip(after));
+    expect(row("flat-burn")?.getAttribute("data-affix-change")).toBe("added");
+    act(() => vi.advanceTimersByTime(180));
     expect(document.querySelector("[data-affix-change]")).toBeNull();
-    rerender(tooltip(before));
+    mounted.unmount();
+    localStorage.setItem("alchemy-disable-animations", "true");
+    const disabled = render(tooltip(after));
+    disabled.rerender(tooltip(before));
     expect(row("flat-burn")).toBeNull();
+    expect(document.querySelector("[data-affix-change]")).toBeNull();
   });
 
   it("keeps unique effects that are defined without rolled affixes", () => {
