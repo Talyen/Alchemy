@@ -4,7 +4,7 @@ import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, REACTIVE_REWARD_CHANCES } from "../game-constants";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { processEncounterTraitsForCardCopies } from "./encounter-trait-events";
-import { mergeCombatText } from "./combat-text-events";
+import { mergeCombatText, emitDamageText } from "./combat-text-events";
 import { addGoldWithCombatText, applyHealingWithCombatText } from "./player-rewards";
 import { processCompanionTurnStart } from "./companion";
 import { purgeOnePlayerBenefit } from "./player-purge";
@@ -178,7 +178,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[]):
   };
   if (state.gearEffects.dodgeSpendsPreservedBlock > 0 && state.playerStatuses.block > 0) {
     const spent = halveRounded(state.playerStatuses.block);
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent, impact: false });
+    emitDamageText(combatTexts, "player", "block", spent, { impact: false });
     nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
     nextState = resolvePendingBattleReactions(applyBlockDepletionRewards(state, nextState, combatTexts), combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;

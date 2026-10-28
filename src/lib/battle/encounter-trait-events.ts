@@ -3,7 +3,7 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { isNatureCard } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText, emitDamageText } from "./combat-text-events";
 import { processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { scaleByRoomMultiplier } from "./amount-helpers";
@@ -39,7 +39,7 @@ export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEve
     "thorns",
     state.enemyStatuses.thorns + 1,
   );
-  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "thorns", amount: 1 });
+  emitStatusText(combatTexts, "enemy", "thorns", 1);
   return nextState;
 }
 
@@ -97,13 +97,7 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
       armorLost = amount;
     });
     if (armorLost > 0) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "damage",
-        stat: "armor",
-        amount: armorLost,
-        impact: false,
-      });
+      emitDamageText(combatTexts, "player", "armor", armorLost, { impact: false });
     }
     nextState = resolvePendingBattleReactions(
       applyArmorLossAttackRetaliation(nextState, armorLost, combatTexts),

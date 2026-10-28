@@ -9,7 +9,7 @@ import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPotionMultiplier, halveRounded } from "./amount-helpers";
 import { writeCombatFlag } from "./action-context";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitNoticeText, emitDamageText, emitStatusText } from "./combat-text-events";
 import { scaleGoldReward } from "./resource-state";
 import { hasCardHealing, type EffectHandlers, type EffectHandler } from "./effect-handlers/handler-types";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -81,12 +81,8 @@ type FlagEffectKind = keyof typeof FLAG_EFFECTS;
 
 const applyFlagEffect = ((state, _card, effect, _potionMult, combatTexts, context) => {
   const flag = FLAG_EFFECTS[effect.kind];
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "notice",
-    stat: flag,
+  emitNoticeText(combatTexts, "player", flag, "", {
     signal: "prepared",
-    text: "",
     ...(context?.feedback ? { feedback: context.feedback } : {}),
   });
   return writeCombatFlag(state, flag, true);
@@ -132,23 +128,12 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
     "lose-mana": (state, _card, effect, _potionMult, combatTexts) => {
       const mana = Math.max(0, state.mana - effect.amount);
       const manaLost = state.mana - mana;
-      if (manaLost > 0)
-        mergeCombatText(combatTexts, {
-          target: "player",
-          kind: "damage",
-          stat: "mana",
-          amount: manaLost,
-          impact: false,
-        });
+      if (manaLost > 0) emitDamageText(combatTexts, "player", "mana", manaLost, { impact: false });
       return { ...state, mana };
     },
     "gain-max-mana": (state, _card, effect, _potionMult, combatTexts, context) => {
       const amount = effect.amount;
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "mana",
-        amount,
+      emitStatusText(combatTexts, "player", "mana", amount, {
         ...(context?.feedback ? { feedback: context.feedback } : {}),
       });
       return port.manaGainRewards(
@@ -161,13 +146,7 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
       const maxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - effect.amount);
       const crystalsLost = state.maxMana - maxMana;
       if (crystalsLost <= 0) return state;
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "damage",
-        stat: "mana",
-        amount: crystalsLost,
-        impact: false,
-      });
+      emitDamageText(combatTexts, "player", "mana", crystalsLost, { impact: false });
       return state.talentEffects.burnDamageOnManaCrystalLoss > 0 && state.enemyHealth > 0
         ? port.crystalLoss(
             { ...state, maxMana, mana: Math.min(maxMana, state.mana) },
@@ -189,13 +168,7 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
       if (effect.convertCurrentMana !== undefined) {
         adjustedAmount = (context?.manaAtStart ?? state.mana) * effect.convertCurrentMana;
         if (state.mana > 0) {
-          mergeCombatText(combatTexts, {
-            target: "player",
-            kind: "damage",
-            stat: "mana",
-            amount: state.mana,
-            impact: false,
-          });
+          emitDamageText(combatTexts, "player", "mana", state.mana, { impact: false });
         }
         nextState = { ...state, mana: 0 };
       } else if (effect.perManaCrystal !== undefined) {
@@ -237,22 +210,14 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
       const next = reduceEnemyArmor(state, amount);
       const removed = state.enemyMitigation.armor - next.enemyMitigation.armor;
       if (removed > 0)
-        mergeCombatText(texts, {
-          target: "enemy",
-          kind: "damage",
-          stat: "armor",
-          amount: removed,
+        emitDamageText(texts, "enemy", "armor", removed, {
           impact: false,
           ...(context?.feedback ? { feedback: context.feedback } : {}),
         });
       return next;
     },
     "summon-companion": (state, _card, effect, _potionMult, combatTexts, context) => {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "notice",
-        stat: "companion",
-        text: "",
+      emitNoticeText(combatTexts, "player", "companion", "", {
         ...(context?.feedback ? { feedback: context.feedback } : {}),
       });
       const summoned = { ...state, activeCompanion: companionLibrary[effect.companionId] };

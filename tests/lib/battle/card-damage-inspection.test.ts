@@ -20,21 +20,23 @@ const hit = (amount = 6): BattleCardEffect => ({ kind: "damage", damageType: "ph
 
 describe("rule-preserving tooltip inspection", () => {
   it("inspects a failure-only Chance effect without rebuilding its authored description", () => {
-    const card = effectsCard({
-      id: "failure-only",
-      art: "",
-      effects: [{ kind: "chance", probability: 0, successEffects: [], failureEffects: [hit()] }],
-      describe: () => [
-        {
-          role: "effect",
-          parts: [
-            "Otherwise deal ",
-            cardMagnitude({ effectIndex: 0, effectPath: [0], kind: "damage", field: "amount" }),
-            " Physical damage",
-          ],
-        },
-      ],
-    });
+    const card = effectsCard(
+      "failure-only",
+      [{ kind: "chance", probability: 0, successEffects: [], failureEffects: [hit()] }],
+      {
+        art: "",
+        describe: () => [
+          {
+            role: "effect",
+            parts: [
+              "Otherwise deal ",
+              cardMagnitude({ effectIndex: 0, effectPath: [0], kind: "damage", field: "amount" }),
+              " Physical damage",
+            ],
+          },
+        ],
+      },
+    );
     const state = patchBattleState({ hand: [card], flags: { nextHitPhysicalBonus: 4 } });
     expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
       "Otherwise deal 10 Physical damage",
@@ -118,14 +120,14 @@ describe("rule-preserving tooltip inspection", () => {
   });
 
   it("uses ordered production resource changes before a later fixed grant", () => {
-    const card = effectsCard({
-      id: "forge-then-block",
-      art: "",
-      effects: [
+    const card = effectsCard(
+      "forge-then-block",
+      [
         { kind: "player-status", status: "forge", amount: 2 },
         { kind: "player-status", status: "block", amount: 5 },
       ],
-    });
+      { art: "" },
+    );
     const state = patchBattleState({
       playerStatuses: { forge: 20 },
       talentEffects: { forgeBlockPercent: 25 },
@@ -169,7 +171,7 @@ describe("rule-preserving tooltip inspection", () => {
       gearEffects: { blockOnManaRestoreWithoutBlock: 5 },
     });
     expect(getBattleCardDescriptionInspection(mana, state).descriptionLines).toEqual(["Gain 4 Mana", "Consume"]);
-    const gold = effectsCard({ id: "gold-grant", art: "", effects: [{ kind: "gain-gold", amount: 5 }] });
+    const gold = effectsCard("gold-grant", [{ kind: "gain-gold", amount: 5 }], { art: "" });
     expect(
       getBattleCardDescriptionInspection(
         gold,
@@ -207,7 +209,7 @@ describe("rule-preserving tooltip inspection", () => {
     { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 2 },
     { kind: "player-status", status: "haste", amount: 1 },
   ] satisfies BattleCardEffect[])("keeps the authored $status formula or duration", (effect) => {
-    const card = effectsCard({ id: "utility-rule", art: "", effects: [effect] });
+    const card = effectsCard("utility-rule", [effect], { art: "" });
     const result = getBattleCardDescriptionInspection(
       card,
       patchBattleState({
@@ -221,11 +223,11 @@ describe("rule-preserving tooltip inspection", () => {
   });
 
   it("shows both known status-choice quantities and leaves the random choice unresolved", () => {
-    const card = effectsCard({
-      id: "utility-choice",
-      art: "",
-      effects: [{ kind: "player-status", status: "armor", amount: 3, statusPool: ["block", "armor"] }],
-    });
+    const card = effectsCard(
+      "utility-choice",
+      [{ kind: "player-status", status: "armor", amount: 3, statusPool: ["block", "armor"] }],
+      { art: "" },
+    );
     const state = patchBattleState({
       hand: [card],
       mana: 3,
@@ -252,14 +254,14 @@ describe("rule-preserving tooltip inspection", () => {
   });
 
   it("retains an authored utility value when an earlier draw makes its result unknown", () => {
-    const card = effectsCard({
-      id: "draw-block",
-      art: "",
-      effects: [
+    const card = effectsCard(
+      "draw-block",
+      [
         { kind: "draw-cards", amount: 1 },
         { kind: "player-status", status: "block", amount: 5 },
       ],
-    });
+      { art: "" },
+    );
     const state = patchBattleState({
       deck: [makeTestCard()],
       playerStatuses: { forge: 20 },
@@ -286,7 +288,7 @@ describe("rule-preserving tooltip inspection", () => {
   });
 
   it("adjusts known gear and talent bonuses inside the original fixed-damage sentence", () => {
-    const card = effectsCard({ id: "plain", art: "", effects: [hit(3)] });
+    const card = effectsCard("plain", [hit(3)], { art: "" });
     const state = patchBattleState({
       gearEffects: { flatPhysicalDamage: 1 },
       talentEffects: { flatPhysicalDamage: 1 },
@@ -297,7 +299,7 @@ describe("rule-preserving tooltip inspection", () => {
   });
 
   it("excludes enemy defenses, Dodge and Critical outcomes from fixed attack numbers", () => {
-    const card = effectsCard({ id: "plain", art: "", effects: [hit(3)] });
+    const card = effectsCard("plain", [hit(3)], { art: "" });
     const rng = vi.fn(() => {
       throw new Error("live RNG consumed");
     });
@@ -319,7 +321,7 @@ describe("rule-preserving tooltip inspection", () => {
     { kind: "damage", damageType: "physical", amount: 0, equalToArmor: true },
     { kind: "damage", damageType: "stun", amount: 3, forgeBonusPercent: 50 },
   ] as const)("retains the complete $damageType scaling/conditional rule", (effect) => {
-    const card = effectsCard({ id: "formula", art: "", effects: [effect] });
+    const card = effectsCard("formula", [effect], { art: "" });
     const result = getBattleCardDescriptionInspection(
       card,
       patchBattleState({
@@ -380,7 +382,7 @@ describe("rule-preserving tooltip inspection", () => {
   });
 
   it("keeps authored numbers when an unresolved draw can change the attack", () => {
-    const card = effectsCard({ id: "draw-attack", art: "", effects: [{ kind: "draw-cards", amount: 1 }, hit()] });
+    const card = effectsCard("draw-attack", [{ kind: "draw-cards", amount: 1 }, hit()], { art: "" });
     const result = getBattleCardDescriptionInspection(card, patchBattleState({ deck: [makeTestCard()] }));
     expect(result.descriptionLines).toEqual(card.descriptionLines);
   });
@@ -392,7 +394,7 @@ describe("rule-preserving tooltip inspection", () => {
         .descriptionLines,
     ).toEqual(["Deal 3 Freeze damage twice"]);
 
-    const doubleHit = effectsCard({ id: "double-hit", art: "", effects: [hit(4), hit(4)] });
+    const doubleHit = effectsCard("double-hit", [hit(4), hit(4)], { art: "" });
     expect(
       getBattleCardDescriptionInspection(doubleHit, patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }))
         .descriptionLines,
@@ -411,14 +413,14 @@ describe("rule-preserving tooltip inspection", () => {
       );
     }
 
-    const dealAndReceive = effectsCard({
-      id: "reckless",
-      art: "",
-      effects: [
+    const dealAndReceive = effectsCard(
+      "reckless",
+      [
         { kind: "damage", damageType: "burn", amount: 3 },
         { kind: "self-damage", damageType: "burn", amount: 3 },
       ],
-    });
+      { art: "" },
+    );
     expect(
       getBattleCardDescriptionInspection(dealAndReceive, patchBattleState({ talentEffects: { flatBurnDamage: 2 } }))
         .descriptionLines,

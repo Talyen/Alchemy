@@ -1,6 +1,6 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { applyHealingWithCombatText } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText, emitNoticeText } from "./combat-text-events";
 import { resolvePlayerHit } from "./hit-resolution";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage } from "./status-helpers";
@@ -79,7 +79,7 @@ function recordPlayerHealthLost(
   const healthLost = playerHealthLostToDamage(prevState, nextState);
   if (healthLost > 0) {
     const stat = damageType === "physical" ? "health" : damageType;
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: healthLost });
+    emitDamageText(combatTexts, "player", stat, healthLost);
   }
 }
 
@@ -167,13 +167,13 @@ export function applyPlayerDefensiveReactions(
       nextState.playerCC.cooldown > 0 &&
       (effect.damageType === "stun" || effect.damageType === "freeze")
     ) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "notice",
-        stat: effect.damageType,
-        signal: "immune",
-        text: `Immune to ${effect.damageType === "stun" ? "Stun" : "Freeze"}`,
-      });
+      emitNoticeText(
+        combatTexts,
+        "player",
+        effect.damageType,
+        `Immune to ${effect.damageType === "stun" ? "Stun" : "Freeze"}`,
+        { signal: "immune" },
+      );
     }
     nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
   }

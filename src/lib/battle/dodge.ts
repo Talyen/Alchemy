@@ -8,7 +8,7 @@ import {
   UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
 import { clamp } from "../math";
-import { mergeCombatText } from "./combat-text-events";
+import { emitNoticeText } from "./combat-text-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
@@ -48,11 +48,7 @@ function tryDodgePacket(
 ): BattleState | null {
   if (!options.canDodge) return null;
   if (!rollPercent(options.chance, getBattleRng(state), "dodge")) return null;
-  mergeCombatText(combatTexts, {
-    target: options.target,
-    kind: "notice",
-    stat: "dodge",
-    text: STATUS_CONFIG.DODGE_NOTICE,
+  emitNoticeText(combatTexts, options.target, "dodge", STATUS_CONFIG.DODGE_NOTICE, {
     ...(options.feedback ? { feedback: options.feedback } : {}),
   });
   return options.target === "player"
@@ -69,12 +65,7 @@ export function tryDodgeEnemyAttackPacket(
   if (!eligible) return null;
 
   if (state.flags.dodgeNextAttack) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "notice",
-      stat: "dodge",
-      text: STATUS_CONFIG.DODGE_NOTICE,
-    });
+    emitNoticeText(combatTexts, "player", "dodge", STATUS_CONFIG.DODGE_NOTICE);
     return {
       ...state,
       flags: { ...state.flags, dodgeNextAttack: false },

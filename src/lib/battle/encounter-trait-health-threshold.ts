@@ -1,7 +1,7 @@
 import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText } from "./combat-text-events";
 import { paceCombatMagnitude } from "./fight-pacing";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
@@ -14,7 +14,7 @@ export function addEnemyMitigationWithCombatText(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const applied = field === "armor" ? amount : paceCombatMagnitude(state, amount, "enemy");
-  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: field, amount: applied });
+  emitStatusText(combatTexts, "enemy", field, applied);
   return addEnemyMitigation(state, field, applied);
 }
 

@@ -15,13 +15,13 @@ import { getBattleRng, rollPercent } from "@/lib/rng";
 import { BLEED_STATUS_MULTIPLIER, BURN_BLEED_MIRROR_CHANCE_PERCENT, HALF_DIVISOR } from "../game-constants";
 import { applyGearCcPhysicalDamage } from "./scaled-damage";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
+import { emitEnemyBuildupImmunity, emitDamageText, emitMultiplyText } from "./combat-text-events";
 
 function removeEnemyArmorWithFeedback(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   const nextState = reduceEnemyArmor(state, amount);
   const removed = state.enemyMitigation.armor - nextState.enemyMitigation.armor;
   if (removed > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
+    emitDamageText(combatTexts, "enemy", "armor", removed, { impact: false });
   }
   return nextState;
 }
@@ -39,7 +39,7 @@ function applyGearBurnBleedMirrorLeech(
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage, { combatTexts });
     const added = nextState.enemyStatuses[mirrorTarget] - state.enemyStatuses[mirrorTarget];
     if (added > 0) {
-      mergeCombatText(combatTexts, { target: "enemy", kind: "multiply", stat: mirrorTarget, amount: added });
+      emitMultiplyText(combatTexts, "enemy", mirrorTarget, added);
     }
   }
   const healAmount =
@@ -242,7 +242,7 @@ function applyPhysicalStatusRider(
       : state;
   const bleedAdded = nextState.enemyStatuses.bleed - state.enemyStatuses.bleed;
   if (bleedAdded > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "multiply", stat: "bleed", amount: bleedAdded });
+    emitMultiplyText(combatTexts, "enemy", "bleed", bleedAdded);
   }
   if (
     actualDamage > 0 &&

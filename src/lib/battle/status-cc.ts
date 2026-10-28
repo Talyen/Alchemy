@@ -1,6 +1,6 @@
 import { prepareCcReactions } from "./elemental-reaction-state";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { mergeCombatText } from "./combat-text-events";
+import { emitNoticeText, emitStatusText } from "./combat-text-events";
 import { applyArmorReward } from "./status-player";
 import {
   BATTLE_CONFIG,
@@ -53,12 +53,12 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
   if (state.playerCC.cooldown > 0) {
     return setPlayerStatus(state, stat, 0);
   }
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "notice",
+  emitNoticeText(
+    combatTexts,
+    "player",
     stat,
-    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
-  });
+    stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
+  );
   const skipKey = stat === "stun" ? "stunSkipTurns" : "freezeSkipTurns";
   let nextState: BattleState = {
     ...setPlayerStatus(state, stat, 0),
@@ -78,7 +78,7 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     nextState = recordEnemyAbilityActivation(nextState, "concussion");
   }
   if (stat === "freeze" && hasEnemyTrait(state, "yeti")) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    emitStatusText(combatTexts, "enemy", "block", 1);
     nextState = addEnemyMitigation(recordEnemyAbilityActivation(nextState, "yeti"), "block", 1);
   }
   if (stat === "freeze" && hasEnemyTrait(state, "ice-wraith") && getBattleOutcome(nextState) === null) {
@@ -137,11 +137,11 @@ export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTrigg
     ...cleared,
     enemyCC: { ...cleared.enemyCC, [skipKey]: cleared.enemyCC[skipKey] + skipDuration },
   };
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "notice",
+  emitNoticeText(
+    combatTexts,
+    "enemy",
     stat,
-    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
-  });
+    stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
+  );
   return { kind: "skip", state: prepareCcReactions(state, stat, input.setupHealthDamage ?? 0) };
 }

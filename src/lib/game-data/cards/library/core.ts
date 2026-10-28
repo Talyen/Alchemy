@@ -7,52 +7,38 @@ import { SHIELD_BASH_SPEND_VERSION } from "../card-definition-versions";
 
 export const coreCards: BattleCard[] = [
   cardBuilders.damageCard({ id: "slash", damageType: "physical", amount: 4 }),
-  cardBuilders.effectsCard({
-    id: "stab",
-    effects: [{ kind: "damage", damageType: "physical", amount: 3, ignoreArmor: true, ignoreBlock: true }],
-  }),
-  cardBuilders.effectsCard({
-    id: "cleanse",
-    effects: [
-      { kind: "remove-harmful-status", amount: 1 },
-      { kind: "heal", amount: 2 },
-    ],
-  }),
-  cardBuilders.effectsCard({ id: "heal", effects: [{ kind: "heal", amount: 4 }] }),
-  cardBuilders.effectsCard({
-    id: "haste",
-    effects: [{ kind: "player-status", status: "haste", amount: 1 }],
-    consume: true,
-  }),
-  cardBuilders.effectsCard({
-    id: "poison-dagger",
-    effects: [{ kind: "damage", damageType: "poison", amount: 1 }, { kind: "next-hit-poison" }],
-  }),
+  cardBuilders.effectsCard("stab", [
+    { kind: "damage", damageType: "physical", amount: 3, ignoreArmor: true, ignoreBlock: true },
+  ]),
+  cardBuilders.effectsCard("cleanse", [
+    { kind: "remove-harmful-status", amount: 1 },
+    { kind: "heal", amount: 2 },
+  ]),
+  cardBuilders.effectsCard("heal", [{ kind: "heal", amount: 4 }]),
+  cardBuilders.effectsCard("haste", [{ kind: "player-status", status: "haste", amount: 1 }], { consume: true }),
+  cardBuilders.effectsCard("poison-dagger", [
+    { kind: "damage", damageType: "poison", amount: 1 },
+    { kind: "next-hit-poison" },
+  ]),
   cardBuilders.damageCard({ id: "fireball", damageType: "burn", amount: 2 }),
-  cardBuilders.effectsCard({
-    id: "fangs",
-    effects: [{ kind: "damage", damageType: "bleed", amount: 2, lifesteal: true }],
-  }),
+  cardBuilders.effectsCard("fangs", [{ kind: "damage", damageType: "bleed", amount: 2, lifesteal: true }]),
   cardBuilders.damageCard({ id: "frostbolt", damageType: "freeze", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "anvil", status: "forge", amount: 2 }),
   cardBuilders.damageCard({ id: "bash", damageType: "stun", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "block", status: "block", amount: 5 }),
-  cardBuilders.effectsCard({
-    id: "blessed-aegis",
-    effects: [
-      { kind: "player-status", status: "block", amount: 2 },
-      { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true, equalToBlockPercent: 50 },
-    ],
-  }),
-  cardBuilders.effectsCard({ id: "wish", effects: [{ kind: "wish", amount: 1 }] }),
-  cardBuilders.effectsCard({
-    id: "meteor",
-    consume: true,
-    effects: [
+  cardBuilders.effectsCard("blessed-aegis", [
+    { kind: "player-status", status: "block", amount: 2 },
+    { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true, equalToBlockPercent: 50 },
+  ]),
+  cardBuilders.effectsCard("wish", [{ kind: "wish", amount: 1 }]),
+  cardBuilders.effectsCard(
+    "meteor",
+    [
       { kind: "damage", damageType: "burn", amount: 7 },
       { kind: "lose-mana", amount: 1 },
     ],
-  }),
+    { consume: true },
+  ),
   {
     id: "mixed-potion",
     title: "Mixed Potion",
@@ -67,127 +53,96 @@ export const coreCards: BattleCard[] = [
     effects: [],
     excludeFromOfferPool: true,
   },
-  cardBuilders.effectsCard({
-    id: "ray-of-frost",
-    title: "Ray of Frost",
-    effects: [
+  cardBuilders.effectsCard(
+    "ray-of-frost",
+    [
       { kind: "damage", damageType: "freeze", amount: 1 },
       { kind: "damage", damageType: "freeze", amount: 1 },
     ],
-  }),
-  cardBuilders.effectsCard({
-    id: "tithe",
-    effects: [
-      { kind: "damage", damageType: "holy", amount: 2 },
-      { kind: "gain-gold", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "exorcism",
-    effects: [
-      { kind: "self-damage", damageType: "burn", amount: 1 },
-      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "kindling",
-    effects: [{ kind: "damage", damageType: "burn", amount: 1, tripleIfEnemyNotBurning: true }],
-  }),
-  cardBuilders.effectsCard({
-    id: "roll-the-dice",
+    { title: "Ray of Frost" },
+  ),
+  cardBuilders.effectsCard("tithe", [
+    { kind: "damage", damageType: "holy", amount: 2 },
+    { kind: "gain-gold", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("exorcism", [
+    { kind: "self-damage", damageType: "burn", amount: 1 },
+    { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
+  ]),
+  cardBuilders.effectsCard("kindling", [
+    { kind: "damage", damageType: "burn", amount: 1, tripleIfEnemyNotBurning: true },
+  ]),
+  cardBuilders.effectsCard("roll-the-dice", [{ kind: "random-draw", minAmount: 1, maxAmount: 6 }], {
     title: "Roll the Dice",
     consume: true,
-    effects: [{ kind: "random-draw", minAmount: 1, maxAmount: 6 }],
   }),
   cardBuilders.damageCard({ id: "lightning-bolt", damageType: "nature", amount: 4 }),
-  cardBuilders.effectsCard({
-    id: "wishing-well",
-    effects: [
-      {
-        kind: "chance",
-        probability: 0.5,
-        successEffects: [{ kind: "wish", amount: 1 }],
-        failureEffects: [{ kind: "gain-gold", amount: 1 }],
-      },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "hemorrhage",
-    effects: [{ kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true }],
-  }),
-  cardBuilders.effectsCard({
-    id: "phoenix-feather",
-    consume: true,
-    effects: [
+  cardBuilders.effectsCard("wishing-well", [
+    {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [{ kind: "wish", amount: 1 }],
+      failureEffects: [{ kind: "gain-gold", amount: 1 }],
+    },
+  ]),
+  cardBuilders.effectsCard("hemorrhage", [{ kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true }]),
+  cardBuilders.effectsCard(
+    "phoenix-feather",
+    [
       { kind: "damage", damageType: "burn", amount: 1 },
       { kind: "player-status", status: "phoenixFeather", amount: 1 },
     ],
-  }),
+    { consume: true },
+  ),
   cardBuilders.playerStatusCard({ id: "plate-mail", status: "armor", amount: 2 }),
-  cardBuilders.effectsCard({
-    id: "sanctified-plate",
-    effects: [
-      { kind: "player-status", status: "armor", amount: 1 },
-      { kind: "damage", damageType: "holy", amount: 2 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "shield-bash",
-    definitionVersion: SHIELD_BASH_SPEND_VERSION,
-    effects: [
+  cardBuilders.effectsCard("sanctified-plate", [
+    { kind: "player-status", status: "armor", amount: 1 },
+    { kind: "damage", damageType: "holy", amount: 2 },
+  ]),
+  cardBuilders.effectsCard(
+    "shield-bash",
+    [
       { kind: "player-status", status: "block", amount: 2 },
       { kind: "damage", damageType: "stun", amount: 0, equalToBlock: true, equalToBlockPercent: 50, spendBlock: true },
     ],
-  }),
-  cardBuilders.effectsCard({
-    id: "steal",
-    effects: [
+    { definitionVersion: SHIELD_BASH_SPEND_VERSION },
+  ),
+  cardBuilders.effectsCard(
+    "steal",
+    [
       { kind: "damage", damageType: "stun", amount: 1 },
       { kind: "gain-gold", amount: 1 },
     ],
-    describe: () => [
-      {
-        parts: ["Deal ", cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }), " Stun damage"],
-        role: "effect",
-      },
-      {
-        parts: ["Steal ", cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }), " Gold"],
-        role: "effect",
-      },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "burning-blade",
-    effects: [{ kind: "damage", damageType: "burn", amount: 1, forgeBonusPercent: 50 }],
-  }),
-  cardBuilders.effectsCard({
-    id: "cauterize",
-    effects: [
-      { kind: "remove-harmful-status", amount: 1 },
-      { kind: "damage", damageType: "burn", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "blackjack",
-    effects: [
-      { kind: "damage", damageType: "stun", amount: 2 },
-      { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "sunburst",
-    effects: [
-      { kind: "heal", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "holy-radiance",
-    effects: [
-      { kind: "heal", amount: 2 },
-      { kind: "damage", damageType: "holy", amount: 2 },
-    ],
-  }),
+    {
+      describe: () => [
+        {
+          parts: ["Deal ", cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }), " Stun damage"],
+          role: "effect",
+        },
+        {
+          parts: ["Steal ", cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }), " Gold"],
+          role: "effect",
+        },
+      ],
+    },
+  ),
+  cardBuilders.effectsCard("burning-blade", [{ kind: "damage", damageType: "burn", amount: 1, forgeBonusPercent: 50 }]),
+  cardBuilders.effectsCard("cauterize", [
+    { kind: "remove-harmful-status", amount: 1 },
+    { kind: "damage", damageType: "burn", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("blackjack", [
+    { kind: "damage", damageType: "stun", amount: 2 },
+    { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
+  ]),
+  cardBuilders.effectsCard("sunburst", [
+    { kind: "heal", amount: 2 },
+    { kind: "damage", damageType: "burn", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("holy-radiance", [
+    { kind: "heal", amount: 2 },
+    { kind: "damage", damageType: "holy", amount: 2 },
+  ]),
   cardBuilders.damageCard({
     id: "venom-fangs",
     damageType: "poison",
@@ -200,143 +155,96 @@ export const coreCards: BattleCard[] = [
     amount: 2,
     lifesteal: true,
   }),
-  cardBuilders.effectsCard({
-    id: "cinderbloom",
-    effects: [{ kind: "damage", damageType: "burn", damageTypePool: ["burn", "nature"], amount: 2 }],
-  }),
-  cardBuilders.effectsCard({
-    id: "grasping-vines",
-    effects: [{ kind: "damage", damageType: "stun", damageTypePool: ["stun", "nature"], amount: 3 }],
-  }),
-  cardBuilders.effectsCard({
-    id: "briar-shield",
-    effects: [
-      { kind: "player-status", status: "block", amount: 2 },
-      { kind: "player-status", status: "thorns", amount: 3 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "thorn-mail",
-    effects: [
-      { kind: "player-status", status: "armor", amount: 1 },
-      { kind: "player-status", status: "thorns", amount: 2 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "thorn-whip",
-    effects: [
-      { kind: "damage", damageType: "nature", amount: 3 },
-      { kind: "player-status", status: "thorns", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "porcupine-quill",
-    effects: [
-      { kind: "player-status", status: "thorns", amount: 2 },
-      { kind: "companion-action", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "pack-tactics",
-    effects: [
-      { kind: "companion-action", amount: 2 },
-      { kind: "wish", amount: 1, companionIfAbsent: true },
-      { kind: "player-status", status: "block", amount: 4 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "serrated-edge",
-    effects: [{ kind: "damage", damageType: "physical", damageTypePool: ["physical", "bleed"], amount: 2 }],
-  }),
-  cardBuilders.effectsCard({
-    id: "caustic-jab",
-    effects: [
-      { kind: "remove-enemy-armor", amount: 2 },
-      { kind: "damage", damageType: "poison", amount: 2 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "rend",
-    effects: [{ kind: "damage", damageType: "bleed", amount: 1, doubleIfEnemyBleeding: true }],
-  }),
-  cardBuilders.effectsCard({
-    id: "pounce",
-    effects: [{ kind: "damage", damageType: "physical", damageTypePool: ["physical", "stun"], amount: 2 }],
-  }),
-  cardBuilders.effectsCard({
-    id: "earthquake",
-    effects: [
-      { kind: "damage", damageType: "stun", amount: 2 },
-      {
-        kind: "repeat-over-turns",
-        remainingTurns: 1,
-        effects: [{ kind: "damage", damageType: "stun", amount: 2 }],
-      },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "stargaze",
-    effects: [
-      { kind: "damage", damageType: "freeze", amount: 1 },
-      { kind: "wish", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "pixie-dust",
-    effects: [
-      { kind: "damage", damageType: "burn", amount: 1 },
-      { kind: "restore-mana", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "maul",
-    effects: [{ kind: "damage", damageType: "bleed", damageTypePool: ["bleed", "stun"], amount: 3 }],
-  }),
-  cardBuilders.effectsCard({
-    id: "sniff-out",
-    tags: ["archery"],
-    effects: [{ kind: "damage", damageType: "bleed", amount: 1 }, { kind: "next-archery-free" }],
-  }),
-  cardBuilders.effectsCard({
-    id: "predators-focus",
-    title: "Predator's Focus",
-    effects: [{ kind: "damage", damageType: "bleed", amount: 1 }, { kind: "next-hit-leech" }],
-  }),
-  cardBuilders.effectsCard({
-    id: "blizzard",
-    effects: [
-      { kind: "damage", damageType: "freeze", amount: 2 },
-      {
-        kind: "repeat-over-turns",
-        remainingTurns: 1,
-        effects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
-      },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "avatar",
-    consume: true,
-    effects: [
+  cardBuilders.effectsCard("cinderbloom", [
+    { kind: "damage", damageType: "burn", damageTypePool: ["burn", "nature"], amount: 2 },
+  ]),
+  cardBuilders.effectsCard("grasping-vines", [
+    { kind: "damage", damageType: "stun", damageTypePool: ["stun", "nature"], amount: 3 },
+  ]),
+  cardBuilders.effectsCard("briar-shield", [
+    { kind: "player-status", status: "block", amount: 2 },
+    { kind: "player-status", status: "thorns", amount: 3 },
+  ]),
+  cardBuilders.effectsCard("thorn-mail", [
+    { kind: "player-status", status: "armor", amount: 1 },
+    { kind: "player-status", status: "thorns", amount: 2 },
+  ]),
+  cardBuilders.effectsCard("thorn-whip", [
+    { kind: "damage", damageType: "nature", amount: 3 },
+    { kind: "player-status", status: "thorns", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("porcupine-quill", [
+    { kind: "player-status", status: "thorns", amount: 2 },
+    { kind: "companion-action", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("pack-tactics", [
+    { kind: "companion-action", amount: 2 },
+    { kind: "wish", amount: 1, companionIfAbsent: true },
+    { kind: "player-status", status: "block", amount: 4 },
+  ]),
+  cardBuilders.effectsCard("serrated-edge", [
+    { kind: "damage", damageType: "physical", damageTypePool: ["physical", "bleed"], amount: 2 },
+  ]),
+  cardBuilders.effectsCard("caustic-jab", [
+    { kind: "remove-enemy-armor", amount: 2 },
+    { kind: "damage", damageType: "poison", amount: 2 },
+  ]),
+  cardBuilders.effectsCard("rend", [{ kind: "damage", damageType: "bleed", amount: 1, doubleIfEnemyBleeding: true }]),
+  cardBuilders.effectsCard("pounce", [
+    { kind: "damage", damageType: "physical", damageTypePool: ["physical", "stun"], amount: 2 },
+  ]),
+  cardBuilders.effectsCard("earthquake", [
+    { kind: "damage", damageType: "stun", amount: 2 },
+    {
+      kind: "repeat-over-turns",
+      remainingTurns: 1,
+      effects: [{ kind: "damage", damageType: "stun", amount: 2 }],
+    },
+  ]),
+  cardBuilders.effectsCard("stargaze", [
+    { kind: "damage", damageType: "freeze", amount: 1 },
+    { kind: "wish", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("pixie-dust", [
+    { kind: "damage", damageType: "burn", amount: 1 },
+    { kind: "restore-mana", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("maul", [
+    { kind: "damage", damageType: "bleed", damageTypePool: ["bleed", "stun"], amount: 3 },
+  ]),
+  cardBuilders.effectsCard(
+    "sniff-out",
+    [{ kind: "damage", damageType: "bleed", amount: 1 }, { kind: "next-archery-free" }],
+    { tags: ["archery"] },
+  ),
+  cardBuilders.effectsCard(
+    "predators-focus",
+    [{ kind: "damage", damageType: "bleed", amount: 1 }, { kind: "next-hit-leech" }],
+    { title: "Predator's Focus" },
+  ),
+  cardBuilders.effectsCard("blizzard", [
+    { kind: "damage", damageType: "freeze", amount: 2 },
+    {
+      kind: "repeat-over-turns",
+      remainingTurns: 1,
+      effects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
+    },
+  ]),
+  cardBuilders.effectsCard(
+    "avatar",
+    [
       { kind: "damage", damageType: "holy", amount: 5 },
       { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5, forgeAmount: 2 },
     ],
-  }),
-  cardBuilders.effectsCard({
-    id: "combustion",
-    effects: [{ kind: "damage", damageType: "burn", amount: 1, detonateAllBurn: true }],
-  }),
-  cardBuilders.effectsCard({
-    id: "bellows-blast",
-    effects: [
-      { kind: "player-status", status: "forge", amount: 1 },
-      { kind: "damage", damageType: "burn", amount: 1 },
-    ],
-  }),
-  cardBuilders.effectsCard({
-    id: "quench",
-    effects: [
-      { kind: "remove-harmful-status", amount: 1 },
-      { kind: "player-status", status: "forge", amount: 1 },
-    ],
-  }),
+    { consume: true },
+  ),
+  cardBuilders.effectsCard("combustion", [{ kind: "damage", damageType: "burn", amount: 1, detonateAllBurn: true }]),
+  cardBuilders.effectsCard("bellows-blast", [
+    { kind: "player-status", status: "forge", amount: 1 },
+    { kind: "damage", damageType: "burn", amount: 1 },
+  ]),
+  cardBuilders.effectsCard("quench", [
+    { kind: "remove-harmful-status", amount: 1 },
+    { kind: "player-status", status: "forge", amount: 1 },
+  ]),
 ];

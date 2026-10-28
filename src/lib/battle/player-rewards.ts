@@ -1,6 +1,6 @@
 import { createPlayerResourceResolver } from "./player-resource-resolution";
 import { drawKeywordCard } from "./draw";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText, mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { DamageType } from "@/lib/game-data";
@@ -19,7 +19,7 @@ function applyBloodCountessHealingReaction(
   if (restoredHealth <= 0 || state.enemyHealth <= 0 || !hasEnemyTrait(state, "blood-countess")) return state;
   const enemyWasAlive = state.enemyHealth > 0;
   const holyDamage = 1;
-  if (combatTexts) mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
+  if (combatTexts) emitDamageText(combatTexts, "enemy", "holy", holyDamage);
   const hit = damageEnemyHealth(state, holyDamage);
   const damagedState = processEncounterTraitHealthThreshold(
     hit.previousHealth,

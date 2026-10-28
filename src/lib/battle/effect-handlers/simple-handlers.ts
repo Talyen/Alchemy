@@ -1,6 +1,6 @@
 import type { EffectHandlers } from "./handler-types";
 import { applyPotionMultiplier } from "../amount-helpers";
-import { mergeCombatText } from "../combat-text-events";
+import { emitNoticeText } from "../combat-text-events";
 import { applyEmergencyWishForEmptyDraw, applyWishEffect } from "../wish";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "../draw";
@@ -27,11 +27,7 @@ export const SIMPLE_HANDLERS = {
     const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
     state.observer?.descriptionMagnitude?.("amount", adjustedWish);
     if (adjustedWish > 0)
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "notice",
-        stat: "wish",
-        text: "",
+      emitNoticeText(combatTexts, "player", "wish", "", {
         ...(context?.feedback ? { feedback: context.feedback } : {}),
       });
     return applyWishEffect(

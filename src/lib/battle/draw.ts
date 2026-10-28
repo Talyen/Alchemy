@@ -2,7 +2,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { cardHasKeyword } from "./card-classification";
 import { getBattleRng, rngInt, shuffle, takeRandomItem } from "@/lib/rng";
 import type { BattleState, CombatTextEvent } from "./types";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText } from "./combat-text-events";
 import { MAX_HAND_SIZE } from "../game-constants";
 
 interface CardUidChange {
@@ -170,13 +170,7 @@ function reportDraw(
   const received =
     nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
   if (received > 0 && combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "draw",
-      amount: received,
-      ...(feedback ? { feedback } : {}),
-    });
+    emitStatusText(combatTexts, "player", "draw", received, { ...(feedback ? { feedback } : {}) });
   }
   return nextState;
 }

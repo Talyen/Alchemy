@@ -7,7 +7,7 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { isPlayerDefeated } from "./battle-outcome";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { applyEmergencyWishForEmptyDraw } from "./wish";
 
 function drawCardPlayReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -70,7 +70,7 @@ function applyTalentStatusAndHitTriggers(
   if (keywords.includes("leech") && talents.armorStealOnLeechCard > 0) {
     const stolen = Math.min(nextState.enemyMitigation.armor, talents.armorStealOnLeechCard);
     if (stolen > 0) {
-      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: stolen, impact: false });
+      emitDamageText(combatTexts, "enemy", "armor", stolen, { impact: false });
       nextState = applyArmorReward(reduceEnemyArmor(nextState, stolen), stolen, combatTexts);
     }
   }

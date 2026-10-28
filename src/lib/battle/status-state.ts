@@ -1,4 +1,4 @@
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
@@ -101,13 +101,7 @@ export function addEnemyStatus(
     nextState = reduceEnemyArmor(nextState, 1);
     const removed = armorBefore - nextState.enemyMitigation.armor;
     if (removed > 0 && options.combatTexts) {
-      mergeCombatText(options.combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "armor",
-        amount: removed,
-        impact: false,
-      });
+      emitDamageText(options.combatTexts, "enemy", "armor", removed, { impact: false });
     }
   }
 

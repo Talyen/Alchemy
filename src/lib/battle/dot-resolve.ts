@@ -18,7 +18,7 @@ import {
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { payKillPayouts } from "./player-rewards";
 import { resolveBleedGoldReward } from "./bonus-effects";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./stun-leech-resolution";
 import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
@@ -192,11 +192,7 @@ export function detonateEnemyStatuses(
     for (const pulse of pulses) {
       if (pulse.finalDamage > 0) {
         const healthLost = Math.min(pulse.finalDamage, Math.max(0, previousHealth - earlierDamage));
-        mergeCombatText(combatTexts, {
-          target: "enemy",
-          kind: "damage",
-          stat: pulse.status,
-          amount: pulse.finalDamage,
+        emitDamageText(combatTexts, "enemy", pulse.status, pulse.finalDamage, {
           ...(healthLost !== pulse.finalDamage ? { healthLost } : {}),
         });
       }
