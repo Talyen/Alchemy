@@ -28,7 +28,9 @@ it("reports stale and incomplete packets without attesting semantic review", () 
     catalogs: Object.fromEntries(
       TARGETS.map((locale) => [
         locale,
-        locale === "de" ? {} : { attack: { ...valid(), sourceHash: sourceHash(message, glossary, locale) } },
+        Object.fromEntries<ReturnType<typeof valid>>(
+          locale === "de" ? [] : [["attack", { ...valid(), sourceHash: sourceHash(message, glossary, locale) }]],
+        ),
       ]),
     ),
   };

@@ -55,7 +55,11 @@ describe("CLI launch paths", () => {
       [],
       fixture(),
       `process.env.ALCHEMY_EDITION = 'full';
-       fs.readdirSync = (directory) => { throw new Error('package lookup: ' + directory); };`,
+       const originalReaddir = fs.readdirSync;
+       fs.readdirSync = (directory, ...args) => {
+         if (String(directory) === ${JSON.stringify(path.join(ROOT, "release-desktop"))}) throw new Error('package lookup: ' + directory);
+         return originalReaddir(directory, ...args);
+       };`,
     );
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(`package lookup: ${path.join(ROOT, "release-desktop")}`);
@@ -205,7 +209,12 @@ describe("CLI validation before side effects", () => {
       fixture(),
       `const originalExists = fs.existsSync;
        fs.existsSync = (file) => String(file) === ${JSON.stringify(path.join(ROOT, "dist/index.html"))} ? false : originalExists(file);
-       cp.spawn = cp.spawnSync = () => { throw new Error('unexpected subprocess'); };`,
+       cp.spawn = () => { throw new Error('unexpected subprocess'); };
+       cp.spawnSync = (command, args) => {
+         if (command === 'python3' && args.includes('--prune') && args.includes('--environment'))
+           return { status: 0, stdout: '{"removed":false}' };
+         throw new Error('unexpected subprocess');
+       };`,
     );
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("--skip-build requires an existing renderer");
@@ -222,7 +231,12 @@ describe("CLI validation before side effects", () => {
         "run-performance.mjs",
         ["--replay", "replay.json", "--electron"],
         directory,
-        `cp.spawn = cp.spawnSync = () => { throw new Error('unexpected subprocess'); };`,
+        `cp.spawn = () => { throw new Error('unexpected subprocess'); };
+         cp.spawnSync = (command, args) => {
+           if (command === 'python3' && args.includes('--prune') && args.includes('--environment'))
+             return { status: 0, stdout: '{"removed":false}' };
+           throw new Error('unexpected subprocess');
+         };`,
       );
       expect(result.status).toBe(2);
       expect(result.stderr).toContain("Invalid replay bundle");

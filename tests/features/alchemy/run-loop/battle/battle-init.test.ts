@@ -78,6 +78,12 @@ describe("createBattleInit", () => {
     expect(resetBattleSession).toHaveBeenCalled();
   });
 
+  it("keeps the room count saveable when a recovered run is already at the safe limit", () => {
+    setRunProgress({ roomsEncountered: Number.MAX_SAFE_INTEGER });
+    makeInit().startBattle({ enemyId: "skeleton" });
+    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
   it("uses the live purse while honoring explicit enemy and empty difficulty overrides", () => {
     setRunProgress({ gold: 27, selectedDifficulty: "difficulty-3" });
     makeInit().startBattle({

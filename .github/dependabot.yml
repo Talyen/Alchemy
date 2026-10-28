@@ -31,3 +31,10 @@ updates:
         update-types: ["minor", "patch"]
     commit-message:
       prefix: chore
+  - package-ecosystem: npm
+    directory: /scripts/trailers
+    schedule:
+      interval: weekly
+    groups:
+      remotion:
+        patterns: ["remotion", "@remotion/*"]

@@ -91,6 +91,35 @@ describe("usePortaledTooltipPlacement", () => {
     expect(floating.dataset.side).toBe("none");
   });
 
+  it("keeps a wide side placement inside the stage when neither side has room", async () => {
+    const { computePosition } = await vi.importActual<typeof floatingUi>("@floating-ui/dom");
+    vi.spyOn(floatingUi, "autoUpdate").mockImplementation(() => () => {});
+    vi.spyOn(floatingUi, "computePosition").mockImplementation((reference, floating, options) =>
+      computePosition(reference, floating, {
+        ...options,
+        platform: {
+          ...floatingUi.platform,
+          getElementRects: async () => ({
+            reference: { x: 500, y: 50, width: 140, height: 100 },
+            floating: { x: 0, y: 0, width: 976, height: 420 },
+          }),
+          getClippingRect: async () => ({ x: 0, y: 0, width: 1280, height: 480 }),
+          getOffsetParent: async () => window,
+          isElement: async () => false,
+          convertOffsetParentRelativeRectToViewportRelativeRect: async ({ rect }) => rect,
+        },
+      }),
+    );
+    vi.spyOn(document.documentElement, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 1280, 480));
+
+    render(<Harness placement="side-end" />);
+    const floating = screen.getByTestId("tip-floating");
+    await waitFor(() => expect(floating.style.left).not.toBe(""));
+    const left = Number.parseFloat(floating.style.left);
+    expect(left).toBeGreaterThanOrEqual(152);
+    expect(left + 976).toBeLessThanOrEqual(1280 - 152);
+  });
+
   it("keeps the newest position when an older measurement finishes after a resize", async () => {
     const pending: Array<(result: Awaited<ReturnType<typeof floatingUi.computePosition>>) => void> = [];
     const compute = vi.spyOn(floatingUi, "computePosition").mockImplementation(

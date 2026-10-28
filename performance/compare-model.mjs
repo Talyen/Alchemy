@@ -84,6 +84,9 @@ export function checkScenarioCompatibility(beforeScenario, afterScenario) {
   if (beforeScenario.caseIdentity !== afterScenario.caseIdentity) {
     errors.push(`Incompatible case checkpoint for scenario "${beforeScenario.scenario}".`);
   }
+  if ((beforeScenario.runs?.length ?? 0) !== (afterScenario.runs?.length ?? 0)) {
+    errors.push(`Different run count for scenario "${beforeScenario.scenario}".`);
+  }
   const beforeSegments = (beforeScenario.segments ?? []).map((segment) => segment.name);
   const afterSegments = (afterScenario.segments ?? []).map((segment) => segment.name);
   if (JSON.stringify(beforeSegments) !== JSON.stringify(afterSegments)) {

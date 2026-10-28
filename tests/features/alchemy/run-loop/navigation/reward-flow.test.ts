@@ -218,7 +218,7 @@ describe("reward flow orchestration", () => {
     });
 
     it("returns null when the potion pool is empty", () => {
-      using _poolSpy = vi.spyOn(cardPools, "getStandardPotionPool").mockReturnValue([]);
+      using _poolSpy = vi.spyOn(cardPools, "getStandardPotionPoolView").mockReturnValue([]);
 
       expect(getRandomPotionCard(() => 0)).toBeNull();
     });

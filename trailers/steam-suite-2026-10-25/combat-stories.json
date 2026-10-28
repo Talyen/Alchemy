@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "id": "boss-turn-micro-stories",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 1,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 0,
+    "lyrics": false
+  },
+  "clips": [
+    {
+      "id": "knight-fortress",
+      "scene": "boss",
+      "boss": "stone-titan",
+      "hero": "knight",
+      "seed": 42,
+      "duration": 16,
+      "lyrics": false,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 2.2,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 3.5,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 4.9,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 6.2,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 7.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 8.9,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 10.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 11.8,
+          "kind": "click",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        }
+      ]
+    },
+    {
+      "id": "druid-counterplay",
+      "scene": "boss",
+      "boss": "blight-treant",
+      "hero": "druid",
+      "seed": 42,
+      "duration": 16,
+      "lyrics": false,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": [
+              "Mana Berries",
+              "Bear Companion",
+              "Briar Shield",
+              "Cinderbloom",
+              "Grasping Vines",
+              "Bloodthorn",
+              "Thorn Whip"
+            ]
+          }
+        },
+        {
+          "at": 2.2,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 3.5,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": [
+              "Mana Berries",
+              "Bear Companion",
+              "Briar Shield",
+              "Cinderbloom",
+              "Grasping Vines",
+              "Bloodthorn",
+              "Thorn Whip"
+            ]
+          }
+        },
+        {
+          "at": 4.9,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 6.2,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": [
+              "Mana Berries",
+              "Bear Companion",
+              "Briar Shield",
+              "Cinderbloom",
+              "Grasping Vines",
+              "Bloodthorn",
+              "Thorn Whip"
+            ]
+          }
+        },
+        {
+          "at": 7.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 8.9,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "cardPriority": [
+              "Mana Berries",
+              "Bear Companion",
+              "Briar Shield",
+              "Cinderbloom",
+              "Grasping Vines",
+              "Bloodthorn",
+              "Thorn Whip"
+            ]
+          }
+        },
+        {
+          "at": 10.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 11.8,
+          "kind": "click",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "clip": "knight-fortress",
+      "duration": 16
+    },
+    {
+      "clip": "druid-counterplay",
+      "duration": 16
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}

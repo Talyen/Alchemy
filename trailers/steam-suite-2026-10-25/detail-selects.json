@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "id": "current-detail-selects",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 2,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 0,
+    "lyrics": false,
+    "volume": 0.8,
+    "fadeIn": 0.05,
+    "fadeOut": 1.5
+  },
+  "clips": [
+    {
+      "id": "card-shop",
+      "scene": "shop",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Buy \"]:not([disabled])"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Buy \"]:not([disabled])"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "armory-loadout",
+      "scene": "armory",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Longsword"
+          },
+          "moveDuration": 0.45
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "Longsword"
+          }
+        },
+        {
+          "at": 3.0,
+          "kind": "move-away"
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "talents-block",
+      "scene": "talents",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Select Block Talents"
+        }
+      ],
+      "actions": [],
+      "lyrics": false
+    },
+    {
+      "id": "homestead-build",
+      "scene": "homestead",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Build Blacksmith\"]"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Build Blacksmith\"]"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "homestead-companions",
+      "scene": "homestead",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Companions"
+        }
+      ],
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "target": {
+            "selector": "[aria-label^=\"Bond \"]:not([disabled])"
+          },
+          "moveDuration": 0.45
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "target": {
+            "selector": "[aria-label^=\"Bond \"]:not([disabled])"
+          }
+        }
+      ],
+      "lyrics": false
+    }
+  ],
+  "shots": [
+    {
+      "clip": "card-shop",
+      "duration": 5.5
+    },
+    {
+      "clip": "armory-loadout",
+      "duration": 5.5
+    },
+    {
+      "clip": "talents-block",
+      "duration": 5.5
+    },
+    {
+      "clip": "homestead-build",
+      "duration": 5.5
+    },
+    {
+      "clip": "homestead-companions",
+      "duration": 5.5
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}

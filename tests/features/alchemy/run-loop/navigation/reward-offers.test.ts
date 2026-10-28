@@ -47,7 +47,7 @@ it("Companion offers recognize summons inside Chance and delayed effects", () =>
     effects: [{ kind: "repeat-over-turns" as const, remainingTurns: 1, effects: summon.effects }],
   };
   const pool = vi
-    .spyOn(gameData, "getOfferableCardPool")
+    .spyOn(gameData, "getOfferableCardPoolView")
     .mockReturnValue([conditional, delayed, gameData.cardById.slash!]);
   try {
     expect(

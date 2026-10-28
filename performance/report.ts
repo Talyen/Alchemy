@@ -188,7 +188,7 @@ export function renderSummaryMarkdown(options: {
     lines.push(`- **Browser:** ${environment.browser}`);
   }
   lines.push(`- **Trace mode:** ${environment.traceMode ? "yes (targets not authoritative)" : "no"}`);
-  lines.push(`- **Runs per scenario:** ${environment.runsPerScenario}`);
+  lines.push(`- **Requested runs per scenario:** ${environment.runsPerScenario}`);
   lines.push(`- **Cold mode:** ${environment.coldMode ? "yes (no warm-up; fresh Electron process per run)" : "no"}`);
   lines.push("");
 
@@ -221,6 +221,7 @@ export function renderSummaryMarkdown(options: {
   for (const agg of aggregates) {
     lines.push(`## ${agg.scenario} (${agg.profile})`);
     lines.push("");
+    lines.push(`- Measured runs: ${agg.runs.filter((run) => run.measured).length}`, "");
     if (agg.caseIdentity) {
       lines.push(`- Case: \`${agg.caseIdentity}\`${agg.exploratory ? " (exploratory)" : " (fixed)"}`);
       const { measured, ...checkpoint } = agg.coverage ?? {};

@@ -310,13 +310,15 @@ strict install checks enforce that supported toolchain. Peer dependencies are
 validated rather than bypassed. ESLint is installed only as the peer host for
 the plugins run through Oxlint's JS bridge; Oxlint remains the lint runner.
 
-Dependabot checks npm and Actions weekly. Related React, Vite, Vitest and Tailwind
+Dependabot checks both npm lockfiles and Actions weekly. Related React, Vite, Vitest and Tailwind
 minor/patch updates travel together; major upgrades remain separate reviews.
 `npm run check:dependencies` audits all dependencies at moderate severity and
-above and runs in `lint:ci`. Do not bypass a new advisory without tracing its
+above and runs in `lint:ci`, which also audits the separate trailer lockfile. Do not bypass a new advisory without tracing its
 actual dependency path and exposure. Temporary overrides keep electron-builder
 on the maintained ESM Electron downloader and typed-rest-client on patched qs;
 remove each when its upstream dependency range incorporates the fix.
+The trailer Zod override addresses a high-severity validation advisory; remove it
+when Remotion's locked dependencies use a patched version and the trailer audit passes.
 Electron binary downloads use Electron's own hardened ZIP extractor. Install
 scripts are explicitly allowed for Electron, Sharp, Sentry CLI, SWC and hooks;
 optional fsevents scripts are disabled in favor of Node's watcher fallback.

@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "id": "countess-directed-performance-v2",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 1,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 0,
+    "lyrics": true,
+    "fadeIn": 0,
+    "fadeOut": 2
+  },
+  "clips": [
+    {
+      "id": "countess-v2",
+      "scene": "boss",
+      "boss": "blood-countess",
+      "hero": "knight",
+      "seed": 42,
+      "duration": 88.5,
+      "actions": [
+        {
+          "at": 1.5,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 3.1,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 4.7,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 6.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 7.9,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 9.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 11.1,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 12.7,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 14.2,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 24.6,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Anvil"
+          }
+        },
+        {
+          "at": 26,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 31,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Plate Mail"
+          }
+        },
+        {
+          "at": 32.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 39.6,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Shield Bash"
+          }
+        },
+        {
+          "at": 41.2,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 43,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Bash"
+          }
+        },
+        {
+          "at": 44.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 45.8,
+          "kind": "click",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 53,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 54.4,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 59.6,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Spiked Shield"
+          }
+        },
+        {
+          "at": 61,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 67.1,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Block"
+          }
+        },
+        {
+          "at": 68.5,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 78.5,
+          "kind": "hover",
+          "moveDuration": 0.4,
+          "target": {
+            "role": "button",
+            "name": "Play Shield Bash"
+          }
+        },
+        {
+          "at": 80,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "clip": "countess-v2",
+      "duration": 88.5
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}
