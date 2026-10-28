@@ -30,13 +30,13 @@ function collectGearIssues(
 ): ContentValidationIssue[] {
   // Damaged clones keep the live catalogs untouched, so cases cannot leak
   // into each other and no restore step exists to forget.
-  const data: GearDamage = {
-    baseItems: structuredClone(gearBaseItems),
-    definitions: structuredClone(gearDefinitions),
-    definitionList: structuredClone(gearDefinitionList),
-    affixCatalog: structuredClone(gearAffixCatalog),
-    uniques: structuredClone(uniqueItemList),
-  };
+  const data: GearDamage = structuredClone({
+    baseItems: gearBaseItems,
+    definitions: gearDefinitions,
+    definitionList: gearDefinitionList,
+    affixCatalog: gearAffixCatalog,
+    uniques: uniqueItemList,
+  });
   damage(data);
   const collector = createCollector();
   validateGear(collector, { ...data, ...extra });
@@ -178,6 +178,14 @@ it.each([
       delete data.definitions[data.definitionList[0]!.id];
     },
     message: "Listed gear definition is missing from definition record",
+  },
+  {
+    requirement: "the list and gameplay lookup share the same definition",
+    damage: (data: GearDamage) => {
+      const listed = data.definitionList[0]!;
+      data.definitions[listed.id] = { ...listed, compatibleSlots: [] };
+    },
+    message: "Listed gear definition differs from the registered definition",
   },
   {
     requirement: "definitions reference real base items",
