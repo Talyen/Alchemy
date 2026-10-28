@@ -70,6 +70,12 @@ describe("gear domain", () => {
       flatPhysicalDamage: 2,
       maxHealth: 7,
     });
+    loadouts.knight["right-accessory"] = accessory.instanceId;
+    expect(computeGearManifest("knight", inventory, loadouts)).toEqual({
+      ...defaultGearEffects,
+      flatPhysicalDamage: 2,
+      maxHealth: 7,
+    });
   });
 
   it("ignores inherited definition names during effect aggregation and loadout repair", () => {
