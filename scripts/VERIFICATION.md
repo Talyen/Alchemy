@@ -328,6 +328,9 @@ Vite's widely available browser baseline. Keep the desktop target aligned when
 updating Electron. Packaged Windows smoke, native Steam overlay/input and release
 signing still need their respective platform and release checks.
 
+Incremental TypeScript state lives in checkout-local `.cache/tsbuild/` so isolated
+worktrees that share `node_modules` do not overwrite each other's compiler cache.
+
 TypeScript 7 owns source and test compilation. Oxlint owns linting through
 `oxlint.config.ts`, with type-aware source checks supplied by `oxlint-tsgolint`.
 Prettier continues to own formatting. The Oxc and TypeScript 7 language-server

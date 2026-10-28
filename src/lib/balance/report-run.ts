@@ -50,12 +50,13 @@ export interface CoreRow extends CoreRateRow {
 
 export function* coreScenarios(options: ReportRunOptions): Iterable<() => CoreRow> {
   for (const tier of REPORT_TIERS) {
+    const matchups = coreMatchupsForTier(tier);
     for (const characterId of reportCharacterIds()) {
       const decks = Array.from({ length: options.deckSeeds }, (_, deckIndex) => {
         const deckSeed = balanceScenarioSeed("core-deck", tier.preset, characterId, deckIndex);
         return buildClassSimDeck(characterId, tier.preset, deckSeed);
       });
-      for (const matchup of coreMatchupsForTier(tier)) {
+      for (const matchup of matchups) {
         yield () => {
           const batches: BalanceBatchResult[] = [];
           for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
@@ -219,7 +220,7 @@ export function composeBalanceReport(
 }
 
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
-  const core = withPhaseTiming("core scenarios", () => [...coreScenarios(options)].map((run) => run()));
+  const core = withPhaseTiming("core scenarios", () => Array.from(coreScenarios(options), (run) => run()));
   const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
 
   const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));

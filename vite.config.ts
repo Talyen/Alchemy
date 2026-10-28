@@ -5,10 +5,7 @@ import { resolve } from "node:path";
 import tailwind from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
-import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig, type Plugin } from "vite";
-import checker from "vite-plugin-checker";
-import { visualizer } from "rollup-plugin-visualizer";
 import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
 import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/verification/bundle-budget.mjs";
 import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
@@ -21,7 +18,7 @@ import { resolveEdition, editionPolicy } from "./game-edition.mjs";
 // Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).
 const devPort = resolveDevPort(process.env);
 
-export default defineConfig(({ mode, command }) => {
+export default defineConfig(async ({ mode, command }) => {
   const edition = resolveEdition(process.env.ALCHEMY_EDITION);
   const policy = editionPolicy(edition);
   const desktopConfig = mode === "desktop" && command === "build" ? validateDesktopBuildConfig() : undefined;
@@ -86,18 +83,18 @@ export default defineConfig(({ mode, command }) => {
       command === "serve" &&
         process.env.ALCHEMY_ENABLE_CHECKER === "1" &&
         process.env.ALCHEMY_SKIP_CHECKER !== "1" &&
-        checker({
+        (await import("vite-plugin-checker")).default({
           typescript: { tsconfigPath: "./tsconfig.json" },
         }),
       Boolean(process.env.ANALYZE) &&
-        visualizer({
+        (await import("rollup-plugin-visualizer")).visualizer({
           open: !process.env.CI,
           gzipSize: true,
           brotliSize: true,
           filename: "reports/bundle-analysis.html",
         }),
       sentryEnabled &&
-        sentryVitePlugin({
+        (await import("@sentry/vite-plugin")).sentryVitePlugin({
           authToken: process.env.SENTRY_AUTH_TOKEN!,
           org: process.env.SENTRY_ORG!,
           project: process.env.SENTRY_PROJECT!,
