@@ -294,6 +294,30 @@ describe("platform save backend", () => {
     expect(secondRead).toEqual({ ok: true, candidates: [latest] });
   });
 
+  it("retries a queued Cloud mirror when desktop deletion reports failure", async () => {
+    const active = deferred<boolean>();
+    const latest = deferred<void>();
+    const writeCloud = vi.fn(async (value: string) => {
+      if (value === "old") return active.promise;
+      if (value === "new") latest.resolve();
+      return true;
+    });
+    installDesktopApi({
+      overrides: {
+        steamCloudWrite: writeCloud,
+        steamCloudDelete: vi.fn().mockResolvedValue(false),
+      },
+    });
+    const backend = createDesktopSaveBackend({ cloudSyncEnabled: true });
+    await backend.write(SAVE_KEY, "old");
+    await backend.write(SAVE_KEY, "new");
+    const clearing = backend.clear(SAVE_KEY);
+    active.resolve(true);
+    expect((await clearing).ok).toBe(false);
+    await latest.promise;
+    expect(writeCloud.mock.calls.map(([value]) => value)).toEqual(["old", "new"]);
+  });
+
   it("fails closed without clearing local data when cloud deletion fails", async () => {
     const clearSave = vi.fn().mockResolvedValue(true);
     installDesktopApi({

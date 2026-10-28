@@ -5,6 +5,8 @@ export class CloudSaveMirror {
   private pending = new Map<string, () => Promise<boolean | undefined>>();
   private running: Promise<void> | null = null;
   private clears = 0;
+  private suspended = new Map<string, () => Promise<boolean | undefined>>();
+  private clearSucceeded = false;
 
   enqueue(slot: string, write: () => Promise<boolean | undefined>) {
     if (this.clears) return;
@@ -12,14 +14,26 @@ export class CloudSaveMirror {
     this.start();
   }
 
+  /** `remove` must reject on failure so suspended uploads can be retried. */
   async clear<T>(remove: () => Promise<T>): Promise<T> {
+    if (this.clears === 0) {
+      this.suspended = this.pending;
+      this.pending = new Map();
+      this.clearSucceeded = false;
+    }
     this.clears++;
-    this.pending.clear();
     try {
       await this.running;
-      return await remove();
+      const result = await remove();
+      this.clearSucceeded = true;
+      return result;
     } finally {
       this.clears--;
+      if (this.clears === 0) {
+        if (!this.clearSucceeded) this.pending = this.suspended;
+        this.suspended = new Map();
+        this.start();
+      }
     }
   }
 

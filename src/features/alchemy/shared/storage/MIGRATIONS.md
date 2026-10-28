@@ -7,7 +7,7 @@ own editing sequences.
 
 ## Public save contract
 
-Local storage is authoritative; Cloud is a mirror. Choose playable candidates by freshness, and preserve unreadable or newer-format data in its existing slot while current play writes a safe slot. A save submission succeeds only when local storage accepts its own snapshot. A submission replaced before writing returns `superseded`; replacement success does not change that result. Completed gameplay actions wait for a local write whose session receipt covers their revision under [write acknowledgement](#write-acknowledgement). Deletion has explicit modes; pending writes must not resurrect deleted data. Load problems fall back to playable data or defaults without a recovery-choice screen.
+Local storage is authoritative; Cloud is a mirror. Choose playable candidates by freshness, and route writes around unreadable or newer-format data when a permitted slot is available, subject to the both-slots exception below. A save submission succeeds only when local storage accepts its own snapshot. A submission replaced before writing returns `superseded`; replacement success does not change that result. Completed gameplay actions wait for a local write whose session receipt covers their revision under [write acknowledgement](#write-acknowledgement). Deletion has explicit modes; pending writes must not resurrect deleted data. Load problems fall back to playable data or defaults without a recovery-choice screen.
 
 Read the applicable contract before changing its behavior:
 
@@ -343,8 +343,8 @@ Routine skips stay silent: missing, empty, and below-baseline candidates on fres
 
 `selectSaveCandidates(primary, recovery)` inspects each candidate once and returns
 the load state together with the ordered write slots permitted by compatibility. Compatibility
-checks protect every newer-format candidate, including stale copies after the
-playable winner. The winning raw payload, validated data, and repair notes stay
+checks inspect every newer-format candidate, including stale copies after the
+playable winner. Slot protection follows the both-slots exception below. The winning raw payload, validated data, and repair notes stay
 together until hydration. `evaluateSaveCandidates` is the single-source facade;
 demo import uses the same selection and rejects a protected source. Storage adds
 unreadable-primary protection at the I/O boundary. Ordinary saves, synchronous
@@ -374,7 +374,7 @@ drops duplicate, missing, or ambiguous card references.
 
 Saves with a schema or content version newer than the current build are intentionally not migrated. Any playable candidate wins over a newer-format candidate, even when the newer copy has a later timestamp, so a compatible backup or recovery copy can still resume play. If no playable candidate exists, load defaults. The storage owner routes writes away from a slot holding newer-format data when another slot is available.
 
-When only one slot holds newer-format candidates, new saves use the other slot, leaving the newer data untouched. If both slots hold incompatible data, the recovery ring remains the best available write target; older recovery backups can eventually rotate out. A later build evaluates both slots again and selects the freshest playable candidate. No player-facing save decision is required.
+When only one slot holds newer-format candidates, new saves use the other slot if it is readable and otherwise permitted; otherwise they fail without overwriting the protected slot. If both slots hold incompatible data, the recovery ring remains the best available write target; older recovery backups can eventually rotate out. A later build evaluates both slots again and selects the freshest playable candidate. No player-facing save decision is required.
 
 Tie rules: playable-vs-playable ties keep the first candidate in read order — primary local ring, primary Cloud, recovery local ring, then recovery Cloud. Future-vs-future ties likewise keep the first candidate in read order for internal diagnostics. Fractional `lastSavedAt` values floor before comparison; missing timestamps fall back per domain (`-1` for future, `0` for the playable pre-filter matching the schema default) via `getCandidateSavedAt`.
 
@@ -495,9 +495,10 @@ serialized writes, even if the clock repeats or reverses, preserving recovery fr
 
 Mirroring follows local writing independently, serialized across both slots with
 only the newest queued payload per slot. Failure cannot delay local acknowledgement.
-Clear cancels queued mirrors and waits for active uploads before Cloud deletion,
-including uploads admitted by a departed renderer. Following reads observe deletion;
-failures release the lane. Account and recovery policies remain unchanged. Native operations check both
+Clear suspends queued mirrors and waits for active uploads before Cloud deletion,
+including uploads admitted by a departed renderer. A successful clear discards the
+suspended writes; if every overlapping clear fails, the newest queued writes resume.
+Following reads observe deletion; failures release the lane. Account and recovery policies remain unchanged. Native operations check both
 Steam account/app Cloud settings at execution time; disabled Cloud reads yield
 no candidate and writes/deletions leave its cache untouched.
 

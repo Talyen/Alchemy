@@ -49,7 +49,7 @@ function normalizedAffixValue(
   if (!Number.isFinite(value) || value <= 0) return null;
   const rounded = Math.round(value);
   const range = rarity ? definition.roll[rarity] : undefined;
-  return range ? clamp(rounded, range.min, range.max) : rounded;
+  return range ? clamp(rounded, range.min, range.max) : rounded > 0 ? rounded : null;
 }
 
 // Save repair, effect aggregation, and tooltips must accept the same rolls.

@@ -4,6 +4,7 @@ import { IMAGE_PRELOAD_TIMEOUT_MS } from "../game-constants";
 export function waitForImage(image: HTMLImageElement, signal?: AbortSignal): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false;
+    let decoding = false;
     const finish = (ready: boolean) => {
       if (settled) return;
       settled = true;
@@ -15,7 +16,8 @@ export function waitForImage(image: HTMLImageElement, signal?: AbortSignal): Pro
     };
     const onFail = () => finish(false);
     const onLoad = () => {
-      if (settled) return;
+      if (settled || decoding) return;
+      decoding = true;
       try {
         if (typeof image.decode !== "function") finish(image.naturalWidth > 0);
         else void image.decode().then(() => finish(true), onFail);

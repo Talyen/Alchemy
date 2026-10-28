@@ -226,7 +226,11 @@ export function createDesktopSaveBackend({ cloudSyncEnabled = false }: PlatformS
 
     clear: (_key, options) =>
       withDesktopSaveApi((desktop) =>
-        cloudMirror(desktop).clear(() => clearDesktop(desktop, cloudSyncEnabled, options?.forceLocalWipe === true)),
+        cloudMirror(desktop).clear(async () => {
+          const result = await clearDesktop(desktop, cloudSyncEnabled, options?.forceLocalWipe === true);
+          if (!result.ok) throw result.error;
+          return result;
+        }),
       ),
   };
 }
