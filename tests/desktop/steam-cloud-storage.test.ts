@@ -1,4 +1,7 @@
 import { createRequire } from "node:module";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { deferred } from "../helpers/deferred";
 
@@ -9,6 +12,11 @@ interface CloudStorage {
 }
 const { createSteamCloudStorage } = createRequire(import.meta.url)("../../desktop/steam-cloud-storage.cjs") as {
   createSteamCloudStorage: (options: object) => CloudStorage;
+};
+const { createDemoProgressBridge } = createRequire(import.meta.url)("../../desktop/demo-progress.cjs") as {
+  createDemoProgressBridge: (options: object) => {
+    readSource: () => Promise<{ readFailed: boolean; candidates: string[] }>;
+  };
 };
 
 afterEach(() => vi.restoreAllMocks());
@@ -80,12 +88,38 @@ it("reads complete uploads and continues after asynchronous Cloud failures", asy
   expect(await read).toBe("new");
 });
 
-it.each([null, Buffer.alloc(1001)])("protects an existing unreadable Cloud save (%s)", async (data) => {
-  const { storage, cloud, files } = fixture();
-  files.set("primary", "existing");
-  cloud.readFile.mockImplementationOnce(async () => data);
-  await expect(storage.read()).rejects.toThrow();
-  expect(await storage.read()).toBe("existing");
+it.each([null, Buffer.alloc(0), Buffer.alloc(1001)])(
+  "protects an existing unreadable Cloud save (%s)",
+  async (data) => {
+    const { storage, cloud, files } = fixture();
+    files.set("primary", "existing");
+    cloud.readFile.mockImplementationOnce(async () => data);
+    await expect(storage.read()).rejects.toThrow();
+    expect(await storage.read()).toBe("existing");
+  },
+);
+
+it.each(["", "x".repeat(1001)])("does not consume the demo import after an unreadable Cloud file", async (bytes) => {
+  const directory = await mkdtemp(path.join(tmpdir(), "alchemy-demo-cloud-"));
+  const { cloud, files } = fixture();
+  const client = { localplayer: { getSteamId: () => ({ steamId64: 123n }) }, cloud };
+  const bridge = createDemoProgressBridge({
+    directory,
+    getSteam: () => client,
+    isSavePayload: (data: string) => Buffer.byteLength(data) <= 1000,
+    edition: "full",
+    platform: "darwin",
+  });
+  try {
+    files.set("demo-save.json", bytes);
+    expect((await bridge.readSource()).readFailed).toBe(true);
+    files.set("demo-save.json", JSON.stringify({ steamAccountId: "123", gold: 12 }));
+    const retried = await bridge.readSource();
+    expect(retried.readFailed).toBe(false);
+    expect(JSON.parse(retried.candidates[0]!).gold).toBe(12);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 it.each(["account", "app"])(

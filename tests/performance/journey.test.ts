@@ -111,6 +111,9 @@ describe("reachable performance cases", () => {
       runs: [{ actions: [{ name: "play:Slash", segment: "combat" }] }],
     };
     expect(checkScenarioCompatibility(before, before).compatible).toBe(true);
+    expect(checkScenarioCompatibility(before, { ...before, runs: [...before.runs, ...before.runs] }).compatible).toBe(
+      false,
+    );
     expect(checkScenarioCompatibility(before, { ...before, caseIdentity: "xyz" }).compatible).toBe(false);
     expect(
       checkScenarioCompatibility(before, { ...before, segments: [{ name: "combat", actions: 1 }] }).compatible,

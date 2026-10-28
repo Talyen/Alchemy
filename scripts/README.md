@@ -181,6 +181,15 @@ portable trailer bundles and release artifacts are outside this reviewer. Tool e
 inside reports. Legacy `reports/boss-lyrics/venv` remains usable in place until its
 owner stops; worktree finishing excludes that known rebuildable environment.
 
+New, completed non-trailer integration evidence bundles carry a retention marker.
+The same run policy applies inside those sealed bundles, including current, latest,
+referenced and pinned protections. Finishing a task triggers a guarded pruning pass;
+legacy or unrecognized bundles and all trailer bundles remain untouched. On macOS,
+the evidence copy opportunistically uses verified clone-on-write for byte-identical
+files with matching attributes and access controls. Copies stay independent, and
+unsupported filesystems retain ordinary copies. Size accounting does not prove
+unique physical bytes saved.
+
 Report-producing CLIs register process-owned guards. Pruning skips while another
 participating tool is active; explicit cleanup refuses deletion. Registration and
 deletion share an OS-released loopback mutex keyed by the checkout's real path.

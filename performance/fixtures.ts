@@ -80,6 +80,7 @@ interface PerfFixtures {
     scenario: ScenarioId;
     profile: TargetProfile;
     minFrames?: number;
+    minimumRuns?: number;
     journeyCase?: JourneyCase;
     segments?: SegmentRequirement[];
     setup: (page: Page) => Promise<void>;
@@ -195,6 +196,7 @@ export const test = base.extend<PerfFixtures>({
         scenario,
         profile,
         minFrames,
+        minimumRuns = 1,
         journeyCase,
         segments,
         setup,
@@ -213,7 +215,7 @@ export const test = base.extend<PerfFixtures>({
         const segmentSamples = new Map<string, FrameSampleRaw[]>();
         let runFailure: Error | null = null;
         // Ordinary profiles include a warm-up. Cold mode intentionally measures first use.
-        const totalLoops = runsPerScenario + (isCold || !warmup ? 0 : 1);
+        const totalLoops = Math.max(runsPerScenario, minimumRuns) + (isCold || !warmup ? 0 : 1);
         let activePage = perfPage;
 
         for (let i = 0; i < totalLoops; i++) {
