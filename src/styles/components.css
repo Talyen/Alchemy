@@ -531,6 +531,103 @@
     }
   }
 
+  /* Isolated comparison B: the entire edge ignites; only the annulus carries the light band. */
+  .talent-node-frame[data-unlocking="true"] {
+    animation-name: talentMetalBorder;
+  }
+
+  .talent-node-glow[data-unlocking="true"] {
+    animation-name: talentMetalGlow;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-metal-outline {
+    animation: talentMetalOutline 1000ms ease-out both;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-track {
+    animation: talentMetalTrack 1000ms linear both;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-shine {
+    animation: talentMetalShine 1000ms ease-in-out both;
+  }
+
+  @keyframes talentMetalBorder {
+    0% {
+      border-color: #b9bcb3;
+    }
+    10%,
+    100% {
+      border-color: var(--talent-readable-accent);
+    }
+  }
+
+  @keyframes talentMetalGlow {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    10%,
+    50% {
+      opacity: 0.8;
+    }
+    72% {
+      opacity: 0.45;
+    }
+  }
+
+  @keyframes talentMetalOutline {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    25% {
+      opacity: 0.35;
+    }
+    65% {
+      opacity: 0.15;
+    }
+  }
+
+  @keyframes talentMetalTrack {
+    0% {
+      opacity: 0;
+      stroke-dasharray: 100 0;
+    }
+    10%,
+    90% {
+      opacity: 1;
+      stroke-dasharray: 100 0;
+    }
+    100% {
+      opacity: 0;
+      stroke-dasharray: 100 0;
+    }
+  }
+
+  @keyframes talentMetalShine {
+    0%,
+    15% {
+      opacity: 0;
+      transform: translateX(-65%);
+    }
+    22% {
+      opacity: 1;
+    }
+    65% {
+      opacity: 1;
+      transform: translateX(65%);
+    }
+    78%,
+    100% {
+      opacity: 0;
+      transform: translateX(65%);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .talent-node-frame,
     .talent-node-glow,

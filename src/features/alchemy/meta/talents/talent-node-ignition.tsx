@@ -66,31 +66,29 @@ export function TalentNodeIgnition({
           <rect {...rect} fill="none" stroke="white" strokeWidth={inset * 2 + 1} />
         </mask>
         <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0.3" stopColor="white" stopOpacity="0" />
-          <stop offset="0.48" stopColor="white" stopOpacity="0.15" />
-          <stop offset="0.54" stopColor="#fff8df" stopOpacity="0.9" />
-          <stop offset="0.65" stopColor="white" stopOpacity="0" />
+          <stop offset="0.25" stopColor="white" stopOpacity="0" />
+          <stop offset="0.40" stopColor="white" stopOpacity="0.15" />
+          <stop offset="0.52" stopColor="#fff8df" stopOpacity="0.9" />
+          <stop offset="0.72" stopColor="white" stopOpacity="0" />
         </linearGradient>
       </defs>
       <rect {...rect} className="talent-ignition-track" pathLength={100} fill="none" strokeWidth={inset * 2} />
       <rect
         {...rect}
-        className="talent-ignition-dash talent-ignition-halo"
+        className="talent-metal-outline talent-ignition-halo"
         pathLength={100}
         fill="none"
         strokeWidth={6.5}
         strokeLinecap="round"
-        strokeDasharray="12 88"
         filter={`url(#${id}-halo)`}
       />
       <rect
         {...rect}
-        className="talent-ignition-dash talent-ignition-core"
+        className="talent-metal-outline talent-ignition-core"
         pathLength={100}
         fill="none"
         strokeWidth={1.6}
         strokeLinecap="round"
-        strokeDasharray="12 88"
       />
       <g mask={`url(#${id}-annulus)`}>
         <rect
