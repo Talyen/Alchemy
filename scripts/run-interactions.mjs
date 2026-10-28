@@ -1,7 +1,15 @@
 import fs from "node:fs";
 import { runStreamCommand } from "./lib/run-command.mjs";
 import { REPO_ROOT } from "./lib/repository-paths.mjs";
-const families = ["battle", "navigation", "visits", "armory", "overlays", "persistence", "startup"];
+const families = {
+  battle: "battle.dom.test.tsx",
+  navigation: "navigation.dom.test.ts",
+  visits: "visits.dom.test.ts",
+  armory: "armory.dom.test.ts",
+  overlays: "overlays.dom.test.tsx",
+  persistence: "persistence.dom.test.ts",
+  startup: "startup.dom.test.ts",
+};
 const env = { ...process.env };
 const args = process.argv.slice(2);
 try {
@@ -16,7 +24,7 @@ try {
     if (flag === "--replay") {
       const artifact = JSON.parse(fs.readFileSync(value, "utf8"));
       if (
-        !families.includes(artifact.family) ||
+        !Object.hasOwn(families, artifact.family) ||
         !Number.isSafeInteger(artifact.seed) ||
         artifact.seed < 0 ||
         artifact.seed > 0xffffffff ||
@@ -28,7 +36,7 @@ try {
       env.ALCHEMY_INTERACTION_FAMILY = artifact.family;
       env.ALCHEMY_INTERACTION_SEED = String(artifact.seed);
       env.ALCHEMY_INTERACTION_ACTIONS = JSON.stringify(artifact.actions);
-    } else if (flag === "--family" && families.includes(value)) env.ALCHEMY_INTERACTION_FAMILY = value;
+    } else if (flag === "--family" && Object.hasOwn(families, value)) env.ALCHEMY_INTERACTION_FAMILY = value;
     else if (flag === "--seed" && /^\d+$/u.test(value) && Number(value) <= 0xffffffff)
       env.ALCHEMY_INTERACTION_SEED = value;
     else if (flag === "--tier" && ["push", "nightly"].includes(value)) env.ALCHEMY_INTERACTION_TIER = value;
@@ -43,7 +51,7 @@ try {
       "vitest",
       "run",
       env.ALCHEMY_INTERACTION_FAMILY
-        ? `tests/interaction/${env.ALCHEMY_INTERACTION_FAMILY}.dom.test`
+        ? `tests/interaction/${families[env.ALCHEMY_INTERACTION_FAMILY]}`
         : "tests/interaction",
       "--maxWorkers=1",
     ],
