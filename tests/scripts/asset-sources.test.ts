@@ -1,4 +1,5 @@
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
@@ -50,7 +51,8 @@ vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal)
 fixture.root = await mkdtemp(path.join(os.tmpdir(), "alchemy-library-checkout-"));
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
 const { checkAssetOutputs, preflightSelectedSources } = await import("../../scripts/assets/check-asset-outputs.mjs");
-const { resolveAssetSource, assetSourceRoot } = await import("../../scripts/assets/asset-sources.mjs");
+const { resolveAssetSource, assetSourceRoot, requireAssetSources } =
+  await import("../../scripts/assets/asset-sources.mjs");
 let directory: string;
 let library: string;
 
@@ -121,6 +123,31 @@ it("resolves the checkout source root, ignores library overrides and prevents es
   expect(resolveAssetSource("selected.png")).toBe(path.join(library, "selected.png"));
   expect(() => resolveAssetSource("../other.png")).toThrow("relative to assets/sources");
   expect(() => resolveAssetSource("/other.png")).toThrow("relative to assets/sources");
+});
+
+it("restores a selected sparse master automatically without replacing a local edit", async () => {
+  const git = (...args: string[]) => execFileSync("git", args, { cwd: fixture.root, encoding: "utf8", stdio: "pipe" });
+  const file = path.join(library, "selected.png");
+  const trailer = path.join(library, "trailer.png");
+  const committed = await readFile(file);
+  await writeFile(trailer, "trailer source");
+  git("init", "-q");
+  git("add", "assets/sources/selected.png", "assets/sources/trailer.png");
+  git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "fixture");
+  execFileSync("git", ["sparse-checkout", "set", "--no-cone", "--stdin"], {
+    cwd: fixture.root,
+    input: "/*\n!/assets/sources/\n",
+    stdio: "pipe",
+  });
+  await expect(readFile(file)).rejects.toMatchObject({ code: "ENOENT" });
+  await requireAssetSources([{ source: "selected.png" }]);
+  expect(await readFile(file)).toEqual(committed);
+  await expect(requireAssetSources([{ source: "trailer.png" }])).rejects.toThrow("Cannot read repository asset source");
+  await expect(readFile(trailer)).rejects.toMatchObject({ code: "ENOENT" });
+  await writeFile(file, "local change");
+  await requireAssetSources([{ source: "selected.png" }]);
+  expect(await readFile(file, "utf8")).toBe("local change");
+  expect(git("status", "--porcelain", "--", "assets/sources/selected.png")).toContain(" M assets/sources/selected.png");
 });
 
 it("verifies application icons without sources and catches recipe, source, or output changes", async () => {
