@@ -101,10 +101,14 @@ export const IN_CLASS_CARD_GAUNTLET = [
   { enemyId: "forge-golem", depthDelta: 7 },
 ] as const;
 
+const REPORT_GAUNTLETS = [BOON_GAUNTLET, IN_CLASS_CARD_GAUNTLET] as const;
+
 /** Canonical depth offset for gauntlet enemies. Isolated single-enemy sweeps use this so card deltas stay comparable across sweeps. */
 export function gauntletDepthDeltaFor(enemyId: string): number {
-  for (const scenario of [...BOON_GAUNTLET, ...IN_CLASS_CARD_GAUNTLET]) {
-    if (scenario.enemyId === enemyId) return scenario.depthDelta;
+  for (const gauntlet of REPORT_GAUNTLETS) {
+    for (const scenario of gauntlet) {
+      if (scenario.enemyId === enemyId) return scenario.depthDelta;
+    }
   }
   return 2;
 }
