@@ -185,7 +185,12 @@ describe("normalizePersistedBattleState", () => {
     const defaults = defaultBattleState();
     const saved = {
       ...defaults,
-      currentEnemy: enemyById.frostwarden,
+      currentEnemy: {
+        ...enemyById.frostwarden,
+        traits: enemyById.frostwarden.traits.map((trait) =>
+          trait.id === "glacial-shell" ? { ...trait, description: "Deals 1 additional Freeze damage." } : trait,
+        ),
+      },
       turn: 8,
       enemyHealth: 100,
       enemyMaxHealth: 234,
@@ -193,6 +198,9 @@ describe("normalizePersistedBattleState", () => {
     };
     const resumed = normalizePersistedBattleState(saved);
     expect(resumed.enemyStatuses).toMatchObject({ freezeBonus: 0, poison: 4 });
+    expect(resumed.currentEnemy.traits.find((trait) => trait.id === "glacial-shell")?.description).toBe(
+      "Deals 1 additional Freeze damage. Receives half Freeze damage.",
+    );
     expect(resumed).toMatchObject({ enemyHealth: 100, enemyMaxHealth: 234, turn: 8 });
     expect(normalizePersistedBattleState(resumed)).toEqual(resumed);
     expect(saved.enemyStatuses.freezeBonus).toBe(2);

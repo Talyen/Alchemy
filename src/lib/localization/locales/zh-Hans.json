@@ -1342,6 +1342,7 @@
   "description.59beb64628cde4ce": {"text":"<keyword0>流血</keyword0>不止","sourceHash":"2dfdc44bbe209fd57d6624a6e2194b9de71a0b9823d6222da4872bb7ac0314b8","reviewed":true},
   "description.5a50193db905a52d": {"text":"你的<keyword0>生命</keyword0>低于一半时，获得{{value0}}点<keyword1>护甲</keyword1>","sourceHash":"4fe86ef97821b670b00615c9cc1dc92f9a30a5afea910a6a7726970e678f547a","reviewed":true},
   "description.5a69d1fa9b9de404": {"text":"若你没有<keyword0>伙伴</keyword0>，则通过<keyword1>祈愿</keyword1>获取一个","sourceHash":"0185e3c6c9def290e55e5ba00e9ac315af3f2c409fdc35cc912c11f94ae78c9d","reviewed":true},
+  "description.5a8b0795b50c1d43": {"text":"额外造成{{value0}}点<keyword0>冻结</keyword0>伤害。受到的<keyword1>冻结</keyword1>伤害减半。","sourceHash":"3b193c4fb622775753a0867a2ab738cb8080c31afd4dca2f1aed1386a3e12b7c","reviewed":true},
   "description.5aa695a7e2cf7f2f": {"text":"造成<magnitude0>{{value0}}</magnitude0>–<magnitude1>{{value1}}</magnitude1>点<keyword0>神圣</keyword0>或<keyword1>眩晕</keyword1>伤害","sourceHash":"c105d9bef514f6042a6f87978912ba96f1a83277cfcd106dabddde0ded6f4d25","reviewed":true},
   "description.5ac736c3efad1c29": {"text":"击败<keyword1>中毒</keyword1>的敌人时，有{{value0}}%几率窃取{{value1}}点<keyword0>金币</keyword0>","sourceHash":"bdee80e02bfff6d9ce437b6ebd8fb7964996051c3aa29c8fe1f600951a6b9a5e","reviewed":true},
   "description.5af7f17d8596b491": {"text":"对处于<keyword0>灼烧</keyword0>状态的英雄造成的伤害提高{{value0}}%。","sourceHash":"ef04d13430d5828ca25ab08133ff03025ccbf830fc678b1c38b35faf5cf4615a","reviewed":true},

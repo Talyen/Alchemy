@@ -13,7 +13,7 @@ import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { tryDodgeEnemyAttackPacket, tryDodgePlayerAttackPacket } from "@/lib/battle/dodge";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { ENCOUNTER_TRAITS, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
-import { cardById, type BattleCard, type DamageType } from "@/lib/game-data";
+import { cardById, enemyById, type BattleCard, type DamageType } from "@/lib/game-data";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
 function state(overrides: BattleStatePatch = {}) {
@@ -369,6 +369,17 @@ describe("Labyrinth enemy modifiers", () => {
     ["grove-ward", "nature"],
   ] as const)("%s halves %s damage", (id, type) => {
     expect(play(state({ currentEnemy: enemy(id) }), attack(type, 8)).enemyHealth).toBe(96);
+  });
+
+  it("Glacial Surge halves Freeze once even with Frostbound Ward and preserves Thawing", () => {
+    const frostwarden = enemyById.frostwarden;
+    const warded = {
+      ...frostwarden,
+      traits: [...frostwarden.traits, ENCOUNTER_TRAITS["frostbound-ward"].enemyTrait],
+    };
+    expect(play(state({ currentEnemy: frostwarden }), attack("freeze", 8)).enemyHealth).toBe(96);
+    expect(play(state({ currentEnemy: warded }), attack("freeze", 8)).enemyHealth).toBe(96);
+    expect(play(state({ currentEnemy: frostwarden }), attack("burn", 8)).enemyHealth).toBe(90);
   });
 
   it("Sundered Guard removes Block before attack damage", () => {
