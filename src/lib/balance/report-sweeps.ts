@@ -128,13 +128,14 @@ export function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSw
       const deckSeed = balanceScenarioSeed("card-in-class-deck", tier.preset, characterId);
       const affinity = characters[characterId].keywords;
       const baseDeck = buildClassSimDeck(characterId, tier.preset, deckSeed);
+      const baseDeckIds = new Set(baseDeck.map((card) => card.id));
       const variants = cardLibrary
         .filter(
           (card) =>
             characterId === "wildcard" || getCardKeywordView(card).length === 0 || cardMatchesAffinity(card, affinity),
         )
         .map((card) => {
-          const present = baseDeck.some((entry) => entry.id === card.id);
+          const present = baseDeckIds.has(card.id);
           return {
             id: card.id,
             deck: present ? removeCardIdFromDeck(baseDeck, card.id) : insertCardIntoDeck(baseDeck, card),
@@ -224,21 +225,22 @@ export function* companionGroups(options: ReportRunOptions): Iterable<PairedSwee
       const deckSeed = balanceScenarioSeed("companion-deck", tier.preset, characterId);
       const classKeywords = characters[characterId].keywords;
       const deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
-      const deckCompanions = companionIdsFromDeck(deck);
+      const deckCompanions = new Set(companionIdsFromDeck(deck));
       const specs = summons.flatMap(({ card, companionId }) => {
         if (!(companionId in companionLibrary)) return [];
         if (
           !classKeywords.includes("companion") &&
-          !deckCompanions.includes(companionId) &&
+          !deckCompanions.has(companionId) &&
           !cardMatchesAffinity(card, classKeywords)
         )
           return [];
         const baselineDeck = removeCompanionSummonFromDeck(deck, companionId);
-        const alreadyInDeck = deckCompanions.includes(companionId);
+        const alreadyInDeck = deckCompanions.has(companionId);
         return [{ companionId, baselineDeck, treatmentDeck: insertCardIntoDeck(baselineDeck, card), alreadyInDeck }];
       });
-      const absent = specs.filter((spec) => !spec.alreadyInDeck);
-      const present = specs.filter((spec) => spec.alreadyInDeck);
+      const absent: typeof specs = [];
+      const present: typeof specs = [];
+      for (const spec of specs) (spec.alreadyInDeck ? present : absent).push(spec);
       for (const scenario of BOON_GAUNTLET) {
         const depth = tier.depthOffset + scenario.depthDelta;
         const shared = {

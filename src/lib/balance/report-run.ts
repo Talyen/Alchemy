@@ -110,11 +110,13 @@ export function collectAnomalies(rows: readonly CoreRow[]): {
   const perTier: Record<TalentPreset, Record<string, number>> = { early: {}, mid: {}, late: {} };
   for (const row of rows) {
     const threshold = getAnomalyThreshold(row.tier);
+    const tierLabel = reportTierForPreset(row.tier).label;
+    const tierMaxima = perTier[row.tier];
     for (const simulation of row.results) {
       const anomalies = simulation.anomalies;
       for (const { key, label } of ANOMALY_METRICS) {
         const value = anomalies[key];
-        perTier[row.tier][key] = Math.max(perTier[row.tier][key] ?? 0, value);
+        tierMaxima[key] = Math.max(tierMaxima[key] ?? 0, value);
         if (value <= threshold) continue;
         byField[key] ??= { field: label, maxValue: 0, battles: 0, peakScenario: "" };
         const entry = byField[key];
@@ -134,11 +136,7 @@ export function collectAnomalies(rows: readonly CoreRow[]): {
               ? anomalies.maxSingleHitDamageToPlayerStat
               : "";
         const card = cardId ? (cardById[cardId]?.title ?? cardId) : "";
-        entry.peakScenario = [
-          `${simulation.characterId} vs ${simulation.enemyId} (${reportTierForPreset(row.tier).label})`,
-          stat,
-          card,
-        ]
+        entry.peakScenario = [`${simulation.characterId} vs ${simulation.enemyId} (${tierLabel})`, stat, card]
           .filter(Boolean)
           .join(" · ");
       }
