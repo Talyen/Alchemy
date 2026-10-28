@@ -53,30 +53,33 @@ export function shouldShowCombatText(event: CombatTextEvent) {
   );
 }
 
+/** Identity only; filtering and presentation capacity are handled by the caller. */
+export function canMergeCombatText(event: CombatTextEvent, nextEvent: CombatTextEvent): boolean {
+  if (
+    event.target !== nextEvent.target ||
+    event.stat !== nextEvent.stat ||
+    event.kind !== nextEvent.kind ||
+    event.feedback !== nextEvent.feedback
+  )
+    return false;
+  if (event.kind === "notice" && nextEvent.kind === "notice")
+    return event.text === nextEvent.text && event.signal === nextEvent.signal;
+  return (
+    event.kind !== "notice" &&
+    nextEvent.kind !== "notice" &&
+    event.reactionId === nextEvent.reactionId &&
+    event.impact === nextEvent.impact &&
+    !!event.periodic === !!nextEvent.periodic &&
+    event.additive !== false &&
+    nextEvent.additive !== false &&
+    Math.sign(event.amount) === Math.sign(nextEvent.amount)
+  );
+}
+
 export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {
   if (!shouldShowCombatText(nextEvent)) return;
 
-  const existing = combatTexts.find((event) => {
-    if (
-      event.target !== nextEvent.target ||
-      event.stat !== nextEvent.stat ||
-      event.kind !== nextEvent.kind ||
-      event.feedback !== nextEvent.feedback
-    )
-      return false;
-    if (event.kind === "notice" && nextEvent.kind === "notice")
-      return event.text === nextEvent.text && event.signal === nextEvent.signal;
-    return (
-      event.kind !== "notice" &&
-      nextEvent.kind !== "notice" &&
-      event.reactionId === nextEvent.reactionId &&
-      event.impact === nextEvent.impact &&
-      !!event.periodic === !!nextEvent.periodic &&
-      event.additive !== false &&
-      nextEvent.additive !== false &&
-      Math.sign(event.amount) === Math.sign(nextEvent.amount)
-    );
-  });
+  const existing = combatTexts.find((event) => canMergeCombatText(event, nextEvent));
   if (!existing) combatTexts.push(nextEvent);
   else if (existing.kind !== "notice" && nextEvent.kind !== "notice") {
     const previousAmount = existing.amount;

@@ -13,6 +13,36 @@ const hit: CombatTextEvent = { target: "enemy", kind: "damage", stat: "physical"
 const heal: CombatTextEvent = { target: "enemy", kind: "heal", stat: "health", amount: 3 };
 
 describe("combat feedback preparation and merging", () => {
+  it.each([
+    { target: "player" },
+    { stat: "burn" },
+    { feedback: "secondary" },
+    { impact: false },
+    { periodic: true },
+    { additive: false },
+    { reactionId: "shatter" },
+    { amount: -5 },
+  ] as const)("keeps rapid outcomes with distinct identity separate: %j", (difference) => {
+    const current = burst(1, [hit]);
+    const incoming = burst(2, [{ ...hit, ...difference }], 10);
+    expect(consolidateCombatBursts([current], [incoming], 10)).toEqual([current, incoming]);
+  });
+
+  it("keeps a separate flight when a total exceeds its reserved digits", () => {
+    const current = burst(1, [{ ...hit, amount: 99 }]);
+    current.entries[0]!.reservedDigits = 2;
+    const incoming = burst(2, [hit], 10);
+    expect(consolidateCombatBursts([current], [incoming], 10)).toEqual([current, incoming]);
+  });
+
+  it("deduplicates matching notices but retains distinct notices", () => {
+    const notice: CombatTextEvent = { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" };
+    const current = burst(1, [notice]);
+    expect(consolidateCombatBursts([current], [burst(2, [notice], 10)], 10)).toEqual([current]);
+    const incoming = burst(3, [{ ...notice, text: "Purged", signal: "purge" }], 10);
+    expect(consolidateCombatBursts([current], [incoming], 10)).toEqual([current, incoming]);
+  });
+
   it("keeps a later Critical Hit visible when rapid hits merge", () => {
     const current = burst(1, [{ ...hit, healthLost: 2 }]);
     const incoming = burst(2, [{ ...hit, healthLost: 3, critical: true }], 10);

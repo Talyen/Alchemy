@@ -15,7 +15,8 @@ import { applyBlockDepletionRewards, applyCleanseHeals, addForgeToPlayer } from 
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyEmergencyWish } from "./wish";
 import { applyCardEffects } from "./effect-handlers";
-import { finalizeCcSkipTurnDecrement, isCcControlled } from "./status-cc";
+import { finalizeCcSkipTurnDecrement } from "./status-cc";
+import { isCcControlled } from "./crowd-control-policy";
 import { decayHalvedStatus } from "./status-helpers";
 import { PER_TURN_UNIQUE_GEAR_RESET } from "./unique-gear-state";
 import { getBattleRng } from "@/lib/rng";

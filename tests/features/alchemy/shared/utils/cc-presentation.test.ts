@@ -1,25 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { getActiveCcKeyword, isCcControlled } from "@/lib/battle";
+import { getActiveCcKeyword, isCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
 import { defaultCcState } from "../../../../fixtures/default-battle-state";
 
 describe("cc-presentation", () => {
-  it("prefers stun for overlay keyword when both skip turns are active", () => {
-    const cc = defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 1 });
-    expect(getActiveCcKeyword(cc)).toBe("stun");
-  });
-
-  it("returns freeze when only freeze skip turns remain", () => {
-    const cc = defaultCcState({ freezeSkipTurns: 1 });
-    expect(getActiveCcKeyword(cc)).toBe("freeze");
-  });
-
-  it("returns null when no skip turns are active", () => {
-    expect(getActiveCcKeyword(defaultCcState())).toBeNull();
-  });
-
-  it("detects player CC control from skip turns", () => {
-    expect(isCcControlled(defaultCcState({ stunSkipTurns: 1 }))).toBe(true);
-    expect(isCcControlled(defaultCcState({ cooldown: 2 }))).toBe(false);
-  });
+  it.each([
+    [{}, null, false, false],
+    [{ cooldown: 2 }, null, false, true],
+    [{ stunSkipTurns: 1 }, "stun", true, true],
+    [{ freezeSkipTurns: 1 }, "freeze", true, true],
+    [{ stunSkipTurns: 1, freezeSkipTurns: 1, cooldown: 2 }, "stun", true, true],
+  ] as const)(
+    "keeps overlay, active control and buildup immunity consistent for %j",
+    (state, keyword, active, blocked) => {
+      const cc = defaultCcState(state);
+      expect(getActiveCcKeyword(cc)).toBe(keyword);
+      expect(isCcControlled(cc)).toBe(active);
+      expect(isStunFreezeBuildupBlocked(cc)).toBe(blocked);
+    },
+  );
 });

@@ -1,5 +1,5 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { isCcControlled } from "./status-cc";
+import { isCcControlled } from "./crowd-control-policy";
 import { battleSnapshot } from "./battle-snapshot";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import type { BattleResolutionContext } from "./types";

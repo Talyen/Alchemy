@@ -1,4 +1,4 @@
-import { mergeCombatText, type CombatTextEvent } from "@/lib/battle";
+import { canMergeCombatText, mergeCombatText, type CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_MERGE_WINDOW_MS } from "@/lib/game-constants";
 import type { CombatTextBurst, FloatingCombatText } from "../../shared/types";
 
@@ -10,22 +10,9 @@ export function combatTextDisplay(event: CombatTextEvent): string {
 }
 
 function combinedEntry(existing: FloatingCombatText, incoming: FloatingCombatText): FloatingCombatText | undefined {
-  if (existing.feedback !== incoming.feedback) return;
-  if (existing.target !== incoming.target || existing.kind !== incoming.kind || existing.stat !== incoming.stat) return;
-  if (existing.kind === "notice" && incoming.kind === "notice") {
-    if (existing.signal === incoming.signal && existing.text === incoming.text) return existing;
-    return;
-  }
+  if (!canMergeCombatText(existing, incoming)) return;
+  if (existing.kind === "notice" && incoming.kind === "notice") return existing;
   if (existing.kind === "notice" || incoming.kind === "notice") return;
-  if (existing.reactionId !== incoming.reactionId) return;
-  if (
-    existing.additive === false ||
-    incoming.additive === false ||
-    existing.impact !== incoming.impact ||
-    !!existing.periodic !== !!incoming.periodic ||
-    Math.sign(existing.amount) !== Math.sign(incoming.amount)
-  )
-    return;
   const amount = existing.amount + incoming.amount;
   if (String(Math.abs(amount)).length > (existing.reservedDigits ?? 0)) return;
   const merged = [{ ...existing }];
