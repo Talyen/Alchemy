@@ -28,7 +28,7 @@ export function isCombatTalent(talent: TalentDefinition): boolean {
 }
 
 export function combatTalentsInPoolOrder(keywordId: TalentDefinition["keywordId"]): TalentDefinition[] {
-  return talentPool.filter((talent) => talent.keywordId === keywordId && isCombatTalent(talent));
+  return getTalentsForKeyword(keywordId).filter(isCombatTalent);
 }
 
 export const LATE_AFFINITY_TALENT_CAP = 7;
@@ -46,10 +46,12 @@ export function talentsInTreeOrder(keywordId: KeywordId): TalentDefinition[] {
   return getTalentsForKeyword(keywordId);
 }
 
+// Authored catalog order determines how the non-affinity budget is spent.
+const ALL_KEYWORD_IDS = [...new Set(talentPool.map((talent) => talent.keywordId))];
+
 export function buildPresetUnlockedTalents(keywords: readonly KeywordId[], preset: TalentPreset): UnlockedTalents {
   if (preset === "early") return {};
 
-  const allKeywordIds = [...new Set(talentPool.map((talent) => talent.keywordId))];
   const affinitySet = new Set(keywords);
   const isWildcard = keywords.length === 0;
   const unlockedTalents: UnlockedTalents = {};
@@ -66,7 +68,7 @@ export function buildPresetUnlockedTalents(keywords: readonly KeywordId[], prese
     : preset === "mid"
       ? MID_OTHER_TALENT_COUNT
       : LATE_OTHER_TALENT_COUNT;
-  for (const keywordId of allKeywordIds) {
+  for (const keywordId of ALL_KEYWORD_IDS) {
     if (otherBudget <= 0) break;
     if (affinitySet.has(keywordId)) continue;
     const treeTalents = talentsInTreeOrder(keywordId);
@@ -88,6 +90,7 @@ export function countUnlockedCombatTalents(keywords: readonly KeywordId[], prese
   return Object.values(unlocked).reduce((total, ids) => total + (ids?.length ?? 0), 0);
 }
 
+const MAX_CACHED_PRESET_MANIFESTS = 128;
 const PRESET_MANIFEST_CACHE = new Map<string, TalentEffectManifest>();
 
 export function buildPresetManifest(keywords: readonly KeywordId[], preset: TalentPreset): TalentEffectManifest {
@@ -96,8 +99,12 @@ export function buildPresetManifest(keywords: readonly KeywordId[], preset: Tale
   let cached = PRESET_MANIFEST_CACHE.get(key);
   if (!cached) {
     cached = computeTalentEffects(buildPresetUnlockedTalents(keywords, preset));
-    PRESET_MANIFEST_CACHE.set(key, cached);
+    if (PRESET_MANIFEST_CACHE.size >= MAX_CACHED_PRESET_MANIFESTS)
+      PRESET_MANIFEST_CACHE.delete(PRESET_MANIFEST_CACHE.keys().next().value!);
+  } else {
+    PRESET_MANIFEST_CACHE.delete(key);
   }
+  PRESET_MANIFEST_CACHE.set(key, cached);
   return structuredClone(cached);
 }
 
@@ -109,7 +116,7 @@ export function withTalent(unlocked: UnlockedTalents, talent: TalentDefinition):
 
 export function withoutTalent(unlocked: UnlockedTalents, talent: TalentDefinition): UnlockedTalents {
   const current = unlocked[talent.keywordId] ?? [];
+  if (!current.includes(talent.id)) return unlocked;
   const next = current.filter((id) => id !== talent.id);
-  if (next.length === current.length) return unlocked;
   return { ...unlocked, [talent.keywordId]: next };
 }

@@ -97,7 +97,9 @@ function collapseMatchupClusters(ranked: readonly BalanceFinding[]): BalanceFind
 }
 
 function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): BalanceFinding[] {
-  const buckets = FINDING_BUCKET_ORDER.map((bucket) => ranked.filter((finding) => finding.bucket === bucket));
+  const byBucket = new Map<FindingBucket, BalanceFinding[]>(FINDING_BUCKET_ORDER.map((bucket) => [bucket, []]));
+  for (const finding of ranked) byBucket.get(finding.bucket)!.push(finding);
+  const buckets = [...byBucket.values()];
   const selected = new Set<BalanceFinding>();
   for (let round = 0; selected.size < cap; round++) {
     const next = buckets.flatMap((bucket) => bucket[round] ?? []);
