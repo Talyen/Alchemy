@@ -1,8 +1,8 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   getCommitsSinceTag,
   latestVersionTag,
@@ -12,21 +12,13 @@ import {
   assertValidTag,
 } from "../../scripts/lib/release/git-release.mjs";
 
-const tempDirs: string[] = [];
-
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
 function git(root: string, command: string) {
   execSync(command, { cwd: root, shell: "/bin/sh" });
 }
 
 function gitRepo() {
-  const root = mkdtempSync(join(tmpdir(), "alchemy-git-release-"));
-  tempDirs.push(root);
+  const root = createTemporaryDirectory("alchemy-git-release-");
+
   git(root, "git init -q");
   git(root, "git config user.email test@example.com && git config user.name test");
   return root;
@@ -46,6 +38,8 @@ function commitFile(root: string, relativePath: string, message: string, body = 
   git(root, `git commit -q --cleanup=verbatim -F ${JSON.stringify(msgFile)}`);
   rmSync(msgFile);
 }
+
+const createTemporaryDirectory = temporaryDirectories();
 
 describe("git-release", () => {
   it("accepts complete semantic versions and rejects malformed identifiers in versions and tags", () => {
@@ -105,8 +99,8 @@ describe("git-release", () => {
   });
 
   it("returns null when git log cannot run", () => {
-    const root = mkdtempSync(join(tmpdir(), "alchemy-git-release-nogit-"));
-    tempDirs.push(root);
+    const root = createTemporaryDirectory("alchemy-git-release-nogit-");
+
     expect(getCommitsSinceTag(root, null)).toBeNull();
   });
 

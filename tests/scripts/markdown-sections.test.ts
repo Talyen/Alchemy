@@ -1,14 +1,11 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { checkDurableDocumentReachability } from "../../scripts/check-documentation-contract.mjs";
 import { extractMarkdownLinkTargets, headingSlugs } from "../../scripts/lib/agent/markdown-sections.mjs";
 
-const roots: string[] = [];
-afterEach(() => {
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
+const createTemporaryDirectory = temporaryDirectories();
 
 it("checks live links without treating fenced or inline examples as maintained paths", () => {
   const source = [
@@ -65,8 +62,8 @@ it("allocates unique heading anchors when an authored suffix collides with a rep
 });
 
 it("follows reference-style owner links for reachability while leaving example-only documents orphaned", () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-doc-links-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("alchemy-doc-links-");
+
   fs.writeFileSync(
     path.join(root, "README.md"),
     "[Owner][guide]\n\n[guide]: <Owner Guide.md>\n\n```md\n[Example](Orphan.md)\n```\n",

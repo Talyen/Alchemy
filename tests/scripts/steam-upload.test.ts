@@ -1,10 +1,10 @@
+import { runNode, copyFixtureFiles } from "../helpers/script-fixtures";
 import { createCleanup } from "@/lib/cleanup";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 const asar = createRequire(import.meta.url)("@electron/asar");
 import { spawnSync } from "node:child_process";
 import {
-  copyFileSync,
   cpSync,
   existsSync,
   mkdtempSync,
@@ -15,7 +15,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { steamContentRoot } from "../../scripts/lib/release/desktop-artifact.mjs";
 import { editionPolicy } from "../../game-edition.mjs";
@@ -29,16 +29,12 @@ beforeEach(() => {
   // into a temporary root so package fixtures and cleanup never touch real builds.
   fixtureRoot = realpathSync(mkdtempSync(join(tmpdir(), "alchemy-steam-upload-fixture-")));
   cpSync(join(ROOT, "scripts"), join(fixtureRoot, "scripts"), { recursive: true });
-  for (const file of [
+  copyFixtureFiles(fixtureRoot, [
     "desktop/package-layout.cjs",
     "game-edition.mjs",
     "steam/app_build.vdf",
     "steam/depot_build.vdf",
-  ]) {
-    const destination = join(fixtureRoot, file);
-    mkdirSync(dirname(destination), { recursive: true });
-    copyFileSync(join(ROOT, file), destination);
-  }
+  ]);
   symlinkSync(
     join(ROOT, "node_modules"),
     join(fixtureRoot, "node_modules"),
@@ -74,6 +70,20 @@ afterEach(() => {
   if (fixtureRoot) rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
+function dryRunUpload() {
+  return spawnSync("node", ["scripts/steam-upload.mjs"], {
+    cwd: fixtureRoot,
+    env: {
+      ...process.env,
+      ALCHEMY_EDITION: "full",
+      STEAM_UPLOAD_DRY_RUN: "1",
+      STEAM_APP_ID: "42",
+      STEAM_DEPOT_ID: "7",
+    },
+    encoding: "utf8",
+  });
+}
+
 describe("steam-upload script", () => {
   it("honors --dry-run with complete credentials without launching SteamCMD", async () => {
     await ensureFakeWinUnpacked();
@@ -87,9 +97,8 @@ describe("steam-upload script", () => {
       syncBuiltinESMExports();
       process.argv = [process.execPath, 'scripts/steam-upload.mjs', '--dry-run'];
       await import('./scripts/steam-upload.mjs');`;
-    const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], {
+    const result = runNode(["--input-type=module", "-e", source], {
       cwd: fixtureRoot,
-      encoding: "utf8",
       env: {
         ...process.env,
         ALCHEMY_EDITION: "full",
@@ -110,10 +119,7 @@ describe("steam-upload script", () => {
   it.each(["--dry-rnu", "unexpected", "--dry-run=false"])(
     "rejects %s before writing VDFs or launching SteamCMD",
     (argument) => {
-      const result = spawnSync(process.execPath, ["scripts/steam-upload.mjs", argument], {
-        cwd: fixtureRoot,
-        encoding: "utf8",
-      });
+      const result = runNode(["scripts/steam-upload.mjs", argument], { cwd: fixtureRoot });
       expect(result.status).toBe(2);
       expect(result.stderr).toMatch(/Unknown option|Unexpected Steam upload arguments|does not take a value/u);
       expect(existsSync(join(fixtureRoot, "steam/build"))).toBe(false);
@@ -124,7 +130,7 @@ describe("steam-upload script", () => {
     "honors the release dry-run allowance for %s when upload credentials are missing",
     async (edition) => {
       await ensureFakeWinUnpacked(edition);
-      const result = spawnSync(process.execPath, ["scripts/steam-upload.mjs"], {
+      const result = runNode(["scripts/steam-upload.mjs"], {
         cwd: fixtureRoot,
         env: {
           ...process.env,
@@ -138,7 +144,6 @@ describe("steam-upload script", () => {
           STEAM_USERNAME: "",
           STEAM_PASSWORD: "",
         },
-        encoding: "utf8",
       });
       expect(result.status, result.stderr).toBe(0);
       expect(result.stderr).toContain("ALLOW_STEAM_DRY_RUN=true");
@@ -149,7 +154,7 @@ describe("steam-upload script", () => {
   );
 
   it("fails closed without credentials unless dry-run fallback is explicitly allowed", () => {
-    const result = spawnSync(process.execPath, ["scripts/steam-upload.mjs"], {
+    const result = runNode(["scripts/steam-upload.mjs"], {
       cwd: fixtureRoot,
       env: {
         ...process.env,
@@ -161,7 +166,6 @@ describe("steam-upload script", () => {
         STEAM_USERNAME: "",
         STEAM_PASSWORD: "",
       },
-      encoding: "utf8",
     });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Missing required env var(s): STEAM_USERNAME, STEAM_PASSWORD");
@@ -169,7 +173,7 @@ describe("steam-upload script", () => {
   });
 
   it("does not use the allowance to hide invalid configured upload targets", () => {
-    const result = spawnSync(process.execPath, ["scripts/steam-upload.mjs"], {
+    const result = runNode(["scripts/steam-upload.mjs"], {
       cwd: fixtureRoot,
       env: {
         ...process.env,
@@ -181,7 +185,6 @@ describe("steam-upload script", () => {
         STEAM_USERNAME: "build-account",
         STEAM_PASSWORD: "fixture-password",
       },
-      encoding: "utf8",
     });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Invalid production Steam App ID");
@@ -190,17 +193,7 @@ describe("steam-upload script", () => {
 
   it("dry-runs without Steam credentials and writes substituted VDFs when contentroot is valid", async () => {
     await ensureFakeWinUnpacked();
-    const result = spawnSync("node", ["scripts/steam-upload.mjs"], {
-      cwd: fixtureRoot,
-      env: {
-        ...process.env,
-        ALCHEMY_EDITION: "full",
-        STEAM_UPLOAD_DRY_RUN: "1",
-        STEAM_APP_ID: "42",
-        STEAM_DEPOT_ID: "7",
-      },
-      encoding: "utf8",
-    });
+    const result = dryRunUpload();
     expect(result.status).toBe(0);
     const appPath = join(fixtureRoot, "steam/build/app_build.vdf");
     expect(existsSync(appPath)).toBe(true);
@@ -214,17 +207,7 @@ describe("steam-upload script", () => {
 
   it("fails dry-run with a clear error when win-unpacked is missing", () => {
     rmSync(contentRoot, { recursive: true, force: true });
-    const result = spawnSync("node", ["scripts/steam-upload.mjs"], {
-      cwd: fixtureRoot,
-      env: {
-        ...process.env,
-        ALCHEMY_EDITION: "full",
-        STEAM_UPLOAD_DRY_RUN: "1",
-        STEAM_APP_ID: "42",
-        STEAM_DEPOT_ID: "7",
-      },
-      encoding: "utf8",
-    });
+    const result = dryRunUpload();
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("Steam contentroot is missing:");
     expect(result.stderr).toContain("release-desktop/win-unpacked");
@@ -232,17 +215,7 @@ describe("steam-upload script", () => {
 
   it("fails dry-run when Alchemy.exe is missing from contentroot", () => {
     mkdirSync(contentRoot, { recursive: true });
-    const result = spawnSync("node", ["scripts/steam-upload.mjs"], {
-      cwd: fixtureRoot,
-      env: {
-        ...process.env,
-        ALCHEMY_EDITION: "full",
-        STEAM_UPLOAD_DRY_RUN: "1",
-        STEAM_APP_ID: "42",
-        STEAM_DEPOT_ID: "7",
-      },
-      encoding: "utf8",
-    });
+    const result = dryRunUpload();
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("missing Alchemy.exe");
   });

@@ -6,6 +6,16 @@
 /** @typedef {{ name: string, message: string, importNames?: string[] }} ImportPath */
 /** @typedef {{ selector: string, message: string }} SyntaxSelector */
 
+/** @param {string | string[]} group @param {string} message @returns {ImportPattern[]} */
+function importPattern(group, message) {
+  return [{ group, message }];
+}
+
+/** @param {string} selector @param {string} message @returns {SyntaxSelector[]} */
+function syntaxSelector(selector, message) {
+  return [{ selector, message }];
+}
+
 /**
  * @param {{ paths?: ImportPath[], patterns?: ImportPattern[] }} opts
  * @returns {["error", { paths?: ImportPath[], patterns?: ImportPattern[] }]}
@@ -34,56 +44,34 @@ export function layerImportsWithPaths(paths, ...fragments) {
   return restrictedImports({ paths, patterns: fragments.flat() });
 }
 
-/** @type {ImportPattern[]} */
 export const BARREL_PATTERNS = [
-  {
-    group: ["@/lib/game-data/*", "**/lib/game-data/*"],
-    allowImportNames: ["hydrateCard"],
-    message: "Import from @/lib/game-data (barrel) instead of deep paths.",
-  },
-  { group: ["@/lib/battle/*", "**/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
-  {
-    group: ["@/lib/validation/*", "**/lib/validation/*"],
-    message: "Import from @/lib/validation (barrel) instead of deep paths.",
-  },
-  {
-    group: ["@/lib/content-validation/*", "**/lib/content-validation/*"],
-    message: "Import from @/lib/content-validation (barrel) instead of deep paths.",
-  },
-  {
-    group: ["@/lib/game-constants/*", "**/lib/game-constants/*"],
-    message: "Import from @/lib/game-constants (barrel) instead of deep paths.",
-  },
-  {
-    group: ["@/features/alchemy/shared/utils/*", "**/features/alchemy/shared/utils/*"],
-    message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths.",
-  },
-  {
-    group: ["@/features/alchemy/shared/storage/*", "**/features/alchemy/shared/storage/*"],
-    message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths.",
-  },
-];
+  "lib/game-data",
+  "lib/battle",
+  "lib/validation",
+  "lib/content-validation",
+  "lib/game-constants",
+  "features/alchemy/shared/utils",
+  "features/alchemy/shared/storage",
+].map((barrel) => ({
+  group: [`@/${barrel}/*`, `**/${barrel}/*`],
+  ...(barrel === "lib/game-data" ? { allowImportNames: ["hydrateCard"] } : {}),
+  message: `Import from @/${barrel} (barrel) instead of deep paths.`,
+}));
 
-/** @type {ImportPattern[]} */
-export const LIB_NO_FEATURES = [
-  {
-    group: ["@/features/**", "**/features/**"],
-    message: "lib/ must not import from features/. Move shared types to lib/.",
-  },
-];
+export const LIB_NO_FEATURES = importPattern(
+  ["@/features/**", "**/features/**"],
+  "lib/ must not import from features/. Move shared types to lib/.",
+);
 
 /** @type {ImportPattern[]} — subset of BARREL_PATTERNS relevant inside src/lib (no features barrels). */
 export const LIB_BARREL_PATTERNS = BARREL_PATTERNS.filter((pattern) =>
   pattern.group.some((g) => g.includes("@/lib/") || g.includes("/lib/")),
 );
 
-/** @type {ImportPattern[]} */
-export const GAME_DATA_NO_BATTLE = [
-  {
-    group: ["@/lib/battle", "@/lib/battle/**"],
-    message: "game-data must not import battle runtime. Handlers live in lib/battle/effect-handlers/.",
-  },
-];
+export const GAME_DATA_NO_BATTLE = importPattern(
+  ["@/lib/battle", "@/lib/battle/**"],
+  "game-data must not import battle runtime. Handlers live in lib/battle/effect-handlers/.",
+);
 
 /** @type {ImportPath[]} */
 export const LIB_NO_FRAMEWORK_PATHS = [
@@ -118,13 +106,10 @@ export const BATTLE_NO_FRAMEWORK_PATHS = [
   ...GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
 ];
 
-/** @type {ImportPattern[]} */
-export const BATTLE_NO_FEATURES = [
-  {
-    group: ["@/features/**", "**/features/**"],
-    message: "lib/battle must not import from features/.",
-  },
-];
+export const BATTLE_NO_FEATURES = importPattern(
+  ["@/features/**", "**/features/**"],
+  "lib/battle must not import from features/.",
+);
 
 /** @type {ImportPattern[]} */
 export const DOMAIN_STORE_PATTERNS = [
@@ -153,41 +138,28 @@ export const DOMAIN_STORE_PATTERNS = [
   },
 ];
 
-/** @type {ImportPattern[]} */
-export const WRITE_PORT_PATTERNS = [
-  {
-    group: [
-      "**/shared/stores/commands/write",
-      "**/shared/stores/commands/write/*",
-      "@/features/alchemy/shared/stores/commands/write",
-      "@/features/alchemy/shared/stores/commands/write/*",
-    ],
-    message:
-      "Import gameplay writes from @/features/alchemy/shared/stores/commands/run-session-write-port, never from ./write/* directly.",
-  },
-];
+export const WRITE_PORT_PATTERNS = importPattern(
+  [
+    "**/shared/stores/commands/write",
+    "**/shared/stores/commands/write/*",
+    "@/features/alchemy/shared/stores/commands/write",
+    "@/features/alchemy/shared/stores/commands/write/*",
+  ],
+  "Import gameplay writes from @/features/alchemy/shared/stores/commands/run-session-write-port, never from ./write/* directly.",
+);
 
-/** @type {ImportPattern[]} */
-export const ORCHESTRATION_NO_SCREENS = [
-  {
-    group: [
-      "@/features/alchemy/meta/screens",
-      "@/features/alchemy/meta/screens/*",
-      "@/features/alchemy/meta/screens/**",
-      "**/features/alchemy/meta/screens/**",
-      "@/features/alchemy/run-setup/screens",
-      "@/features/alchemy/run-setup/screens/*",
-      "@/features/alchemy/run-setup/screens/**",
-      "**/features/alchemy/run-setup/screens/**",
-      "@/features/alchemy/run-loop/screens",
-      "@/features/alchemy/run-loop/screens/*",
-      "@/features/alchemy/run-loop/screens/**",
-      "**/features/alchemy/run-loop/screens/**",
-      "**/features/alchemy/screens/**",
-    ],
-    message: "Orchestration must not import screen components. Wire screens from app/screen-routes.",
-  },
-];
+export const ORCHESTRATION_NO_SCREENS = importPattern(
+  [
+    ...["meta", "run-setup", "run-loop"].flatMap((phase) => [
+      `@/features/alchemy/${phase}/screens`,
+      `@/features/alchemy/${phase}/screens/*`,
+      `@/features/alchemy/${phase}/screens/**`,
+      `**/features/alchemy/${phase}/screens/**`,
+    ]),
+    "**/features/alchemy/screens/**",
+  ],
+  "Orchestration must not import screen components. Wire screens from app/screen-routes.",
+);
 
 /** @type {ImportPattern[]} */
 export const SCREENS_NO_ORCHESTRATION = [
@@ -237,30 +209,26 @@ export const SCREENS_NO_ORCHESTRATION = [
   },
 ];
 
-/** @type {ImportPattern[]} */
-export const SCREENS_NO_APP_ORCHESTRATION = [
-  {
-    group: [
-      "@/app/app-shell",
-      "@/app/use-app-*",
-      "@/app/use-alchemy-bootstrap",
-      "@/app/use-card-inspection",
-      "@/app/screen-routes",
-      "@/app/screen-routes/*",
-      "@/app/screen-routes/**",
-      "@/app/app-overlays",
-      "@/app/startup-bar-progress",
-      "@/app/startup-loading-screen",
-      "@/app/unsupported-save-version-screen",
-      "@/app/battle-cluster",
-      "@/app/loading-words",
-      "**/app/app-shell",
-      "**/app/screen-routes/**",
-    ],
-    message:
-      "Screens must not import app-shell orchestration (bootstrap/autosave/navigation/routes/overlays). Leaf capability modules (@/app/escape-stack, @/app/screen-particle-config, app chrome context) stay allowed; wire everything else via route props.",
-  },
-];
+export const SCREENS_NO_APP_ORCHESTRATION = importPattern(
+  [
+    "@/app/app-shell",
+    "@/app/use-app-*",
+    "@/app/use-alchemy-bootstrap",
+    "@/app/use-card-inspection",
+    "@/app/screen-routes",
+    "@/app/screen-routes/*",
+    "@/app/screen-routes/**",
+    "@/app/app-overlays",
+    "@/app/startup-bar-progress",
+    "@/app/startup-loading-screen",
+    "@/app/unsupported-save-version-screen",
+    "@/app/battle-cluster",
+    "@/app/loading-words",
+    "**/app/app-shell",
+    "**/app/screen-routes/**",
+  ],
+  "Screens must not import app-shell orchestration (bootstrap/autosave/navigation/routes/overlays). Leaf capability modules (@/app/escape-stack, @/app/screen-particle-config, app chrome context) stay allowed; wire everything else via route props.",
+);
 
 /** @type {ImportPattern[]} */
 export const META_NO_RUN_LOOP = [
@@ -274,95 +242,52 @@ export const META_NO_RUN_LOOP = [
   },
 ];
 
-/** @type {ImportPattern[]} */
-export const RUN_SETUP_NO_RUN_LOOP = [
-  {
-    group: ["**/run-loop/**", "@/features/alchemy/run-loop/**"],
-    message: "run-setup must not import run-loop. Shared destination/campaign helpers live in shared/run-flow.",
-  },
-];
+export const RUN_SETUP_NO_RUN_LOOP = importPattern(
+  ["**/run-loop/**", "@/features/alchemy/run-loop/**"],
+  "run-setup must not import run-loop. Shared destination/campaign helpers live in shared/run-flow.",
+);
 
-/** @type {ImportPattern[]} */
-export const RUN_LOOP_NO_RUN_SETUP = [
-  {
-    group: ["**/run-setup/**", "@/features/alchemy/run-setup/**"],
-    message: "run-loop must not import run-setup. Depend on shared/run-flow contracts or shell-composed deps.",
-  },
-];
+export const RUN_LOOP_NO_RUN_SETUP = importPattern(
+  ["**/run-setup/**", "@/features/alchemy/run-setup/**"],
+  "run-loop must not import run-setup. Depend on shared/run-flow contracts or shell-composed deps.",
+);
 
-/** @type {ImportPattern[]} */
-export const UI_NO_SESSION_STORES = [
-  {
-    group: [
-      "**/stores/commands/run-session-*",
-      "**/stores/session/run-reads",
-      "**/stores/react/use-run-reads",
-      "@/features/alchemy/shared/stores/commands/run-session-write-port",
-      "@/features/alchemy/shared/stores/session/run-reads",
-      "@/features/alchemy/shared/stores/react/gameplay-state-store",
-    ],
-    message: "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
-  },
-];
+export const UI_NO_SESSION_STORES = importPattern(
+  [
+    "**/stores/commands/run-session-*",
+    "**/stores/session/run-reads",
+    "**/stores/react/use-run-reads",
+    "@/features/alchemy/shared/stores/commands/run-session-write-port",
+    "@/features/alchemy/shared/stores/session/run-reads",
+    "@/features/alchemy/shared/stores/react/gameplay-state-store",
+  ],
+  "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
+);
 
-/** @type {SyntaxSelector[]} */
-export const BATTLE_NO_MATH_RANDOM = [
-  {
-    selector:
-      'MemberExpression[object.name="Math"]:matches([computed=false][property.name="random"], [computed=true][property.value="random"])',
-    message:
-      "Reference to Math.random is not allowed in the battle engine. Use getBattleRng(state) for seeded combat RNG; placeholderRng from @/lib/rng is only for UI-default battle snapshots.",
-  },
-];
+export const BATTLE_NO_MATH_RANDOM = syntaxSelector(
+  'MemberExpression[object.name="Math"]:matches([computed=false][property.name="random"], [computed=true][property.value="random"])',
+  "Reference to Math.random is not allowed in the battle engine. Use getBattleRng(state) for seeded combat RNG; placeholderRng from @/lib/rng is only for UI-default battle snapshots.",
+);
 
-/** @type {SyntaxSelector[]} */
-export const GAMEPLAY_NO_MATH_RANDOM = [
-  {
-    selector:
-      'MemberExpression[object.name="Math"]:matches([computed=false][property.name="random"], [computed=true][property.value="random"])',
-    message:
-      "Gameplay code must take a seeded rng instead of Math.random (persisted streams only). Armory crafting/dev-spawn randomness lives in meta screens by design — see Docs/RUN_STATE.md#run-randomness.",
-  },
-];
+export const GAMEPLAY_NO_MATH_RANDOM = syntaxSelector(
+  'MemberExpression[object.name="Math"]:matches([computed=false][property.name="random"], [computed=true][property.value="random"])',
+  "Gameplay code must take a seeded rng instead of Math.random (persisted streams only). Armory crafting/dev-spawn randomness lives in meta screens by design — see Docs/RUN_STATE.md#run-randomness.",
+);
 
-/** @type {SyntaxSelector[]} */
-export const BATTLE_NO_MATH_FLOOR = [
-  {
-    selector:
-      'CallExpression[callee.object.name="Math"]:matches([callee.computed=false][callee.property.name="floor"], [callee.computed=true][callee.property.value="floor"])',
-    message: "Use Math.round() instead of Math.floor() in battle engine code.",
-  },
-  {
-    selector:
-      'CallExpression[callee.object.name="Math"]:matches([callee.computed=false][callee.property.name="ceil"], [callee.computed=true][callee.property.value="ceil"])',
-    message: "Use Math.round() instead of Math.ceil() in battle engine code.",
-  },
-  {
-    selector:
-      'CallExpression[callee.object.name="Math"]:matches([callee.computed=false][callee.property.name="trunc"], [callee.computed=true][callee.property.value="trunc"])',
-    message: "Use Math.round() instead of Math.trunc() in battle engine code.",
-  },
-];
+export const BATTLE_NO_MATH_FLOOR = ["floor", "ceil", "trunc"].map((method) => ({
+  selector: `CallExpression[callee.object.name="Math"]:matches([callee.computed=false][callee.property.name="${method}"], [callee.computed=true][callee.property.value="${method}"])`,
+  message: `Use Math.round() instead of Math.${method}() in battle engine code.`,
+}));
 
-/** @type {SyntaxSelector[]} */
 export const BATTLE_NO_DIRECT_RNG = [
-  {
-    selector: 'MemberExpression[property.name="rng"]',
-    message: "Use getBattleRng(state) instead of direct .rng access in battle engine code.",
-  },
-  {
-    selector: 'MemberExpression[property.value="rng"]',
-    message: "Use getBattleRng(state) instead of direct .rng access in battle engine code.",
-  },
-  {
-    selector: 'ObjectPattern Property[key.name="rng"]',
-    message: "Use getBattleRng(state) instead of destructuring .rng in battle engine code.",
-  },
-  {
-    selector: 'ObjectPattern Property[key.value="rng"]',
-    message: "Use getBattleRng(state) instead of destructuring .rng in battle engine code.",
-  },
-];
+  ["MemberExpression[property", "direct .rng access"],
+  ["ObjectPattern Property[key", "destructuring .rng"],
+].flatMap(([selector, operation]) =>
+  ["name", "value"].map((property) => ({
+    selector: `${selector}.${property}="rng"]`,
+    message: `Use getBattleRng(state) instead of ${operation} in battle engine code.`,
+  })),
+);
 
 /** @type {SyntaxSelector[]} */
 export const AGGREGATE_NO_DIRECT_MUTATION = [
@@ -391,13 +316,10 @@ export const CLASSNAME_NO_TEMPLATE = [
 ];
 
 /** Direct @/assets/optimized imports bypass the generated barrel — use @/lib/game-data barrels instead. */
-export const NO_DIRECT_ASSET_IMPORT = [
-  {
-    group: ["@/assets/optimized", "@/assets/optimized/*", "**/assets/optimized/*"],
-    message:
-      "Import art via @/lib/game-data (e.g. difficultyArt/craftingArt/characterArt) instead of @/assets/optimized directly. The barrel is the canonical import surface.",
-  },
-];
+export const NO_DIRECT_ASSET_IMPORT = importPattern(
+  ["@/assets/optimized", "@/assets/optimized/*", "**/assets/optimized/*"],
+  "Import art via @/lib/game-data (e.g. difficultyArt/craftingArt/characterArt) instead of @/assets/optimized directly. The barrel is the canonical import surface.",
+);
 
 /** Playwright esbuild cannot parse .webp barrels — flag value imports only.
  * Keep in sync with the generated barrel and eager catalog URL registry.
