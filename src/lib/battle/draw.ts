@@ -73,14 +73,11 @@ export function deliverPendingHandCards(state: BattleState): BattleState {
 
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
   const received = { ...card, uid: state.nextCardUid };
-  const slots = Math.max(0, MAX_HAND_SIZE - state.hand.length);
-  const hand = slots > 0 ? [...state.hand] : state.hand;
-  const pendingHandCards = state.pendingHandCards.slice(slots);
-  const delivered = Math.min(slots, state.pendingHandCards.length);
-  for (let index = 0; index < delivered; index++) hand.push(state.pendingHandCards[index]!);
-  if (slots > state.pendingHandCards.length) hand.push(received);
-  else pendingHandCards.push(received);
-  return { ...state, hand, pendingHandCards, nextCardUid: state.nextCardUid + 1 };
+  return {
+    ...state,
+    ...distributeHandCards(state.hand, [...state.pendingHandCards, received]),
+    nextCardUid: state.nextCardUid + 1,
+  };
 }
 
 export function drawCards(
