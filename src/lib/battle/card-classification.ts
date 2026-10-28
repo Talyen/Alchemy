@@ -5,6 +5,7 @@ import {
   type BattleCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 
 export { cardHasKeyword };
 
@@ -13,8 +14,7 @@ interface EffectClassification {
   playTarget: "player" | "enemy";
 }
 
-// All derived classification belongs to the immutable effect tree. Card
-// variants share it; replacing effects automatically selects a fresh entry.
+// Frozen effect trees can share classification; editable copies must be rechecked.
 const EFFECT_CLASSIFICATION_CACHE = new WeakMap<readonly BattleCardEffect[], EffectClassification>();
 
 function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassification {
@@ -41,7 +41,7 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
     damageTypes,
     playTarget: playTarget ?? "enemy",
   };
-  EFFECT_CLASSIFICATION_CACHE.set(effects, classification);
+  if (isDeeplyFrozenData(effects)) EFFECT_CLASSIFICATION_CACHE.set(effects, classification);
   return classification;
 }
 

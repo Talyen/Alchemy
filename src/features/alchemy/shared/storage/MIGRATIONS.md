@@ -244,6 +244,8 @@ New runs start with empty complete
 history and zero earned Gold. Older runs default to empty partial history and unknown
 Gold (`null`): subsequent visits are recorded with an omitted-history marker, while
 Gold remains unknown until a fresh run. Never infer missing earnings from the purse.
+Damaged room entries are dropped individually and mark the recap partial; a missing
+or invalid history also marks it partial even if its saved flag claimed otherwise.
 History and earnings round-trip without recording visits or replaying earnings on
 load. [Recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership) governs
 the transient ending snapshot.

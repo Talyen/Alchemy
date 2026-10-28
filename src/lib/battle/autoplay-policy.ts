@@ -1,4 +1,4 @@
-import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
+import { phoenixFeatherRevivalHealth } from "./health-state";
 import { projectEnemyDotDamage } from "./dot-resolve";
 import { scoreAvailableReactions } from "./reaction-score";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
@@ -299,7 +299,7 @@ export function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapsh
   if (!state.deathsDoorUsed || (state.deathsDoorActive && state.playerStatuses.phoenixFeather <= 0)) return false;
   if (!visitBattleCardEffects(card.effects, (effect) => effect.kind === "lose-health" || effect.kind === "self-damage"))
     return false;
-  const revivedHealth = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
+  const revivedHealth = phoenixFeatherRevivalHealth(state.playerMaxHealth);
   const first = selfCostOutcomes(
     card.effects,
     [{ health: state.playerHealth, phoenixFeather: state.playerStatuses.phoenixFeather > 0 }],

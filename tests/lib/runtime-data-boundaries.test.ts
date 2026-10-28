@@ -9,8 +9,32 @@ import { SaveOperationQueue } from "@/features/alchemy/shared/storage/save-opera
 import { logStorageFailure } from "@/lib/storage-logging";
 import { isRecord } from "@/lib/utils";
 import { createFakeAudioElement } from "../helpers/fake-audio";
+import { cardHasKeyword, isCompanionSummonCard, isEnemyAbilityCard } from "@/lib/game-data";
+import { cardHasDamageType } from "@/lib/battle/card-classification";
+import { makeTestCard } from "../fixtures/cards";
 
 afterEach(() => vi.restoreAllMocks());
+
+it("recomputes classifications when an owned effect tree changes, including below a frozen outer array", () => {
+  const card = makeTestCard({
+    effects: [{ kind: "chance", probability: 0.5, successEffects: [{ kind: "heal", amount: 1 }], failureEffects: [] }],
+  });
+  Object.freeze(card.effects);
+  expect(cardHasKeyword(card, "burn")).toBe(false);
+  expect(cardHasDamageType(card, "burn")).toBe(false);
+  expect(isCompanionSummonCard(card)).toBe(false);
+  expect(isEnemyAbilityCard(card)).toBe(true);
+  const branch = card.effects[0]!;
+  if (branch.kind !== "chance") throw new Error("Expected chance wrapper");
+  branch.successEffects.push(
+    { kind: "damage", damageType: "burn", amount: 1 },
+    { kind: "summon-companion", companionId: "wolf" },
+  );
+  expect(cardHasKeyword(card, "burn")).toBe(true);
+  expect(cardHasDamageType(card, "burn")).toBe(true);
+  expect(isCompanionSummonCard(card)).toBe(true);
+  expect(isEnemyAbilityCard(card)).toBe(false);
+});
 
 it("gear normalization rejects inherited item identities and accepts plain dictionaries", () => {
   const item = { instanceId: "owned-item", definitionId: "ruby-ring-basic", affixes: [] };
