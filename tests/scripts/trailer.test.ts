@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { pointerPath, samplePointer } from "../../scripts/trailers/direction.mjs";
-import { assertFrameDimensions, validateSourceVideo } from "../../scripts/trailers/media.mjs";
+import { assertFrameDimensions, captureEncoderArgs, validateSourceVideo } from "../../scripts/trailers/media.mjs";
 import { describe, expect, it, vi } from "vitest";
 import {
   compileRenderChunks,
@@ -14,6 +14,22 @@ import { installCaptureRuntime, sampleVisualTime } from "../../scripts/trailers/
 const authored = JSON.parse(fs.readFileSync(new URL("../../trailers/boss-spotlight.json", import.meta.url), "utf8"));
 
 describe("trailer edit admission and synchronization", () => {
+  it("keeps ordinary source capture lossless and requires an explicit bounded policy", () => {
+    expect(captureEncoderArgs(60)).toEqual(["-preset", "ultrafast", "-crf", "0", "-g", "1"]);
+    expect(captureEncoderArgs(60, "bounded")).toEqual([
+      "-preset",
+      "veryfast",
+      "-crf",
+      "16",
+      "-maxrate",
+      "64000000",
+      "-bufsize",
+      "128000000",
+      "-g",
+      "120",
+    ]);
+    expect(() => captureEncoderArgs(60, "unknown")).toThrow("Unknown capture encoder policy");
+  });
   it("covers the complete cinematic edit exactly once across bounded render chunks", () => {
     const recipe = parseRecipe(
       JSON.parse(fs.readFileSync(new URL("../../trailers/alchemy-cinematic.json", import.meta.url), "utf8")),
@@ -371,6 +387,18 @@ describe("trailer edit admission and synchronization", () => {
     expect(timeline.shots).toHaveLength(1);
     expect(timeline.shots[0].camera).toEqual({ from: { x: 0.5, y: 0.5, zoom: 1 }, to: { x: 0.5, y: 0.5, zoom: 1 } });
     expect(nativeMusicOffsets(recipe)).toEqual({ "blood-countess": 20.68 });
+  });
+
+  it("carries the native lyric clock through a menu take that resumes a saved boss", () => {
+    const recipe = JSON.parse(
+      fs.readFileSync(new URL("../../trailers/blood-countess-battle.json", import.meta.url), "utf8"),
+    );
+    recipe.music.offset = 18.68;
+    recipe.clips[0].scene = "menu";
+    recipe.clips[0].checkpoint = "isolated-countess-ready.json";
+    expect(nativeMusicOffsets(parseRecipe(recipe))).toEqual({ "blood-countess": 18.68 });
+    delete recipe.clips[0].checkpoint;
+    expect(nativeMusicOffsets(parseRecipe(recipe))).toEqual({});
   });
 });
 

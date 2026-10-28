@@ -43,7 +43,7 @@ review recipe. Investigate a timeout before changing the work or its limits.
 Frame rate, actions, music positions and edit timing stay identical. Drafts are
 explicitly identified in the receipts. A draft is not production-quality evidence.
 The same commands work on a dedicated Linux/macOS capture machine without the
-shared Mac lane wrapper. Rendering uses one worker. Directed compilations decode exact lossless source
+shared Mac lane wrapper. Rendering uses one worker. Directed compilations decode retained source
 frames on demand through a private local frame server with a 64 MiB memory cache.
 They retain native source resolution without expanding the full edit to temporary
 PNG files. Successful exports remove their remaining temporary composition files.
@@ -169,9 +169,12 @@ resolved timeline and fails invalid inputs before launching a browser.
 
 - **Capture:** logical viewport, device scale and 30 or 60 samples per second.
   Default 1920×1080 at scale 2 captures 3840×2160 without changing the game's
-  logical layout. Captures retain lossless H.264 4:4:4 at CRF 0 with every frame
-  independently seekable. This avoids quality loss and long-GOP seek costs
-  before the final delivery encode.
+  logical layout. Ordinary captures retain lossless H.264 4:4:4 at CRF 0 with
+  every frame independently seekable. The separate Steam suite runner explicitly
+  selects H.264 4:4:4, CRF 16, `veryfast`, a two-second GOP, a 64 Mbps maximum
+  rate and a 128 Mbit buffer for bounded iteration. That mode is lossy; its
+  1440p canary does not qualify every 4K capture or final delivery. Compare an
+  excerpt at native and delivery size before choosing it for a new use.
 - **Clips:** named boss, menu, heroes, Collection, Homestead, Armory, Options or
   checkpoint scenes, seed, hero, duration and timed inputs. Boss staging uses
   production starting cards and a production boss destination; there are no

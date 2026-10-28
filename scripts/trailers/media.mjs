@@ -44,7 +44,16 @@ export function probe(file, { countFrames = true, countPackets = false } = {}) {
   if (result.error || result.status !== 0) throw new Error(`ffprobe failed: ${result.error?.message ?? result.stderr}`);
   return JSON.parse(result.stdout);
 }
-/** Intra-only capture emits one video packet per sampled frame. */
+export const CAPTURE_ENCODER_POLICY = Object.freeze({
+  preset: "veryfast",
+  crf: 16,
+  maxBitrate: 64_000_000,
+  bufferBits: 128_000_000,
+  gopSeconds: 2,
+  pixelFormat: "yuv444p",
+});
+
+/** Every sampled frame must survive encoding, independent of GOP structure. */
 export function validateSourceVideo(video, settings, frameCount) {
   if (
     Number(video?.nb_frames) !== frameCount ||
@@ -69,7 +78,24 @@ export function assertFrameDimensions(buffer, width, height) {
   )
     throw new Error(`Screenshot must contain native ${width}×${height} PNG pixels`);
 }
-export function startEncoder(file, { width, height, fps }) {
+export function captureEncoderArgs(fps, policy = "lossless") {
+  if (policy === "lossless") return ["-preset", "ultrafast", "-crf", "0", "-g", "1"];
+  if (policy !== "bounded") throw new Error(`Unknown capture encoder policy: ${policy}`);
+  return [
+    "-preset",
+    CAPTURE_ENCODER_POLICY.preset,
+    "-crf",
+    String(CAPTURE_ENCODER_POLICY.crf),
+    "-maxrate",
+    String(CAPTURE_ENCODER_POLICY.maxBitrate),
+    "-bufsize",
+    String(CAPTURE_ENCODER_POLICY.bufferBits),
+    "-g",
+    String(fps * CAPTURE_ENCODER_POLICY.gopSeconds),
+  ];
+}
+
+export function startEncoder(file, { width, height, fps, encoderPolicy = "lossless" }) {
   const child = spawn(
     ffmpegPath(),
     [
@@ -88,15 +114,9 @@ export function startEncoder(file, { width, height, fps }) {
       "-an",
       "-c:v",
       "libx264",
-      "-preset",
-      "ultrafast",
-      "-crf",
-      "0",
-      // Every source frame must be independently seekable during editing.
-      "-g",
-      "1",
+      ...captureEncoderArgs(fps, encoderPolicy),
       "-vf",
-      "scale=out_color_matrix=bt709:out_range=tv,format=yuv444p",
+      `scale=out_color_matrix=bt709:out_range=tv,format=${CAPTURE_ENCODER_POLICY.pixelFormat}`,
       "-x264-params",
       "colorprim=bt709:transfer=bt709:colormatrix=bt709",
       "-colorspace",

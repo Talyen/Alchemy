@@ -214,7 +214,8 @@ export function nativeMusicOffsets(recipe) {
   if (!recipe.music.lyrics) return offsets;
   for (const shot of compileTimeline(recipe).shots) {
     const clip = recipe.clips.find((entry) => entry.id === shot.clip);
-    if (clip.scene !== "boss" && clip.scene !== "checkpoint") continue;
+    const resumesBoss = clip.scene === "menu" && clip.checkpoint && clip.boss;
+    if (clip.scene !== "boss" && clip.scene !== "checkpoint" && !resumesBoss) continue;
     if (clip.lyrics === false) continue;
     if (clip.boss !== recipe.music.boss)
       throw new Error(`${clip.id}: native lyrics need the battle boss to match the soundtrack`);
