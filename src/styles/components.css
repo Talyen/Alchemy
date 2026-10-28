@@ -349,17 +349,6 @@
     color: #bec0b9;
   }
 
-  .talent-node[data-node-state="available"] .talent-node-frame {
-    border-color: #e6dfce;
-    border-style: dashed;
-  }
-
-  .talent-node[data-node-state="available"]:hover .talent-node-frame {
-    box-shadow:
-      0 0 10px rgb(230 223 206 / 35%),
-      0 4px 14px rgb(0 0 0 / 35%);
-  }
-
   .talent-node:is([data-node-state="unlocked"], [data-node-state="unlocking"]) .talent-node-frame {
     border-color: var(--talent-readable-accent);
   }
