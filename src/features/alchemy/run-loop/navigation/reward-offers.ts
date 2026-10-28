@@ -98,12 +98,14 @@ export function createRewardOffer({
   // serializes each reward type on its own branch.
   const excludedBoons = excludedBoonIds.length ? new Set(excludedBoonIds) : undefined;
   const ownedTrinkets = ownedTrinketIds.length ? new Set(ownedTrinketIds) : undefined;
-  const boons = excludedBoons ? trinketLibrary.filter((entry) => !excludedBoons.has(entry.id)) : trinketLibrary;
-  const trinkets = ownedTrinkets ? trinketLibrary.filter((entry) => !ownedTrinkets.has(entry.id)) : trinketLibrary;
+  const availableBoons = () =>
+    excludedBoons ? trinketLibrary.filter((entry) => !excludedBoons.has(entry.id)) : trinketLibrary;
+  const availableTrinkets = () =>
+    ownedTrinkets ? trinketLibrary.filter((entry) => !ownedTrinkets.has(entry.id)) : trinketLibrary;
   const availability = getRewardLootAvailability(ownedUniqueIds, {
     cards: cards.length > 0,
-    boons: boons.length > 0,
-    trinkets: trinkets.length > 0,
+    boons: trinketLibrary.some((entry) => !excludedBoons?.has(entry.id)),
+    trinkets: trinketLibrary.some((entry) => !ownedTrinkets?.has(entry.id)),
   });
   const weightsFor = (available: typeof availability) =>
     resolveLootWeights({ source, progress: lootProgress, astralChanceBonus: gearAstralChanceBonus, available });
@@ -143,10 +145,10 @@ export function createRewardOffer({
       break;
     }
     if (modifier === "trinket-hoard") {
-      if (!isLootEligible("trinket", lootProgress.depth) || trinkets.length === 0) break;
+      if (!isLootEligible("trinket", lootProgress.depth) || !availability.trinket) break;
       return {
         rewardType: "trinket",
-        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
+        choices: sampleItems(availableTrinkets(), REWARD_CARD_CHOICES, rng),
       };
     }
   }
@@ -169,10 +171,10 @@ export function createRewardOffer({
     case "trinket":
       return {
         rewardType: "trinket",
-        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
+        choices: sampleItems(availableTrinkets(), REWARD_CARD_CHOICES, rng),
       };
     case "boon":
-      return { rewardType: "boon", choices: sampleItems(boons, REWARD_CARD_CHOICES, rng) };
+      return { rewardType: "boon", choices: sampleItems(availableBoons(), REWARD_CARD_CHOICES, rng) };
     case "card":
       return { rewardType: "card", choices: selectRewardCards(runDeck, cards, REWARD_CARD_CHOICES, [], rng) };
   }

@@ -1,21 +1,21 @@
 import type { BattleCard, BattleCardEffect, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffects } from "./effect-metadata";
 import { TALENT_TREE_KEYWORD_IDS } from "./talents/xp-keywords";
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 
-// Cost/title variants can share an immutable effect tree. Cache that tree,
-// while keeping Consume and tags on the card that actually requested it.
+// Cache only fully frozen effect trees; copied cards remain editable. Consume
+// and tags belong to the card that actually requested the keywords.
 const EFFECT_KEYWORD_CACHE = new WeakMap<readonly BattleCardEffect[], readonly KeywordId[]>();
 
 function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly KeywordId[] {
   const cached = EFFECT_KEYWORD_CACHE.get(effects);
   if (cached) return cached;
   const result = Object.freeze(collectKeywordsFromBattleEffects(effects));
-  EFFECT_KEYWORD_CACHE.set(effects, result);
+  if (isDeeplyFrozenData(effects)) EFFECT_KEYWORD_CACHE.set(effects, result);
   return result;
 }
 
-export function getCardKeywords(card: BattleCard): KeywordId[] {
-  const base = cachedEffectKeywords(card.effects);
+function mergeCardKeywords(card: BattleCard, base: readonly KeywordId[]): KeywordId[] {
   if (!card.consume && !card.tags?.length) return [...base];
   if (card.consume && !card.tags?.length) return base.includes("consume") ? [...base] : [...base, "consume"];
   if (card.tags?.length === 1) {
@@ -31,6 +31,10 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   return [...keywords];
 }
 
+export function getCardKeywords(card: BattleCard): KeywordId[] {
+  return mergeCardKeywords(card, cachedEffectKeywords(card.effects));
+}
+
 /** Internal read-only view for consumers that do not retain or mutate keywords. */
 export function getCardKeywordView(card: BattleCard): readonly KeywordId[] {
   const base = cachedEffectKeywords(card.effects);
@@ -39,7 +43,7 @@ export function getCardKeywordView(card: BattleCard): readonly KeywordId[] {
     (!card.tags?.length || card.tags.every((tag) => base.includes(tag)))
   )
     return base;
-  return getCardKeywords(card);
+  return mergeCardKeywords(card, base);
 }
 
 /** Predicate callers can use the immutable cache without copying its array. */

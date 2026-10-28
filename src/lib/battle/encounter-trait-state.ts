@@ -1,8 +1,12 @@
 import type { BattleState } from "./types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-// Trait lists are immutable battle inputs. Key by the list so state copies
-// reuse the lookup, replacement lists invalidate it, and old battles can be collected.
-const enemyTraitSets = new WeakMap<BattleState["currentEnemy"]["traits"], ReadonlySet<string>>();
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
+// Published battle inputs are frozen, but owned setup copies may be edited.
+// Keep identity-stable lookups while invalidating changes to mutable trait IDs.
+const enemyTraitSets = new WeakMap<
+  BattleState["currentEnemy"]["traits"],
+  { ids: string[]; frozen: boolean; lookup: ReadonlySet<string> }
+>();
 
 function readonlyTraitSet(traits: BattleState["currentEnemy"]["traits"]): ReadonlySet<string> {
   const source = new Set<string>();
@@ -29,12 +33,15 @@ export function hasEnemyTrait(state: BattleState, traitId: string, traitSet?: Re
 
 export function getEnemyTraitSet(state: Pick<BattleState, "currentEnemy">): ReadonlySet<string> {
   const traits = state.currentEnemy.traits;
-  let set = enemyTraitSets.get(traits);
-  if (!set) {
-    set = readonlyTraitSet(traits);
-    enemyTraitSets.set(traits, set);
-  }
-  return set;
+  const cached = enemyTraitSets.get(traits);
+  if (
+    cached &&
+    (cached.frozen || (cached.ids.length === traits.length && cached.ids.every((id, i) => traits[i]?.id === id)))
+  )
+    return cached.lookup;
+  const lookup = readonlyTraitSet(traits);
+  enemyTraitSets.set(traits, { ids: traits.map((trait) => trait.id), frozen: isDeeplyFrozenData(traits), lookup });
+  return lookup;
 }
 
 export function hasEncounterBenefit(

@@ -13,7 +13,10 @@ export const cardLibrary: BattleCard[] = [
   ...defenseCards,
 ];
 
-export const cardById: Record<string, BattleCard> = Object.fromEntries(cardLibrary.map((card) => [card.id, card]));
+export const cardById: Record<string, BattleCard> = Object.assign(
+  Object.create(null) as Record<string, BattleCard>,
+  Object.fromEntries(cardLibrary.map((card) => [card.id, card])),
+);
 
 if (Object.keys(cardById).length !== cardLibrary.length) {
   throw new Error("Duplicate card id in cardLibrary");

@@ -1,6 +1,15 @@
 import { validateRegistryEntries } from "./registry-validation.mjs";
 
 export const bossIdleMasters = [
+  { source: "Animations/Bosses/The Forge Golem - Idle 1.mp4", target: "forge-golem-idle-1.mp4" },
+  { source: "Animations/Bosses/The Forge Golem - Idle 2.mp4", target: "forge-golem-idle-2.mp4" },
+  { source: "Animations/Bosses/The Forge Golem - Idle 3.mp4", target: "forge-golem-idle-3.mp4" },
+  { source: "Animations/Bosses/The Frostwarden - Idle 1.mp4", target: "frostwarden-idle-1.mp4" },
+  { source: "Animations/Bosses/The Frostwarden - Idle 2.mp4", target: "frostwarden-idle-2.mp4" },
+  { source: "Animations/Bosses/The Frostwarden - Idle 3.mp4", target: "frostwarden-idle-3.mp4" },
+  { source: "Animations/Bosses/The Iron Bear - Idle 1.mp4", target: "iron-bear-idle-1.mp4" },
+  { source: "Animations/Bosses/The Iron Bear - Idle 2.mp4", target: "iron-bear-idle-2.mp4" },
+  { source: "Animations/Bosses/The Iron Bear - Idle 3.mp4", target: "iron-bear-idle-3.mp4" },
   { source: "Animations/Bosses/The Blight Treant - Idle 1.mp4", target: "blight-treant-idle-1.mp4" },
   { source: "Animations/Bosses/The Blight Treant - Idle 2.mp4", target: "blight-treant-idle-2.mp4" },
   { source: "Animations/Bosses/The Blight Treant - Idle 3.mp4", target: "blight-treant-idle-3.mp4" },

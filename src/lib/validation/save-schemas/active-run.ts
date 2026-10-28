@@ -16,7 +16,7 @@ import {
   LabyrinthPendingNodeSchema,
 } from "./labyrinth-schemas";
 import { PersistedBattleStateSchema } from "./persisted-battle-state";
-import { RunProgressSchema } from "./run-progress";
+import { repairRunHistory, RunProgressSchema } from "./run-progress";
 import {
   ContentSystemIdSchema,
   DestinationArraySchema,
@@ -278,7 +278,9 @@ const ActiveRunDataObjectSchema = z.object({
 
 export type ValidatedActiveRunData = z.output<typeof ActiveRunDataObjectSchema>;
 
-export const ActiveRunDataSchema = ActiveRunDataObjectSchema.transform(normalizeActiveRunData)
+export const ActiveRunDataSchema = z
+  .preprocess(repairRunHistory, ActiveRunDataObjectSchema)
+  .transform(normalizeActiveRunData)
   .refine(
     (data) =>
       data.contentSystemType !== "labyrinth" ||

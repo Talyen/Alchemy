@@ -119,6 +119,141 @@
     "outputHash": "bd2764dd08bea619be1670ebb898f711",
     "selectionHash": "407642edf3dded057538d2aae3be31071115f4611376cc58907743509a0cce2e"
   },
+  "forge-golem-idle-1-1280.mp4": {
+    "hash": "41cce53abca6f0c85e06110fbf9ab576",
+    "outputHash": "68d2391ed1bd4e429cd9ff7de866d138",
+    "selectionHash": "75859e7d6326b3298f861a79b769ec47e5e29f82eb7444bce8d7ac17cd1fa4a3"
+  },
+  "forge-golem-idle-1-640.mp4": {
+    "hash": "cea556b9fb1e8ccfb3004797d6156085",
+    "outputHash": "cb98232e69510e5f7badd44e354ce113",
+    "selectionHash": "ceb2897cb33dc47fd72e531459142cf27f33761d446a641eccd972934126dce8"
+  },
+  "forge-golem-idle-1.mp4": {
+    "hash": "add2dd65a01ae0eea11c2707b18e2f80",
+    "outputHash": "e9e7fa6d119d42df83dd4ff217643c25",
+    "selectionHash": "778c73d2a077a532a0021b852ecb0d226d1f4efbad57e39ecb0146a1e98f0817"
+  },
+  "forge-golem-idle-2-1280.mp4": {
+    "hash": "2b095ce703eca76868b215ba0283cab5",
+    "outputHash": "eb722aa879f61ff064fda0f245a93a3b",
+    "selectionHash": "d7cc183172ac47a719a99af4a4ff8e3c25d5358d07e9dad6fd4e5fe409b6a39f"
+  },
+  "forge-golem-idle-2-640.mp4": {
+    "hash": "8958c12d775f7ce74dce352b4f576080",
+    "outputHash": "96c6dec5e5323bc0a4637090d53de4b2",
+    "selectionHash": "5ba006442218bbec0ee15ca4a79f320b46fb34e96e71f6b0734c96dcc6fa9813"
+  },
+  "forge-golem-idle-2.mp4": {
+    "hash": "6820e77691879a156cfd70b4a08bc822",
+    "outputHash": "b1a26e5fd65f6f6fafa6e229e573df3b",
+    "selectionHash": "356ed78633803b0b94c7f630a4f603639718eff24ce98220881f037153e26492"
+  },
+  "forge-golem-idle-3-1280.mp4": {
+    "hash": "81e985088b9966c9b8ae07ed82449270",
+    "outputHash": "45e0e9ecb71daa51b58cbdd111345ff5",
+    "selectionHash": "fc3a89b73d4b1efb3d108bbac880b4218c510ba2c6021cde4398981426bf1884"
+  },
+  "forge-golem-idle-3-640.mp4": {
+    "hash": "be1f2f1c27e507aad4e95c4e869e8998",
+    "outputHash": "0baab040f87b634719e57a4a99c9c38f",
+    "selectionHash": "7bdead3bd6e8a1e2b46abdb72d5ad2e82fc6974a759c5b67a9f20cea4ee21ed2"
+  },
+  "forge-golem-idle-3.mp4": {
+    "hash": "3a050513ac313b94a72ad650ce4a305b",
+    "outputHash": "59a44490754f8ac8d9e1f559d15b1674",
+    "selectionHash": "6964bd23f9aae2658559174bb82faa2be0da5946b7d0746a741b51e847b284f1"
+  },
+  "frostwarden-idle-1-1280.mp4": {
+    "hash": "4237355309b8d5d2f317c7e41983f7fd",
+    "outputHash": "499d95ecb9e567167899c0ca6824cc42",
+    "selectionHash": "53e0221e69ce16203fd17b8902e0982c7d9f25f0550275c2cac4330582514691"
+  },
+  "frostwarden-idle-1-640.mp4": {
+    "hash": "3a938aafd0cdf81742d351187b5fbe7c",
+    "outputHash": "6e0a5d7dea27c81ad9cfce464171096c",
+    "selectionHash": "2124bba81e4481280a162916e78b331700a13f0bb643e5576e07126c8d2d56ea"
+  },
+  "frostwarden-idle-1.mp4": {
+    "hash": "7acf8230a3983929b7d276342cfab3b5",
+    "outputHash": "a2024ea3636023348bea2b109ffca2c9",
+    "selectionHash": "caa9ff05cfbbac508a6f1323c525055ff7b233167b43eb5f52b236cb43293eb9"
+  },
+  "frostwarden-idle-2-1280.mp4": {
+    "hash": "d27026bc2cff47fcc9287d1baccba14a",
+    "outputHash": "68114c0deeeb214b74b2c1bf3557e955",
+    "selectionHash": "9d2f466ab482e7ea142fea972b0f8a778427cc850ae0cc192b74cd70392fa827"
+  },
+  "frostwarden-idle-2-640.mp4": {
+    "hash": "260c65c7a78f4af6bc30716b6e14e04f",
+    "outputHash": "c2ff37810431f5107e851c03a03e1687",
+    "selectionHash": "ac338f2a7dd7dcb475cb9504672e79a1fb5a4e50c71cd341c9d0126cd555b4a4"
+  },
+  "frostwarden-idle-2.mp4": {
+    "hash": "eac7e7643e3be258cacaa1425e9974b0",
+    "outputHash": "8c5d9cbf8798c6590e801504be685123",
+    "selectionHash": "93d78947ae3e03006887d15949a43acabe14cd96c498d7926cd8f6f70623c0eb"
+  },
+  "frostwarden-idle-3-1280.mp4": {
+    "hash": "d324eb509f99e7c651c66de37a8317f9",
+    "outputHash": "0210a79689cc126eef8f5acd37b650df",
+    "selectionHash": "e7401adaeb9c723a2f2e791fa1a9fc762b7f56d973b6d4732bef580e91baccba"
+  },
+  "frostwarden-idle-3-640.mp4": {
+    "hash": "fce4d2e1f93e43338dcd4bff5b7394e7",
+    "outputHash": "b5fbc99afe2716b450d941e0f83ce480",
+    "selectionHash": "0e25879e52ac438712436e81232790b38d8882421f3fbd9d25a8db70135c5333"
+  },
+  "frostwarden-idle-3.mp4": {
+    "hash": "dd8f151b4d5308b8160e066052d8432d",
+    "outputHash": "ae97c850795bf2c249050c4b06e5f6a8",
+    "selectionHash": "490e44eadbed421fc72ec47b8d07f3476a169af8c440c11cccb7fe707c1664bf"
+  },
+  "iron-bear-idle-1-1280.mp4": {
+    "hash": "2bf3815dff185b01374605dda54e6f56",
+    "outputHash": "0874c738aa8c498f4cc79ffd572a1417",
+    "selectionHash": "20b6917d09c781afd460521a39f26b92e036f0c397760c732c617237b231d354"
+  },
+  "iron-bear-idle-1-640.mp4": {
+    "hash": "149bcb462bb5e493c948b9c3a306b77c",
+    "outputHash": "0ff2069c2bbd9bde47ae8ae912ced61f",
+    "selectionHash": "de61457eb52167b3f12119327c5f989bc9c8ea8403590a315cb5af9bf9baf2ee"
+  },
+  "iron-bear-idle-1.mp4": {
+    "hash": "584eaaa346914cfac3a4365518aaf63b",
+    "outputHash": "1bd1cf4a84ed8d6af67de17ef59f0f40",
+    "selectionHash": "f77b19c9d374ea551259b022293e919c511216ae50a8d3651cb7d9b697b63506"
+  },
+  "iron-bear-idle-2-1280.mp4": {
+    "hash": "ced7ca9113ff3bd172d2427986dae7b2",
+    "outputHash": "7901097dd45f834cb6776aa1b585f753",
+    "selectionHash": "515bb852d7adb8a1f3ad0eddb9e969c0f96c9fac50be347a472b0f3d3c869600"
+  },
+  "iron-bear-idle-2-640.mp4": {
+    "hash": "abead64e9ff6c6a9167203e5b1b7abac",
+    "outputHash": "fff486bee30ef44b8a736fdc0d17ed2e",
+    "selectionHash": "805ccb960a1fa217f7bf11697d328186344fadbf8b43bbe7216646d91bd7a5b1"
+  },
+  "iron-bear-idle-2.mp4": {
+    "hash": "1e609d15af485100c16e8cece1255eb9",
+    "outputHash": "c94f5f53fab07a20852477cdfad1c72b",
+    "selectionHash": "cfa43e96391084b7f68ab042c61b2db7a3d45d017fcee08b9ee41943468499a5"
+  },
+  "iron-bear-idle-3-1280.mp4": {
+    "hash": "c6cbf107dacdd286319008a7293a808e",
+    "outputHash": "56770b67261bf9966f36b0acea1cc9e7",
+    "selectionHash": "35677ce5351d1c25497f651c9a5baa782c85cc1cbb0f671c6a6684fe8362a574"
+  },
+  "iron-bear-idle-3-640.mp4": {
+    "hash": "a3275db710c82f1c5e592ac9fc2e3eb4",
+    "outputHash": "0e7574b2589026b5c03c4baef539c50b",
+    "selectionHash": "4bdd4ce6289e71e7fc7befd63c0e69200fc2deda938d7c73d906ff07c7184f9f"
+  },
+  "iron-bear-idle-3.mp4": {
+    "hash": "e400fcaa51ae4789718a20d44c3ae8f0",
+    "outputHash": "0d4938de0689dd5e91b5ef620c4458c0",
+    "selectionHash": "cf50df1d106c08ed5e4c826ec1f7acd178e70f552ab11dce4c3979d1661664fe"
+  },
   "seraph-idle-1-1280.mp4": {
     "hash": "2a8e068857062f3be820b02b395cc05f",
     "outputHash": "12c487eedf549abb158a2e97d655632d",

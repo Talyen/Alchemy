@@ -8,7 +8,17 @@ import { runTaskCommand } from "./lib/run-command.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
-export const VISUAL_SCENARIOS = Object.freeze(["menu", "options", "homestead", "battle", "card-inspection", "rewards"]);
+export const VISUAL_SCENARIOS = Object.freeze([
+  "menu",
+  "options",
+  "homestead",
+  "talents",
+  "talent-mana",
+  "talent-unlock",
+  "battle",
+  "card-inspection",
+  "rewards",
+]);
 const languages = JSON.parse(fs.readFileSync(path.join(ROOT, "src/lib/localization/locales/languages.json"), "utf8"));
 
 export function parseVisualScenarioArgs(argv) {

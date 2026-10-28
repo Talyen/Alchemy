@@ -115,7 +115,12 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
         battleState: {
           ...activity.data.battleState,
           contentSystemType: data.contentSystemType,
-          encounterBenefits: data.contentSystemType === "labyrinth" ? activity.data.battleState.encounterBenefits : [],
+          encounterBenefits:
+            data.contentSystemType === "labyrinth"
+              ? data.activeLabyrinthRewardModifiers.length > 0
+                ? data.activeLabyrinthRewardModifiers
+                : activity.data.battleState.encounterBenefits
+              : [],
         },
       },
     };

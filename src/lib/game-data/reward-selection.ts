@@ -77,7 +77,9 @@ export function selectRewardCards(
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;
   const weightedCandidates = companionCopies > 1 ? [...effectiveCandidates] : undefined;
   if (weightedCandidates) {
-    for (const card of effectiveCandidates) if (isCompanionSummonCard(card)) weightedCandidates.push(card);
+    for (let copy = 1; copy < companionCopies; copy++) {
+      for (const card of effectiveCandidates) if (isCompanionSummonCard(card)) weightedCandidates.push(card);
+    }
   }
   const randomPool = weightedCandidates ? shuffleInPlace(weightedCandidates, rng) : shuffle(effectiveCandidates, rng);
   const selected: BattleCard[] = [];

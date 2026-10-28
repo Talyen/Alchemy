@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById, enemyById } from "@/lib/game-data";
-import { battleSnapshot, canPlayCard } from "@/lib/battle";
+import { battleSnapshot, canPlayCard, type CombatTextEvent } from "@/lib/battle";
 import { chooseWishCard } from "@/lib/battle/wish";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -13,6 +13,13 @@ import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persis
 import { advanceToPlayerTurn, reducePlayerSkipTurns } from "@/lib/battle/player-turn-transition";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { ActiveRunDataSchema } from "@/lib/validation";
+import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
+import { applyPlayerCombatDamage } from "@/lib/battle/health-state";
+import { hasPotentialLethalSelfCost } from "@/lib/battle/autoplay-policy";
+import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
+import { makeTestCard } from "../../fixtures/cards";
 import { regressionBattle } from "../../fixtures/battle";
 
 function restore(patch: Record<string, unknown>) {
@@ -34,6 +41,47 @@ function restore(patch: Record<string, unknown>) {
 const rng = () => 0.99;
 
 describe("playing recovered battles", () => {
+  it("retains valid room history and marks a damaged recap partial", () => {
+    const first = { id: "campaign:1:1:Mystery", destination: "Mystery", act: 1, floor: null, completed: true };
+    const second = { id: "campaign:1:2:Campfire", destination: "Campfire", act: 1, floor: null, completed: false };
+    const run = ActiveRunDataSchema.parse(
+      makeMinimalActiveRunInput({ runHistory: [first, null, second], runHistoryPartial: false }),
+    );
+    expect(run.runHistory).toEqual([first, second]);
+    expect(run.runHistoryPartial).toBe(true);
+    const missing = ActiveRunDataSchema.parse(
+      makeMinimalActiveRunInput({ runHistory: "broken", runHistoryPartial: false }),
+    );
+    expect(missing.runHistory).toEqual([]);
+    expect(missing.runHistoryPartial).toBe(true);
+  });
+
+  it("keeps valid Returning Flight discounts beside a damaged reference", () => {
+    const state = restore({
+      hand: [{ ...cardById["bounty-shot"]!, uid: 1, cost: 2 }],
+      gearEffects: { recoverLastArcheryCard: 1 },
+      uniqueGear: { returningFlightUids: [null, 1] },
+    });
+    expect(state.uniqueGear.returningFlightUids).toEqual([1]);
+    expect(playBattleCardResolved({ ...state, rng, mana: 1 }, "bounty-shot", 0).state.mana).toBe(0);
+  });
+
+  it("revives at one Health and lets autoplay recognize the surviving self-cost", () => {
+    const state = restore({
+      playerHealth: 1,
+      playerMaxHealth: 1,
+      deathsDoorUsed: true,
+      playerStatuses: { phoenixFeather: 1 },
+    });
+    const texts: CombatTextEvent[] = [];
+    const revived = applyPlayerCombatDamage({ ...state, rng }, 1, "hostile", "physical", undefined, texts);
+    expect(revived.playerHealth).toBe(1);
+    expect(revived.playerStatuses.phoenixFeather).toBe(0);
+    expect(texts).toContainEqual(expect.objectContaining({ kind: "heal", amount: 1 }));
+    expect(hasPotentialLethalSelfCost(makeTestCard({ effects: [{ kind: "lose-health", amount: 1 }] }), state)).toBe(
+      false,
+    );
+  });
   it("drops undeclared battle fields while preserving live combat progress", () => {
     const state = restore({
       companionDamageBuff: 99,
@@ -196,4 +244,62 @@ describe("playing recovered battles", () => {
       expect(state.nextCardUid).toBeGreaterThan(Math.max(...ids));
     },
   );
+});
+
+it("keeps cards with damaged optional fields and valid tags", () => {
+  const original = cardById["health-potion"]!;
+  const state = restore({
+    hand: [
+      { ...original, uid: 1, consume: "broken", corrupted: 42, baseTitle: false, tags: ["archery", "bogus", null] },
+    ],
+  });
+  expect(state.hand).toHaveLength(1);
+  expect(state.hand[0]).toMatchObject({ id: original.id, consume: true, tags: ["archery"] });
+  expect(state.hand[0]).not.toHaveProperty("corrupted");
+  expect(state.hand[0]).not.toHaveProperty("baseTitle");
+});
+
+it("preserves scheduled effects when source metadata or a sibling effect is damaged", () => {
+  const state = restore({
+    pendingTurnStartEffects: [
+      {
+        remainingTurns: 1,
+        sourceCard: { id: "blizzard", consume: "broken", tags: ["archery", "invalid"] },
+        effects: [{ kind: "damage", damageType: "freeze", amount: 2 }, { kind: "unknown" }],
+      },
+      {
+        remainingTurns: 1,
+        sourceCard: { id: 5 },
+        effects: [{ kind: "damage", damageType: "freeze", amount: 1 }],
+      },
+    ],
+  });
+  expect(state.pendingTurnStartEffects).toHaveLength(2);
+  expect(state.pendingTurnStartEffects[0]?.sourceCard).toEqual({ id: "blizzard", tags: ["archery"] });
+  expect(state.pendingTurnStartEffects[1]?.sourceCard).toBeUndefined();
+  expect(advanceToPlayerTurn({ ...state, rng }).enemyHealth).toBe(97);
+});
+
+it("retains valid Archery echoes when a saved tag is damaged", () => {
+  const echo = cardById["fire-arrow"]!;
+  const state = restore({ uniqueGear: { archeryEchoes: [{ ...echo, tags: ["archery", "invalid"] }] } });
+  expect(state.uniqueGear.archeryEchoes).toHaveLength(1);
+  expect(state.uniqueGear.archeryEchoes[0]?.tags).toEqual(["archery"]);
+});
+
+it("restores Labyrinth battle benefits from the enclosing run", () => {
+  const battleState = {
+    ...battleSnapshot(regressionBattle({ currentEnemy: enemyById.skeleton })),
+    contentSystemType: "broken",
+    encounterBenefits: ["generous"],
+  };
+  const data = ActiveRunDataSchema.parse(
+    makeMinimalActiveRunInput({
+      contentSystemType: "labyrinth",
+      labyrinthMap: gridLabyrinthMapFixture(),
+      activeLabyrinthRewardModifiers: ["generous"],
+      activity: savedActivityFixture("battle", { battleState }),
+    }),
+  );
+  expect(savedActivityData(data, "battle")?.battleState.encounterBenefits).toEqual(["generous"]);
 });

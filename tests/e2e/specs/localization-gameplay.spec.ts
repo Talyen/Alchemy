@@ -183,6 +183,18 @@ for (const locale of acceptanceLocales) {
               .poll(async () => (await readSavedGame(fresh)).unlockedTalents.dodge)
               .toEqual(["dodge-lightfoot"]);
             await reviewLayout(fresh, `${locale} talent allocation`);
+            await fresh.getByRole("button", { name: label("Back"), exact: true }).click();
+            await fresh
+              .getByRole("button", {
+                name: label("Select {{value0}} Talents").replace("{{value0}}", label("Mana")),
+                exact: true,
+              })
+              .click();
+            const longName = fresh.getByText(label("Arcane Mending"), { exact: true });
+            await expect(longName).toBeVisible();
+            expect(await longName.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+            const cardFace = fresh.locator(".talent-card-face").filter({ has: longName });
+            expect(await cardFace.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
             await fresh.getByRole("button", { name: label("Open game menu"), exact: true }).click();
             await fresh
               .getByTestId("game-menu")

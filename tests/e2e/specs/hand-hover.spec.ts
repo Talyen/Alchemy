@@ -190,8 +190,12 @@ test("hover reconciles through a play, draw, and reflow with the pointer in the 
   await page.mouse.move(focusedSlot.x, focusedSlot.y + focusedSlot.height / 2);
   await page.mouse.move(0, 0);
   await expect(page.locator("[data-hand-slot]").nth(2)).toHaveAttribute("data-hovered", "true");
+  const nextSlot = (await geometry(page))[3]!;
   await controllerInput(page).press("confirm");
   await expect(page.locator("[data-hand-slot]")).toHaveCount(6);
+  // Keyboard recovery can occur after the played card leaves the hand. Wait
+  // for it before switching back to mouse input, and verify its intended target.
+  await expect(page.locator(`[data-hand-slot="${nextSlot.key}"] button`)).toBeFocused();
   await sweep(page);
 });
 

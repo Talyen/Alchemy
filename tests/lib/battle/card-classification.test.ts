@@ -7,7 +7,7 @@ import {
   isAttackCard,
   isNatureCard,
 } from "@/lib/battle/card-classification";
-import { DAMAGE_TYPES, getCardKeywords, type BattleCardEffect } from "@/lib/game-data";
+import { cardLibrary, DAMAGE_TYPES, getCardKeywords, type BattleCardEffect } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("card classification", () => {
@@ -147,5 +147,37 @@ it("aims chance-card VFX from the failure branch when success has no target", ()
       },
     ],
   });
+  expect(getBattleCardPlayTarget(card)).toBe("enemy");
+});
+
+it("keeps mutable and frozen classifications equal across the card catalog", () => {
+  function freezeTree(value: unknown): void {
+    if (!value || typeof value !== "object" || Object.isFrozen(value)) return;
+    for (const child of Object.values(value)) freezeTree(child);
+    Object.freeze(value);
+  }
+  for (const source of cardLibrary) {
+    const mutable = structuredClone(source);
+    const frozen = structuredClone(source);
+    freezeTree(frozen.effects);
+    expect(hasDamageEffect(mutable.effects), source.id).toBe(hasDamageEffect(frozen.effects));
+    expect(getBattleCardPlayTarget(mutable), source.id).toBe(getBattleCardPlayTarget(frozen));
+    for (const type of [...DAMAGE_TYPES, "missing"]) {
+      expect(cardHasDamageType(mutable, type), `${source.id} ${type}`).toBe(cardHasDamageType(frozen, type));
+    }
+  }
+});
+
+it("reclassifies in-place changes to mutable nested effects", () => {
+  const card = makeTestCard({
+    effects: [{ kind: "chance", probability: 0.5, successEffects: [{ kind: "heal", amount: 1 }], failureEffects: [] }],
+  });
+  expect(isAttackCard(card)).toBe(false);
+  expect(getBattleCardPlayTarget(card)).toBe("player");
+  const chance = card.effects[0];
+  if (chance?.kind !== "chance") throw new Error("Expected chance");
+  chance.successEffects[0] = { kind: "damage", damageType: "burn", amount: 2 };
+  expect(isAttackCard(card)).toBe(true);
+  expect(cardHasDamageType(card, "burn")).toBe(true);
   expect(getBattleCardPlayTarget(card)).toBe("enemy");
 });

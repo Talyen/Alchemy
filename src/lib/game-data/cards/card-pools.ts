@@ -1,4 +1,5 @@
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 import type { BattleCard, BattleCardEffect } from "../types";
 import { visitBattleCardEffects } from "../effect-tree";
 import { cardLibrary } from "./library/cards";
@@ -57,6 +58,6 @@ export function isCompanionSummonCard(card: Pick<BattleCard, "effects">): boolea
   const cached = summonCache.get(card.effects);
   if (cached !== undefined) return cached;
   const result = visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
-  summonCache.set(card.effects, result);
+  if (isDeeplyFrozenData(card.effects)) summonCache.set(card.effects, result);
   return result;
 }

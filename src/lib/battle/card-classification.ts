@@ -5,6 +5,7 @@ import {
   type BattleCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 
 export { cardHasKeyword };
 
@@ -13,8 +14,7 @@ interface EffectClassification {
   playTarget: "player" | "enemy";
 }
 
-// All derived classification belongs to the immutable effect tree. Card
-// variants share it; replacing effects automatically selects a fresh entry.
+// Frozen effect trees can share classification; editable copies must be rechecked.
 const EFFECT_CLASSIFICATION_CACHE = new WeakMap<readonly BattleCardEffect[], EffectClassification>();
 
 function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassification {
@@ -41,12 +41,19 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
     damageTypes,
     playTarget: playTarget ?? "enemy",
   };
-  EFFECT_CLASSIFICATION_CACHE.set(effects, classification);
+  if (isDeeplyFrozenData(effects)) EFFECT_CLASSIFICATION_CACHE.set(effects, classification);
   return classification;
 }
 
 export function hasDamageEffect(effects: readonly BattleCardEffect[]): boolean {
-  return classifyEffects(effects).damageTypes.size > 0;
+  const cached = EFFECT_CLASSIFICATION_CACHE.get(effects);
+  if (cached) return cached.damageTypes.size > 0;
+  if (Object.isFrozen(effects)) return classifyEffects(effects).damageTypes.size > 0;
+  return visitBattleCardEffects(
+    effects,
+    (effect) =>
+      effect.kind === "damage" || effect.kind === "random-damage" || effect.kind === "cleanse-player-status-to-damage",
+  );
 }
 
 export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
@@ -54,7 +61,26 @@ export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
 }
 
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
-  return classifyEffects(card.effects).damageTypes.has(damageType);
+  const effects = card.effects;
+  const cached = EFFECT_CLASSIFICATION_CACHE.get(effects);
+  if (cached) return cached.damageTypes.has(damageType);
+  if (Object.isFrozen(effects)) return classifyEffects(effects).damageTypes.has(damageType);
+  return visitBattleCardEffects(effects, (effect) => {
+    if (effect.kind === "damage") {
+      return (
+        effect.damageTypeIfTargetFrozen === damageType ||
+        (effect.damageTypePool?.length
+          ? effect.damageTypePool.includes(damageType as typeof effect.damageType)
+          : effect.damageType === damageType)
+      );
+    }
+    if (effect.kind === "cleanse-player-status-to-damage") return effect.damageType === damageType;
+    if (effect.kind === "random-damage") {
+      const pool: readonly string[] = effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES;
+      return pool.includes(damageType);
+    }
+    return false;
+  });
 }
 
 export function isNatureCard(card: BattleCard): boolean {
@@ -120,5 +146,14 @@ export function effectTarget(effect: BattleCardEffect): "player" | "enemy" | nul
 }
 
 export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
-  return classifyEffects(card.effects).playTarget;
+  const effects = card.effects;
+  const cached = EFFECT_CLASSIFICATION_CACHE.get(effects);
+  if (cached) return cached.playTarget;
+  if (Object.isFrozen(effects)) return classifyEffects(effects).playTarget;
+  let target: "player" | "enemy" | null = null;
+  visitBattleCardEffects(effects, (effect) => {
+    target = effectTarget(effect);
+    return target !== null;
+  });
+  return target ?? "enemy";
 }

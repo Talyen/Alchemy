@@ -1,4 +1,5 @@
 import { cardById } from "./cards/library/cards";
+import { isDeeplyFrozenData } from "@/lib/immutable-data";
 import type { BattleCard, BattleCardEffect, BestiaryEntry } from "./types";
 
 // The runtime allowlist also defines the enemy damage contract, so accepting
@@ -64,8 +65,7 @@ interface EnemyEffectAnalysis {
   dealsDamage: boolean;
 }
 
-// Effect trees are immutable. Key by the tree itself, rather than the card or
-// temporary branch wrappers: scaled/replaced trees get a fresh analysis.
+// Cache fully frozen effect trees, including nested branches, by their identity.
 const effectAnalysis = new WeakMap<readonly BattleCardEffect[], EnemyEffectAnalysis>();
 
 function analyzeEffects(effects: readonly BattleCardEffect[]): EnemyEffectAnalysis {
@@ -83,7 +83,7 @@ function analyzeEffects(effects: readonly BattleCardEffect[]): EnemyEffectAnalys
       result.dealsDamage ||= effect.kind === "damage";
     }
   }
-  effectAnalysis.set(effects, result);
+  if (isDeeplyFrozenData(effects)) effectAnalysis.set(effects, result);
   return result;
 }
 
