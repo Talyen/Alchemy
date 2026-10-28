@@ -71,6 +71,10 @@ export function compileRenderChunks(
   timeline: Pick<Timeline, "fps" | "durationInFrames">,
 ): Array<{ index: number; from: number; to: number }>;
 export function nativeMusicOffsets(recipe: Recipe): Record<string, number>;
+export function captureOptionsMatch(
+  start: { encoderPolicy?: string; pinVideoStart?: boolean; foregroundLyrics?: boolean; captureWindows?: unknown },
+  options: { encoderPolicy?: string; pinVideoStart?: boolean; foregroundLyrics?: boolean; captureWindows?: unknown },
+): boolean;
 export function mapSoundEvents(
   timeline: Timeline,
   clips: Record<string, { sounds: Sound[] }>,
