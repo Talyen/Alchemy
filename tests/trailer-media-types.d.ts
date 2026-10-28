@@ -1,6 +1,7 @@
 declare module "*scripts/trailers/media.mjs" {
   export function assertFrameDimensions(buffer: Buffer, width: number, height: number): void;
   export function captureEncoderArgs(fps: number, policy?: string): string[];
+  export function ffmpegPath(): string;
   export function validateSourceVideo(
     video: {
       width: number;
