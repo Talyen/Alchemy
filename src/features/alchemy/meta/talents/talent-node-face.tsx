@@ -9,7 +9,7 @@ import { renderTokenizedDescription } from "../../shared/ui/localized-descriptio
 export type TalentNodeState = "locked" | "available" | "unlocking" | "unlocked";
 export const TALENT_NODE_UNLOCK_MS = 400;
 
-/** The rounded frame celebrates an unlock while the reading surface stays fixed. */
+/** Unlock feedback changes only color and light; every contour stays stationary. */
 export function TalentNodeFace({
   talent,
   state,
@@ -23,6 +23,11 @@ export function TalentNodeFace({
   const reduceMotion = useReducedMotionPreference();
   return (
     <>
+      <span
+        className="talent-node-glow"
+        data-unlocking={state === "unlocking" && !reduceMotion ? "true" : undefined}
+        aria-hidden="true"
+      />
       <span
         className="talent-node-frame"
         data-unlocking={state === "unlocking" && !reduceMotion ? "true" : undefined}

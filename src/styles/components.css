@@ -255,7 +255,7 @@
     transform: rotateY(180deg);
   }
 
-  /* Talent content stays fixed; only its native rounded frame celebrates an unlock. */
+  /* All talent geometry stays fixed; unlock feedback changes color and opacity only. */
   .talent-node {
     --talent-readable-accent: color-mix(in srgb, var(--talent-accent) 45%, #f6eddf);
     background: #171918;
@@ -266,20 +266,36 @@
     translate: none;
   }
 
-  .talent-node-frame {
+  .talent-node-glow {
     position: absolute;
     z-index: 0;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 12px color-mix(in srgb, var(--talent-readable-accent) 35%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
+  }
+
+  .talent-node-frame {
+    position: absolute;
+    z-index: 1;
     inset: 0;
     border: 2px solid #68716b;
     border-radius: inherit;
     background: #171918;
     box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
     pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
   }
 
   .talent-node-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: flex;
     width: 100%;
     flex: 1;
@@ -372,9 +388,11 @@
   }
 
   .talent-node-frame[data-unlocking="true"] {
-    animation:
-      talentFramePop 400ms cubic-bezier(0.2, 0.75, 0.3, 1) both,
-      talentFrameGlow 400ms ease-out both;
+    animation: talentBorderIlluminate 400ms ease-out both;
+  }
+
+  .talent-node-glow[data-unlocking="true"] {
+    animation: talentGlowOpacity 400ms ease-out both;
   }
 
   @supports (color: oklch(from #000 l c h)) {
@@ -386,13 +404,12 @@
     }
   }
 
-  @keyframes talentFramePop {
-    0%,
-    100% {
-      transform: scale(1);
+  @keyframes talentBorderIlluminate {
+    from {
+      border-color: #68716b;
     }
-    40% {
-      transform: scale(1.04);
+    to {
+      border-color: var(--talent-readable-accent);
     }
   }
 
@@ -408,20 +425,19 @@
     }
   }
 
-  @keyframes talentFrameGlow {
+  @keyframes talentGlowOpacity {
     0%,
     100% {
-      box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+      opacity: 0;
     }
     40% {
-      box-shadow:
-        0 0 12px color-mix(in srgb, var(--talent-readable-accent) 35%, transparent),
-        0 4px 14px rgb(0 0 0 / 35%);
+      opacity: 0.85;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .talent-node-frame {
+    .talent-node-frame,
+    .talent-node-glow {
       animation: none !important;
     }
   }
