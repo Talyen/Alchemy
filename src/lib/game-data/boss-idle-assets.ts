@@ -1,3 +1,30 @@
+import forgeGolemIdle1 from "@/assets/boss-idles/forge-golem-idle-1.mp4";
+import forgeGolemIdle1At640 from "@/assets/boss-idles/forge-golem-idle-1-640.mp4";
+import forgeGolemIdle1At1280 from "@/assets/boss-idles/forge-golem-idle-1-1280.mp4";
+import forgeGolemIdle2 from "@/assets/boss-idles/forge-golem-idle-2.mp4";
+import forgeGolemIdle2At640 from "@/assets/boss-idles/forge-golem-idle-2-640.mp4";
+import forgeGolemIdle2At1280 from "@/assets/boss-idles/forge-golem-idle-2-1280.mp4";
+import forgeGolemIdle3 from "@/assets/boss-idles/forge-golem-idle-3.mp4";
+import forgeGolemIdle3At640 from "@/assets/boss-idles/forge-golem-idle-3-640.mp4";
+import forgeGolemIdle3At1280 from "@/assets/boss-idles/forge-golem-idle-3-1280.mp4";
+import frostwardenIdle1 from "@/assets/boss-idles/frostwarden-idle-1.mp4";
+import frostwardenIdle1At640 from "@/assets/boss-idles/frostwarden-idle-1-640.mp4";
+import frostwardenIdle1At1280 from "@/assets/boss-idles/frostwarden-idle-1-1280.mp4";
+import frostwardenIdle2 from "@/assets/boss-idles/frostwarden-idle-2.mp4";
+import frostwardenIdle2At640 from "@/assets/boss-idles/frostwarden-idle-2-640.mp4";
+import frostwardenIdle2At1280 from "@/assets/boss-idles/frostwarden-idle-2-1280.mp4";
+import frostwardenIdle3 from "@/assets/boss-idles/frostwarden-idle-3.mp4";
+import frostwardenIdle3At640 from "@/assets/boss-idles/frostwarden-idle-3-640.mp4";
+import frostwardenIdle3At1280 from "@/assets/boss-idles/frostwarden-idle-3-1280.mp4";
+import ironBearIdle1 from "@/assets/boss-idles/iron-bear-idle-1.mp4";
+import ironBearIdle1At640 from "@/assets/boss-idles/iron-bear-idle-1-640.mp4";
+import ironBearIdle1At1280 from "@/assets/boss-idles/iron-bear-idle-1-1280.mp4";
+import ironBearIdle2 from "@/assets/boss-idles/iron-bear-idle-2.mp4";
+import ironBearIdle2At640 from "@/assets/boss-idles/iron-bear-idle-2-640.mp4";
+import ironBearIdle2At1280 from "@/assets/boss-idles/iron-bear-idle-2-1280.mp4";
+import ironBearIdle3 from "@/assets/boss-idles/iron-bear-idle-3.mp4";
+import ironBearIdle3At640 from "@/assets/boss-idles/iron-bear-idle-3-640.mp4";
+import ironBearIdle3At1280 from "@/assets/boss-idles/iron-bear-idle-3-1280.mp4";
 import blightTreantIdle1 from "@/assets/boss-idles/blight-treant-idle-1.mp4";
 import blightTreantIdle1At640 from "@/assets/boss-idles/blight-treant-idle-1-640.mp4";
 import blightTreantIdle1At1280 from "@/assets/boss-idles/blight-treant-idle-1-1280.mp4";
@@ -61,6 +88,21 @@ function clip(small: string, medium: string, full: string): BossIdleClip {
 
 // Battle presentation only: these URLs never join the startup image preload set.
 export const bossIdleClips: Readonly<Partial<Record<string, readonly BossIdleClip[]>>> = {
+  "forge-golem": [
+    clip(forgeGolemIdle1At640, forgeGolemIdle1At1280, forgeGolemIdle1),
+    clip(forgeGolemIdle2At640, forgeGolemIdle2At1280, forgeGolemIdle2),
+    clip(forgeGolemIdle3At640, forgeGolemIdle3At1280, forgeGolemIdle3),
+  ],
+  frostwarden: [
+    clip(frostwardenIdle1At640, frostwardenIdle1At1280, frostwardenIdle1),
+    clip(frostwardenIdle2At640, frostwardenIdle2At1280, frostwardenIdle2),
+    clip(frostwardenIdle3At640, frostwardenIdle3At1280, frostwardenIdle3),
+  ],
+  "iron-bear": [
+    clip(ironBearIdle1At640, ironBearIdle1At1280, ironBearIdle1),
+    clip(ironBearIdle2At640, ironBearIdle2At1280, ironBearIdle2),
+    clip(ironBearIdle3At640, ironBearIdle3At1280, ironBearIdle3),
+  ],
   "blight-treant": [
     clip(blightTreantIdle1At640, blightTreantIdle1At1280, blightTreantIdle1),
     clip(blightTreantIdle2At640, blightTreantIdle2At1280, blightTreantIdle2),
