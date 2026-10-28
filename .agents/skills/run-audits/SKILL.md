@@ -1,6 +1,6 @@
 ---
 name: run-audits
-description: Run user-requested Alchemy audits from Docs/Audits. Use for a named audit or all audits; do not activate for unrelated cleanup.
+description: Run user-requested Alchemy audits from Docs/Audits. Use for a named audit or all audits; do not activate for unrelated cleanup or edits to the guides themselves.
 ---
 
 # Run Alchemy audits
@@ -17,14 +17,14 @@ Do not run an uncited sibling audit, broaden into standing cleanup, or manufactu
 
 ## Investigate
 
-Follow the [shared discovery and confirmation contract](../../../Docs/Audits/README.md#discover-and-confirm) for scope coverage, repeat-pass starting points, evidence, and counterevidence. Keep probe output compact (`npm run audit:all`); use summaries when the cause is unclear and open relevant evidence directly for a specific hypothesis. For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
+Follow the [shared discovery and confirmation contract](../../../Docs/Audits/README.md#discover-and-confirm) for scope coverage, repeat-pass starting points, evidence, and counterevidence. Choose probes that answer the requested audit question; `npm run audit:all` is an optional measurable sweep, not a prerequisite for each audit. Keep probe output compact, use summaries when the cause is unclear, and open relevant evidence directly for a specific hypothesis. Group connected findings by cause and choose the cheapest matching verification.
 
 ## Review and verify
 
-Inspect each worker diff against its brief and the audit evidence bar; reject speculative growth, forwarding wrappers, duplicate paths, concealed defects, or tests whose cost is unjustified by their distinct protection. Use the shared [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy) for additions and retirements. Resolve overlaps centrally, then verify per the README verification contract.
+Inspect the final diff against the requested scope and the audit evidence bar; reject speculative growth, forwarding wrappers, duplicate paths, concealed defects, or tests whose cost is unjustified by their distinct protection. Use the shared [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy) for additions and retirements. Verify per the README verification contract.
 
 Do not edit guides to record results. Move reusable rationale into its canonical owner; keep only unresolved product choices in the audit README, and delete completed records.
 
 ## Handoff
 
-Report findings fixed by audit, zero-finding audits, proposals awaiting approval, verification status, and toolchain limitations. Summarize diagnostics; never paste long output.
+Report findings fixed by audit, zero-finding audits, unresolved decisions, verification status, and toolchain limitations. Distinguish scope inspected, sampled and unavailable; do not present sampling as exhaustive proof. Summarize diagnostics; never paste long output.
