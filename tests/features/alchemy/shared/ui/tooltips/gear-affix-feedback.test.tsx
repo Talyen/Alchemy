@@ -96,17 +96,54 @@ describe("Crafted affix inspection feedback", () => {
       expect(row(entry.affixId!)?.textContent).toContain(String(entry.value));
       const previous = initial.affixes.find((affix) => affix.id === entry.affixId);
       expect(row(entry.affixId!)?.getAttribute("data-affix-change")).toBe(
-        !previous ? "added" : previous.value !== entry.value ? "changed" : null,
+        !previous
+          ? row(entry.affixId!)?.querySelector(".gear-affix-previous")
+            ? "replaced"
+            : "added"
+          : previous.value !== entry.value
+            ? "changed"
+            : null,
       );
     }
     for (const affix of initial.affixes.filter((affix) => !actual.affixes.some((next) => next.id === affix.id)))
-      expect(row(affix.id)?.getAttribute("data-affix-change")).toBe("removed");
+      expect(
+        row(affix.id)?.getAttribute("data-affix-change") === "removed" ||
+          !!document.querySelector(`[data-previous-affix-id="${affix.id}"]`),
+      ).toBe(true);
     act(() => vi.advanceTimersByTime(360));
     expect(document.querySelectorAll("[data-affix-id]")).toHaveLength(current.length);
     expect(document.querySelector("[data-affix-change]")).toBeNull();
     expect(actual).toEqual(saved);
   });
 
+  it("replaces wording within one stable slot, without stacking a fake second affix", () => {
+    const replaced: GearInstance = { ...before, affixes: [{ id: "resist-physical", value: 12 }] };
+    const { rerender } = render(tooltip(before));
+    const original = row("flat-poison");
+    rerender(tooltip(replaced));
+    const current = row("resist-physical");
+    expect(current).toBe(original);
+    expect(document.querySelectorAll(".gear-affix-row")).toHaveLength(1);
+    expect(current?.getAttribute("data-affix-change")).toBe("replaced");
+    expect(current?.querySelector(".gear-affix-previous")?.getAttribute("aria-hidden")).toBe("true");
+    expect(current?.querySelector(".gear-affix-row-clip")?.classList.contains("gear-affix-replacement")).toBe(true);
+    expect(current?.querySelectorAll(".gear-affix-line")).toHaveLength(2);
+    act(() => vi.advanceTimersByTime(360));
+    expect(row("resist-physical")).toBe(original);
+    expect(current?.querySelectorAll(".gear-affix-line")).toHaveLength(1);
+    expect(current?.querySelector(".gear-affix-previous")).toBeNull();
+  });
+
+  it("can add the previous affix again without reusing another row's slot", () => {
+    const { rerender } = render(tooltip(before));
+    rerender(tooltip({ ...before, affixes: [{ id: "flat-burn", value: 1 }] }));
+    act(() => vi.advanceTimersByTime(360));
+    const retained = row("flat-burn");
+    rerender(tooltip(after));
+    expect(row("flat-burn")).toBe(retained);
+    expect(row("flat-poison")).not.toBe(retained);
+    expect(document.querySelectorAll(".gear-affix-row")).toHaveLength(2);
+  });
   it("does not replay identical rerolls or reorder surviving lines at completion", () => {
     const { rerender } = render(tooltip(after));
     const poison = row("flat-poison");
@@ -139,13 +176,10 @@ describe("Crafted affix inspection feedback", () => {
       initialProps: { entries: [sameText("flat-poison")] },
     });
     rerender({ entries: [sameText("flat-burn")] });
-    expect(result.current.map((entry) => entry.change)).toEqual(["removed", "added"]);
+    expect(result.current.map((entry) => entry.change)).toEqual(["replaced"]);
     act(() => vi.advanceTimersByTime(100));
     rerender({ entries: [sameText("flat-poison")] });
-    expect(result.current.map((entry) => [entry.entry.affixId, entry.change])).toEqual([
-      ["flat-burn", "removed"],
-      ["flat-poison", "added"],
-    ]);
+    expect(result.current.map((entry) => [entry.entry.affixId, entry.change])).toEqual([["flat-poison", "replaced"]]);
     act(() => vi.advanceTimersByTime(260));
     expect(result.current.some((entry) => entry.change)).toBe(true);
     act(() => vi.advanceTimersByTime(100));

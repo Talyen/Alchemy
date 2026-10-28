@@ -1645,6 +1645,34 @@ html.alchemy-disable-animations .card-play-rejected::before {
 .gear-affix-row[data-affix-change="removed"] > .gear-affix-row-clip {
   overflow: hidden;
 }
+/* Rerolls share a single slot: its height is max(old,new), never their sum. */
+.gear-affix-replacement {
+  display: grid;
+  align-items: start;
+}
+.gear-affix-replacement > .gear-affix-line {
+  grid-area: 1 / 1;
+}
+.gear-affix-previous {
+  pointer-events: none;
+  animation: gear-affix-replace-out 100ms ease-out both;
+}
+.gear-affix-replacement .gear-affix-word {
+  animation-duration: 140ms;
+  animation-delay: calc(100ms + min(var(--affix-word-delay, 0ms), 80ms));
+}
+.gear-affix-replacement .gear-affix-glow {
+  animation-delay: 100ms;
+  animation-duration: 260ms;
+}
+@keyframes gear-affix-replace-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 @keyframes gear-affix-word-enter {
   from {
     opacity: 0;
@@ -1678,12 +1706,14 @@ html.alchemy-disable-animations .card-play-rejected::before {
 }
 @media (prefers-reduced-motion: reduce) {
   .gear-affix-word,
+  .gear-affix-previous,
   .gear-affix-glow,
   .gear-affix-row[data-affix-change="removed"] {
     animation: none;
   }
 }
 html.alchemy-disable-animations .gear-affix-word,
+html.alchemy-disable-animations .gear-affix-previous,
 html.alchemy-disable-animations .gear-affix-glow,
 html.alchemy-disable-animations .gear-affix-row[data-affix-change="removed"] {
   animation: none;
