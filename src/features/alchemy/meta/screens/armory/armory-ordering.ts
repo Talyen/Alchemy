@@ -63,9 +63,8 @@ export function reconcileOrder(currentIds: readonly string[], rows: readonly Arm
   const surviving = currentIds.filter((id) => available.delete(id));
   if (available.size === 0) return surviving;
   const sortedAvailable = rows.filter((row) => available.has(row.id)).sort((a, b) => compareOrderRows(a, b, "rarity"));
-  const newlyAvailable: string[] = [];
-  for (const row of sortedAvailable) if (available.delete(row.id)) newlyAvailable.push(row.id);
-  return [...surviving, ...newlyAvailable];
+  for (const row of sortedAvailable) if (available.delete(row.id)) surviving.push(row.id);
+  return surviving;
 }
 
 export interface DisplacedGearItem {

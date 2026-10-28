@@ -57,17 +57,16 @@ export function buildWishOptions(
     undiscovered = candidates.filter((candidate) => !discovered.has(candidate.id));
   }
   const guaranteed = undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], battleRng) : [];
-  const selected = [
-    ...guaranteed,
-    // Selection cannot offer more cards than the eligible pool.
-    ...selectRewardCards(
-      fullDeck,
-      candidates,
-      Math.min(baseCount, candidates.length) - guaranteed.length,
-      guaranteed,
-      battleRng,
-    ),
-  ];
+  const selected = guaranteed;
+  // Both arrays belong to this offer; append without copying the guaranteed choices.
+  const remaining = selectRewardCards(
+    fullDeck,
+    candidates,
+    Math.min(baseCount, candidates.length) - guaranteed.length,
+    guaranteed,
+    battleRng,
+  );
+  for (const candidate of remaining) selected.push(candidate);
 
   if (state.talentEffects.wishCardsUpgraded) {
     return selected.map((c) => upgradeWishCard(c));
