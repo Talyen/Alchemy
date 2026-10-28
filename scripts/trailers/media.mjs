@@ -44,7 +44,7 @@ export function probe(file, { countFrames = true, countPackets = false } = {}) {
   if (result.error || result.status !== 0) throw new Error(`ffprobe failed: ${result.error?.message ?? result.stderr}`);
   return JSON.parse(result.stdout);
 }
-export const CAPTURE_ENCODER_POLICY = Object.freeze({
+const CAPTURE_ENCODER_POLICY = Object.freeze({
   preset: "veryfast",
   crf: 16,
   maxBitrate: 64_000_000,

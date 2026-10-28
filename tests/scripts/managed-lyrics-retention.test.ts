@@ -176,7 +176,7 @@ it.skipIf(process.platform === "win32")(
       );
       const marker = path.join(envDir, ".alchemy-managed.json");
       fs.writeFileSync(marker, JSON.stringify({ kind: "alchemy-managed-fonts-v1", version: "4.60.1", last_used: 1 }));
-      const childEnv = { ...process.env, ALCHEMY_TEST_FONT_MARKER: path.join(root, "called") };
+      const childEnv: NodeJS.ProcessEnv = { ...process.env, ALCHEMY_TEST_FONT_MARKER: path.join(root, "called") };
       delete childEnv.ALCHEMY_FONT_PYTHON;
       delete childEnv.ALCHEMY_FONT_LOCK_FD;
       const result = spawnSync(process.execPath, [path.join(root, "scripts/localization/subset-fonts.mjs")], {
