@@ -31,6 +31,41 @@ it("computeBaseDamage — Expert Blacksmith rounds its Forge bonus before damage
   expect(result.enemyHealth).toBe(30 - 12);
 });
 
+it.each([
+  { forge: 0, expected: 3 },
+  { forge: 5, expected: 6 },
+])("explicit Forge scaling replaces the normal Forge bonus at $forge stacks", ({ forge, expected }) => {
+  const state = patchBattleState({
+    playerStatuses: { forge },
+    talentEffects: { forgeBurnDamagePercent: 100 },
+    rng: () => 0.99,
+  });
+  const card = makeTestCard({ effects: [makeEffect("burn", 3, { forgeBonusPercent: 50 })] });
+  const result = dealDamage(state, card);
+  expect(result.enemyHealth).toBe(30 - expected);
+  expect(result.playerStatuses.forge).toBe(forge);
+});
+
+it.each([
+  { shared: false, type: "burn", expected: 6 },
+  { shared: false, type: "bleed", expected: 12 },
+  { shared: true, type: "burn", expected: 12 },
+  { shared: true, type: "bleed", expected: 12 },
+] as const)(
+  "shares the higher Forge conversion only when enabled: $type, shared=$shared",
+  ({ shared, type, expected }) => {
+    const state = patchBattleState({
+      playerStatuses: { forge: 8 },
+      talentEffects: { forgeBurnDamagePercent: 25, forgeBleedDamagePercent: 100 },
+      gearEffects: { sharedBurnBleedBonuses: shared ? 1 : 0 },
+      rng: () => 0.99,
+    });
+    const result = dealDamage(state, makeTestCard({ effects: [makeEffect(type, 4)] }));
+    expect(result.enemyHealth).toBe(30 - expected);
+    expect(result.playerStatuses.forge).toBe(8);
+  },
+);
+
 describe("applyForgeStunRider", () => {
   it("stuns enemy when forge meets boon threshold", () => {
     const state = patchBattleState({
