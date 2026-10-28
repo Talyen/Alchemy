@@ -180,7 +180,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard("pack-tactics", [
     { kind: "companion-action", amount: 2 },
     { kind: "wish", amount: 1, companionIfAbsent: true },
-    { kind: "player-status", status: "block", amount: 4 },
+    { kind: "player-status", status: "block", amount: 3 },
   ]),
   cardBuilders.effectsCard("serrated-edge", [
     { kind: "damage", damageType: "physical", damageTypePool: ["physical", "bleed"], amount: 2 },

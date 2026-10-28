@@ -932,7 +932,7 @@
   "catalog.cardLibrary.molten-bulwark.title": {"text":"Molten Bulwark","context":"Game catalog: cardLibrary.molten-bulwark.title","terms":[]},
   "catalog.cardLibrary.pack-tactics.line0": {"text":"Your Companion acts twice","context":"Game catalog: cardLibrary.pack-tactics description","aliasOf":"description.698542c81ed1b164","values":{},"terms":["Companion"]},
   "catalog.cardLibrary.pack-tactics.line1": {"text":"If you don't have a Companion, Wish for one","context":"Game catalog: cardLibrary.pack-tactics description","aliasOf":"description.5a69d1fa9b9de404","values":{},"terms":["Companion","Wish"]},
-  "catalog.cardLibrary.pack-tactics.line2": {"text":"Gain 4 Block","context":"Game catalog: cardLibrary.pack-tactics description","aliasOf":"description.3982b18759b2f2f9","values":{"value0":4},"terms":["Block"]},
+  "catalog.cardLibrary.pack-tactics.line2": {"text":"Gain 3 Block","context":"Game catalog: cardLibrary.pack-tactics description","aliasOf":"description.3982b18759b2f2f9","values":{"value0":3},"terms":["Block"]},
   "catalog.cardLibrary.pack-tactics.title": {"text":"Pack Tactics","context":"Game catalog: cardLibrary.pack-tactics.title","terms":[]},
   "catalog.cardLibrary.panacea-potion.line0": {"text":"Cleanse all harmful status effects","context":"Game catalog: cardLibrary.panacea-potion description","terms":[]},
   "catalog.cardLibrary.panacea-potion.line1": {"text":"Restore 2 Health","context":"Game catalog: cardLibrary.panacea-potion description","aliasOf":"description.82c6a67b41298ce5","values":{"value0":2},"terms":["Health"]},
