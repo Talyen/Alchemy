@@ -5,6 +5,8 @@ import {
   getGearInstanceTooltipEntries,
   type GearDefinition,
   type GearInstance,
+  type GearAffixTooltipEntry,
+  type GearRarity,
   gearAffixCatalog,
   getGearAffixTextShineColors,
 } from "@/lib/gear";
@@ -14,6 +16,8 @@ import { renderColoredKeywords } from "../cards/card-description-ui";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "./tooltip-panel";
 import { cn } from "@/lib/utils";
 import { tooltipBodyLineClass } from "@/features/alchemy/shared/config";
+import { revealAffixWords, useGearAffixFeedback } from "./gear-affix-feedback";
+import type { CSSProperties } from "react";
 
 export function GearTooltipContent({
   definition,
@@ -39,27 +43,13 @@ export function GearTooltipContent({
       <TooltipHeader>
         <GearItemTitle {...(instance ? { instance } : { definition })} className="whitespace-normal" />
       </TooltipHeader>
-      {affixEntries.length > 0 ? (
-        <div className="mt-1 space-y-2">
-          {affixEntries.map((entry) => {
-            const def = gearAffixCatalog[entry.affixId];
-            const isMaxRoll = (rarity === "astral" || rarity === "unique") && entry.value === def.roll[rarity].max;
-            const colors = isMaxRoll ? getGearAffixTextShineColors(def) : [];
-
-            return (
-              <div key={entry.key}>
-                <TooltipSubheader>
-                  <ShineText colors={colors} fallbackClassName="text-inherit">
-                    {i18n.displayText(entry.name)}
-                  </ShineText>
-                </TooltipSubheader>
-                <p className={cn(tooltipBodyLineClass, "mt-0 pl-3")}>
-                  {i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+      {instance ? (
+        <GearAffixLines
+          key={instance.instanceId}
+          entries={affixEntries}
+          rarity={rarity}
+          fallback={entries.filter((entry) => entry.affixId === undefined).map((entry) => entry.text)}
+        />
       ) : (
         <TooltipBody>
           {entries.map((entry) => (
@@ -69,6 +59,68 @@ export function GearTooltipContent({
           ))}
         </TooltipBody>
       )}
+    </div>
+  );
+}
+
+function GearAffixLines({
+  entries,
+  rarity,
+  fallback,
+}: {
+  entries: GearAffixTooltipEntry[];
+  rarity: GearRarity;
+  fallback: string[];
+}) {
+  const i18n = useGameTranslation();
+  const rows = useGearAffixFeedback(entries);
+  if (!rows.length)
+    return (
+      <TooltipBody>
+        {fallback.map((text, index) => (
+          <p key={index} className={tooltipBodyLineClass}>
+            {i18n.displayText(i18n.read(() => renderColoredKeywords(text)))}
+          </p>
+        ))}
+      </TooltipBody>
+    );
+  return (
+    <div className="gear-affix-lines">
+      {rows.map(({ entry, change, revision }) => {
+        const def = gearAffixCatalog[entry.affixId];
+        const isMaxRoll = (rarity === "astral" || rarity === "unique") && entry.value === def.roll[rarity].max;
+        const colors = isMaxRoll ? getGearAffixTextShineColors(def) : [];
+
+        return (
+          <div
+            key={entry.affixId}
+            className="gear-affix-row"
+            data-affix-id={entry.affixId}
+            data-affix-change={change}
+            aria-hidden={change === "removed" ? true : undefined}
+          >
+            <div className="gear-affix-row-clip">
+              <div
+                key={change === "added" ? revision : "settled"}
+                className="gear-affix-line"
+                style={{ "--affix-glow-color": getGearAffixTextShineColors(def)[0] } as CSSProperties}
+              >
+                {change === "added" ? <span className="gear-affix-glow" aria-hidden="true" /> : null}
+                <TooltipSubheader>
+                  <ShineText colors={colors} fallbackClassName="text-inherit">
+                    {change === "added" ? revealAffixWords(i18n.displayText(entry.name)) : i18n.displayText(entry.name)}
+                  </ShineText>
+                </TooltipSubheader>
+                <p className={cn(tooltipBodyLineClass, "mt-0 pl-3")}>
+                  {change === "added"
+                    ? revealAffixWords(i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text))))
+                    : i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

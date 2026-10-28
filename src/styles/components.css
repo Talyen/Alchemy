@@ -1605,3 +1605,81 @@ html.alchemy-disable-animations .card-play-rejected::before {
   animation: boss-lyric-enter 180ms ease-out both;
   transform-origin: center bottom;
 }
+
+/* Crafting changes only the affected affix; authoritative gear is already updated. */
+.gear-affix-lines {
+  margin-bottom: -4px;
+}
+.gear-affix-row {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.gear-affix-row-clip {
+  min-height: 0;
+}
+.gear-affix-line {
+  position: relative;
+  isolation: isolate;
+  padding-block: 4px;
+}
+.gear-affix-word {
+  animation: gear-affix-word-enter 180ms ease-out var(--affix-word-delay, 0ms) both;
+}
+.gear-affix-glow {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset: 6px 0;
+  border-radius: 6px;
+  box-shadow: 0 0 12px 2px var(--affix-glow-color);
+  animation: gear-affix-glow 360ms ease-out both;
+}
+.gear-affix-row[data-affix-change="removed"] {
+  animation: gear-affix-remove 360ms ease-in-out both;
+}
+.gear-affix-row[data-affix-change="removed"] > .gear-affix-row-clip {
+  overflow: hidden;
+}
+@keyframes gear-affix-word-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes gear-affix-glow {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.35;
+  }
+}
+@keyframes gear-affix-remove {
+  0% {
+    opacity: 1;
+    grid-template-rows: 1fr;
+  }
+  50% {
+    opacity: 0;
+    grid-template-rows: 1fr;
+  }
+  100% {
+    opacity: 0;
+    grid-template-rows: 0fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gear-affix-word,
+  .gear-affix-glow,
+  .gear-affix-row[data-affix-change="removed"] {
+    animation: none;
+  }
+}
+html.alchemy-disable-animations .gear-affix-word,
+html.alchemy-disable-animations .gear-affix-glow,
+html.alchemy-disable-animations .gear-affix-row[data-affix-change="removed"] {
+  animation: none;
+}
