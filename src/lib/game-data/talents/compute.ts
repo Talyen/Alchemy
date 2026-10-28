@@ -6,12 +6,13 @@ import { isAdditiveBonus, type TalentBonus } from "./talent-builder";
 import { createEmptyTalentEffectManifest } from "./manifest-defaults";
 
 function* usableUnlockedTalents(unlockedTalents: UnlockedTalents): Iterable<TalentDefinition> {
-  for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
+  for (const keywordId of Object.keys(unlockedTalents) as KeywordId[]) {
+    const talentIds = unlockedTalents[keywordId];
     if (!talentIds?.length) continue;
     const uniqueIds = talentIds.length === 1 ? talentIds : new Set(talentIds);
     for (const talentId of uniqueIds) {
       const talent = getTalentById(talentId);
-      if (isUsableTalentForKeyword(talent, keywordId as KeywordId)) yield talent;
+      if (isUsableTalentForKeyword(talent, keywordId)) yield talent;
     }
   }
 }
@@ -20,8 +21,10 @@ export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEf
   const manifest = createEmptyTalentEffectManifest();
 
   for (const talent of usableUnlockedTalents(unlockedTalents)) {
-    for (const [field, value] of Object.entries(talent.effects ?? {})) {
-      applyTalentBonus(manifest, field as keyof TalentEffectManifest, value);
+    const effects = talent.effects;
+    if (!effects) continue;
+    for (const field of Object.keys(effects) as Array<keyof TalentEffectManifest>) {
+      applyTalentBonus(manifest, field, effects[field]!);
     }
   }
 
@@ -39,14 +42,15 @@ export function normalizeUnlockedTalents(unlockedTalents: UnlockedTalents): Unlo
 }
 
 function applyTalentBonus(manifest: TalentEffectManifest, field: keyof TalentEffectManifest, bonus: TalentBonus) {
+  // The catalog supplies the field/value pairing; this owner writes dynamic keys.
+  const writable = manifest as Record<keyof TalentEffectManifest, unknown>;
   if (isAdditiveBonus(bonus)) {
-    Object.assign(manifest, { [field]: (manifest[field] as number) + bonus.amount });
+    writable[field] = (manifest[field] as number) + bonus.amount;
     return;
   }
   const current = manifest[field];
   // Catalog payloads outlive battles; each manifest owns its mutable values.
   const value = typeof bonus === "object" ? structuredClone(bonus) : bonus;
-  Object.assign(manifest, {
-    [field]: Array.isArray(current) && Array.isArray(value) ? [...current, ...value] : value,
-  });
+  if (Array.isArray(current) && Array.isArray(value)) current.push(...value);
+  else writable[field] = value;
 }

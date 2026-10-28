@@ -8,6 +8,7 @@ import {
   xpToNextPoint,
   addTalentXP,
   getTalentKeywordProgress,
+  hasUnspentTalentPoint,
   normalizeUnlockedTalents,
   computeRunEndTalentXPSnapshot,
   mergeTalentXPAwards,
@@ -45,6 +46,17 @@ describe("talent progression", () => {
     const input = Object.freeze({ physical: 1 });
     expect(addTalentXP(input, ["physical", "burn"], 3)).toEqual({ physical: 4, burn: 3 });
     expect(input).toEqual({ physical: 1 });
+  });
+
+  it("reports spendable points after normalizing duplicate and mismatched purchases", () => {
+    const purchased = Object.freeze({ physical: ["physical-brute-force", "physical-brute-force", "unknown-talent"] });
+    expect(hasUnspentTalentPoint({}, purchased)).toBe(false);
+    expect(hasUnspentTalentPoint({ thorns: 100 }, purchased)).toBe(false);
+    expect(hasUnspentTalentPoint({ physical: Number.NaN }, purchased)).toBe(false);
+    expect(hasUnspentTalentPoint({ physical: 10 }, purchased)).toBe(false);
+    expect(hasUnspentTalentPoint({ physical: 40 }, purchased)).toBe(true);
+    expect(hasUnspentTalentPoint({ burn: 10 }, { burn: ["physical-brute-force"] })).toBe(true);
+    expect(purchased.physical).toEqual(["physical-brute-force", "physical-brute-force", "unknown-talent"]);
   });
 
   it("shows progress within the current level and caps spendable points at remaining talents", () => {
