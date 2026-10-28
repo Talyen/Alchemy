@@ -29,7 +29,7 @@ export const defenseCards: BattleCard[] = [
   cardBuilders.effectsCard("shadowstep", [{ kind: "dodge-next-attack" }, { kind: "play-next-card-twice" }], {
     consume: true,
   }),
-  cardBuilders.effectsCard("feint", [{ kind: "dodge-next-attack" }, { kind: "draw-cards", amount: 2 }]),
+  cardBuilders.effectsCard("feint", [{ kind: "dodge-next-attack" }, { kind: "draw-cards", amount: 1 }]),
 
   cardBuilders.effectsCard("mana-shield", [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }]),
   cardBuilders.effectsCard(
