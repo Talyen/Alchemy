@@ -182,6 +182,8 @@ export function ItemPickerGrid({
                     instance={item}
                     visible={visible}
                     triggerRef={triggerRef}
+                    placement="below"
+                    preservePlacementOnResize
                     notice={blockedReason ?? undefined}
                   />
                 )}

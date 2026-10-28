@@ -94,6 +94,8 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           visible={isHovered}
           className="armory-inventory-tooltip !shadow-none"
           plasmaColorPair={getPlasmaColorPairForGear(instance)}
+          placement="below"
+          preservePlacementOnResize
         >
           <GearTooltipContent definition={definition} instance={instance} />
           {blockedReason ? <p className="mt-3 text-sm text-warning">{i18n.displayText(blockedReason)}</p> : null}

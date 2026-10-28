@@ -43,6 +43,7 @@ export function usePortaledTooltipPlacement(
   maxWidthFraction?: number,
   allowFlip = true,
   horizontalInsetOverride?: number,
+  preservePlacementOnResize = false,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{
@@ -64,6 +65,7 @@ export function usePortaledTooltipPlacement(
     let needsSizing = true;
     let sizedWidth = 0;
     let sizedHeight = 0;
+    let retainedPlacement = preferredFloatingPlacement(placement);
 
     const update = () => {
       if (cancelled) return;
@@ -88,8 +90,9 @@ export function usePortaledTooltipPlacement(
           tooltipEl.style.width = `${availableWidth}px`;
         }
       }
+      const preferredPlacement = preservePlacementOnResize ? retainedPlacement : preferredFloatingPlacement(placement);
       void computePosition(trigger, tooltipEl, {
-        placement: preferredFloatingPlacement(placement),
+        placement: preferredPlacement,
         strategy: "fixed",
         middleware: [
           offset(padding),
@@ -97,9 +100,9 @@ export function usePortaledTooltipPlacement(
             flip({
               boundary: stage,
               fallbackPlacements:
-                placement === "above"
+                preferredPlacement === "top"
                   ? ["bottom", "left", "right"]
-                  : placement === "below"
+                  : preferredPlacement === "bottom"
                     ? ["top", "left", "right"]
                     : undefined,
             }),
@@ -113,6 +116,9 @@ export function usePortaledTooltipPlacement(
       }).then(
         ({ x, y, placement: finalPlacement }) => {
           if (cancelled || currentMeasurement !== measurement) return;
+          // A shrinking crafted affix should not move an otherwise fitting panel
+          // back across its trigger. Flip still handles viewport constraints.
+          retainedPlacement = finalPlacement;
           const left = `${x}px`;
           // Anchor fixed above panels directly to the artwork so resizing and
           // celebratory scale never feed transformed panel dimensions back into placement.
@@ -173,7 +179,16 @@ export function usePortaledTooltipPlacement(
       if (frame !== null) cancelAnimationFrame(frame);
       cleanup();
     };
-  }, [active, triggerRef, padding, placement, maxWidthFraction, allowFlip, horizontalInsetOverride]);
+  }, [
+    active,
+    triggerRef,
+    padding,
+    placement,
+    maxWidthFraction,
+    allowFlip,
+    horizontalInsetOverride,
+    preservePlacementOnResize,
+  ]);
 
   return { tooltipRef, ...floatingPlacementToTooltipState(position.placement), tooltipStyle: position.tooltipStyle };
 }

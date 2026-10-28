@@ -4,6 +4,7 @@ import { type GearDefinition, type GearInstance } from "@/lib/gear";
 import { GearTooltipContent } from "./gear-tooltip-content";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { getPlasmaColorPairForGear } from "../../config";
+import type { PortaledTooltipPlacement } from "./portaled-tooltip-placement";
 
 export function GearDetailPopup({
   definition,
@@ -18,6 +19,8 @@ export function GearDetailPopup({
   visible: boolean;
   padding?: number | undefined;
   notice?: string | undefined;
+  placement?: PortaledTooltipPlacement;
+  preservePlacementOnResize?: boolean;
 }) {
   if (!definition) return null;
   return (

@@ -21,20 +21,25 @@ function Harness({
   placement,
   allowFlip = true,
   horizontalInset,
+  preservePlacementOnResize = false,
+  active = true,
 }: {
   placement: PortaledTooltipPlacement;
   allowFlip?: boolean;
   horizontalInset?: number;
+  preservePlacementOnResize?: boolean;
+  active?: boolean;
 }) {
   const triggerRef = useRef<HTMLDivElement>(null);
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
-    true,
+    active,
     8,
     placement,
     undefined,
     allowFlip,
     horizontalInset,
+    preservePlacementOnResize,
   );
   return (
     <>
@@ -55,6 +60,58 @@ describe("usePortaledTooltipPlacement", () => {
     cleanup();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it.each([true, false])("retains a fitting resolved side only when opted in (%s)", async (preserve) => {
+    let height = 180;
+    let viewportHeight = 1080;
+    let remeasure!: () => void;
+    const { computePosition } = await vi.importActual<typeof floatingUi>("@floating-ui/dom");
+    vi.spyOn(floatingUi, "autoUpdate").mockImplementation((_trigger, _tooltip, update) => {
+      remeasure = update;
+      return () => {};
+    });
+    vi.spyOn(floatingUi, "computePosition").mockImplementation((reference, floating, options) =>
+      computePosition(reference, floating, {
+        ...options,
+        platform: {
+          ...floatingUi.platform,
+          getElementRects: async () => ({
+            reference: { x: 900, y: 230, width: 200, height: 300 },
+            floating: { x: 0, y: 0, width: 320, height },
+          }),
+          getClippingRect: async () => ({ x: 0, y: 0, width: 1920, height: viewportHeight }),
+          getOffsetParent: async () => window,
+          isElement: async () => false,
+          convertOffsetParentRelativeRectToViewportRelativeRect: async ({ rect }) => rect,
+        },
+      }),
+    );
+    vi.spyOn(document.documentElement, "getBoundingClientRect").mockImplementation(
+      () => new DOMRect(0, 0, 1920, viewportHeight),
+    );
+    const view = render(<Harness placement="above" preservePlacementOnResize={preserve} />);
+    const floating = screen.getByTestId("tip-floating");
+    await waitFor(() => expect(floating.style.top).toBe("42px"));
+    height = 274;
+    act(() => remeasure());
+    await waitFor(() => expect(floating.dataset.placeBelow).toBe("true"));
+    expect(floating.style.top).toBe("538px");
+    height = 198;
+    act(() => remeasure());
+    await waitFor(() => expect(floating.style.top).toBe(preserve ? "538px" : "24px"));
+    // A retained side must still yield when the viewport no longer has room.
+    viewportHeight = 640;
+    act(() => remeasure());
+    await waitFor(() => expect(floating.style.top).toBe("24px"));
+    viewportHeight = 1080;
+    act(() => remeasure());
+    await waitFor(() => expect(floating.style.top).toBe("24px"));
+    view.rerender(<Harness placement="above" preservePlacementOnResize={preserve} active={false} />);
+    expect(floating.style.top).toBe("");
+    height = 180;
+    view.rerender(<Harness placement="above" preservePlacementOnResize={preserve} />);
+    await waitFor(() => expect(floating.style.top).toBe("42px"));
   });
 
   it.each([
