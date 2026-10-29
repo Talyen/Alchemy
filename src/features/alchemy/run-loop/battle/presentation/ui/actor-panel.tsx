@@ -266,7 +266,7 @@ function ActorArtFrame({
         if (event.target === event.currentTarget) event.currentTarget.classList.remove("portrait-recoil-active");
       }}
     >
-      <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
+      <CombatantStatusEffectPresentation keyword={ccKeyword} defeated={isDead}>
         <Surface
           surfaceRef={surfaceRef}
           onClick={onInspect && !isDead ? (event) => onInspect(event.currentTarget) : undefined}

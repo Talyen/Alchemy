@@ -201,7 +201,11 @@ it("preserves the mounted idle video when death clears a Stunned portrait wrappe
   readyFrame(originalVideo);
   fireEvent.playing(originalVideo);
   originalVideo.currentTime = 3.25;
-  view.rerender(<CombatantStatusEffectPresentation keyword={null}>{deadPortrait}</CombatantStatusEffectPresentation>);
+  view.rerender(
+    <CombatantStatusEffectPresentation keyword="stun" defeated>
+      {deadPortrait}
+    </CombatantStatusEffectPresentation>,
+  );
   expect(view.queryByTestId("combatant-status-effect")).toBeNull();
   expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame).toBeInstanceOf(HTMLCanvasElement);
   expect(context.drawImage.mock.calls[0]![0]).toBe(originalVideo);

@@ -74,6 +74,9 @@ static art during that handoff. Static-art death is used only when static fallba
 was already displayed. No video frame from another portrait or earlier clip is cached.
 The crowd-control wrapper retains its portrait subtree when its effect clears, so
 death can freeze the displayed decoder rather than mounting a new fallback portrait.
+Defeat stops the control loop and removes its canvas while retaining the portrait's
+last rendered tilt through the slice. Ending control on a living portrait still
+clears the tilt normally.
 
 Prepared clips contain 60 fps motion interpolation, computed offline, and filtered
 640/1280/1920-pixel variants. The player selects the smallest width covering the

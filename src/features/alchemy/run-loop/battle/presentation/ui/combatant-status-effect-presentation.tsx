@@ -9,21 +9,24 @@ interface CombatantStatusEffectPresentationProps {
   keyword: ActiveCcKeyword | null;
   children: ReactNode;
   className?: string;
+  defeated?: boolean;
 }
 
 export function CombatantStatusEffectPresentation({
   keyword,
   children,
   className,
+  defeated = false,
 }: CombatantStatusEffectPresentationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wobbleRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotionPreference();
+  const activeKeyword = defeated ? null : keyword;
 
   useLayoutEffect(() => {
     const wobbleNode = wobbleRef.current;
-    if (!keyword) {
-      if (wobbleNode) wobbleNode.style.transform = "";
+    if (!activeKeyword) {
+      if (!defeated && wobbleNode) wobbleNode.style.transform = "";
       return;
     }
 
@@ -32,7 +35,7 @@ export function CombatantStatusEffectPresentation({
 
     const stop = startCombatantStatusEffectLoop({
       canvas,
-      kind: keyword,
+      kind: activeKeyword,
       onFrame: ({ wobbleDegrees }) => {
         const node = wobbleRef.current;
         if (!node) return;
@@ -40,20 +43,18 @@ export function CombatantStatusEffectPresentation({
       },
     });
 
-    return () => {
-      stop();
-      if (wobbleNode) wobbleNode.style.transform = "";
-    };
-  }, [keyword, reducedMotion]);
+    // The next live effect owns resets; defeat retains the last rendered pose.
+    return stop;
+  }, [activeKeyword, defeated, reducedMotion]);
 
   return (
     <div
       className={cn("relative rounded-shell-hero", className)}
-      data-testid={keyword ? "combatant-status-effect" : undefined}
+      data-testid={activeKeyword ? "combatant-status-effect" : undefined}
     >
       <div ref={wobbleRef} className="relative h-full w-full">
         {children}
-        {keyword ? (
+        {activeKeyword ? (
           <div
             className="pointer-events-none absolute inset-px z-20 overflow-hidden rounded-[calc(var(--radius-shell-hero)-1px)]"
             data-testid="combatant-status-effect-clip"
