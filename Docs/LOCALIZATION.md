@@ -158,6 +158,12 @@ owns smoke/QA tags, CI tiers and screenshot policy; [workflows](../.github/workf
 own scheduling. Expanded English is development-only QA, separate from production
 catalog acceptance.
 
+For an explicitly authorized exhaustive local review, set
+`ALCHEMY_LOCALIZATION_EXHAUSTIVE=1` as well. This adds English and runs each
+gameplay journey for every shipped locale, without changing the normal CI matrix.
+Use bounded locale selections when needed to respect the shared host lane's
+command deadline; retain the screenshot evidence for visual inspection.
+
 The [demo journeys](../tests/e2e/specs/localization-demo.spec.ts) include starter
 play/save/resume and a seeded final-room checkpoint through recap, hero unlock,
 marketing and menu. That checkpoint does not establish an unseeded full run.

@@ -2,7 +2,8 @@ import { expect, type Page } from "@playwright/test";
 import { injectActiveBattle, enterPrimaryRewardScreen, makeCard, makeGoblinBattleState } from "../browser-helpers";
 import { MenuPage } from "../pages/menu-page";
 import { resumeInjectedRun } from "../e2e/navigation";
-import { readSavedGame } from "../e2e/save-injection";
+import { injectSaveState, readSavedGame } from "../e2e/save-injection";
+import { savedActivityFixture } from "../fixtures/run-activity";
 import { translatedLabel, type AcceptanceLocale } from "../e2e/localization";
 
 /** Shared checkpoint for pixel baselines and ad-hoc original/candidate review. */
@@ -15,11 +16,39 @@ export async function openVisualBattle(page: Page) {
 
 export async function openVisualScenario(page: Page, scenario: string, locale = "en") {
   const label = (english: string) => (locale === "en" ? english : translatedLabel(locale as AcceptanceLocale, english));
-  const activeRun = ["battle", "card-inspection", "rewards"].includes(scenario);
+  const activeRun = ["battle", "card-inspection", "rewards", "mystery-gear"].includes(scenario);
   if (scenario === "battle" || scenario === "card-inspection") await openVisualBattle(page);
   else if (scenario === "rewards")
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"], selectedId: "bash" });
-  else if (["homestead", "talents", "talent-mana", "talent-unlock"].includes(scenario))
+  else if (scenario === "mystery-gear") {
+    const choice = {
+      label: "Take the Offering",
+      effects: [
+        { kind: "gainGeneratedGear" as const, baseItemId: "emerald-amulet", astral: true as const },
+        { kind: "gainGeneratedGear" as const, baseItemId: "leather-buckler", astral: true as const },
+      ],
+    };
+    await injectSaveState(page, {
+      activity: savedActivityFixture("mystery", {
+        event: {
+          id: "ancient-altar",
+          title: "Ancient Altar",
+          art: "",
+          narrative: "A weathered stone altar.",
+          choices: [choice],
+        },
+        chosenChoice: choice,
+        cardChoices: null,
+        grantedGear: [
+          { instanceId: "review-amulet", definitionId: "emerald-amulet-astral", affixes: [] },
+          { instanceId: "review-buckler", definitionId: "leather-buckler-astral", affixes: [] },
+        ],
+        chosenCardId: null,
+      }),
+    });
+    await page.goto("/");
+    await resumeInjectedRun(page);
+  } else if (["homestead", "talents", "talent-mana", "talent-unlock"].includes(scenario))
     await new MenuPage(page).gotoWithUnlockedMeta(scenario === "talent-unlock" ? { talentXP: { mana: 550 } } : {});
   else await new MenuPage(page).goto();
 
@@ -65,6 +94,8 @@ export async function openVisualScenario(page: Page, scenario: string, locale = 
   } else if (scenario === "card-inspection") {
     await page.getByTestId("draw-pile").getByRole("button").click();
     await expect(page.getByRole("dialog", { name: label("Draw Pile"), exact: true })).toBeVisible();
+  } else if (scenario === "mystery-gear") {
+    await expect(page.getByRole("heading", { name: label("Reward"), exact: true })).toBeVisible();
   } else if (scenario === "rewards") {
     await expect(page.getByRole("heading", { name: label("Victory"), exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: label("Skip"), exact: true })).toBeEnabled();

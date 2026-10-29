@@ -24,6 +24,7 @@ import { HomesteadPage } from "../../pages/homestead-page";
 import { DEVICE_DISPLAY_RANGES } from "../../../src/lib/settings-values";
 import {
   acceptanceLocales,
+  exhaustiveLocalizationReview,
   localizationCoverage,
   type AcceptanceLocale,
   layoutReview,
@@ -94,7 +95,7 @@ for (const locale of acceptanceLocales) {
 
     const label = (english: string) => translatedLabel(locale, english);
 
-    if (locale === "de" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "de" || locale === "en-XA")
       test(
         "localized setup chooses a difficulty and completes a saved draft",
         localizationCoverage(locale, "de"),
@@ -104,8 +105,10 @@ for (const locale of acceptanceLocales) {
           await page.goto("/");
           await localizedCheckpoint(page, locale, async (fresh) => {
             await fresh.getByRole("button", { name: label("Play"), exact: true }).click();
+            await expect(fresh.getByRole("heading", { name: label("Start a Run"), exact: true })).toBeVisible();
             await reviewLayout(fresh, `${locale} mode selection`);
             await fresh.getByRole("button", { name: label("The Campaign"), exact: true }).click();
+            await expect(fresh.getByRole("heading", { name: label("Choose Your Hero"), exact: true })).toBeVisible();
             await reviewLayout(fresh, `${locale} hero selection`);
             await fresh
               .getByRole("button", {
@@ -154,12 +157,16 @@ for (const locale of acceptanceLocales) {
             );
             await expect(fresh.getByRole("heading", { name: label("Draft Complete"), exact: true })).toBeVisible();
             await reviewLayout(fresh, `${locale} completed draft`);
+            if (layoutReview)
+              await expect(fresh.getByRole("button", { name: label("Continue"), exact: true })).toBeInViewport({
+                ratio: 0.99,
+              });
             await crossLanguageResume(fresh, locale, "Draft Complete");
           });
         },
       );
 
-    if (locale === "ru" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "ru" || locale === "en-XA")
       test(
         "Talents and Collection keep localized keyboard targets and saved allocation",
         localizationCoverage(locale, "ru"),
@@ -224,7 +231,7 @@ for (const locale of acceptanceLocales) {
         },
       );
 
-    if (locale === "es" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "es" || locale === "en-XA")
       test(
         "Mystery choice remains translated and settles once across a language change",
         localizationCoverage(locale, "es"),
@@ -270,7 +277,7 @@ for (const locale of acceptanceLocales) {
         },
       );
 
-    if (locale === "fr" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "fr" || locale === "en-XA")
       test(
         "defeat and final victory keep localized recap controls and settle progress",
         localizationCoverage(locale, "fr"),
@@ -336,7 +343,7 @@ for (const locale of acceptanceLocales) {
         },
       );
 
-    if (locale === "ja" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "ja" || locale === "en-XA")
       test(
         "mixed and distilled Potions retain their modifications across languages",
         localizationCoverage(locale, "ja"),
@@ -396,6 +403,10 @@ for (const locale of acceptanceLocales) {
             await fresh.getByRole("button", { name: label("Distill"), exact: true }).click();
             await fresh.locator("[data-potion-choice] button").first().click();
             await reviewLayout(fresh, `${locale} distillation comparison`);
+            if (layoutReview)
+              await expect(fresh.getByRole("heading", { name: label("Distill Potion"), exact: true })).toBeInViewport({
+                ratio: 0.99,
+              });
             await fresh.getByRole("button", { name: label("Distill"), exact: true }).click();
             await expect
               .poll(async () => (await readSavedGame(fresh)).activeRun?.runDeck[0]?.effects)
@@ -411,12 +422,16 @@ for (const locale of acceptanceLocales) {
               ),
             ).toBe(true);
             await reviewLayout(fresh, `${locale} distilled Potion`);
+            if (layoutReview)
+              await expect(fresh.getByRole("heading", { name: label("Distill Potion"), exact: true })).toBeInViewport({
+                ratio: 0.99,
+              });
             await crossLanguageResume(fresh, locale, "Alchemist's Shop");
           });
         },
       );
 
-    if (locale === "pt-BR" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "pt-BR" || locale === "en-XA")
       test(
         "transmutation previews and saved generated names remain localized",
         localizationCoverage(locale, "pt-BR"),
@@ -444,7 +459,7 @@ for (const locale of acceptanceLocales) {
         },
       );
 
-    if (locale === "ru" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "ru" || locale === "en-XA")
       test(
         "corruption keeps its magnitude marks through cross-language resume",
         localizationCoverage(locale, "ru"),
@@ -463,7 +478,7 @@ for (const locale of acceptanceLocales) {
         },
       );
 
-    if (locale === "de" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "de" || locale === "en-XA")
       test(
         "Homestead and crafting spend once with localized targets",
         localizationCoverage(locale, "de"),
@@ -542,7 +557,7 @@ for (const locale of acceptanceLocales) {
         },
       );
 
-    if (locale === "zh-Hans" || locale === "en-XA")
+    if (exhaustiveLocalizationReview || locale === "zh-Hans" || locale === "en-XA")
       test(
         "Labyrinth discovery and reward claims survive a different language",
         localizationCoverage(locale, "zh-Hans"),

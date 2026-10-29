@@ -13,8 +13,12 @@ for (const [id, english] of Object.entries(catalogs.en!)) {
   if (!messageIds.has(english)) messageIds.set(english, id);
 }
 
-export const acceptanceLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "ja", "fr", "en-XA"] as const;
-export type AcceptanceLocale = (typeof acceptanceLocales)[number];
+const translatedLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "ja", "fr", "en-XA"] as const;
+export type AcceptanceLocale = "en" | (typeof translatedLocales)[number];
+export const exhaustiveLocalizationReview = process.env.ALCHEMY_LOCALIZATION_EXHAUSTIVE === "1";
+export const acceptanceLocales: readonly AcceptanceLocale[] = exhaustiveLocalizationReview
+  ? ["en", ...translatedLocales]
+  : translatedLocales;
 // One representative language per journey gates pushes. Gameplay settlement
 // uses that representative plus expanded-English QA; shared presentation flows
 // retain every locale for switching, layout and font coverage.

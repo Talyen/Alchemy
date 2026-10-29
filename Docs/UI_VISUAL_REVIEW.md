@@ -45,7 +45,7 @@ scope. Other source changes follow the ordinary task gate.
 ## Reproducible scenarios
 
 Use `npm run visual:scenario -- --list` to discover seeded browser checkpoints:
-menu, Options, Homestead, Talents, Battle, card inspection and card rewards. For example:
+menu, Options, Homestead, Talents, Mystery equipment, Battle, card inspection and card rewards. For example:
 
 ```sh
 npm run visual:scenario -- battle --label before

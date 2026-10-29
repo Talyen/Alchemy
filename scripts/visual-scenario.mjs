@@ -15,6 +15,7 @@ export const VISUAL_SCENARIOS = Object.freeze([
   "talents",
   "talent-mana",
   "talent-unlock",
+  "mystery-gear",
   "battle",
   "card-inspection",
   "rewards",
