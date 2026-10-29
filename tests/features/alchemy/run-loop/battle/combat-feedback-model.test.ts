@@ -117,7 +117,7 @@ describe("combat feedback preparation and merging", () => {
   });
 });
 
-it("preserves primary/corner intent through display totals and rapid burst merging", () => {
+it("preserves status intent while keeping both direct and triggered damage central", () => {
   const direct: CombatTextEvent = { target: "player", kind: "status", stat: "block", amount: 5, feedback: "primary" };
   const proc: CombatTextEvent = { ...direct, amount: 2, feedback: "secondary" };
   const current = burst(1, [direct, proc]);
@@ -138,7 +138,50 @@ it("preserves primary/corner intent through display totals and rapid burst mergi
     1100,
   ).bursts[0]!;
   expect(damage.entries).toHaveLength(2);
-  expect(damage.entries.map(combatTextLane)).toEqual(["impact", "setback"]);
+  expect(damage.entries.map(combatTextLane)).toEqual(["impact", "impact"]);
+});
+
+it("fans the resolved repeated Stab, Viper and Parting Cut hits without mixing their damage or Critical facts", () => {
+  const events: CombatTextEvent[] = [
+    { target: "enemy", kind: "damage", stat: "physical", amount: 10, feedback: "primary" },
+    { target: "enemy", kind: "damage", stat: "poison", amount: 20, critical: true, feedback: "secondary" },
+    { target: "enemy", kind: "damage", stat: "bleed", amount: 12, feedback: "secondary" },
+  ];
+  const ledger = structuredClone(events);
+  const entries = burst(1, events).entries;
+  expect(entries.map(combatTextLane)).toEqual(["impact", "impact", "impact"]);
+  expect(entries).toMatchObject([
+    { stat: "physical", amount: 10, displayText: "-10", feedback: "primary" },
+    { stat: "poison", amount: 20, displayText: "-20", critical: true, feedback: "secondary" },
+    { stat: "bleed", amount: 12, displayText: "-12", feedback: "secondary" },
+  ]);
+  expect(entries[0]).not.toHaveProperty("critical");
+  expect(entries[2]).not.toHaveProperty("critical");
+  expect(events).toEqual(ledger);
+});
+
+it("keeps status-only changes, Health costs and periodic secondary damage in their existing corners", () => {
+  const events: CombatTextEvent[] = [
+    { target: "enemy", kind: "status", stat: "poison", amount: 20, feedback: "secondary" },
+    { target: "player", kind: "status", stat: "block", amount: 5, feedback: "secondary" },
+    { target: "player", kind: "damage", stat: "health", amount: 2, impact: false, feedback: "secondary" },
+    { target: "enemy", kind: "damage", stat: "burn", amount: 8, periodic: true, feedback: "secondary" },
+    { target: "enemy", kind: "damage", stat: "physical", amount: 0, impact: false, feedback: "secondary" },
+  ];
+  expect(events.map(combatTextLane)).toEqual(["setback", "benefit", "setback", "setback", "setback"]);
+});
+
+it("keeps separately timed companion hits independent when their triggered damage uses the central fan", () => {
+  const first = burst(1, [{ ...hit, feedback: "secondary", companionActionId: -1 }]);
+  const second = burst(2, [{ ...hit, feedback: "secondary", companionActionId: -2 }], 100);
+  const result = consolidateCombatBursts([first], [second], 100);
+  expect(result).toEqual([first, second]);
+  expect(result.map((entry) => entry.firstShownAt)).toEqual([0, 100]);
+  expect(result.flatMap((entry) => entry.entries).map(combatTextLane)).toEqual(["impact", "impact"]);
+  expect(result.flatMap((entry) => entry.entries)).toMatchObject([
+    { amount: 5, companionActionId: -1 },
+    { amount: 5, companionActionId: -2 },
+  ]);
 });
 
 it("keeps direct and reaction damage distinct while retaining packet facts for impacts", () => {

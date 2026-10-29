@@ -143,7 +143,7 @@ describe("detonation combat feedback", () => {
     expect(texts).toEqual([direct, { ...direct, feedback: "secondary" }, detonation]);
     const result = entries(texts);
     expect(result).toMatchObject([{ amount: 46 }, { amount: 8, feedback: "secondary" }]);
-    expect(result.map(combatTextLane)).toEqual(["impact", "setback"]);
+    expect(result.map(combatTextLane)).toEqual(["impact", "impact"]);
   });
 
   it("retains ineffective feedback, does not detonate a corpse, and keeps an independent detonation central", () => {
