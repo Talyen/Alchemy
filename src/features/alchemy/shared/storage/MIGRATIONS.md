@@ -64,12 +64,11 @@ Elusive Transmutation now appends a 50% next-attack Dodge probability. Identifia
 saved Elusive cards normalize only that appended top-level effect and its wording,
 including saved previews and battle piles; native guaranteed Dodge is unchanged.
 The pending percentage is a separate integer combat flag and survives current-format
-save/resume. An old armed guaranteed Boolean has no source provenance: when a saved
-battle also contains an identifiable legacy Elusive card, restore restarts the same
-encounter through `resolveBattleStart()` using the normalized run deck, pre-battle
-run Health, saved encounter settings and current world RNG cursor. It does not
-advance room history or award progress. The fresh battle no longer matches the
-legacy condition, so subsequent loads resume normally.
+save/resume. An already-armed guaranteed Boolean has no source provenance and is
+still a valid current native Dodge state, so restore preserves it for one eligible
+attack. Card normalization changes future Elusive plays to 50%; it does not restart
+the battle, reset Health or piles, advance progression, or draw RNG. The attack
+resolver consumes both existing preparations before Dodge rewards can arm another.
 
 ### Schema change contract
 

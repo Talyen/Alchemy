@@ -30,7 +30,7 @@ function occurrences(parts: readonly string[], text: string): number {
 }
 
 /** Transmutation appends its Dodge outside any existing branches or scheduled effects. */
-export function hasLegacyElusiveDodge(card: BattleCard): boolean {
+function hasLegacyElusiveDodge(card: BattleCard): boolean {
   const effect = card.effects.at(-1);
   return card.transmuted === "dodge" && effect?.kind === "dodge-next-attack" && effect.probability === undefined;
 }
