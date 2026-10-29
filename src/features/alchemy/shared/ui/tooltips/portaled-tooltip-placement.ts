@@ -44,8 +44,14 @@ export function usePortaledTooltipPlacement(
   allowFlip = true,
   horizontalInsetOverride?: number,
   preservePlacementOnResize = false,
+  visible = active,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const hoverReservation = useRef({
+    width: 0,
+    visible: false,
+    placement: preferredFloatingPlacement(placement),
+  });
   const [position, setPosition] = useState<{
     placement: Placement;
     tooltipStyle: CSSProperties | undefined;
@@ -55,9 +61,22 @@ export function usePortaledTooltipPlacement(
     const trigger = triggerRef.current;
     const tooltipEl = tooltipRef.current;
     if (!active || !trigger || !tooltipEl) {
-      if (tooltipEl) tooltipEl.style.width = "";
+      if (tooltipEl) {
+        tooltipEl.style.width = "";
+        tooltipEl.style.minWidth = "";
+      }
+      hoverReservation.current = { width: 0, visible: false, placement: preferredFloatingPlacement(placement) };
       setPosition((previous) => ({ ...previous, tooltipStyle: undefined }));
       return;
+    }
+
+    const reservation = hoverReservation.current;
+    const entering = visible && !reservation.visible;
+    reservation.visible = visible;
+    if (entering || !preservePlacementOnResize) {
+      reservation.width = 0;
+      reservation.placement = preferredFloatingPlacement(placement);
+      tooltipEl.style.minWidth = "";
     }
 
     let cancelled = false;
@@ -65,7 +84,7 @@ export function usePortaledTooltipPlacement(
     let needsSizing = true;
     let sizedWidth = 0;
     let sizedHeight = 0;
-    let retainedPlacement = preferredFloatingPlacement(placement);
+    let retainedPlacement = reservation.placement;
 
     const update = () => {
       if (cancelled) return;
@@ -88,6 +107,16 @@ export function usePortaledTooltipPlacement(
         if (tooltipEl.getBoundingClientRect().height > bounds.height - 2 * padding) {
           tooltipEl.style.maxWidth = `${availableWidth}px`;
           tooltipEl.style.width = `${availableWidth}px`;
+        }
+        if (preservePlacementOnResize) {
+          // An outgoing affix can determine the panel's intrinsic width. Keep
+          // that width through this hover/exit fade so its retained text does
+          // not recenter when the old line finishes collapsing.
+          reservation.width = Math.min(
+            availableWidth,
+            Math.max(reservation.width, tooltipEl.getBoundingClientRect().width),
+          );
+          tooltipEl.style.minWidth = `${reservation.width}px`;
         }
       }
       const preferredPlacement = preservePlacementOnResize ? retainedPlacement : preferredFloatingPlacement(placement);
@@ -119,6 +148,7 @@ export function usePortaledTooltipPlacement(
           // A shrinking crafted affix should not move an otherwise fitting panel
           // back across its trigger. Flip still handles viewport constraints.
           retainedPlacement = finalPlacement;
+          reservation.placement = finalPlacement;
           const left = `${x}px`;
           // Anchor fixed above panels directly to the artwork so resizing and
           // celebratory scale never feed transformed panel dimensions back into placement.
@@ -188,6 +218,7 @@ export function usePortaledTooltipPlacement(
     allowFlip,
     horizontalInsetOverride,
     preservePlacementOnResize,
+    visible,
   ]);
 
   return { tooltipRef, ...floatingPlacementToTooltipState(position.placement), tooltipStyle: position.tooltipStyle };

@@ -180,6 +180,7 @@ export function PortaledTooltip({
     allowFlip,
     horizontalInset,
     preservePlacementOnResize,
+    preservePlacementOnResize ? visible : mounted,
   );
 
   if (!mounted) return null;
