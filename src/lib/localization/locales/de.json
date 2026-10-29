@@ -1924,6 +1924,7 @@
   "description.ea35b3d088ff3964": {"text":"Das Erhalten von <keyword0>Rüstung</keyword0> hat eine Chance von {{value0}}%, zusätzlich <keyword1>Gold</keyword1> zu gewähren","sourceHash":"48f46703e1413a647ee8da9218bfe68fc734040c349335b21cd133f917042bfd","reviewed":true},
   "description.eae114e06b8902ca": {"text":"<keyword0>Mana</keyword0>entzug","sourceHash":"ccd0b0cd2b416fbb9f612e575e2040aa74ac08a8dece7b6913151ca772ea76d4","reviewed":true},
   "description.eb27c683ebad3927": {"text":"<keyword0>Ausweichen</keyword0>","sourceHash":"0bcced303a34bc587850275595a64f649f2ee12e4d3d3f5f0b99494f76c0192d","reviewed":true},
+  "description.eb563644c682a4f8": {"text":"{{value0}}% Chance, dem nächsten Angriff <keyword0>auszuweichen</keyword0>.","sourceHash":"7134e067e50a07acbf040feac1ef07b10bcb4e152a8c3fc0158654a4ded40f32","reviewed":true},
   "description.eb9ce7fadc356660": {"text":"Erhalte {{value0}} <keyword0>Dornen</keyword0>, wenn du <keyword1>Leben</keyword1> wiederherstellst","sourceHash":"4cbf84eda2c4c17f38316e04087b1cbc6d892f98f8999ca480366c1a36a4e389","reviewed":true},
   "description.ec2bd0532e4c45db": {"text":"Wenn du einem <keyword1>brennenden</keyword1> Gegner <keyword0>ausweichst</keyword0>, füge {{value0}} Schaden vom Typ <keyword2>Brand</keyword2> zu","sourceHash":"21473c90be250a9d9de2a3b2e8f0b15f87bbc4c0c0ebae97fd17faaa03f8b131","reviewed":true},
   "description.ecc1b2aeb96965ca": {"text":"<keyword0>Wunsch</keyword0>-Karten werden verbessert","sourceHash":"55715106da5f77be7387b36dfdb9359aedf682f2e6e878d01bed6a41a74499cc","reviewed":true},

@@ -1,5 +1,7 @@
 import type { KeywordId } from "@/lib/game-data";
 
+export const ELUSIVE_DODGE_PROBABILITY = 0.5;
+
 export const TRANSMUTATION_KEYWORD_GROUPS = [
   ["physical", "holy", "nature", "burn", "poison", "bleed", "freeze", "stun"],
   ["block", "armor", "forge", "thorns", "health", "leech"],

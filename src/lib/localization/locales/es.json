@@ -1924,6 +1924,7 @@
   "description.ea35b3d088ff3964": {"text":"Obtener <keyword0>Armadura</keyword0> tiene un {{value0}}% de probabilidad de otorgar también <keyword1>Oro</keyword1>","sourceHash":"d2e1d034fb496072bdffa4ded422626ba76f7ea0f5fae7412477b29ba035e69b","reviewed":true},
   "description.eae114e06b8902ca": {"text":"Succión de <keyword0>Maná</keyword0>","sourceHash":"af440573e7db3a2fecaa2ab111fe694b76a23a8ae9bc46022d3a8fd13ace3503","reviewed":true},
   "description.eb27c683ebad3927": {"text":"<keyword0>Esquiva</keyword0>","sourceHash":"4199a9e28b364987d48dafa5d34ffa95a8b9ca016cc763d816d34062168423ae","reviewed":true},
+  "description.eb563644c682a4f8": {"text":"{{value0}}% de probabilidad de <keyword0>esquivar</keyword0> el próximo ataque.","sourceHash":"de936bca219bc0dd2c9430593be6f2168375aff547cc79aca986db4b970b851b","reviewed":true},
   "description.eb9ce7fadc356660": {"text":"Obtén {{value0}} de <keyword0>Espinas</keyword0> al recuperar <keyword1>Salud</keyword1>","sourceHash":"e6d852e25263da9b725e5ef0a12f41b179c064ca999d459083729e33023c0fd1","reviewed":true},
   "description.ec2bd0532e4c45db": {"text":"Al <keyword0>esquivar</keyword0> el ataque de un enemigo con <keyword1>Quemadura</keyword1>, inflige {{value0}} de daño de <keyword2>Quemadura</keyword2>","sourceHash":"3f310c96d4c4285efb5de686b492a488c031d331437f1a2f3658d31ada377310","reviewed":true},
   "description.ecc1b2aeb96965ca": {"text":"Las cartas de <keyword0>Deseo</keyword0> están mejoradas","sourceHash":"916e3e631e28573ebc465a8ce825be5e32d0c82fd8ee319d5f020ed98c9e2c56","reviewed":true},

@@ -1924,6 +1924,7 @@
   "description.ea35b3d088ff3964": {"text":"Получение эффекта «<keyword0>Броня</keyword0>» с шансом {{value0}}% также даёт <keyword1>золото</keyword1>","sourceHash":"f384db1c88d89c3eb25a710f9c7e91500d7c4ff3b1018a0dd6fdd1ed3812f6c7","reviewed":true},
   "description.eae114e06b8902ca": {"text":"Вытягивание: <keyword0>Мана</keyword0>","sourceHash":"a47c9267ee2bf0020d8a0d91118e558fd021a6b2b9154b769ce8e774882b932a","reviewed":true},
   "description.eb27c683ebad3927": {"text":"<keyword0>Уклонение</keyword0>","sourceHash":"527f7eb86171e08b10532dc95a120c42149a24b1493ab88a3a39564192cb7271","reviewed":true},
+  "description.eb563644c682a4f8": {"text":"{{value0}}% шанс <keyword0>уклониться</keyword0> от следующей атаки.","sourceHash":"db5d2417d8c76429b2e38522e96e5b380f3d6dfdc31124189f5db26e455f5a52","reviewed":true},
   "description.eb9ce7fadc356660": {"text":"Получите {{value0}} ед. <keyword0>шипов</keyword0> при восстановлении <keyword1>здоровья</keyword1>","sourceHash":"0ec3da57e8ed4ab487dbb79a58e9075442cc21738d6a4805ad97fe1366d034b2","reviewed":true},
   "description.ec2bd0532e4c45db": {"text":"Когда вы <keyword0>уклоняетесь</keyword0> от атаки врага под эффектом «<keyword1>Горение</keyword1>», нанесите {{value0}} ед. урона от <keyword2>горения</keyword2>","sourceHash":"45e8422723e8f093d38fea441a76ea34e222a0a24a46297b93d3226c27b2b250","reviewed":true},
   "description.ecc1b2aeb96965ca": {"text":"Карты типа «<keyword0>Желание</keyword0>» улучшены","sourceHash":"28b76344729e9e3154c90fbe3d664db41924e669bc602a9ae05a8494f826031b","reviewed":true},

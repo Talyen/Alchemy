@@ -43,7 +43,7 @@ export function nominalCardValue(effects: readonly BattleCardEffect[]): { damage
       } else defense += amount * Number(effect.status === "block" || effect.status === "armor");
     } else if (effect.kind === "remove-harmful-status") defense += (effect.amount ?? 1) * AUTOPLAY_EFFECT_SCORE.cleanse;
     else if (effect.kind === "remove-player-status") defense += AUTOPLAY_EFFECT_SCORE.cleanse;
-    else if (effect.kind === "dodge-next-attack") defense++;
+    else if (effect.kind === "dodge-next-attack") defense += effect.probability ?? 1;
   }
   const result = { damage, defense };
   if (isDeeplyFrozenData(effects)) nominalValues.set(effects, { ...result });

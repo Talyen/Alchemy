@@ -1924,6 +1924,7 @@
   "description.ea35b3d088ff3964": {"text":"<keyword0>装甲</keyword0>を得ると{{value0}}%の確率で<keyword1>ゴールド</keyword1>も得る","sourceHash":"7fc2bf904b8a0b35a0c325dba3dd38416593dd84b2892a12590c2cc90e6a811c","reviewed":true},
   "description.eae114e06b8902ca": {"text":"<keyword0>マナ</keyword0>の吸収","sourceHash":"72db0baef6998378810db28f812e89833b6a1709f7d36d1cff46eb3acddd04c7","reviewed":true},
   "description.eb27c683ebad3927": {"text":"<keyword0>回避</keyword0>","sourceHash":"cc2d17cf1490c82ee774ef6c8aef82d451955ef53b488b12d392f982583c2add","reviewed":true},
+  "description.eb563644c682a4f8": {"text":"{{value0}}%の確率で次の攻撃を<keyword0>回避</keyword0>する。","sourceHash":"ca84138b4bce8c4a74c2c971759a64494c5987d67d657ea2d5860e482ead8c9b","reviewed":true},
   "description.eb9ce7fadc356660": {"text":"<keyword1>体力</keyword1>を回復すると<keyword0>棘</keyword0>を{{value0}}得る","sourceHash":"713d6bc9a92e2a2b700cd120e465a7d5fffe4a58e9cff85199a404bc8ac62fa1","reviewed":true},
   "description.ec2bd0532e4c45db": {"text":"<keyword1>炎上</keyword1>中の敵を<keyword0>回避</keyword0>すると{{value0}}の<keyword2>炎上</keyword2>ダメージを与える","sourceHash":"e4838a6b7f7ee99ac02fe520cd032387581ac98987d354456d70a1cf4287764c","reviewed":true},
   "description.ecc1b2aeb96965ca": {"text":"<keyword0>願い</keyword0>カードが強化される","sourceHash":"535adcc6d9b23c7d29e27c5e0c09e5057605f79aa157da178e09bf2f7ca58407","reviewed":true},

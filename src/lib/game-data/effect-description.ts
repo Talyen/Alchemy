@@ -180,7 +180,11 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
     case "next-archery-free":
       return ["Your next Archery card is free"];
     case "dodge-next-attack":
-      return ["Dodge the next attack"];
+      return [
+        effect.probability === undefined
+          ? "Dodge the next attack"
+          : `${Math.round(effect.probability * 100)}% chance to Dodge the next attack.`,
+      ];
     case "summon-companion":
     case "chance":
     case "repeat-over-turns":

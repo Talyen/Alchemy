@@ -1924,6 +1924,7 @@
   "description.ea35b3d088ff3964": {"text":"Gagner de l'<keyword0>Armure</keyword0> a {{value0}}% de chances d'accorder aussi de l'<keyword1>Or</keyword1>","sourceHash":"71b1370623b19eb1b36510e444c685a2e7d72a6abe06b69cefb011fd95d369c2","reviewed":true},
   "description.eae114e06b8902ca": {"text":"Siphon de <keyword0>Mana</keyword0>","sourceHash":"3b282533ab83f977a9577f40bbeb55c27786118c65430cbaf0afd814dab9f556","reviewed":true},
   "description.eb27c683ebad3927": {"text":"<keyword0>Esquive</keyword0>","sourceHash":"d0afe95ce479a5f25a0e08f5e1d90965c28131d925d2974bd4905ce493dc770b","reviewed":true},
+  "description.eb563644c682a4f8": {"text":"{{value0}} % de chances d'<keyword0>esquiver</keyword0> la prochaine attaque.","sourceHash":"7edf4e78d2bd809d1fa3f40eeaa8e96ed8c32e9df027d743f158b03949e35f52","reviewed":true},
   "description.eb9ce7fadc356660": {"text":"Gagnez {{value0}} <keyword0>Épines</keyword0> quand vous restaurez de la <keyword1>Vie</keyword1>","sourceHash":"5246ea0d7809f3c1d7d275070cc1d4116cff8e5cd6eb65190e81393a2387699b","reviewed":true},
   "description.ec2bd0532e4c45db": {"text":"Quand vous <keyword0>Esquivez</keyword0> un ennemi <keyword1>Enflammé</keyword1>, infligez {{value0}} dégâts de <keyword2>Brûlure</keyword2>","sourceHash":"7a1fcad242443a8228a850fffcf898b0325e8a9b5945563a54f546ebbb487879","reviewed":true},
   "description.ecc1b2aeb96965ca": {"text":"Les cartes <keyword0>Souhait</keyword0> sont améliorées","sourceHash":"86ec239baa90e5bba51b7b43aa2846759bfec7b1f5dcdbe2c8c8ae93f68ce6f1","reviewed":true},
