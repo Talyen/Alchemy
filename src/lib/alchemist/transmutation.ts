@@ -23,6 +23,7 @@ import {
   CORRUPTION_MAX_EFFECT_LINES,
   TRANSMUTATION_KEYWORD_GROUPS,
   TRANSMUTATION_PREFIXES,
+  ELUSIVE_DODGE_PROBABILITY,
 } from "@/lib/game-constants";
 import type {
   AlchemyVisit,
@@ -340,7 +341,8 @@ function getPendingVariants(
       build: () => {
         const effects = [...card.effects];
         if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
-        else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
+        else if (keyword === "dodge")
+          effects.push({ kind: "dodge-next-attack", probability: ELUSIVE_DODGE_PROBABILITY });
         else effects.push({ kind: "companion-action", amount: 1 });
         return finishAlteration(card, keyword, effects, {}, analysis);
       },

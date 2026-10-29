@@ -207,7 +207,12 @@ function accumulateDefense(total: number, effect: BattleCardEffect, state: Battl
     return total + scoreEffect(effect, state, 0);
   if (effect.kind === "cleanse-player-status-to-damage")
     return total + (state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0);
-  return effect.kind === "dodge-next-attack" ? total + (state.flags.dodgeNextAttack ? 0 : 1) : total;
+  return effect.kind === "dodge-next-attack"
+    ? total +
+        (state.flags.dodgeNextAttack
+          ? 0
+          : Math.max(0, (effect.probability ?? 1) - state.flags.dodgeNextAttackChance / 100))
+    : total;
 }
 
 export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): number {

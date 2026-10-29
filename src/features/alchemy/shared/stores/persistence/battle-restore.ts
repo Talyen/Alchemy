@@ -23,6 +23,8 @@ function hydrateBattleState(battleState: BattleSnapshot): BattleSnapshot {
 
 export function restoreActiveBattle(draft: GameplayDraft, snapshot: BattleSnapshot | null): void {
   if (!snapshot) return;
+  // Armed flags have no card provenance; preserve committed preparations while
+  // normalizing card definitions for future plays.
   draft.session.activity = { kind: "battle", data: { battleState: battleSnapshot(hydrateBattleState(snapshot)) } };
   rebindLiveRunMeta(draft);
 }

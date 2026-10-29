@@ -68,12 +68,8 @@ const FLAG_EFFECTS = {
   "play-next-card-twice": "playNextCardTwice",
   "next-hit-poison": "nextHitPoison",
   "next-archery-free": "nextArcheryCardFree",
-  "dodge-next-attack": "dodgeNextAttack",
 } as const satisfies Record<
-  Extract<
-    BattleCardEffect["kind"],
-    `next-hit-${string}` | "play-next-card-twice" | "next-archery-free" | "dodge-next-attack"
-  >,
+  Extract<BattleCardEffect["kind"], `next-hit-${string}` | "play-next-card-twice" | "next-archery-free">,
   keyof BattleState["flags"]
 >;
 
@@ -94,8 +90,22 @@ const FLAG_HANDLERS = {
   "play-next-card-twice": applyFlagEffect,
   "next-hit-poison": applyFlagEffect,
   "next-archery-free": applyFlagEffect,
-  "dodge-next-attack": applyFlagEffect,
-} satisfies Pick<EffectHandlers, FlagEffectKind>;
+  "dodge-next-attack": ((state, _card, effect, _potionMult, combatTexts, context) => {
+    if (effect.probability !== undefined && state.flags.dodgeNextAttack) return state;
+    const flag = effect.probability === undefined ? "dodgeNextAttack" : "dodgeNextAttackChance";
+    emitNoticeText(combatTexts, "player", flag, "", {
+      signal: "prepared",
+      ...(context?.feedback ? { feedback: context.feedback } : {}),
+    });
+    return flag === "dodgeNextAttack"
+      ? writeCombatFlag(state, flag, true)
+      : writeCombatFlag(
+          state,
+          flag,
+          Math.max(state.flags.dodgeNextAttackChance, Math.round((effect.probability ?? 0) * 100)),
+        );
+  }) satisfies EffectHandler<"dodge-next-attack">,
+} satisfies Pick<EffectHandlers, FlagEffectKind | "dodge-next-attack">;
 
 /** Card-specific healing modifiers belong to live resolution, not nominal autoplay utility. */
 export function cardHealingAmount(

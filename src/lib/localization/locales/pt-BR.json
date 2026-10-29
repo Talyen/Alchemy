@@ -1925,6 +1925,7 @@
   "description.ea35b3d088ff3964": {"text":"Ganhar <keyword0>Armadura</keyword0> tem {{value0}}% de chance de também conceder <keyword1>Ouro</keyword1>","sourceHash":"cbd9de717b9034571dbef34d0cc247b570764ba58f46a96ed2394d87602c03c8","reviewed":true},
   "description.eae114e06b8902ca": {"text":"Sucção de <keyword0>Mana</keyword0>","sourceHash":"9375138543807a9adf5ef89a2b764fc68fc9005469e86782b8ea332616900ad6","reviewed":true},
   "description.eb27c683ebad3927": {"text":"<keyword0>Esquiva</keyword0>","sourceHash":"a0bd24ad4817bac1b12db14b6417442d3102190e125e5f96d7586d12af6b6151","reviewed":true},
+  "description.eb563644c682a4f8": {"text":"{{value0}}% de chance de <keyword0>esquivar</keyword0> do próximo ataque.","sourceHash":"7c7e0bef985603938b5817db54ebaa59d55a37720f64072221a9c0a5ce083f54","reviewed":true},
   "description.eb9ce7fadc356660": {"text":"Ganhe {{value0}} de <keyword0>Espinhos</keyword0> ao recuperar <keyword1>Vida</keyword1>","sourceHash":"776a5d0ab95b6a7982cd8df55695fd6d621ed2b455a0d6ba7d426fc9ea109417","reviewed":true},
   "description.ec2bd0532e4c45db": {"text":"Ao <keyword0>esquivar</keyword0> do ataque de um inimigo com <keyword1>Queimadura</keyword1>, cause {{value0}} de dano de <keyword2>Queimadura</keyword2>","sourceHash":"20807e22f5793952354337a38cb6a11d1783396ef577bc394afda11abab6340c","reviewed":true},
   "description.ecc1b2aeb96965ca": {"text":"Cartas de <keyword0>Desejo</keyword0> estão aprimoradas","sourceHash":"0f8f8cbff09052edb61e3ff56a892114d6592c4e8fd35af689ac40d0bda7928c","reviewed":true},

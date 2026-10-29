@@ -1925,6 +1925,7 @@
   "description.ea35b3d088ff3964": {"text":"获得<keyword0>护甲</keyword0>时有{{value0}}%几率同时获得<keyword1>金币</keyword1>","sourceHash":"7fe567c735ac7714d56f121ce2e16d3530de4f1226e3efc1ada2206d193368d2","reviewed":true},
   "description.eae114e06b8902ca": {"text":"<keyword0>魔力</keyword0>虹吸","sourceHash":"a441d49f1ee4dec712715274298f50ffce1c7de9e9513a8966669147925532f3","reviewed":true},
   "description.eb27c683ebad3927": {"text":"<keyword0>闪避</keyword0>","sourceHash":"084ba9f79c7cca33b9a562ed1d868d2482e8b253cfd74c1bbdf6bb7b54b8a046","reviewed":true},
+  "description.eb563644c682a4f8": {"text":"有{{value0}}%几率<keyword0>闪避</keyword0>下一次攻击。","sourceHash":"8b709b136d37c0be0fe7125486e9ccff82532028e2aa0e92736717a04d5589c5","reviewed":true},
   "description.eb9ce7fadc356660": {"text":"恢复<keyword1>生命</keyword1>时获得{{value0}}点<keyword0>荆棘</keyword0>","sourceHash":"f3b97f8fd67cb37bb57ed7c28ac337471f02c286ab3df31b8c261881f09a768d","reviewed":true},
   "description.ec2bd0532e4c45db": {"text":"你<keyword0>闪避</keyword0>处于<keyword1>灼烧</keyword1>状态的敌人的攻击时，造成{{value0}}点<keyword2>灼烧</keyword2>伤害","sourceHash":"97a8064f86fc8a5bb403ac4178ab9cb45c64fd595995d456bec6bee007d8d99b","reviewed":true},
   "description.ecc1b2aeb96965ca": {"text":"<keyword0>祈愿</keyword0>卡牌已升级","sourceHash":"dbdb7660fa466a8d00a941cbb3cf97b317c1c1674d810eccf1e70aa0f4d73d01","reviewed":true},

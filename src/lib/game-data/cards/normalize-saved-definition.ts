@@ -3,6 +3,7 @@ import { createEffectDescription } from "../effect-description";
 import { mapEffectChildren, visitBattleCardEffects } from "../effect-tree";
 import { withCardDescription } from "../card-description-model";
 import { SHIELD_BASH_SPEND_VERSION } from "./card-definition-versions";
+import { ELUSIVE_DODGE_PROBABILITY } from "@/lib/game-constants";
 
 interface NormalizationResult {
   card: BattleCard;
@@ -11,7 +12,7 @@ interface NormalizationResult {
 }
 type Damage = Extract<BattleCardEffect, { kind: "damage" }>;
 
-function clause(effect: Damage): string | undefined {
+function clause(effect: BattleCardEffect): string | undefined {
   const parts = createEffectDescription([effect])[0]?.parts;
   return parts?.length === 1 && typeof parts[0] === "string" ? parts[0] : undefined;
 }
@@ -28,8 +29,49 @@ function occurrences(parts: readonly string[], text: string): number {
   return count;
 }
 
-/** Normalize only the identifiable retired rule; never substitute a modified card from the catalog. */
+/** Transmutation appends its Dodge outside any existing branches or scheduled effects. */
+function hasLegacyElusiveDodge(card: BattleCard): boolean {
+  const effect = card.effects.at(-1);
+  return card.transmuted === "dodge" && effect?.kind === "dodge-next-attack" && effect.probability === undefined;
+}
+
+function normalizeElusive(card: BattleCard): NormalizationResult {
+  if (!hasLegacyElusiveDodge(card)) return { card, outcome: "unchanged" };
+  const oldClause = "Dodge the next attack";
+  const effect = { kind: "dodge-next-attack" as const, probability: ELUSIVE_DODGE_PROBABILITY };
+  const newClause = clause(effect)!;
+  const prose = card.description?.flatMap((line) => line.parts.filter((part) => typeof part === "string"));
+  if (occurrences(card.descriptionLines, oldClause) !== 1 || (prose && occurrences(prose, oldClause) !== 1))
+    return { card, outcome: "ambiguous", reason: "Saved Elusive wording does not identify its appended Dodge" };
+  const updated = {
+    ...card,
+    effects: [...card.effects.slice(0, -1), effect],
+    descriptionLines: card.descriptionLines.map((line) => line.replaceAll(oldClause, newClause)),
+  };
+  return {
+    card: card.description
+      ? withCardDescription(
+          updated,
+          card.description.map((line) => ({
+            ...line,
+            parts: line.parts.map((part) => (typeof part === "string" ? part.replaceAll(oldClause, newClause) : part)),
+          })),
+        )
+      : updated,
+    outcome: "normalized",
+  };
+}
+
+/** Normalize identifiable retired rules without replacing saved modifications from the catalog. */
 export function normalizeSavedCardDefinition(card: BattleCard): NormalizationResult {
+  const elusive = normalizeElusive(card);
+  const shieldBash = normalizeShieldBash(elusive.card);
+  if (shieldBash.outcome === "ambiguous") return shieldBash;
+  if (elusive.outcome === "ambiguous") return { ...elusive, card: shieldBash.card };
+  return { card: shieldBash.card, outcome: elusive.outcome === "normalized" ? "normalized" : shieldBash.outcome };
+}
+
+function normalizeShieldBash(card: BattleCard): NormalizationResult {
   if (card.id !== "shield-bash" || (card.definitionVersion ?? 0) >= SHIELD_BASH_SPEND_VERSION)
     return { card, outcome: "unchanged" };
   const selectors: Damage[] = [];

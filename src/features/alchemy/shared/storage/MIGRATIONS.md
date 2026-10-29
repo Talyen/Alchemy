@@ -60,6 +60,16 @@ or unmatched/custom wording remain unchanged and unversioned; the normalizer
 returns an explicit ambiguous result for diagnosis rather than guessing. Do not
 claim those payloads migrated. Fresh catalog cards already carry revision 1.
 
+Elusive Transmutation now appends a 50% next-attack Dodge probability. Identifiable
+saved Elusive cards normalize only that appended top-level effect and its wording,
+including saved previews and battle piles; native guaranteed Dodge is unchanged.
+The pending percentage is a separate integer combat flag and survives current-format
+save/resume. An already-armed guaranteed Boolean has no source provenance and is
+still a valid current native Dodge state, so restore preserves it for one eligible
+attack. Card normalization changes future Elusive plays to 50%; it does not restart
+the battle, reset Health or piles, advance progression, or draw RNG. The attack
+resolver consumes both existing preparations before Dodge rewards can arm another.
+
 ### Schema change contract
 
 Choose a safe additive default or a transformation under [When to increment](#when-to-increment).

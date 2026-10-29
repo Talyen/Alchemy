@@ -127,6 +127,7 @@ export type CombatTextStat =
   | "playNextCardTwice"
   | "nextArcheryCardFree"
   | "dodgeNextAttack"
+  | "dodgeNextAttackChance"
   | "draw"
   | "companion"
   | "wish"

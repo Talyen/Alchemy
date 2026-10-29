@@ -51,6 +51,7 @@ export const FLAG_DEFINITIONS = {
   nextArcheryCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextNatureCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   dodgeNextAttack: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  dodgeNextAttackChance: { default: 0 as const, secondaryValue: 0 as const, lifetime: "until-consumed" },
 
   enemyAttackDamageReduction: { default: 0 as const, secondaryValue: null, lifetime: "combat" },
   concussionReady: { default: false as const, secondaryValue: null, lifetime: "combat" },

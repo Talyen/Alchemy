@@ -209,10 +209,9 @@ function tryDodgeEnemyDamagePacket(
   state: BattleState,
   combatTexts: CombatTextEvent[],
   canDodge: boolean,
-): BattleState | null {
-  const dodged = tryDodgeEnemyAttackPacket(state, combatTexts, canDodge);
-  if (!dodged) return null;
-  return applyOnPlayerDodge(dodged, combatTexts);
+): { state: BattleState; dodged: boolean } {
+  const result = tryDodgeEnemyAttackPacket(state, combatTexts, canDodge);
+  return result.dodged ? { state: applyOnPlayerDodge(result.state, combatTexts), dodged: true } : result;
 }
 
 export function resolveEnemyAttackHit(
@@ -226,8 +225,9 @@ export function resolveEnemyAttackHit(
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const preparedDamage = prepareEnemyDamage(state, effect, damageOptions);
   const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge && preparedDamage.attemptedDamage > 0);
-  if (dodged) {
-    const nextState = resolvePendingBattleReactions(dodged, combatTexts);
+  state = dodged.state;
+  if (dodged.dodged) {
+    const nextState = resolvePendingBattleReactions(state, combatTexts);
     return {
       state: nextState,
       attemptedDamage: preparedDamage.attemptedDamage,
