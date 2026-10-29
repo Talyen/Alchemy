@@ -1,7 +1,7 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
-import { isPlayerDefeated, getBattleCompanionDamageModifiers } from "@/lib/battle";
+import { isPlayerDefeated, getBattleCompanionDamageModifiers, getBattleCompanionDescriptionLines } from "@/lib/battle";
 import { BATTLE_ACTOR_TOP, BATTLE_ACTOR_VIEWPORT_OFFSET } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import type { CSSProperties } from "react";
@@ -88,6 +88,7 @@ export function BattleActors({
                     turnShineColors={getCompanionShineColors(battleState.activeCompanion)}
                     bondLevel={battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0}
                     damageBonus={getBattleCompanionDamageModifiers(battleState)}
+                    descriptionLines={getBattleCompanionDescriptionLines(battleState.activeCompanion, battleState)}
                   />
                 </div>
               ) : null

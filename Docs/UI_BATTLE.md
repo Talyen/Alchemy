@@ -373,6 +373,16 @@ never consumes live RNG, resources, or prepared effects. Collection and other
 nonbattle views retain authored descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
 defines execution seams, uncertainty limits, and effect-authoring requirements.
 
+Companion summon cards, pile inspection and the active Companion panel use the
+same detached effect inspection in Companion action scope. Bond and Companion
+bonuses are applied once before ordinary typed Gear, Forge and current conditional
+Talents such as First Blood. Numbers update when those conditions change. Damage
+types with different known values retain a range; utility and Bond repeat wording
+remain intact. Like card attacks, these are offensive packet values before target
+Block/Armor, critical strikes and Dodge, rather than promised Health loss or a
+sum of separate follow-up effects. Nonbattle descriptions retain their existing
+Bond/Companion context without borrowing a previous battle's target.
+
 Proportions, per-Mana coefficients, explicit Forge-scaling operands, multiplication
 factors, durations and charges remain rule operands. Replacing one with a current
 total would change or count its formula twice; these rules do not gain a separate

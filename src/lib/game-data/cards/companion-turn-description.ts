@@ -4,13 +4,22 @@ import type { CompanionDefinition, BattleCardEffect } from "../types";
 
 function companionAction(effect: BattleCardEffect): string | null {
   switch (effect.kind) {
-    case "damage": {
-      const amount = effect.amount;
+    case "damage":
+    case "random-damage": {
+      const amount =
+        effect.kind === "damage" || effect.minAmount === effect.maxAmount
+          ? effect.kind === "damage"
+            ? effect.amount
+            : effect.minAmount
+          : `${effect.minAmount}–${effect.maxAmount}`;
       const types = effect.damageTypePool?.length
         ? effect.damageTypePool.map(capitalizeWord)
-        : [capitalizeWord(effect.damageType)];
+        : effect.kind === "damage"
+          ? [capitalizeWord(effect.damageType)]
+          : [];
       const last = types.pop();
       const damageLabel = types.length > 0 ? `${types.join(", ")} or ${last}` : last;
+      if (!damageLabel) return null;
       return `Deals ${amount} ${damageLabel} damage`;
     }
     case "heal":
@@ -47,7 +56,6 @@ function companionAction(effect: BattleCardEffect): string | null {
     case "remove-enemy-armor":
     case "multiply-enemy-status":
     case "cleanse-player-status-to-damage":
-    case "random-damage":
     case "repeat-over-turns":
     case "next-hit-crit":
     case "next-hit-leech":

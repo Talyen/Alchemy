@@ -7,7 +7,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button";
 import { SelectableCard } from "@/features/alchemy/shared/ui/cards/selectable-card";
-import { cardById, type BattleCard } from "@/lib/game-data/index";
+import { cardById, companionLibrary, type BattleCard } from "@/lib/game-data/index";
+import { getBattleCompanionDescriptionLines } from "@/lib/battle/card-damage-inspection";
+import { CompanionPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/companion-panel";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { getCardInspectionShineColors } from "@/features/alchemy/shared/config/shine-palettes";
 import { CardTitle } from "@/features/alchemy/shared/ui/cards/card-description-ui";
@@ -124,6 +126,41 @@ describe("BattleCardButton", () => {
     expect(result.current.companionDamageModifiers.damageBonus).toBe(3);
     rerender({ battle: { ...state, enemyStatuses: { ...state.enemyStatuses, bleed: 0 } } });
     expect(result.current.companionDamageModifiers.damageBonus).toBe(0);
+  });
+
+  it("updates a summon hover's known typed damage when First Blood stops applying", () => {
+    const state = patchBattleState({
+      currentEnemy: { traits: [] },
+      talentEffects: { companionBondLevels: { panther: 1 }, bleedUnwoundedBonusPercent: 25 },
+      gearEffects: { flatBleedDamage: 6 },
+    });
+    const { rerender } = render(<LiveInspection state={state} inspectedCard={cardById["panther-companion"]!} />);
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Inspect Slash" }).parentElement!);
+    expect(screen.getByRole("tooltip").textContent).toContain("Deals 10 Bleed damage each turn");
+    rerender(
+      <LiveInspection
+        state={{ ...state, enemyStatuses: { ...state.enemyStatuses, bleed: 1 } }}
+        inspectedCard={cardById["panther-companion"]!}
+      />,
+    );
+    expect(screen.getByRole("tooltip").textContent).toContain("Deals 8 Bleed damage each turn");
+    expect(screen.getByRole("tooltip").textContent).not.toContain("Attack Power");
+  });
+
+  it("uses the same inspected wording in the active Companion panel", () => {
+    const state = patchBattleState({
+      currentEnemy: { traits: [] },
+      talentEffects: { companionBondLevels: { panther: 1 }, bleedUnwoundedBonusPercent: 25 },
+      gearEffects: { flatBleedDamage: 6 },
+    });
+    render(
+      <CompanionPanel
+        companion={companionLibrary.panther}
+        descriptionLines={getBattleCompanionDescriptionLines(companionLibrary.panther, state)}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByTestId("active-companion"));
+    expect(screen.getByRole("tooltip").textContent).toContain("Deals 10 Bleed damage each turn");
   });
 
   it("removes a hidden card in transit from keyboard navigation until it is revealed", () => {

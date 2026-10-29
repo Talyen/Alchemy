@@ -25,6 +25,7 @@ export function CompanionPanel({
   shaking = false,
   damageBonus = 0,
   bondLevel = 0,
+  descriptionLines,
   ccKeyword = null,
   turnActive = false,
   turnShineColors,
@@ -34,6 +35,7 @@ export function CompanionPanel({
   shaking?: boolean;
   damageBonus?: number | CompanionDamageModifiers;
   bondLevel?: number;
+  descriptionLines?: string[];
   ccKeyword?: ActiveCcKeyword | null;
   turnActive?: boolean;
   turnShineColors?: readonly string[];
@@ -103,7 +105,7 @@ export function CompanionPanel({
       >
         <TooltipHeader>{i18n.displayText(companion.title)}</TooltipHeader>
         <DescriptionLines
-          lines={getCompanionDescriptionLines(companion, bondLevel, damageBonus)}
+          lines={descriptionLines ?? getCompanionDescriptionLines(companion, bondLevel, damageBonus)}
           idPrefix={`companion-${companion.id}`}
         />
       </PortaledTooltip>
