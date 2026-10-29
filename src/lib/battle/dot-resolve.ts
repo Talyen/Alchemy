@@ -200,6 +200,7 @@ export function detonateEnemyStatuses(
       if (pulse.finalDamage > 0) {
         const healthLost = Math.min(pulse.finalDamage, Math.max(0, previousHealth - earlierDamage));
         emitDamageText(combatTexts, "enemy", pulse.status, pulse.finalDamage, {
+          detonation: true,
           ...(healthLost !== pulse.finalDamage ? { healthLost } : {}),
         });
       }

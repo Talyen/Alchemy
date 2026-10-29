@@ -173,6 +173,15 @@ packets for gameplay, audio and impact strength; visual aggregation never turns
 a reaction into a Critical. A direct total containing Critical damage retains its
 existing accent and accessible label saying it includes a Critical.
 
+Consumed Burn, Bleed and Poison detonations always use central damage feedback,
+including detonations triggered by talents or gear. Within one resolved action,
+the same recipient's direct hit and detonation can share a same-type total from
+their actual resolved receipts. Mixed types retain separate typed central flights;
+reactions, periodic ticks and distinct Companion actions remain separate. A total
+with a Critical constituent says it includes a Critical, without making its
+detonation Critical. Detonation totals do not merge into later action bursts.
+Original receipts still own mitigation, overkill, impact and audio facts.
+
 Critical damage retains ordinary typed color/icon with a brief pale flash and
 gold glow, without changing font size, weight or angle. Reduced/disabled motion
 keeps a steady glow for the ordinary lifetime. Critical remains in the accessible

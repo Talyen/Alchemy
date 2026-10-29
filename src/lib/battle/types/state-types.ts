@@ -153,6 +153,8 @@ export interface NumericCombatTextEvent extends CombatTextIntent {
   absorbedDamage?: number;
   critical?: boolean;
   periodic?: boolean;
+  /** Actual consumed DoT payoff, distinct from a natural tick or direct hit. */
+  detonation?: true;
   /** Exact earned payoff origin; distinct from its single output damage type and card intent. */
   reactionId?: ReactionId;
 }
