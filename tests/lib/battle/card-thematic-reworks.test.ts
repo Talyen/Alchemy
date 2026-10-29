@@ -41,6 +41,20 @@ describe("thematic card effects", () => {
     expect(cardById.steal!.descriptionLines).toEqual(["Deal 2 Stun damage", "Steal 1 Gold"]);
   });
 
+  it("Blackjack steals Gold only while the enemy is Stunned and retains its Gold binding", () => {
+    expect(play("blackjack").gold).toBe(0);
+    expect(play("blackjack", { enemyCC: { stunSkipTurns: 1 } }).gold).toBe(2);
+
+    const card = cardById.blackjack!;
+    expect(card.descriptionLines).toEqual(["Deal 2 Stun damage", "Steal 2 Gold if the enemy is Stunned"]);
+    const goldTarget = getEditableCorruptionTargets(card).find((target) =>
+      target.edits.some((edit) => edit.kind === "gain-gold"),
+    )!;
+    const upgraded = applyNumericCorruption(card, goldTarget, 1);
+    expect(upgraded.descriptionLines[1]).toBe("Steal 3 Gold if the enemy is Stunned");
+    expect(upgraded.effects[1]).toEqual({ kind: "gain-gold", amount: 3, ifEnemyStunned: true });
+  });
+
   it.each([
     ["combustion", "burn", 2],
     ["hemorrhage", "bleed", 4],

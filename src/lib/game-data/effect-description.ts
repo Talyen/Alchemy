@@ -14,11 +14,11 @@ import type { BattleCardEffect } from "./types";
 
 type EffectDescription = CardDescriptionPart[][];
 
-function joinOptions(items: readonly string[], alwaysComma = false): string {
+function joinOptions(items: readonly string[]): string {
   const rest = [...items];
   const last = rest.pop() ?? "";
   if (rest.length === 0) return last;
-  return `${rest.join(", ")}${rest.length > 1 || alwaysComma ? "," : ""} or ${last}`;
+  return `${rest.join(", ")}${rest.length > 1 ? "," : ""} or ${last}`;
 }
 
 function value(
@@ -49,7 +49,7 @@ function createConditionalDamageLine(
   if (effect.damageTypeIfTargetFrozen)
     return [
       ...base,
-      "; Against Frozen enemies, deal ",
+      ". Against Frozen enemies, deal ",
       value(effect, address, "amountIfTargetFrozen"),
       ` ${capitalizeWord(effect.damageTypeIfTargetFrozen)} instead`,
     ];
@@ -93,7 +93,7 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
         value(effect, address, "minAmount"),
         "–",
         value(effect, address, "maxAmount"),
-        ` ${effect.damageTypePool?.length ? joinOptions(effect.damageTypePool.map(capitalizeWord), true) : "Random"} damage`,
+        ` ${effect.damageTypePool?.length ? joinOptions(effect.damageTypePool.map(capitalizeWord)) : "Random"} damage`,
       ];
     case "player-status": {
       const status = capitalizeWord(effect.status);
@@ -114,7 +114,7 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
           amount(),
           " Armor",
         ];
-      if (effect.statusPool) return ["Gain ", amount(), ` ${joinOptions(effect.statusPool.map(capitalizeWord), true)}`];
+      if (effect.statusPool) return ["Gain ", amount(), ` ${joinOptions(effect.statusPool.map(capitalizeWord))}`];
       if (
         effect.status === "block" ||
         effect.status === "armor" ||
