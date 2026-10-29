@@ -66,26 +66,18 @@ function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
   return { hand: nextHand, pendingHandCards: queued.slice(slots) };
 }
 
-function reportPendingHandDelivery(state: BattleState, hand: BattleCard[]) {
-  const delivered = hand.slice(state.hand.length).filter((card) => state.pendingHandCards.includes(card));
-  const uids = delivered.flatMap((card) => (card.uid === undefined ? [] : [card.uid]));
-  if (uids.length) state.onCardsDrawn?.(uids);
-}
-
 export function deliverPendingHandCards(state: BattleState): BattleState {
   if (state.hand.length >= MAX_HAND_SIZE || state.pendingHandCards.length === 0) return state;
-  const delivered = distributeHandCards(state.hand, state.pendingHandCards);
-  reportPendingHandDelivery(state, delivered.hand);
-  return { ...state, ...delivered };
+  // The saved queue can contain draws or created cards. Delivery is hand reflow,
+  // not a new deck operation, and must not invent a deck origin after resume.
+  return { ...state, ...distributeHandCards(state.hand, state.pendingHandCards) };
 }
 
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
   const received = { ...card, uid: state.nextCardUid };
-  const delivered = distributeHandCards(state.hand, [...state.pendingHandCards, received]);
-  reportPendingHandDelivery(state, delivered.hand);
   return {
     ...state,
-    ...delivered,
+    ...distributeHandCards(state.hand, [...state.pendingHandCards, received]),
     nextCardUid: state.nextCardUid + 1,
   };
 }
@@ -179,7 +171,6 @@ function reportDraw(
   combatTexts?: CombatTextEvent[],
   feedback?: CombatTextEvent["feedback"],
 ): BattleState {
-  reportPendingHandDelivery(state, nextState.hand);
   if (nextState.nextCardUid > state.nextCardUid) {
     state.onCardsDrawn?.(
       Array.from({ length: nextState.nextCardUid - state.nextCardUid }, (_, index) => state.nextCardUid + index),

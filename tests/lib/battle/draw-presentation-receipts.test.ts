@@ -4,7 +4,6 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
   addCardToHandOrQueue,
   applyDrawResult,
-  deliverPendingHandCards,
   drawFromState,
   drawKeywordCard,
   takeRandomCardFromDeck,
@@ -99,22 +98,63 @@ describe("resolved draw presentation receipts", () => {
     expect(chosen.drawnCardUids ?? []).toEqual([]);
   });
 
-  it("reports keyword, random and overflow deliveries through the same draw boundary", () => {
-    for (const kind of ["keyword", "random", "overflow"] as const) {
+  it("reports actual keyword and random deck draws through the same draw boundary", () => {
+    for (const kind of ["keyword", "random"] as const) {
       const onCardsDrawn = vi.fn();
       const state = patchBattleState({
         hand: [],
         deck: [cardById.slash!],
-        pendingHandCards: kind === "overflow" ? [{ ...cardById.block!, uid: 8 }] : [],
         nextCardUid: 10,
         onCardsDrawn,
       });
       if (kind === "keyword") drawKeywordCard(state, "physical");
-      else if (kind === "random") takeRandomCardFromDeck(state);
-      else deliverPendingHandCards(state);
-      expect(onCardsDrawn).toHaveBeenCalledExactlyOnceWith([kind === "overflow" ? 8 : 10]);
+      else takeRandomCardFromDeck(state);
+      expect(onCardsDrawn).toHaveBeenCalledExactlyOnceWith([10]);
     }
   });
+
+  it.each(["wish", "draw"] as const)(
+    "settles a full-hand %s queue delivery after resume and a later play without inventing a new deck draw",
+    async (source) => {
+      const received = cardById.block!;
+      const initial = patchBattleState({
+        hand: Array.from({ length: MAX_HAND_SIZE }, (_, uid) => ({ ...cardById.slash!, uid })),
+        deck: [received],
+        discard: [],
+        nextCardUid: 20,
+        enemyHealth: 1000,
+        enemyMaxHealth: 1000,
+        wishOptions: source === "wish" ? [received] : null,
+      });
+      const queued =
+        source === "wish"
+          ? resolveBattleWish(battleSnapshot(initial), received.id, { rng: initial.rng }).state
+          : battleSnapshot(applyDrawResult(initial, drawFromState(initial, 1)));
+      expect(queued.hand).toEqual(initial.hand);
+      expect(queued.pendingHandCards).toMatchObject([{ id: received.id, uid: 20 }]);
+      // Exercise the existing save representation, with no transient origin hook.
+      const restored: typeof queued = JSON.parse(JSON.stringify(queued));
+      const rng = vi.fn(() => 0.99);
+      const result = resolveBattleCard(restored, initial.hand[0]!.id, 0, { rng });
+      const baselineRng = vi.fn(() => 0.99);
+      const baseline = playBattleCardResolved({ ...restored, rng: baselineRng }, initial.hand[0]!.id, 0);
+      expect(result.state.hand.map(({ uid }) => uid)).toEqual([1, 2, 3, 4, 5, 6, 20]);
+      expect(result.state.pendingHandCards).toEqual([]);
+      expect(result.state.nextCardUid).toBe(21);
+      expect(result.drawnCardUids).toEqual([]);
+      expect(result.state).toEqual(battleSnapshot(baseline.state));
+      expect(rng).toHaveBeenCalledTimes(baselineRng.mock.calls.length);
+      const deps = makeDrawSequenceDeps();
+      const onReveal = vi.fn();
+      await expect(
+        runHandDrawSequence(restored.hand, result.state, onReveal, 0, deps, result.drawnCardUids),
+      ).resolves.toBe(false);
+      expect(onReveal).toHaveBeenCalledOnce();
+      expect(deps.animateDrawnHand).not.toHaveBeenCalled();
+      expect(deps.setHiddenHandCardKeys).not.toHaveBeenCalled();
+      expect(deps.playback.pendingDraws).toBe(0);
+    },
+  );
 
   it("hides and flies only the actual draw when a created card has the same ID", async () => {
     const created = { ...cardById.slash!, uid: 20 };

@@ -304,6 +304,8 @@ Tuning lives in `CARD_TRANSFER_CONFIG`.
 Library Owl's actual draws use the same flights after the ordinary turn hand,
 while retaining its utility cast cue. Resolved draw identities distinguish those
 cards from newly created Wish cards, which do not fly out of the Draw Pile.
+Later delivery from Hand Overflow uses normal hand reflow without replaying a
+deck flight or departure sound, including created cards that were queued there.
 
 Existing playback owns batch completion, input gates, hidden-card handoff,
 cancellation, and timers. A batch waits for its last flight rather than pausing
