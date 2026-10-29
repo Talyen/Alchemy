@@ -53,9 +53,14 @@ export async function runHandDrawSequence(
   onReveal: DrawPresentationReveal,
   session: number,
   deps: HandDrawSequenceDeps,
+  drawnCardUids?: readonly number[],
 ): Promise<boolean> {
   if (!deps.isSessionActive(session)) return false;
-  const drawnCards = detectNewHandCards(oldHand, newState.hand);
+  const received = detectNewHandCards(oldHand, newState.hand);
+  const drawnCards =
+    drawnCardUids === undefined
+      ? received
+      : received.filter((card) => card.uid !== undefined && drawnCardUids.includes(card.uid));
   if (drawnCards.length === 0) {
     if (deps.isSessionActive(session)) {
       onReveal();
@@ -99,6 +104,7 @@ export interface BattleDrawRequest {
   deps: HandDrawSequenceDeps;
   errorContext: string;
   onSettled?: () => void;
+  drawnCardUids?: readonly number[];
 }
 
 export async function runBattleDraw(request: BattleDrawRequest): Promise<boolean> {
@@ -109,6 +115,7 @@ export async function runBattleDraw(request: BattleDrawRequest): Promise<boolean
       request.onReveal,
       request.session,
       request.deps,
+      request.drawnCardUids,
     );
   } catch (err) {
     logBattleError(request.errorContext, err);

@@ -95,16 +95,26 @@ export async function playTurnFrames(
       () => presentation.setDisplayedBattle(turn.state),
       sessionNum,
       deps,
+      frame.drawnCardUids,
     );
     if (!deps.isSessionActive(sessionNum)) return;
     if (!turn.playerTurnSkipped && !companion) options?.onHandDrawn?.();
     if (companion) {
       if (!(await deps.playback.waitForDelay(sessionNum, COMPANION_ATTACK_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
-      if (!options?.isCardPlayInProgress?.()) {
-        presentation.setDisplayedBattle(companion.state);
-      }
-      presentCompanionResolution(frame, presentation, true);
+      if (options?.isCardPlayInProgress?.()) presentCompanionResolution(frame, presentation, true);
+      else
+        await runHandDrawSequence(
+          turn.state.hand,
+          companion.state,
+          () => {
+            presentation.setDisplayedBattle(companion.state);
+            presentCompanionResolution(frame, presentation, true);
+          },
+          sessionNum,
+          deps,
+          companion.drawnCardUids,
+        );
       await presentation.waitForCompanionActions();
       if (!deps.isSessionActive(sessionNum)) return;
       if (!turn.playerTurnSkipped) options?.onHandDrawn?.();
@@ -190,7 +200,9 @@ export function createBattleEndTurnUi(
                 ctx.playback.completeAction(sessionNum);
               });
             },
-            isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
+            // The end-turn action itself owns the playing phase. Only a newer
+            // card draw owns the hand and must prevent a stale frame reveal.
+            isCardPlayInProgress: () => ctx.playback.pendingCardDraws > 0,
           },
         );
       } catch (error) {

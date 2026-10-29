@@ -198,6 +198,8 @@ export interface CompanionActionCue {
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
   rng: Rng;
+  /** Actual draw/overflow deliveries, not cards created by Wish. Never persisted. */
+  onCardsDrawn?: (uids: readonly number[]) => void;
   onCompanionAction?: (cue: CompanionActionCue) => void;
   companionActionSequence?: { current: number };
   observer?: BattleResolutionObserver;

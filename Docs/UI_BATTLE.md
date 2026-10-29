@@ -296,6 +296,9 @@ Pile, and scale to its top card. Both follow the shallow curved path in
 with batch-accelerated timing. Flights run sequentially;
 each departure starts its sound. The live card identity follows hand reflow.
 Tuning lives in `CARD_TRANSFER_CONFIG`.
+Library Owl's actual draws use the same flights after the ordinary turn hand,
+while retaining its utility cast cue. Resolved draw identities distinguish those
+cards from newly created Wish cards, which do not fly out of the Draw Pile.
 
 Existing playback owns batch completion, input gates, hidden-card handoff,
 cancellation, and timers. A batch waits for its last flight rather than pausing

@@ -66,16 +66,26 @@ function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
   return { hand: nextHand, pendingHandCards: queued.slice(slots) };
 }
 
+function reportPendingHandDelivery(state: BattleState, hand: BattleCard[]) {
+  const delivered = hand.slice(state.hand.length).filter((card) => state.pendingHandCards.includes(card));
+  const uids = delivered.flatMap((card) => (card.uid === undefined ? [] : [card.uid]));
+  if (uids.length) state.onCardsDrawn?.(uids);
+}
+
 export function deliverPendingHandCards(state: BattleState): BattleState {
   if (state.hand.length >= MAX_HAND_SIZE || state.pendingHandCards.length === 0) return state;
-  return { ...state, ...distributeHandCards(state.hand, state.pendingHandCards) };
+  const delivered = distributeHandCards(state.hand, state.pendingHandCards);
+  reportPendingHandDelivery(state, delivered.hand);
+  return { ...state, ...delivered };
 }
 
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
   const received = { ...card, uid: state.nextCardUid };
+  const delivered = distributeHandCards(state.hand, [...state.pendingHandCards, received]);
+  reportPendingHandDelivery(state, delivered.hand);
   return {
     ...state,
-    ...distributeHandCards(state.hand, [...state.pendingHandCards, received]),
+    ...delivered,
     nextCardUid: state.nextCardUid + 1,
   };
 }
@@ -139,6 +149,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
   const deck = refilled.deck === state.deck ? [...refilled.deck] : refilled.deck;
   const rawCard = takeRandomItem(deck, battleRng);
   if (!rawCard) return null;
+  state.onCardsDrawn?.([state.nextCardUid]);
   const remaining = refillDeck(deck, refilled.discard, battleRng);
   return {
     card: { ...rawCard, uid: state.nextCardUid },
@@ -168,6 +179,12 @@ function reportDraw(
   combatTexts?: CombatTextEvent[],
   feedback?: CombatTextEvent["feedback"],
 ): BattleState {
+  reportPendingHandDelivery(state, nextState.hand);
+  if (nextState.nextCardUid > state.nextCardUid) {
+    state.onCardsDrawn?.(
+      Array.from({ length: nextState.nextCardUid - state.nextCardUid }, (_, index) => state.nextCardUid + index),
+    );
+  }
   const received =
     nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
   if (received > 0 && combatTexts) {

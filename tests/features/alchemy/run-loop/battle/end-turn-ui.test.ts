@@ -21,7 +21,10 @@ import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
-import { companionLibrary } from "@/lib/game-data";
+import { companionLibrary, type BattleCard } from "@/lib/game-data";
+import { CARDS_PER_TURN } from "@/lib/game-constants";
+import { getHandCardKey } from "@/features/alchemy/run-loop/battle/playable-hand";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 
 vi.mock("@/lib/animation/animation-prefs", () => ({
   isAnimationDisabled: () => false,
@@ -48,7 +51,10 @@ function makeUi(
     deck: slashDeck(8),
     activeCompanion: companionId ? companionLibrary[companionId] : null,
   });
-  mutateGameplayForTest((draft) => initializeActiveBattle(draft, initial));
+  mutateGameplayForTest((draft) => {
+    initializeActiveBattle(draft, initial);
+    setScreen(draft, "battle");
+  });
   let releaseDiscard!: () => void;
   const discard = new Promise<void>((resolve) => {
     releaseDiscard = resolve;
@@ -69,6 +75,7 @@ function makeUi(
     checkBattleEnd: vi.fn(() => false),
     clearAllBattleTimeouts: vi.fn(),
   } as unknown as ReturnType<typeof createBattleSession>;
+  const draws: BattleCard[][] = [];
   const deps = makeDrawSequenceDeps({
     setTransferInProgress: (active) => ctx.getPresentation().setCardTransferInProgress(active),
     setHiddenHandCardKeys: (update) => ctx.getPresentation().setHiddenHandCardKeys(update),
@@ -85,7 +92,8 @@ function makeUi(
         return true;
       },
     },
-    animateDrawnHand: async () => {
+    animateDrawnHand: async (cards) => {
+      draws.push(cards);
       if (rejectDraw) throw new Error("draw failed");
       onDraw?.(ctx);
     },
@@ -93,10 +101,46 @@ function makeUi(
   const transfers = { animateDiscardedHand: () => discard, getDrawSequenceDeps: () => deps } as unknown as ReturnType<
     typeof createBattleTransferDeps
   >;
-  return { ui: createBattleEndTurnUi(ctx, session, transfers), ctx, releaseDiscard };
+  return { ui: createBattleEndTurnUi(ctx, session, transfers), ctx, releaseDiscard, draws };
 }
 
 describe("End Turn execution and playback", () => {
+  it("hides each actual Owl draw before publishing its hand, animates it once, and releases successive turns", async () => {
+    vi.useFakeTimers();
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+    const { ui, ctx, releaseDiscard, draws } = makeUi(false, undefined, "library-owl");
+    const owlHands: Array<{ hand: BattleCard[]; hidden: readonly string[] }> = [];
+    const casts: string[] = [];
+    const unsubscribe = battlePresentation.subscribe((state) => {
+      if (state.displayedBattle?.hand.length === CARDS_PER_TURN + 1)
+        owlHands.push({ hand: state.displayedBattle.hand, hidden: state.hiddenHandCardKeys });
+      if (state.companionActionCue) casts.push(state.companionActionCue.kind);
+    });
+    using _subscription = createCleanup(unsubscribe);
+    for (let turn = 0; turn < 2; turn++) {
+      ui.handleEndTurn(readBattle(defaultGameSession).battleState);
+      const committed = readGameplayState(defaultGameSession);
+      releaseDiscard();
+      await vi.runAllTimersAsync();
+      expect(readGameplayState(defaultGameSession)).toBe(committed);
+      expect(ctx.playback.pendingDraws).toBe(0);
+      expect(ctx.playback.cardPlayInProgress).toBe(false);
+      expect(battlePresentation.getState().hiddenHandCardKeys).toEqual([]);
+      expect(battlePresentation.getState().cardTransferInProgress).toBe(false);
+      expect(battlePresentation.getState().displayedBattle).toBeNull();
+    }
+    expect(draws.map((cards) => cards.length)).toEqual([CARDS_PER_TURN, 1, CARDS_PER_TURN, 1]);
+    expect(draws[1]?.[0]?.uid).not.toBe(draws[3]?.[0]?.uid);
+    for (const cards of [draws[1]!, draws[3]!]) {
+      const card = cards[0]!;
+      const firstPublication = owlHands.find(({ hand }) => hand.at(-1)?.uid === card.uid)!;
+      expect(firstPublication).toBeDefined();
+      expect(firstPublication.hidden).toContain(getHandCardKey(card, CARDS_PER_TURN));
+    }
+    expect(casts).toContain("cast");
+    expect(battlePresentation.getState().companionActionCue).toBeNull();
+  });
+
   it.each(["library-owl", "wolf"] as const)("presents %s using its actual action type", async (companionId) => {
     vi.useFakeTimers();
     using _scopeCleanup = createCleanup(() => vi.useRealTimers());
@@ -112,6 +156,35 @@ describe("End Turn execution and playback", () => {
     // All queued action animations have completed; no stale cue survives.
     expect(after.companionActionCue).toBeNull();
     expect(readGameplayState(defaultGameSession)).toBe(committed);
+  });
+
+  it("cannot clear a replacement hand or draw lease when an Owl transfer is cancelled", async () => {
+    vi.useFakeTimers();
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+    let count = 0;
+    let finishReplacement = () => {};
+    const { ui, ctx, releaseDiscard } = makeUi(
+      false,
+      (context) => {
+        if (++count !== 2) return;
+        context.playback.restart();
+        context.getPresentation().resetPresentation();
+        finishReplacement = context.playback.beginDraw(context.playback.id);
+        context.getPresentation().setHiddenHandCardKeys(() => ["replacement-card"]);
+        context.getPresentation().setCardTransferInProgress(true);
+      },
+      "library-owl",
+    );
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
+    const committed = readGameplayState(defaultGameSession);
+    releaseDiscard();
+    await vi.runAllTimersAsync();
+    expect(count).toBe(2);
+    expect(readGameplayState(defaultGameSession)).toBe(committed);
+    expect(ctx.playback.pendingDraws).toBe(1);
+    expect(battlePresentation.getState().hiddenHandCardKeys).toEqual(["replacement-card"]);
+    expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
+    finishReplacement();
   });
 
   it("commits before discard playback and blocks a second End Turn", () => {
