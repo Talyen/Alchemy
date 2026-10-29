@@ -46,21 +46,22 @@ export function CombatantStatusEffectPresentation({
     };
   }, [keyword, reducedMotion]);
 
-  if (!keyword) {
-    return <>{children}</>;
-  }
-
   return (
-    <div className={cn("relative rounded-shell-hero", className)} data-testid="combatant-status-effect">
+    <div
+      className={cn("relative rounded-shell-hero", className)}
+      data-testid={keyword ? "combatant-status-effect" : undefined}
+    >
       <div ref={wobbleRef} className="relative h-full w-full">
         {children}
-        <div
-          className="pointer-events-none absolute inset-px z-20 overflow-hidden rounded-[calc(var(--radius-shell-hero)-1px)]"
-          data-testid="combatant-status-effect-clip"
-          aria-hidden
-        >
-          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-        </div>
+        {keyword ? (
+          <div
+            className="pointer-events-none absolute inset-px z-20 overflow-hidden rounded-[calc(var(--radius-shell-hero)-1px)]"
+            data-testid="combatant-status-effect-clip"
+            aria-hidden
+          >
+            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+          </div>
+        ) : null}
       </div>
     </div>
   );

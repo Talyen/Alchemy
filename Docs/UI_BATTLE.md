@@ -72,6 +72,8 @@ dimensions, contain placement and any in-progress clip blend. A temporarily
 unready displayed buffer stays paused until it can be captured; it never swaps to
 static art during that handoff. Static-art death is used only when static fallback
 was already displayed. No video frame from another portrait or earlier clip is cached.
+The crowd-control wrapper retains its portrait subtree when its effect clears, so
+death can freeze the displayed decoder rather than mounting a new fallback portrait.
 
 Prepared clips contain 60 fps motion interpolation, computed offline, and filtered
 640/1280/1920-pixel variants. The player selects the smallest width covering the

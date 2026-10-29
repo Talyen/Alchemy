@@ -3,8 +3,10 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { BossIdleArt } from "@/features/alchemy/run-loop/battle/presentation/ui/boss-idle-art";
 import { SliceDeath } from "@/features/alchemy/run-loop/battle/presentation/ui/slice-death";
+import { CombatantStatusEffectPresentation } from "@/features/alchemy/run-loop/battle/presentation/ui/combatant-status-effect-presentation";
 
 vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/slice-death", () => ({ SliceDeath: vi.fn(() => null) }));
+vi.mock("@/lib/animation/combatant-status-effect-loop", () => ({ startCombatantStatusEffectLoop: () => () => {} }));
 const clips = ["a", "b"].map((id) => ({
   variants: [
     { width: 640, src: `${id}-640.mp4` },
@@ -186,6 +188,24 @@ it("does not use a stale video frame after playback has failed back to static ar
   rerender(deadPortrait);
   expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame).toBeUndefined();
   expect(context.drawImage).not.toHaveBeenCalled();
+});
+
+it("preserves the mounted idle video when death clears a Stunned portrait wrapper", () => {
+  const context = frameContext();
+  const view = render(
+    <CombatantStatusEffectPresentation keyword="stun">
+      <BossIdleArt clips={clips} art="portrait.webp" title="Boss" isDead={false} imageClassName="aspect-video" />
+    </CombatantStatusEffectPresentation>,
+  );
+  const originalVideo = view.container.querySelector("video")!;
+  readyFrame(originalVideo);
+  fireEvent.playing(originalVideo);
+  originalVideo.currentTime = 3.25;
+  view.rerender(<CombatantStatusEffectPresentation keyword={null}>{deadPortrait}</CombatantStatusEffectPresentation>);
+  expect(view.queryByTestId("combatant-status-effect")).toBeNull();
+  expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame).toBeInstanceOf(HTMLCanvasElement);
+  expect(context.drawImage.mock.calls[0]![0]).toBe(originalVideo);
+  expect(originalVideo.currentTime).toBe(3.25);
 });
 afterEach(() => {
   cleanup();
