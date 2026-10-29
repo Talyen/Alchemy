@@ -42,6 +42,7 @@ function mockSliceLayout() {
     setLineDash: vi.fn(),
     arc: vi.fn(),
     fillRect: vi.fn(),
+    drawImage: vi.fn(),
     strokeStyle: "",
     fillStyle: "",
     lineWidth: 1,
@@ -50,6 +51,7 @@ function mockSliceLayout() {
     globalAlpha: 1,
   };
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
+  return ctx;
 }
 
 describe("SliceDeath", () => {
@@ -74,5 +76,34 @@ describe("SliceDeath", () => {
     const { container } = render(<SliceDeath imageUrl="/enemy.webp" alt="Goblin" imageClassName="h-full" />);
     expect(playSliceDeath).toHaveBeenCalledOnce();
     expect(container.querySelectorAll("img")).toHaveLength(2);
+  });
+
+  it("draws both death halves from the same frozen video pixels before animation, preserving geometry", () => {
+    const context = mockSliceLayout();
+    const frame = document.createElement("canvas");
+    frame.width = 1920;
+    frame.height = 1080;
+    const { container, getByRole } = render(
+      <SliceDeath
+        imageUrl="/unused-static.webp"
+        frame={frame}
+        alt="Countess"
+        imageClassName="aspect-video h-portrait object-contain"
+      />,
+    );
+    expect(container.querySelector("img")).toBeNull();
+    const halves = [...container.querySelectorAll("canvas")].slice(0, 2);
+    expect(halves.map((half) => [half.width, half.height])).toEqual([
+      [1920, 1080],
+      [1920, 1080],
+    ]);
+    expect(
+      halves.every((half) => half.classList.contains("aspect-video") && half.classList.contains("h-portrait")),
+    ).toBe(true);
+    expect(halves.every((half) => !half.classList.contains("border"))).toBe(true);
+    expect(context.drawImage).toHaveBeenCalledTimes(2);
+    expect(context.drawImage).toHaveBeenNthCalledWith(1, frame, 0, 0);
+    expect(context.drawImage).toHaveBeenNthCalledWith(2, frame, 0, 0);
+    expect(getByRole("img", { name: "Countess" })).toBe(halves[0]);
   });
 });

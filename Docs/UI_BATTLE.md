@@ -67,6 +67,11 @@ Only the short blend plays both decoders. This cosmetic selection never uses
 the world's gameplay RNG. Hidden tabs pause playback; reduced/disabled motion and
 unavailable video playback use the usual static artwork. Defeat freezes the
 visible video frame for the existing sliced-portrait effect.
+The death slice consumes a latched canvas directly, preserving the live surface's
+dimensions, contain placement and any in-progress clip blend. A temporarily
+unready displayed buffer stays paused until it can be captured; it never swaps to
+static art during that handoff. Static-art death is used only when static fallback
+was already displayed. No video frame from another portrait or earlier clip is cached.
 
 Prepared clips contain 60 fps motion interpolation, computed offline, and filtered
 640/1280/1920-pixel variants. The player selects the smallest width covering the
