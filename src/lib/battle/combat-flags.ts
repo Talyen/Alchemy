@@ -32,6 +32,7 @@ export const FLAG_DEFINITIONS = {
   pendingDeathgripBlock: { default: false as const, secondaryValue: null, lifetime: "combat" },
   pendingDisruptingPurge: { default: false as const, secondaryValue: null, lifetime: "combat" },
   cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  crackedHaloAttackHitsThisTurn: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
   holyRetributionUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   spitefulHealedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
 

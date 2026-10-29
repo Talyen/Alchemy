@@ -23,6 +23,7 @@ export interface CardEffectResolutionContext {
   ) => void;
   damageMultiplier?: number;
   baseDamageBonus?: number;
+  enemyHitFlatBonus?: number;
   guaranteedCrit?: boolean;
   /** Inspection-only authored operands, retained before choosing a conditional hit. */
   descriptionDamage?: { effect: Extract<BattleCardEffect, { kind: "damage" }>; potionMultiplier: number };

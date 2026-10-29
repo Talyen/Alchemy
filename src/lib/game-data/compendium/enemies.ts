@@ -299,7 +299,12 @@ export const enemyBestiary = [
     enemyType: "boss",
     traits: [
       trait("radiant-judgment", "Radiant Judgment", "Deals 1 Holy damage every other turn."),
-      { ...sharedWeaknesses.flickering },
+      trait(
+        "cracked-halo",
+        "Cracked Halo",
+        "Receives 2 additional damage from the second attack hit each turn.",
+        "negative",
+      ),
     ],
     abilityIds: ["smite", "judgment", "holy-radiance"],
   }),

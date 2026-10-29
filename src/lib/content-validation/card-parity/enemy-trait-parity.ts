@@ -8,6 +8,7 @@ export const TRAIT_REQUIRED_TERMS: Record<string, ReadonlyArray<string | readonl
   "hollow-frame": ["cannot", "leeched"],
   pilfer: ["steals", "block", "before each attack hit"],
   "snap-shut": ["block", "after each attack hit"],
+  "cracked-halo": ["2 additional damage", "second attack hit", "each turn"],
   "soul-harvest": ["purge", "leech", "below half health"],
   contagion: ["restores", "health", "opponent", "poison damage"],
   "frost-elemental": ["freeze"],
