@@ -154,29 +154,45 @@ describe("enemy attack damage", () => {
     expect(hit.state.enemyHealth).toBeGreaterThan(2);
   });
 
-  it.each([
-    ["burn", "armorMitigatesBurn"],
-    ["bleed", "armorMitigatesBleed"],
-  ] as const)("Armor protects against direct %s hits with the matching talent", (damageType, talent) => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: { armor: 3, block: 2 },
-      talentEffects: { [talent]: true },
-    });
-    const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 7 }, []);
-    expect(result.playerHealth).toBe(28);
-    expect(result.playerStatuses[damageType]).toBe(2);
-    expect(result.playerStatuses.armor).toBe(2);
-    expect(result.playerStatuses.block).toBe(0);
-    expect(state.playerHealth).toBe(30);
+  it.each(["burn", "freeze", "nature"] as const)(
+    "Elemental Ward applies a quarter of Armor to direct %s damage after Block",
+    (damageType) => {
+      const state = patchBattleState({
+        playerHealth: 30,
+        playerMaxHealth: 30,
+        playerStatuses: { armor: 6, block: 2 },
+        talentEffects: { armorMitigatesBurn: true },
+      });
+      const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 7 }, []);
+      expect(result.playerHealth).toBe(27);
+      expect(result.playerStatuses.block).toBe(0);
+      expect(result.playerStatuses.armor).toBe(5);
+      expect(state.playerHealth).toBe(30);
+    },
+  );
+
+  it("leaves direct elemental damage unmitigated without Elemental Ward", () => {
+    const state = patchBattleState({ playerStatuses: { armor: 6 } });
+    for (const damageType of ["burn", "freeze", "nature"] as const) {
+      const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 7 }, []);
+      expect(result.playerHealth).toBe(23);
+    }
   });
 
-  it("Fireward also protects against Cauterize's self-inflicted Burn", () => {
-    const state = patchBattleState({ playerStatuses: { armor: 3 }, talentEffects: { armorMitigatesBurn: true } });
-    const result = dealSelfDamage(state, 1, "burn", []);
-    expect(result.healthLost).toBe(0);
-    expect(result.state.playerHealth).toBe(state.playerHealth);
+  it("preserves full Armor mitigation for Bleed with Thick Hide", () => {
+    const state = patchBattleState({
+      playerStatuses: { armor: 3, block: 2 },
+      talentEffects: { armorMitigatesBleed: true },
+    });
+    const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "bleed", amount: 7 }, []);
+    expect(result.playerHealth).toBe(28);
+    expect(result.playerStatuses.bleed).toBe(2);
+  });
+
+  it("Elemental Ward protects against typed self-inflicted Burn using rounded quarter Armor", () => {
+    const state = patchBattleState({ playerStatuses: { armor: 6 }, talentEffects: { armorMitigatesBurn: true } });
+    expect(dealSelfDamage(state, 5, "burn", []).healthLost).toBe(3);
+    expect(dealSelfDamage(state, 5, "health", []).healthLost).toBe(5);
   });
 
   it.each(["sunder", "caustic", "banshee"])("Reactive Guard rewards Armor broken by %s", (source) => {

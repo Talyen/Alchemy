@@ -97,7 +97,9 @@ export const talentRows = [
     armorOnBlockCardChance: 10,
     armorOnBlockCard: 6,
   }),
-  armor("armor-burn-mitigate", "Fireward")("Flame", "Armor mitigates Burn damage taken", { armorMitigatesBurn: true }),
+  armor("armor-burn-mitigate", "Elemental Ward")("Flame", "25% of Armor mitigates Burn, Freeze, and Nature damage", {
+    armorMitigatesBurn: true,
+  }),
   armor("armor-break-block", "Reactive Guard")("ShieldPlus", "When Armor breaks, gain 3 Block", { armorBreakBlock: 3 }),
   armor("armor-start-combat", "Bulwark")("Square", "Start each combat with 2 Armor", { startArmor: 2 }),
   armor("armor-mitigate-bleed", "Thick Hide")("Hexagon", "Armor mitigates Bleed damage taken", {

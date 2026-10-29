@@ -1,6 +1,7 @@
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   BATTLE_CONFIG,
+  ELEMENTAL_WARD_ARMOR_PERCENT,
   HALF_DIVISOR,
   LABYRINTH_HALF_DAMAGE_WARDS,
   LABYRINTH_MODIFIER_CONFIG,
@@ -117,7 +118,7 @@ export function reduceDamageByMana(
 export function mitigatePlayerStatusDamage(state: BattleState, damage: number, status: EnemyStatusDamageId): number {
   const scaled = scaleReceivedPlayerDamage(reduceDamageByMana(state, damage), state.talentEffects, status);
   const resisted = mitigatePlayerCombatDamage(state, scaled, status);
-  return armorMitigatesElementalDamage(state, status) ? Math.max(0, resisted - state.playerStatuses.armor) : resisted;
+  return Math.max(0, resisted - elementalArmorAmount(state, status));
 }
 
 export function dealSelfDamage(
@@ -170,11 +171,14 @@ export function applyPoisonDamageArmorRider(
 
 export type ArmorDecayTarget = "player" | "enemy";
 
-export function armorMitigatesElementalDamage(state: BattleState, damageType: string): boolean {
-  return (
-    (damageType === "burn" && state.talentEffects.armorMitigatesBurn) ||
-    (damageType === "bleed" && state.talentEffects.armorMitigatesBleed)
-  );
+export function elementalArmorAmount(state: BattleState, damageType: string): number {
+  if (damageType === "bleed" && state.talentEffects.armorMitigatesBleed) return state.playerStatuses.armor;
+  if (
+    state.talentEffects.armorMitigatesBurn &&
+    (damageType === "burn" || damageType === "freeze" || damageType === "nature")
+  )
+    return Math.round((state.playerStatuses.armor * ELEMENTAL_WARD_ARMOR_PERCENT) / PERCENT_DENOMINATOR);
+  return 0;
 }
 
 export function removePlayerArmor(

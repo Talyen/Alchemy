@@ -112,3 +112,5 @@ export const REACTIVE_REWARD_CHANCES = {
   riposting: 50,
   bladedance: 25,
 } as const;
+
+export const ELEMENTAL_WARD_ARMOR_PERCENT = 25;

@@ -7,7 +7,7 @@ import {
 } from "../game-constants";
 import { emitDamageText } from "./combat-text-events";
 import { paceCombatDamage } from "./fight-pacing";
-import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
+import { elementalArmorAmount, reduceDamageByMana } from "./status-helpers";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { mitigatePlayerCombatDamage } from "./health-state";
@@ -44,14 +44,11 @@ function computeMitigatedDamage(
   options: Pick<EnemyDamageOptions, "ignorePlayerMitigation" | "ignoreArmor">,
   protectionState: BattleState,
 ) {
-  const armorMitigatesDamage =
-    effect.damageType === "physical" ||
-    effect.damageType === "stun" ||
-    armorMitigatesElementalDamage(state, effect.damageType);
-  const rawDamage =
-    armorMitigatesDamage && !options.ignoreArmor
-      ? Math.max(0, remainingDamage - state.playerStatuses.armor)
-      : remainingDamage;
+  const armor =
+    effect.damageType === "physical" || effect.damageType === "stun"
+      ? state.playerStatuses.armor
+      : elementalArmorAmount(state, effect.damageType);
+  const rawDamage = options.ignoreArmor ? remainingDamage : Math.max(0, remainingDamage - armor);
   const scaledDamage = options.ignorePlayerMitigation
     ? rawDamage
     : scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
