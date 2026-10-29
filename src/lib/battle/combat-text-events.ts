@@ -69,6 +69,7 @@ export function canMergeCombatText(event: CombatTextEvent, nextEvent: CombatText
     event.kind !== "notice" &&
     nextEvent.kind !== "notice" &&
     event.reactionId === nextEvent.reactionId &&
+    event.detonation === nextEvent.detonation &&
     event.impact === nextEvent.impact &&
     !!event.periodic === !!nextEvent.periodic &&
     event.additive !== false &&

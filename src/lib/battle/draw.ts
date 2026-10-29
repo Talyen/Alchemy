@@ -68,6 +68,8 @@ function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
 
 export function deliverPendingHandCards(state: BattleState): BattleState {
   if (state.hand.length >= MAX_HAND_SIZE || state.pendingHandCards.length === 0) return state;
+  // The saved queue can contain draws or created cards. Delivery is hand reflow,
+  // not a new deck operation, and must not invent a deck origin after resume.
   return { ...state, ...distributeHandCards(state.hand, state.pendingHandCards) };
 }
 
@@ -139,6 +141,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
   const deck = refilled.deck === state.deck ? [...refilled.deck] : refilled.deck;
   const rawCard = takeRandomItem(deck, battleRng);
   if (!rawCard) return null;
+  state.onCardsDrawn?.([state.nextCardUid]);
   const remaining = refillDeck(deck, refilled.discard, battleRng);
   return {
     card: { ...rawCard, uid: state.nextCardUid },
@@ -168,6 +171,11 @@ function reportDraw(
   combatTexts?: CombatTextEvent[],
   feedback?: CombatTextEvent["feedback"],
 ): BattleState {
+  if (nextState.nextCardUid > state.nextCardUid) {
+    state.onCardsDrawn?.(
+      Array.from({ length: nextState.nextCardUid - state.nextCardUid }, (_, index) => state.nextCardUid + index),
+    );
+  }
   const received =
     nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
   if (received > 0 && combatTexts) {

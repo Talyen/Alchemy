@@ -26,6 +26,38 @@ interface Playback {
   sources: IdleBuffer[];
 }
 
+function freezeFrame(element: HTMLElement, video: HTMLVideoElement, outgoing: HTMLVideoElement | null) {
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) return null;
+  if (outgoing && outgoing.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height =
+    element.clientWidth > 0 && element.clientHeight > 0
+      ? Math.round((canvas.width * element.clientHeight) / element.clientWidth)
+      : video.videoHeight;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  // Match the live black surface and object-contain placement, including letterboxing.
+  context.fillStyle = "black";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const draw = (source: HTMLVideoElement, opacity: number) => {
+    const scale = Math.min(canvas.width / source.videoWidth, canvas.height / source.videoHeight);
+    const width = source.videoWidth * scale;
+    const height = source.videoHeight * scale;
+    context.globalAlpha = opacity;
+    context.drawImage(source, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+  };
+  try {
+    if (outgoing && outgoing.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) draw(outgoing, 1);
+    draw(video, Number(getComputedStyle(video).opacity));
+    return canvas;
+  } catch {
+    // A seek can invalidate the decoded buffer between readiness and drawImage.
+    // Retain the paused visible element until its replacement frame is ready.
+    return null;
+  }
+}
+
 export function BossIdleArt({
   clips,
   art,
@@ -61,7 +93,7 @@ export function BossIdleArt({
     };
   });
   const [failed, setFailed] = useState(false);
-  const [deathImage, setDeathImage] = useState<string | null>(null);
+  const [deathFrame, setDeathFrame] = useState<HTMLCanvasElement | null>(null);
 
   useLayoutEffect(() => {
     const element = wrapper.current;
@@ -108,7 +140,7 @@ export function BossIdleArt({
       observer.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, []);
+  }, [deathFrame]);
 
   const active = playback.active;
   const activeSource = playback.sources[active]!.src;
@@ -157,29 +189,32 @@ export function BossIdleArt({
   }, [outgoing, active, activeClip, clips, failed, isDead]);
 
   useLayoutEffect(() => {
-    if (!isDead) return;
-    const video = playback.visible == null ? null : videos.current[playback.visible];
-    let image = art;
-    if (video && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext("2d");
-      if (context) {
-        const outgoing = playback.outgoing == null ? null : videos.current[playback.outgoing];
-        if (outgoing && outgoing.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-          context.drawImage(outgoing, 0, 0, canvas.width, canvas.height);
-          context.globalAlpha = Number(getComputedStyle(video).opacity);
-        }
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        image = canvas.toDataURL();
-      }
-    }
+    if (!isDead || deathFrame) return;
+    if (seamTimer.current !== null) clearTimeout(seamTimer.current);
     for (const node of videos.current) node?.pause();
-    setDeathImage(image);
-  }, [isDead, art, playback.visible, playback.outgoing]);
+    const element = wrapper.current;
+    const video = playback.visible == null ? null : videos.current[playback.visible];
+    if (!element || !video || failed) return;
+    const outgoing = playback.outgoing == null ? null : videos.current[playback.outgoing];
+    const capture = () => {
+      const frame = freezeFrame(element, video, outgoing);
+      if (frame) setDeathFrame(frame);
+    };
+    capture();
+    video.addEventListener("loadeddata", capture);
+    video.addEventListener("seeked", capture);
+    outgoing?.addEventListener("loadeddata", capture);
+    outgoing?.addEventListener("seeked", capture);
+    return () => {
+      video.removeEventListener("loadeddata", capture);
+      video.removeEventListener("seeked", capture);
+      outgoing?.removeEventListener("loadeddata", capture);
+      outgoing?.removeEventListener("seeked", capture);
+    };
+  }, [isDead, failed, deathFrame, playback.visible, playback.outgoing]);
 
-  if (deathImage) return <SliceDeath imageUrl={deathImage} alt={title} imageClassName={imageClassName} />;
+  if (isDead && (deathFrame || failed || playback.visible === null))
+    return <SliceDeath imageUrl={art} frame={deathFrame ?? undefined} alt={title} imageClassName={imageClassName} />;
 
   return (
     <div ref={wrapper} className={cn("relative isolate w-full overflow-hidden bg-black", imageClassName)}>
@@ -239,10 +274,14 @@ export function BossIdleArt({
             }}
             onEnded={() =>
               setPlayback((previous) =>
-                previous.active === slot && previous.outgoing === null ? { ...previous, active: 1 - slot } : previous,
+                !isDead && previous.active === slot && previous.outgoing === null
+                  ? { ...previous, active: 1 - slot }
+                  : previous,
               )
             }
-            onError={() => setFailed(true)}
+            onError={() => {
+              if (!isDead) setFailed(true);
+            }}
           />
         ))}
     </div>

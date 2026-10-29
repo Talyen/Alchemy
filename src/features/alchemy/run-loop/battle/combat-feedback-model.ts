@@ -17,7 +17,11 @@ export function prepareCombatFeedback(
   const consolidated: Array<CombatTextEvent & { includesCritical?: boolean }> = [];
   const reactions: ReactionAnnouncement[] = [];
   // Resolved frames can be saved and replayed; presentation must never mutate their events.
-  for (const event of events) {
+  for (const source of events) {
+    const event =
+      source.kind === "damage" && source.detonation
+        ? { ...source, feedback: "primary" as const, additive: false }
+        : source;
     // Immunity is already represented by the persistent control-immunity chip.
     // Keep its engine receipt for mechanics/audio, without allocating a floating flight.
     if (event.kind === "notice" && event.signal === "immune") continue;
@@ -46,19 +50,25 @@ export function prepareCombatFeedback(
           entry.impact !== false &&
           entry.target === event.target &&
           entry.stat === event.stat &&
+          entry.companionActionId === event.companionActionId &&
+          !!entry.periodic === !!event.periodic &&
           entry.reactionId === event.reactionId &&
           entry.feedback === event.feedback &&
           Math.sign(entry.amount) === Math.sign(event.amount),
       );
       const previous = consolidated[index];
       if (previous?.kind === "damage") {
-        // Repeated packets of one origin can total; direct and different reaction payoffs stay distinct.
-        const merged = [{ ...previous, impact: true, additive: true, periodic: false }];
-        mergeCombatText(merged, { ...event, impact: true, additive: true, periodic: false });
+        // One action's same-type hit and detonation share a total; keep the
+        // original receipts for audio, impact strength and Critical attribution.
+        const detonation = previous.detonation ?? event.detonation;
+        const details = { impact: true, additive: true, periodic: false, ...(detonation ? { detonation } : {}) };
+        const merged = [{ ...previous, ...details }];
+        mergeCombatText(merged, { ...event, ...details });
         const { impact: _impact, additive: _additive, periodic: _periodic, ...aggregate } = merged[0]!;
         consolidated[index] = {
           ...previous,
           ...aggregate,
+          ...(detonation ? { additive: false } : {}),
           ...(previous.periodic !== event.periodic ? { periodic: false } : {}),
           includesCritical: previous.critical === true || event.critical === true,
         };

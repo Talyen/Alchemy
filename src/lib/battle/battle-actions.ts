@@ -11,6 +11,7 @@ export interface ResolvedPlayerAction {
   state: BattleSnapshot;
   combatTexts: CombatTextEvent[];
   companionActions?: CompanionActionCue[];
+  drawnCardUids?: number[];
 }
 
 export type BattleAction =
@@ -47,10 +48,15 @@ export function resolveBattleAction(
       )
         return reject("Card play is unavailable");
       const companionActions: CompanionActionCue[] = [];
+      const drawnCardUids: number[] = [];
       const result = playBattleCardResolved(
         {
           ...snapshot,
           rng: getBattleRng(context),
+          onCardsDrawn: (uids) => {
+            drawnCardUids.push(...uids);
+            context.onCardsDrawn?.(uids);
+          },
           onCompanionAction: (cue) => {
             companionActions.push(cue);
             context.onCompanionAction?.(cue);
@@ -64,7 +70,12 @@ export function resolveBattleAction(
         kind: "accepted",
         action: "card",
         card,
-        resolution: { state: battleSnapshot(result.state), combatTexts: result.combatTexts, companionActions },
+        resolution: {
+          state: battleSnapshot(result.state),
+          combatTexts: result.combatTexts,
+          companionActions,
+          drawnCardUids,
+        },
       };
     }
     case "wish": {

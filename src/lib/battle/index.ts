@@ -37,7 +37,7 @@ export type { BattleTurnFrame, ResolvedBattleTurn } from "./enemy-turn";
 
 export { getEncounterEnemyAbility, getEncounterEnemyTrait, type EnemyDescriptionContext } from "./enemy-description";
 
-export { getBattleCardDescriptionInspection } from "./card-damage-inspection";
+export { getBattleCardDescriptionInspection, getBattleCompanionDescriptionLines } from "./card-damage-inspection";
 
 export { createElementalReactionState, expireCcReactions } from "./elemental-reaction-state";
 export { REACTION_DEFINITIONS, type ReactionId } from "./reaction-definitions";

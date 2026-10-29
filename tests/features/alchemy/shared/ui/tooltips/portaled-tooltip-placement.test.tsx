@@ -23,12 +23,14 @@ function Harness({
   horizontalInset,
   preservePlacementOnResize = false,
   active = true,
+  visible = active,
 }: {
   placement: PortaledTooltipPlacement;
   allowFlip?: boolean;
   horizontalInset?: number;
   preservePlacementOnResize?: boolean;
   active?: boolean;
+  visible?: boolean;
 }) {
   const triggerRef = useRef<HTMLDivElement>(null);
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
@@ -40,6 +42,7 @@ function Harness({
     allowFlip,
     horizontalInset,
     preservePlacementOnResize,
+    visible,
   );
   return (
     <>
@@ -112,6 +115,64 @@ describe("usePortaledTooltipPlacement", () => {
     height = 180;
     view.rerender(<Harness placement="above" preservePlacementOnResize={preserve} />);
     await waitFor(() => expect(floating.style.top).toBe("42px"));
+  });
+
+  it("holds a crafting hover's widest width through removal and replacement, then resets on re-entry", async () => {
+    let width = 372;
+    let viewportWidth = 1920;
+    let resized!: ResizeObserverCallback;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resized = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    vi.spyOn(floatingUi, "autoUpdate").mockImplementation(() => () => {});
+    vi.spyOn(document.documentElement, "getBoundingClientRect").mockImplementation(
+      () => new DOMRect(0, 0, viewportWidth, 1080),
+    );
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return new DOMRect(0, 0, Math.max(width, Number.parseFloat(this.style.minWidth) || 0), 180);
+    });
+    vi.spyOn(floatingUi, "computePosition").mockImplementation(async (_trigger, floating) => ({
+      x: 1000 - floating.getBoundingClientRect().width / 2,
+      y: 538,
+      placement: "bottom",
+      strategy: "fixed",
+      middlewareData: {},
+    }));
+    const view = render(<Harness placement="below" preservePlacementOnResize />);
+    const floating = screen.getByTestId("tip-floating");
+    const resize = () =>
+      act(() => resized([{ target: floating } as unknown as ResizeObserverEntry], {} as ResizeObserver));
+    await waitFor(() => expect(floating.style.minWidth).toBe("372px"));
+    const left = floating.style.left;
+    width = 298;
+    resize();
+    await waitFor(() => expect(floating.style.left).toBe(left));
+    expect(floating.style.minWidth).toBe("372px");
+    width = 410;
+    resize();
+    await waitFor(() => expect(floating.style.minWidth).toBe("410px"));
+    width = 310;
+    resize();
+    await waitFor(() => expect(floating.style.left).toBe("795px"));
+    expect(floating.style.minWidth).toBe("410px");
+    view.rerender(<Harness placement="below" preservePlacementOnResize visible={false} />);
+    expect(floating.style.minWidth).toBe("410px");
+    width = 250;
+    view.rerender(<Harness placement="below" preservePlacementOnResize />);
+    await waitFor(() => expect(floating.style.minWidth).toBe("250px"));
+    viewportWidth = 600;
+    width = 410;
+    resize();
+    await waitFor(() => expect(floating.style.minWidth).toBe("300px"));
+    view.rerender(<Harness placement="below" preservePlacementOnResize active={false} />);
+    expect(floating.style.minWidth).toBe("");
   });
 
   it.each([

@@ -47,6 +47,7 @@ export function createBattleCardPlay(
     onReveal: () => void,
     sessionNum: number,
     errorContext: string,
+    drawnCardUids: readonly number[],
   ) {
     if (!ctx.playback.isCurrent(sessionNum)) return;
     if (!ctx.playback.finishing && !ctx.playback.beginAction(sessionNum)) return;
@@ -58,6 +59,7 @@ export function createBattleCardPlay(
       session: sessionNum,
       deps: transferDeps.getDrawSequenceDeps(sessionNum),
       errorContext: `handle ${errorContext} draw sequence`,
+      drawnCardUids,
       onSettled: () => {
         void getPresentation()
           .waitForCompanionActions()
@@ -196,6 +198,7 @@ export function createBattleCardPlay(
       },
       sessionNum,
       "play card",
+      played.drawnCardUids ?? [],
     );
     return true;
   }
@@ -254,7 +257,7 @@ export function createBattleCardPlay(
     playUISound("selection");
     const sessionNum = ctx.playback.id;
     session.checkBattleEnd(newState, sessionNum);
-    runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, errorContext);
+    runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, errorContext, []);
     return true;
   }
 

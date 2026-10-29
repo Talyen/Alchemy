@@ -67,6 +67,16 @@ Only the short blend plays both decoders. This cosmetic selection never uses
 the world's gameplay RNG. Hidden tabs pause playback; reduced/disabled motion and
 unavailable video playback use the usual static artwork. Defeat freezes the
 visible video frame for the existing sliced-portrait effect.
+The death slice consumes a latched canvas directly, preserving the live surface's
+dimensions, contain placement and any in-progress clip blend. A temporarily
+unready displayed buffer stays paused until it can be captured; it never swaps to
+static art during that handoff. Static-art death is used only when static fallback
+was already displayed. No video frame from another portrait or earlier clip is cached.
+The crowd-control wrapper retains its portrait subtree when its effect clears, so
+death can freeze the displayed decoder rather than mounting a new fallback portrait.
+Defeat stops the control loop and removes its canvas while retaining the portrait's
+last rendered tilt through the slice. Ending control on a living portrait still
+clears the tilt normally.
 
 Prepared clips contain 60 fps motion interpolation, computed offline, and filtered
 640/1280/1920-pixel variants. The player selects the smallest width covering the
@@ -172,6 +182,15 @@ type matches. Resource removals and Health costs remain separate. Preserve origi
 packets for gameplay, audio and impact strength; visual aggregation never turns
 a reaction into a Critical. A direct total containing Critical damage retains its
 existing accent and accessible label saying it includes a Critical.
+
+Consumed Burn, Bleed and Poison detonations always use central damage feedback,
+including detonations triggered by talents or gear. Within one resolved action,
+the same recipient's direct hit and detonation can share a same-type total from
+their actual resolved receipts. Mixed types retain separate typed central flights;
+reactions, periodic ticks and distinct Companion actions remain separate. A total
+with a Critical constituent says it includes a Critical, without making its
+detonation Critical. Detonation totals do not merge into later action bursts.
+Original receipts still own mitigation, overkill, impact and audio facts.
 
 Critical damage retains ordinary typed color/icon with a brief pale flash and
 gold glow, without changing font size, weight or angle. Reduced/disabled motion
@@ -287,6 +306,11 @@ Pile, and scale to its top card. Both follow the shallow curved path in
 with batch-accelerated timing. Flights run sequentially;
 each departure starts its sound. The live card identity follows hand reflow.
 Tuning lives in `CARD_TRANSFER_CONFIG`.
+Library Owl's actual draws use the same flights after the ordinary turn hand,
+while retaining its utility cast cue. Resolved draw identities distinguish those
+cards from newly created Wish cards, which do not fly out of the Draw Pile.
+Later delivery from Hand Overflow uses normal hand reflow without replaying a
+deck flight or departure sound, including created cards that were queued there.
 
 Existing playback owns batch completion, input gates, hidden-card handoff,
 cancellation, and timers. A batch waits for its last flight rather than pausing
@@ -348,6 +372,16 @@ authored values because future resources and pacing are unknown. Inspection
 never consumes live RNG, resources, or prepared effects. Collection and other
 nonbattle views retain authored descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
 defines execution seams, uncertainty limits, and effect-authoring requirements.
+
+Companion summon cards, pile inspection and the active Companion panel use the
+same detached effect inspection in Companion action scope. Bond and Companion
+bonuses are applied once before ordinary typed Gear, Forge and current conditional
+Talents such as First Blood. Numbers update when those conditions change. Damage
+types with different known values retain a range; utility and Bond repeat wording
+remain intact. Like card attacks, these are offensive packet values before target
+Block/Armor, critical strikes and Dodge, rather than promised Health loss or a
+sum of separate follow-up effects. Nonbattle descriptions retain their existing
+Bond/Companion context without borrowing a previous battle's target.
 
 Proportions, per-Mana coefficients, explicit Forge-scaling operands, multiplication
 factors, durations and charges remain rule operands. Replacing one with a current

@@ -36,6 +36,7 @@ describe("balance simulator", () => {
       startingTexts: [],
       openingDrawTexts: [],
       companion: null,
+      companionActions: [],
       outcome: null,
     });
 
@@ -63,6 +64,7 @@ describe("balance simulator", () => {
         startingTexts: [],
         openingDrawTexts: [],
         companion: null,
+        companionActions: [],
         outcome: battle.getBattleOutcome(health),
       });
 

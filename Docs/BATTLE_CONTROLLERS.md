@@ -166,6 +166,19 @@ completion flags or cleanup ordering.
 
 `draw-sequence.ts` sequences work; `battle-transfers.ts` adapts DOM measurements,
 sounds and timers. End-turn cleanup resets hand transfers after all draws settle.
+Resolved card and turn frames carry actual drawn-card UIDs from the execution-only
+`onCardsDrawn` hook. Draw helpers report fresh deck draws; newly created Wish
+cards do not emit a deck-draw receipt. The saved overflow queue deliberately
+contains no origin metadata: its later delivery settles through normal hand
+reflow without a new deck flight or departure sound, for both queued draws and
+created cards. Delivery never invents an origin or replays an earlier draw.
+The hook is removed by
+`battleSnapshot`, and receipts are never committed or saved. Playback hides only
+new hand cards matching those receipts before publishing their resolved hand,
+including the separate Companion frame after ordinary turn draws. The end-turn
+action's own playing phase must not be mistaken for a newer card draw that owns
+the hand. Companion cast/attack cues and committed gameplay remain independent
+of transfer completion, failure or cancellation.
 
 ### Route lifetime
 

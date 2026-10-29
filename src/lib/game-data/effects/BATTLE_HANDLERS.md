@@ -98,6 +98,11 @@ targeting read those outcomes directly. Player payment,
 pre-triggers, ordered effects, and follow-ups resolve through `card-play.ts`;
 enemy abilities resolve through `enemy-turn-attack.ts`. Admission alone is
 hypothetical, so cards outside the hand or above the current Mana remain inspectable.
+Companion descriptions use the `companion.ts` inspection seam in normal secondary
+action scope, after Bond/Companion scaling. Their own grants are marked primary
+only for detached observation; live feedback and separate post-action rewards
+are unchanged. Inspection cannot import the effect interpreter or low-level
+action context directly.
 `damage.ts` and `enemy-ability-damage.ts` report offensive power before defenses
 and critical strikes. Resulting state still includes mitigation and prepared
 critical consequences when later packets depend on them.

@@ -131,10 +131,29 @@ export const coreCards: BattleCard[] = [
     { kind: "remove-harmful-status", amount: 1 },
     { kind: "damage", damageType: "burn", amount: 1 },
   ]),
-  cardBuilders.effectsCard("blackjack", [
-    { kind: "damage", damageType: "stun", amount: 2 },
-    { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
-  ]),
+  cardBuilders.effectsCard(
+    "blackjack",
+    [
+      { kind: "damage", damageType: "stun", amount: 2 },
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
+    ],
+    {
+      describe: () => [
+        {
+          parts: ["Deal ", cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }), " Stun damage"],
+          role: "effect",
+        },
+        {
+          parts: [
+            "Steal ",
+            cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }),
+            " Gold if the enemy is Stunned",
+          ],
+          role: "effect",
+        },
+      ],
+    },
+  ),
   cardBuilders.effectsCard("sunburst", [
     { kind: "heal", amount: 2 },
     { kind: "damage", damageType: "burn", amount: 1 },

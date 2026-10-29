@@ -48,3 +48,46 @@ it.each(["OS", "disable flag"])("updates an existing status effect when the %s m
   view.unmount();
   expect(stops[2]).toHaveBeenCalledOnce();
 });
+
+it("stops the control effect on defeat while retaining the mounted portrait and its exact last pose", () => {
+  const stop = vi.fn();
+  vi.mocked(startCombatantStatusEffectLoop).mockImplementation(({ onFrame }) => {
+    onFrame({ progress: 0.6, wobbleDegrees: 2.75 });
+    return stop;
+  });
+  const view = render(<CombatantStatusEffectPresentation keyword="stun">Portrait</CombatantStatusEffectPresentation>);
+  const portrait = screen.getByText("Portrait");
+  expect(portrait.style.transform).toBe("rotate(2.75deg)");
+  view.rerender(
+    <CombatantStatusEffectPresentation keyword="stun" defeated>
+      Portrait
+    </CombatantStatusEffectPresentation>,
+  );
+  expect(screen.getByText("Portrait")).toBe(portrait);
+  expect(portrait.style.transform).toBe("rotate(2.75deg)");
+  expect(stop).toHaveBeenCalledOnce();
+  expect(screen.queryByTestId("combatant-status-effect-clip")).toBeNull();
+  expect(startCombatantStatusEffectLoop).toHaveBeenCalledOnce();
+  view.unmount();
+  expect(stop).toHaveBeenCalledOnce();
+});
+
+it("still clears the transform when control ends on a living portrait, including a replacement after defeat", () => {
+  vi.mocked(startCombatantStatusEffectLoop).mockImplementation(({ onFrame }) => {
+    onFrame({ progress: 0.6, wobbleDegrees: 2.75 });
+    return vi.fn();
+  });
+  const view = render(<CombatantStatusEffectPresentation keyword="stun">Portrait</CombatantStatusEffectPresentation>);
+  const portrait = screen.getByText("Portrait");
+  view.rerender(<CombatantStatusEffectPresentation keyword={null}>Portrait</CombatantStatusEffectPresentation>);
+  expect(portrait.style.transform).toBe("");
+  view.rerender(<CombatantStatusEffectPresentation keyword="stun">Portrait</CombatantStatusEffectPresentation>);
+  view.rerender(
+    <CombatantStatusEffectPresentation keyword={null} defeated>
+      Portrait
+    </CombatantStatusEffectPresentation>,
+  );
+  expect(portrait.style.transform).toBe("rotate(2.75deg)");
+  view.rerender(<CombatantStatusEffectPresentation keyword={null}>Portrait</CombatantStatusEffectPresentation>);
+  expect(portrait.style.transform).toBe("");
+});

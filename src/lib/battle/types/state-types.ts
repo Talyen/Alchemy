@@ -153,6 +153,8 @@ export interface NumericCombatTextEvent extends CombatTextIntent {
   absorbedDamage?: number;
   critical?: boolean;
   periodic?: boolean;
+  /** Actual consumed DoT payoff, distinct from a natural tick or direct hit. */
+  detonation?: true;
   /** Exact earned payoff origin; distinct from its single output damage type and card intent. */
   reactionId?: ReactionId;
 }
@@ -196,6 +198,8 @@ export interface CompanionActionCue {
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
   rng: Rng;
+  /** Fresh deck draws, not created cards or later overflow delivery. Never persisted. */
+  onCardsDrawn?: (uids: readonly number[]) => void;
   onCompanionAction?: (cue: CompanionActionCue) => void;
   companionActionSequence?: { current: number };
   observer?: BattleResolutionObserver;
