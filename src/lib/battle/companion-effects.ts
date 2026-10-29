@@ -27,9 +27,10 @@ export function resolveCompanionTurnStart(
   ) => BattleState,
   options?: { damageOnly?: boolean },
 ) {
-  if (!state.activeCompanion || getBattleOutcome(state) !== null) return state;
+  const companion = state.activeCompanion;
+  if (!companion || getBattleOutcome(state) !== null) return state;
 
-  const companionCard = createCompanionActionCard(state, state.activeCompanion);
+  const companionCard = createCompanionActionCard(state, companion);
 
   if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 
@@ -41,7 +42,7 @@ export function resolveCompanionTurnStart(
   ];
   let currentGroup = groups[0]!;
   const texts: CombatTextEvent[] = [];
-  const cue = { companionId: state.activeCompanion.id, kind: isAttackCard(companionCard) ? "attack" : "cast" } as const;
+  const cue = { companionId: companion.id, kind: isAttackCard(companionCard) ? "attack" : "cast" } as const;
   // Owl/Moth Bond repeats are resolved inside this action's chance effect.
   // Observe the actual roll; presentation must neither reroll it nor infer success.
   const repeat =

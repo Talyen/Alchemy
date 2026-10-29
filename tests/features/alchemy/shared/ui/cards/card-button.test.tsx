@@ -131,7 +131,10 @@ describe("BattleCardButton", () => {
   it("updates a summon hover's known typed damage when First Blood stops applying", () => {
     const state = patchBattleState({
       currentEnemy: { traits: [] },
-      talentEffects: { companionBondLevels: { panther: 1 }, bleedUnwoundedBonusPercent: 25 },
+      talentEffects: {
+        companionBondLevels: { ...patchBattleState().talentEffects.companionBondLevels, panther: 1 },
+        bleedUnwoundedBonusPercent: 25,
+      },
       gearEffects: { flatBleedDamage: 6 },
     });
     const { rerender } = render(<LiveInspection state={state} inspectedCard={cardById["panther-companion"]!} />);
@@ -150,7 +153,10 @@ describe("BattleCardButton", () => {
   it("uses the same inspected wording in the active Companion panel", () => {
     const state = patchBattleState({
       currentEnemy: { traits: [] },
-      talentEffects: { companionBondLevels: { panther: 1 }, bleedUnwoundedBonusPercent: 25 },
+      talentEffects: {
+        companionBondLevels: { ...patchBattleState().talentEffects.companionBondLevels, panther: 1 },
+        bleedUnwoundedBonusPercent: 25,
+      },
       gearEffects: { flatBleedDamage: 6 },
     });
     render(

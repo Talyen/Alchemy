@@ -7,6 +7,10 @@ import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import { regressionBattle as battle, type BattleStatePatch } from "../../fixtures/battle";
 
+function bonds(id: CompanionId) {
+  return { ...battle().talentEffects.companionBondLevels, [id]: 1 };
+}
+
 function stateFor(id: CompanionId, patch: BattleStatePatch = {}) {
   return battle({
     enemyHealth: 1000,
@@ -20,7 +24,7 @@ function stateFor(id: CompanionId, patch: BattleStatePatch = {}) {
 describe("known Companion descriptions", () => {
   it("includes Panther Bond, typed Gear and First Blood once, and removes the conditional bonus when Bleeding", () => {
     const state = stateFor("panther", {
-      talentEffects: { companionBondLevels: { panther: 1 }, bleedUnwoundedBonusPercent: 25 },
+      talentEffects: { companionBondLevels: bonds("panther"), bleedUnwoundedBonusPercent: 25 },
       gearEffects: { flatBleedDamage: 6 },
     });
     expect(getBattleCompanionDescriptionLines(companionLibrary.panther, state)).toEqual([
@@ -52,7 +56,7 @@ describe("known Companion descriptions", () => {
   ] as const)("matches known %s damage without changing execution", (id, type, amount, patch) => {
     const state = stateFor(id, {
       ...patch,
-      talentEffects: { ...("talentEffects" in patch ? patch.talentEffects : {}), companionBondLevels: { [id]: 1 } },
+      talentEffects: { ...("talentEffects" in patch ? patch.talentEffects : {}), companionBondLevels: bonds(id) },
     });
     expect(getBattleCompanionDescriptionLines(companionLibrary[id], state)[0]).toBe(
       `Deals ${amount} ${type} damage each turn`,
@@ -65,7 +69,7 @@ describe("known Companion descriptions", () => {
   it("keeps random damage types as a known range rather than choosing a roll", () => {
     const state = stateFor("wolf", {
       playerStatuses: { forge: 3 },
-      talentEffects: { companionBondLevels: { wolf: 1 }, bleedUnwoundedBonusPercent: 25 },
+      talentEffects: { companionBondLevels: bonds("wolf"), bleedUnwoundedBonusPercent: 25 },
       gearEffects: { flatPhysicalDamage: 2, flatBleedDamage: 6 },
     });
     expect(getBattleCompanionDescriptionLines(companionLibrary.wolf, state)[0]).toBe(
@@ -84,7 +88,7 @@ describe("known Companion descriptions", () => {
         playNextCardTwice: true,
         companionNextAttackBonus: 3,
       },
-      talentEffects: { companionBondLevels: { skeleton: 1 } },
+      talentEffects: { companionBondLevels: bonds("skeleton") },
       gearEffects: { flatPhysicalDamage: 1 },
     });
     const before = structuredClone(battleSnapshot(state));
@@ -118,7 +122,7 @@ describe("known Companion descriptions", () => {
       enemyMitigation: { armor: 4 },
       gearEffects: { armorIncreasesStun: 1 },
       playerStatuses: { forge: 3 },
-      talentEffects: { companionBondLevels: { bear: 1 } },
+      talentEffects: { companionBondLevels: bonds("bear") },
     });
     expect(getBattleCompanionDescriptionLines(companionLibrary.bear, state)[0]).toBe("Deals 9 Stun damage each turn");
   });
@@ -127,13 +131,13 @@ describe("known Companion descriptions", () => {
     const pixie = stateFor("pixie", {
       playerHealth: 39,
       playerMaxHealth: 40,
-      talentEffects: { companionBondLevels: { pixie: 1 }, healMultiplier: 1.5 },
+      talentEffects: { companionBondLevels: bonds("pixie"), healMultiplier: 1.5 },
     });
     expect(getBattleCompanionDescriptionLines(companionLibrary.pixie, pixie)[0]).toBe("Restores 3 Health each turn");
     expect(processCompanionTurnStart(pixie, []).playerHealth).toBe(40);
     const scarab = stateFor("shield-scarab", {
       playerStatuses: { forge: 4 },
-      talentEffects: { companionBondLevels: { "shield-scarab": 1 }, forgeBlockPercent: 25 },
+      talentEffects: { companionBondLevels: bonds("shield-scarab"), forgeBlockPercent: 25 },
       gearEffects: { flatBlockGained: 2 },
     });
     expect(getBattleCompanionDescriptionLines(companionLibrary["shield-scarab"], scarab)[0]).toBe(
@@ -145,7 +149,7 @@ describe("known Companion descriptions", () => {
   it.each(["library-owl", "mana-moth", "will-o-wisp", "golden-retriever"] as const)(
     "preserves %s utility and Bond wording without doubling it",
     (id) => {
-      const state = stateFor(id, { talentEffects: { companionBondLevels: { [id]: 1 } } });
+      const state = stateFor(id, { talentEffects: { companionBondLevels: bonds(id) } });
       expect(getBattleCompanionDescriptionLines(companionLibrary[id], state)).toEqual(
         getCompanionDescriptionLines(companionLibrary[id], 1),
       );
@@ -160,7 +164,7 @@ describe("known Companion descriptions", () => {
     const state = stateFor("panther", {
       enemyHealth: 30,
       enemyMaxHealth: 100,
-      talentEffects: { companionBondLevels: { panther: 1 }, companionDoubledVsLowHealth: true },
+      talentEffects: { companionBondLevels: bonds("panther"), companionDoubledVsLowHealth: true },
       gearEffects: { flatBleedDamage: 6, companionDamageBonusVsBleeding: 3 },
     });
     expect(getBattleCompanionDescriptionLines(companionLibrary.panther, state)[0]).toBe(
@@ -184,7 +188,7 @@ describe("known Companion descriptions", () => {
         rng,
         state: stateFor("panther", {
           rng: createRunStateRng(rng, "world"),
-          talentEffects: { companionBondLevels: { panther: 1 }, bleedUnwoundedBonusPercent: 25 },
+          talentEffects: { companionBondLevels: bonds("panther"), bleedUnwoundedBonusPercent: 25 },
           gearEffects: { flatBleedDamage: 6, burnBleedMirrorAndLeech: 1 },
         }),
       };

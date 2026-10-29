@@ -139,7 +139,7 @@ describe("resolved Companion action facts", () => {
     const result = resolveBattleCard(battleSnapshot(state), card.id, 0, { rng: state.rng });
     const actions = result.companionActions!.map((cue) => cue.resolution!);
     expect(
-      actions.map((action) => action.texts.filter((text) => text.kind === "damage").map((text) => text.amount)),
+      actions.map((action) => action.texts.flatMap((text) => (text.kind === "damage" ? [text.amount] : []))),
     ).toEqual([[4], [1]]);
     expect(actions.map(({ before, after }) => [before.enemyHealth, after.enemyHealth])).toEqual([
       [54, 50],
