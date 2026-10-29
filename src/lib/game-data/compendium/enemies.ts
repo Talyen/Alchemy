@@ -47,7 +47,7 @@ export const enemyBestiary = [
     enemyType: "boss",
     traits: [
       trait("regeneration", "Rotting Regrowth", "Restores 1 Health each turn."),
-      { ...sharedWeaknesses.kindling },
+      trait("brittle-bark", "Brittle Bark", "Receives 30% more Burn damage and 30% more Stun damage.", "negative"),
     ],
     abilityIds: ["grasping-vines", "bloodthorn", "thorn-whip"],
   }),

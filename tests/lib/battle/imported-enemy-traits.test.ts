@@ -20,7 +20,6 @@ import {
 describe("imported enemy trait damage rules", () => {
   it.each([
     ["skeleton", "holy"],
-    ["frostwarden", "freeze"],
     ["fire-imp", "freeze"],
     ["hellhound", "freeze"],
     ["giant-snake", "freeze"],
@@ -51,8 +50,11 @@ describe("imported enemy trait damage rules", () => {
     ["brawler", "bleed", 1],
     ["skeleton", "holy", 1.3],
     ["skeleton", "stun", 1],
-    ["frostwarden", "freeze", 1],
+    ["frostwarden", "freeze", 0.5],
     ["frostwarden", "burn", 1.3],
+    ["blight-treant", "burn", 1.3],
+    ["blight-treant", "stun", 1.3],
+    ["blight-treant", "physical", 1],
     ["fire-imp", "freeze", 1.3],
     ["hellhound", "freeze", 1.3],
     ["giant-snake", "freeze", 1.3],
@@ -278,12 +280,12 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerHealth).toBe(95);
   });
 
-  it("Crimson Pulse follows alternating turns without selecting an ability", () => {
-    const state = stateForEnemy("blood-countess", { turn: 2 });
+  it("Crimson Pulse strikes every third turn without selecting an ability", () => {
+    const state = stateForEnemy("blood-countess", { turn: 3 });
     const result = processEnemyTraits(state, []);
     expect(result.playerStatuses.bleed).toBe(1);
     expect(result.lastEnemyAbilityId).toBe(state.lastEnemyAbilityId);
-    expect(processEnemyTraits({ ...state, turn: 1 }, []).playerStatuses.bleed).toBe(0);
+    expect(processEnemyTraits({ ...state, turn: 2 }, []).playerStatuses.bleed).toBe(0);
   });
 });
 
