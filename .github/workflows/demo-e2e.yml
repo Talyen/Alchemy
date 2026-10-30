@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Record test job setup start
         run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -37,7 +37,7 @@ jobs:
         run: xvfb-run -a npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
         env:
           PLAYWRIGHT_ELECTRON_FULL: "1"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()
         with:
           name: ${{ inputs.artifact }}
