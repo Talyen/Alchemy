@@ -76,7 +76,7 @@ describe("enemy hit boundaries", () => {
 
   it("does not apply Unbinding Strike to periodic Crimson Pulse damage", () => {
     const state = regressionBattle({
-      turn: 2,
+      turn: 3,
       currentEnemy: {
         ...enemyById["blood-countess"]!,
         traits: [

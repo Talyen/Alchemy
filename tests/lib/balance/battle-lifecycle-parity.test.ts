@@ -149,7 +149,8 @@ describe("simulator and live command parity", () => {
     expect(result.companion?.state.hand).toHaveLength(0);
     expect(result.state.hand).toHaveLength(4);
     expect(result.companion?.texts).toEqual([
-      { target: "player", kind: "status", stat: "gold", amount: 2, feedback: "secondary" },
+      { target: "player", kind: "status", stat: "gold", amount: 1, feedback: "secondary", companionActionId: 1 },
+      { target: "player", kind: "status", stat: "gold", amount: 1, feedback: "secondary", companionActionId: 2 },
     ]);
     expect(structuredClone(result)).toEqual(result);
   });

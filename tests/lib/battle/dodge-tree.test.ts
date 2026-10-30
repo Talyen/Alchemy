@@ -28,16 +28,16 @@ describe("Dodge chance", () => {
     [0.049, true],
     [0.05, false],
   ])("retains the 5%% baseline at roll %s", (roll, succeeds) => {
-    expect(tryDodgeEnemyAttackPacket(patchBattleState({ rng: () => roll }), [], true) !== null).toBe(succeeds);
+    expect(tryDodgeEnemyAttackPacket(patchBattleState({ rng: () => roll }), [], true).dodged).toBe(succeeds);
     expect(tryDodgePlayerAttackPacket(patchBattleState({ rng: () => roll }), []) !== null).toBe(succeeds);
   });
 
   it("adds Lightfoot and gear without making Unburdened a conditional chance bonus", () => {
     const state = patchBattleState({ talentEffects: fullTree, gearEffects: { dodgeChance: 3 }, rng: () => 0.129 });
-    expect(tryDodgeEnemyAttackPacket(state, [], true)?.playerDodgeCount).toBe(1);
+    expect(tryDodgeEnemyAttackPacket(state, [], true).state.playerDodgeCount).toBe(1);
     const blocked = { ...state, playerStatuses: { ...state.playerStatuses, block: 1 } };
-    expect(tryDodgeEnemyAttackPacket(blocked, [], true)?.playerDodgeCount).toBe(1);
-    expect(tryDodgeEnemyAttackPacket({ ...state, rng: () => 0.13 }, [], true)).toBeNull();
+    expect(tryDodgeEnemyAttackPacket(blocked, [], true).state.playerDodgeCount).toBe(1);
+    expect(tryDodgeEnemyAttackPacket({ ...state, rng: () => 0.13 }, [], true).dodged).toBe(false);
   });
 
   it.each([49, 50, 51])("Last Gasp requires strictly less than half Health: %s", (health) => {
@@ -47,7 +47,7 @@ describe("Dodge chance", () => {
       rng: () => 0.15,
       talentEffects: { dodgeChanceBelowHalfHealth: 20 },
     });
-    expect(tryDodgeEnemyAttackPacket(state, [], true) !== null).toBe(health < 50);
+    expect(tryDodgeEnemyAttackPacket(state, [], true).dodged).toBe(health < 50);
   });
 
   it("caps all bonuses at 75% and leaves enemy chance unchanged", () => {
@@ -57,10 +57,10 @@ describe("Dodge chance", () => {
       dodgeChanceFromDamage: 100,
       rng: () => 0.75,
     });
-    expect(tryDodgeEnemyAttackPacket(state, [], true)).toBeNull();
-    expect(tryDodgeEnemyAttackPacket({ ...state, rng: () => 0.749 }, [], true)?.dodgeChanceFromDamage).toBe(0);
+    expect(tryDodgeEnemyAttackPacket(state, [], true).dodged).toBe(false);
+    expect(tryDodgeEnemyAttackPacket({ ...state, rng: () => 0.749 }, [], true).state.dodgeChanceFromDamage).toBe(0);
     expect(tryDodgePlayerAttackPacket({ ...state, rng: () => 0.06 }, [])).toBeNull();
-    expect(tryDodgeEnemyAttackPacket({ ...state, rng: () => 0 }, [], false)).toBeNull();
+    expect(tryDodgeEnemyAttackPacket({ ...state, rng: () => 0 }, [], false).dodged).toBe(false);
     expect(state.dodgeChanceFromDamage).toBe(100);
   });
 });

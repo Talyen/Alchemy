@@ -313,7 +313,8 @@ it("Eager Pack acknowledges an ineffective Wisp action after the summon notice",
   expect(result.state.playerStatuses).toEqual(state.playerStatuses);
   expect(result.combatTexts).toMatchObject([
     { target: "player", kind: "notice", stat: "companion", text: "" },
-    { target: "player", kind: "notice", stat: "cleanse", text: "Nothing to Cleanse" },
+    { target: "player", kind: "notice", stat: "cleanse", text: "Nothing to Cleanse", companionActionId: 1 },
+    { target: "player", kind: "notice", stat: "cleanse", text: "Nothing to Cleanse", companionActionId: 2 },
   ]);
 });
 

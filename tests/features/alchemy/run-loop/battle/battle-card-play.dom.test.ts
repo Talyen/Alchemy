@@ -397,7 +397,7 @@ describe("createBattleCardPlay", () => {
     expect(ctx.playback.cardPlayInProgress).toBe(true);
     expect(session.checkBattleEnd).toHaveBeenCalledTimes(2);
     settled[0]!();
-    expect(ctx.playback.cardPlayInProgress).toBe(false);
+    await vi.waitFor(() => expect(ctx.playback.cardPlayInProgress).toBe(false));
     expect(session.checkBattleEnd).toHaveBeenCalledWith(readBattle(defaultGameSession).battleState, 1);
     expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(readBattle(defaultGameSession).battleState);
     expect(playUISound).not.toHaveBeenCalled();

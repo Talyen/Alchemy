@@ -1,7 +1,6 @@
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
-import { battleEventSounds } from "@/lib/audio/sound-registry";
 import * as controllerUtils from "@/features/alchemy/run-loop/battle/controller-utils";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { companionLibrary, computeTalentEffects } from "@/lib/game-data";
@@ -21,11 +20,14 @@ import type { createBattleSession } from "@/features/alchemy/run-loop/battle/bat
 import { createRunRngState } from "@/lib/rng";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { patchBattleState } from "../../../../fixtures/battle";
 
 beforeEach(() => {
+  battlePresentation.getState().resetPresentation();
   resetRunDomainStore();
   setRunSession({ hasActiveRun: true });
+  mutateGameplayForTest((draft) => setScreen(draft, "battle"));
 });
 
 describe("createBattleInit", () => {
@@ -200,7 +202,7 @@ describe("createBattleInit", () => {
     expect(battle.enemyHealth).toBeLessThan(battle.enemyMaxHealth);
   });
 
-  it("plays combat-text sounds and portrait feedback for companion damage at battle start", () => {
+  it("queues opening companion damage for its own impact instead of generic immediate feedback", () => {
     const feedback = vi.spyOn(controllerUtils, "presentCombatTexts");
     setRunProgress({
       roomsEncountered: 0,
@@ -214,8 +216,9 @@ describe("createBattleInit", () => {
     });
 
     expect(feedback).toHaveBeenCalled();
-    expect(feedback.mock.calls[0]?.[2]).toBe(battleEventSounds.enemyHit);
-    const texts = feedback.mock.calls[0]?.[1] ?? [];
-    expect(texts.some((ct) => ct.kind === "damage" && ct.target === "enemy")).toBe(true);
+    expect(feedback.mock.calls[0]?.[2]).toBeUndefined();
+    const action = battlePresentation.getState().companionActionCue;
+    expect(action).toMatchObject({ companionId: "wolf", kind: "attack" });
+    expect(action?.resolution?.texts).toContainEqual(expect.objectContaining({ kind: "damage", target: "enemy" }));
   });
 });

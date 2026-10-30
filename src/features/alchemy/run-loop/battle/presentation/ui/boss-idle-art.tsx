@@ -195,7 +195,7 @@ export function BossIdleArt({
     const element = wrapper.current;
     const video = playback.visible == null ? null : videos.current[playback.visible];
     if (!element || !video || failed) return;
-    const outgoing = playback.outgoing == null ? null : videos.current[playback.outgoing];
+    const outgoing = playback.outgoing == null ? null : (videos.current[playback.outgoing] ?? null);
     const capture = () => {
       const frame = freezeFrame(element, video, outgoing);
       if (frame) setDeathFrame(frame);

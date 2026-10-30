@@ -65,7 +65,8 @@ export async function runPlaythrough() {
       ? "reports/playthrough-comparison"
       : "reports/playthrough";
   const reportDir = resolve(arg("out", defaultDirectory));
-  const timeoutMs = process.env.CI ? 0 : integer("timeout", 120) * 1000;
+  const requestedTimeoutMs = integer("timeout", 120) * 1000;
+  const timeoutMs = process.env.CI ? 0 : requestedTimeoutMs;
   const hash = createHash("sha256").update(`edition:${resolveEdition(process.env.ALCHEMY_EDITION)}`);
   const inventory = runGit(REPO_ROOT, [
     "ls-files",

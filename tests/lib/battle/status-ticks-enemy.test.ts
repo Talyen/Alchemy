@@ -127,7 +127,13 @@ describe("tickEnemyStatuses", () => {
         amount: expected,
         periodic: true,
       });
-      expect(detonationTexts).toContainEqual({ target: "enemy", kind: "damage", stat: status, amount: expected });
+      expect(detonationTexts).toContainEqual({
+        target: "enemy",
+        kind: "damage",
+        stat: status,
+        amount: expected,
+        detonation: true,
+      });
       expect(detonated.enemyHealth).toBe(1000 - expected);
       expect(state.enemyStatuses[status]).toBe(stacks);
     },

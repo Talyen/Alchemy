@@ -36,7 +36,7 @@ describe("player action host boundary", () => {
     const texts: typeof played.combatTexts = [];
     const chosen = chooseWishCard(played.state, played.state.wishOptions![0]!.id);
     expect(result).toEqual({
-      played: { ...played, state: battleSnapshot(played.state) },
+      played: { ...played, state: battleSnapshot(played.state), companionActions: [], drawnCardUids: [] },
       chosen: { state: battleSnapshot(chosen), combatTexts: texts },
       nextRoll: rng(),
     });

@@ -115,7 +115,8 @@ describe("Finding Rhythm", () => {
     for (let index = 0; index < 20; index++) state = applyPlayerCombatDamage(state, 1, "hostile");
     expect(state.dodgeChanceFromDamage).toBe(100);
     const dodged = tryDodgeEnemyAttackPacket({ ...state, rng: () => 0.74 }, [], true);
-    expect(dodged?.dodgeChanceFromDamage).toBe(0);
+    expect(dodged.dodged).toBe(true);
+    expect(dodged.state.dodgeChanceFromDamage).toBe(0);
     expect(defaultBattleState().dodgeChanceFromDamage).toBe(0);
     expect(defaultBattleState().playerDodgeCount).toBe(0);
   });

@@ -215,15 +215,15 @@ describe("Labyrinth player benefits", () => {
 
   it("Elusive helps player Dodge without changing enemy Dodge", () => {
     const current = state({ encounterBenefits: ["elusive"], rng: () => 0.1 });
-    expect(tryDodgeEnemyAttackPacket(current, [], true)).not.toBeNull();
+    expect(tryDodgeEnemyAttackPacket(current, [], true).dodged).toBe(true);
     expect(tryDodgePlayerAttackPacket(current, [])).toBeNull();
     expect(
       tryDodgeEnemyAttackPacket(
         { ...current, rng: () => 0.8, gearEffects: { ...current.gearEffects, dodgeChance: 100 } },
         [],
         true,
-      ),
-    ).toBeNull();
+      ).dodged,
+    ).toBe(false);
   });
 
   it("Restorative heals before the enemy attack, once per turn", () => {

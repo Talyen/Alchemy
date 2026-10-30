@@ -35,7 +35,7 @@ export const enemyBestiary = [
     art: assetRefs.theFrostwarden,
     enemyType: "boss",
     traits: [
-      trait("glacial-shell", "Glacial Surge", "Deals 1 additional Freeze damage. Receives half Freeze damage."),
+      trait("glacial-shell", "Glacial Surge", "Deals 1 additional Freeze damage and receives half Freeze damage."),
       { ...sharedWeaknesses.thawing },
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
