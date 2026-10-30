@@ -13,6 +13,9 @@ import {
   type AffixRowInput,
 } from "./affix-definition";
 
+const ASTRAL_BURN_POISON_NATURE_ROLL = { ...ROLL_SMALL, astral: { min: 2, max: 3 } };
+const ASTRAL_ARCHERY_DAMAGE_ROLL = { ...rollRange(2, 3, 4, 5), astral: { min: 3, max: 4 } };
+
 // Order is part of seeded Gear generation. Presentation and manifest defaults
 // derive from these same rows, without making combat depend on tooltip parsing.
 export const gearAffixRows = [
@@ -106,11 +109,11 @@ export const gearAffixRows = [
   flatDamageAffix("flat-physical", "Ironbound", "physical", "flatPhysicalDamage"),
   flatDamageAffix("flat-stun", "Concussive", "stun", "flatStunDamage"),
   flatDamageAffix("flat-holy", "Sanctified", "holy", "flatHolyDamage"),
-  flatDamageAffix("flat-burn", "Blazing", "burn", "flatBurnDamage"),
-  flatDamageAffix("flat-poison", "Venomous", "poison", "flatPoisonDamage"),
+  flatDamageAffix("flat-burn", "Blazing", "burn", "flatBurnDamage", ASTRAL_BURN_POISON_NATURE_ROLL),
+  flatDamageAffix("flat-poison", "Venomous", "poison", "flatPoisonDamage", ASTRAL_BURN_POISON_NATURE_ROLL),
   flatDamageAffix("flat-bleed", "Serrated", "bleed", "flatBleedDamage"),
   flatDamageAffix("flat-freeze", "Glacial", "freeze", "flatFreezeDamage"),
-  flatDamageAffix("flat-nature", "Wildheart", "nature", "flatNatureDamage"),
+  flatDamageAffix("flat-nature", "Wildheart", "nature", "flatNatureDamage", ASTRAL_BURN_POISON_NATURE_ROLL),
   startOfCombatAffix("start-block", "Bastioned", "block", "startBlock", rollRange(4, 6, 7, 9)),
   offensiveAffix(
     ["armor-pierce", "Piercing", "physical"],
@@ -188,7 +191,7 @@ export const gearAffixRows = [
     ["consume-heal-bonus", "Nourishing", "consume", "health"],
     ["consumeHealBonusPercent", ROLL_PERCENT, "Increases Health restored by Consumed cards by {value}%"],
   ),
-  flatDamageAffix("archery-damage", "Fletched", "archery", "flatArrowDamage", rollRange(2, 3, 4, 5)),
+  flatDamageAffix("archery-damage", "Fletched", "archery", "flatArrowDamage", ASTRAL_ARCHERY_DAMAGE_ROLL),
   offensiveAffix(
     ["damage-on-freeze", "Shattering", "physical", "freeze"],
     ["damageOnFreezePhysical", ROLL_MEDIUM, "Deal {value} Physical damage when you Freeze an enemy"],
