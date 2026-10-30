@@ -11,6 +11,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   mutateRunForTest,
+  mutateGameplayForTest,
   resetAllTestStores,
   setRunProgress,
   setRunSession,
@@ -18,13 +19,38 @@ import {
 import { defaultGameSession } from "@/app/application-session";
 import { abandonCurrentRun } from "@/features/alchemy/run-loop/run/run-end-commands";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { cardById } from "@/lib/game-data";
+import { cardById, companionLibrary } from "@/lib/game-data";
+import { getRunCompanionDescriptionLines } from "@/lib/battle";
+import { makeGearInstance } from "../../../../../fixtures/gear";
 
 beforeEach(() => {
   resetAllTestStores();
 });
 
 describe("screen-specific run data hooks", () => {
+  it("keeps shop companion inspection tied to the active hero's actual gear and Bond", () => {
+    mutateGameplayForTest((draft) => {
+      draft.run.activeRun.characterId = "rogue";
+      draft.session.activity = { kind: "shop", data: emptyShopState() };
+      draft.runProfile.effects.companionBondLevels.panther = 1;
+      draft.gear.inventories.rogue = [
+        makeGearInstance("ruby-ring-basic", "shop-ring", [{ id: "flat-bleed", value: 2 }]),
+      ];
+      draft.gear.loadouts.rogue["right-accessory"] = "shop-ring";
+    });
+    const { result } = renderHook(() => useRunScreenData("shop"));
+    expect(getRunCompanionDescriptionLines(companionLibrary.panther, result.current.companionInspection)).toEqual([
+      "Deals 4 Bleed damage each turn",
+    ]);
+    act(() =>
+      mutateGameplayForTest((draft) => {
+        draft.gear.loadouts.rogue["right-accessory"] = null;
+      }),
+    );
+    expect(getRunCompanionDescriptionLines(companionLibrary.panther, result.current.companionInspection)).toEqual([
+      "Deals 2 Bleed damage each turn",
+    ]);
+  });
   it.each(["campaign", "wildwood"] as const)(
     "retains the %s draft choices while ending the run",
     (contentSystemType) => {

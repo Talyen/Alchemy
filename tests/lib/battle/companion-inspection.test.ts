@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { companionLibrary, getCompanionDescriptionLines } from "@/lib/game-data";
 import type { CompanionId } from "@/lib/game-data";
 import { getBattleCompanionDescriptionLines } from "@/lib/battle/card-damage-inspection";
+import {
+  getRunCompanionDescriptionLines,
+  type RunCompanionInspectionState,
+} from "@/lib/battle/run-companion-inspection";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
@@ -22,6 +26,73 @@ function stateFor(id: CompanionId, patch: BattleStatePatch = {}) {
 }
 
 describe("known Companion descriptions", () => {
+  function actor(patch: BattleStatePatch = {}): RunCompanionInspectionState {
+    const state = stateFor("panther", patch);
+    return {
+      talentEffects: state.talentEffects,
+      gearEffects: state.gearEffects,
+      trinketEffects: state.trinketEffects,
+      playerHealth: state.playerHealth,
+      playerMaxHealth: state.playerMaxHealth,
+    };
+  }
+
+  it("shows standing shop bonuses without inventing an unbled enemy or consuming any RNG", () => {
+    const known = actor({
+      talentEffects: {
+        companionBondLevels: bonds("panther"),
+        bleedUnwoundedBonusPercent: 25,
+        companionVsFrozenBonus: 10,
+        companionDoubledVsLowHealth: true,
+      },
+      gearEffects: { flatBleedDamage: 6, companionDamageBonusVsBleeding: 7 },
+    });
+    const before = structuredClone(known);
+    expect(getRunCompanionDescriptionLines(companionLibrary.panther, known)).toEqual([
+      "Deals 8 Bleed damage each turn",
+    ]);
+    expect(known).toEqual(before);
+    expect(known).not.toHaveProperty("enemyStatuses");
+  });
+
+  it("preserves the real random type range instead of selecting a shop outcome", () => {
+    const known = actor({
+      talentEffects: { companionBondLevels: bonds("wolf") },
+      gearEffects: { flatBleedDamage: 6, flatPhysicalDamage: 2 },
+    });
+    expect(getRunCompanionDescriptionLines(companionLibrary.wolf, known)).toEqual([
+      "Deals 4–8 Bleed or Physical damage each turn",
+    ]);
+  });
+
+  it("uses canonical known utility grants and keeps Bond chance wording", () => {
+    const known = actor({
+      playerHealth: 8,
+      playerMaxHealth: 40,
+      talentEffects: {
+        companionBondLevels: { ...bonds("pixie"), "mana-moth": 1, "shield-scarab": 1, "golden-retriever": 1 },
+        homesteadHealing: 1,
+        healMultiplier: 1.5,
+      },
+      gearEffects: {
+        healingBonusBelowHalfHealth: 2,
+        flatBlockGained: 2,
+        blockGainBonusBelowHalfHealth: 1,
+        goldGainPercent: 50,
+      },
+    });
+    expect(getRunCompanionDescriptionLines(companionLibrary.pixie, known)).toEqual(["Restores 8 Health each turn"]);
+    expect(getRunCompanionDescriptionLines(companionLibrary["shield-scarab"], known)).toEqual([
+      "Gains 6 Block each turn",
+    ]);
+    expect(getRunCompanionDescriptionLines(companionLibrary["golden-retriever"], known)).toEqual([
+      "Gain 3 Gold each turn",
+    ]);
+    expect(getRunCompanionDescriptionLines(companionLibrary["mana-moth"], known)).toEqual([
+      "Gain 1 Mana each turn, with a 25% chance to grant 1 more, allowing overflow",
+    ]);
+  });
+
   it("includes Panther Bond, typed Gear and First Blood once, and removes the conditional bonus when Bleeding", () => {
     const state = stateFor("panther", {
       talentEffects: { companionBondLevels: bonds("panther"), bleedUnwoundedBonusPercent: 25 },

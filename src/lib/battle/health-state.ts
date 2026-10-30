@@ -156,7 +156,10 @@ export function playerHealthLostToDamage(before: BattleState, after: BattleState
   return phoenixTriggered ? before.playerHealth : Math.max(0, before.playerHealth - after.playerHealth);
 }
 
-export function effectivePlayerHealingAmount(state: BattleState, amount: number): number {
+export function effectivePlayerHealingAmount(
+  state: Pick<BattleState, "talentEffects" | "gearEffects" | "playerHealth" | "playerMaxHealth">,
+  amount: number,
+): number {
   const bonus =
     amount > 0
       ? (state.talentEffects.homesteadHealing ?? 0) +

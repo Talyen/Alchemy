@@ -14,6 +14,7 @@ export { canPlayCard, type CardPlayOptions } from "./card-play";
 export { canMergeCombatText, mergeCombatText } from "./combat-text-events";
 export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
+export { getRunCompanionDescriptionLines, type RunCompanionInspectionState } from "./run-companion-inspection";
 export { applyCardEffects } from "./effect-handlers";
 export {
   getActiveCcKeyword,

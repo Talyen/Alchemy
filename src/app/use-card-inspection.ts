@@ -16,6 +16,7 @@ import { handHasHiddenCard, type HiddenHandCardKeys } from "@/features/alchemy/r
 import {
   getBattleCardDescriptionInspection,
   getBattleCompanionDescriptionLines,
+  getRunCompanionDescriptionLines,
   type BattleSnapshot,
 } from "@/lib/battle";
 import { companionLibrary, type BattleCard, type CompanionId } from "@/lib/game-data";
@@ -150,13 +151,22 @@ export function useCardInspection({
       ...data.talentEffects,
       inspectBattleCard: (card: BattleCard) => getBattleCardDescriptionInspection(card, data.battleState),
       describeCompanion: (id: CompanionId) =>
-        getBattleCompanionDescriptionLines(companionLibrary[id], data.battleState),
+        data.hasActiveBattle
+          ? getBattleCompanionDescriptionLines(companionLibrary[id], data.battleState)
+          : getRunCompanionDescriptionLines(companionLibrary[id], data.companionInspection),
       companionDamageModifiers: {
         damageBonus: data.companionDamageBonus,
         damageMultiplier: data.companionDamageMultiplier,
       },
     }),
-    [data.battleState, data.talentEffects, data.companionDamageBonus, data.companionDamageMultiplier],
+    [
+      data.battleState,
+      data.talentEffects,
+      data.companionDamageBonus,
+      data.companionDamageMultiplier,
+      data.hasActiveBattle,
+      data.companionInspection,
+    ],
   );
 
   return {
@@ -169,6 +179,6 @@ export function useCardInspection({
     collections,
     returnFocusRef,
     count: data.runDeck.length,
-    battleDescriptionContext: data.hasActiveBattle ? battleDescriptionContext : null,
+    battleDescriptionContext: data.hasActiveRun ? battleDescriptionContext : null,
   };
 }

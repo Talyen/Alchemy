@@ -370,7 +370,7 @@ identities or inspection work limits leave dependent damage at its authored
 value; already known earlier packets and state-independent nominal counts remain usable. Delayed attacks also retain
 authored values because future resources and pacing are unknown. Inspection
 never consumes live RNG, resources, or prepared effects. Collection and other
-nonbattle views retain authored descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
+nonbattle views retain authored attack descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
 defines execution seams, uncertainty limits, and effect-authoring requirements.
 
 Companion summon cards, pile inspection and the active Companion panel use the
@@ -380,8 +380,13 @@ Talents such as First Blood. Numbers update when those conditions change. Damage
 types with different known values retain a range; utility and Bond repeat wording
 remain intact. Like card attacks, these are offensive packet values before target
 Block/Armor, critical strikes and Dodge, rather than promised Health loss or a
-sum of separate follow-up effects. Nonbattle descriptions retain their existing
-Bond/Companion context without borrowing a previous battle's target.
+sum of separate follow-up effects. Active-run Card Shops and Deck inspection use
+the same standing actor manifests as battle initialization. Their Companion
+descriptions include Bond, generic Companion bonuses, typed flat damage and known
+utility grants. They do not invent an unbled, Frozen or low-Health enemy to enable
+conditional bonuses such as First Blood. Temporary battle resources, encounter
+pacing and target defenses remain battle-only; class-independent catalogs retain
+their intrinsic descriptions. No preview borrows a previous battle's target.
 
 Proportions, per-Mana coefficients, explicit Forge-scaling operands, multiplication
 factors, durations and charges remain rule operands. Replacing one with a current

@@ -14,7 +14,11 @@ export function blockAmountWithForge(state: BattleState, amount: number): number
   return amount + forgeBonus;
 }
 
-function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
+export function playerStatusDelta(
+  state: Pick<BattleState, "gearEffects" | "playerHealth" | "playerMaxHealth">,
+  status: PlayerStatusId,
+  delta: number,
+): number {
   if (status === "stun" && delta > 0) {
     return Math.max(0, Math.round(delta));
   }

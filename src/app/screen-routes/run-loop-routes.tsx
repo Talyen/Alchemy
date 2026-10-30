@@ -2,6 +2,8 @@ import { BattleEndTurnButton } from "@/features/alchemy/run-loop/screens/battle-
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { useEffect, useRef } from "react";
+import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
+import { useRunCompanionDescriptionContext } from "./use-run-companion-description-context";
 import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/enemy-inspection-overlay";
 import {
@@ -207,23 +209,26 @@ function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.merchant;
   const onContinue = () => routeCommands.runLoop.shop.continue("shop");
   const r = useRunScreenData("shop");
+  const descriptionContext = useRunCompanionDescriptionContext(r.companionInspection);
   return (
-    <CardShopScreen
-      isProgressSavePending={routeCommands.progress.isPending}
-      gold={r.gold}
-      runDeck={r.runDeck}
-      items={r.shopState.cards}
-      refreshesLeft={r.shopState.refreshesLeft}
-      removeUsed={r.shopState.removeUsed}
-      purchasedSlotKeys={r.shopState.purchasedSlotKeys}
-      getPrice={commands.getCardBuyPrice}
-      removePrice={commands.getRemoveCardPrice()}
-      refreshPrice={commands.getRefreshPrice()}
-      onBuy={commands.buyCard}
-      onRemoveCard={commands.removeCard}
-      onRefresh={commands.refresh}
-      onContinue={onContinue}
-    />
+    <CardDescriptionProvider cardDescriptionContext={descriptionContext}>
+      <CardShopScreen
+        isProgressSavePending={routeCommands.progress.isPending}
+        gold={r.gold}
+        runDeck={r.runDeck}
+        items={r.shopState.cards}
+        refreshesLeft={r.shopState.refreshesLeft}
+        removeUsed={r.shopState.removeUsed}
+        purchasedSlotKeys={r.shopState.purchasedSlotKeys}
+        getPrice={commands.getCardBuyPrice}
+        removePrice={commands.getRemoveCardPrice()}
+        refreshPrice={commands.getRefreshPrice()}
+        onBuy={commands.buyCard}
+        onRemoveCard={commands.removeCard}
+        onRefresh={commands.refresh}
+        onContinue={onContinue}
+      />
+    </CardDescriptionProvider>
   );
 }
 

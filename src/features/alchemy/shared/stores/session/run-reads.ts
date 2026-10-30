@@ -13,6 +13,7 @@ import type { RunSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
 import { deepFreeze } from "./store-utils";
+import { selectRunCompanionInspectionState } from "./combat-meta";
 
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = Readonly<PermanentProgressFields>;
@@ -128,6 +129,7 @@ export function selectCardInspectionData(state: GameplayState) {
     talentEffects: battle.talentEffects,
     companionDamageBonus: companionModifiers.damageBonus,
     companionDamageMultiplier: companionModifiers.damageMultiplier,
+    companionInspection: selectRunCompanionInspectionState(state),
   };
 }
 

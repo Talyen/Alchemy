@@ -6,6 +6,8 @@ import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/ses
 import { useRunScreenData } from "@/features/alchemy/shared/stores/react/use-run-screen-data";
 import type { RunLoopRouteCtx } from "./route-ctx";
 import { computeGoldReward, computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
+import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
+import { useRunCompanionDescriptionContext } from "./use-run-companion-description-context";
 
 const findCard = (id: string) => cardById[id];
 const findTrinket = (id: string) => trinketById[id];
@@ -40,6 +42,7 @@ function useHeldMysteryVisit(r: RunScreenDataByScreen["mystery"]) {
 export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.mystery;
   const r = useRunScreenData("mystery");
+  const descriptionContext = useRunCompanionDescriptionContext(r.companionInspection);
   const { handleContinue } = commands;
 
   const lastMysteryEventIdRef = useRef<string | null>(null);
@@ -74,43 +77,45 @@ export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   }
 
   return (
-    <MysteryScreen
-      event={heldVisit.event}
-      previewEffect={(effect) => {
-        if (effect.kind === "gainGold")
-          return {
-            ...effect,
-            amount: computeGoldReward(effect.amount, r.goldMultiplier, r.homesteadEffects.goldFindBonus),
-          };
-        if (effect.kind === "gainMaterial")
-          return {
-            ...effect,
-            amount: computeMysteryMaterialReward({
-              material: effect.material,
-              amount: effect.amount,
-              effects: r.homesteadEffects,
-            })[effect.material],
-          };
-        if (effect.kind === "healHealth") {
-          const total = effect.amount + (effect.amount > 0 ? r.homesteadEffects.homesteadHealing : 0);
-          // The choice applies Math.min(maxHealth, health + total); clamp the
-          // preview to the same missing Health so a near-full run does not
-          // promise healing it cannot receive.
-          return { ...effect, amount: Math.min(total, Math.max(0, r.runMaxHealth - r.runPlayerHealth)) };
-        }
-        return effect;
-      }}
-      mysteryCardChoices={heldVisit.cardChoices}
-      mysteryGrantedGearInstances={heldVisit.grantedGearInstances}
-      mysteryChosenCardId={heldVisit.chosenCardId}
-      mysteryChosenChoice={heldVisit.chosenChoice}
-      runTalentXP={r.runTalentXP}
-      talentXP={r.talentXP}
-      onChoose={commands.handleChoice}
-      onChooseCard={commands.handleChooseCard}
-      onContinue={commands.handleContinue}
-      findCard={findCard}
-      findTrinket={findTrinket}
-    />
+    <CardDescriptionProvider cardDescriptionContext={descriptionContext}>
+      <MysteryScreen
+        event={heldVisit.event}
+        previewEffect={(effect) => {
+          if (effect.kind === "gainGold")
+            return {
+              ...effect,
+              amount: computeGoldReward(effect.amount, r.goldMultiplier, r.homesteadEffects.goldFindBonus),
+            };
+          if (effect.kind === "gainMaterial")
+            return {
+              ...effect,
+              amount: computeMysteryMaterialReward({
+                material: effect.material,
+                amount: effect.amount,
+                effects: r.homesteadEffects,
+              })[effect.material],
+            };
+          if (effect.kind === "healHealth") {
+            const total = effect.amount + (effect.amount > 0 ? r.homesteadEffects.homesteadHealing : 0);
+            // The choice applies Math.min(maxHealth, health + total); clamp the
+            // preview to the same missing Health so a near-full run does not
+            // promise healing it cannot receive.
+            return { ...effect, amount: Math.min(total, Math.max(0, r.runMaxHealth - r.runPlayerHealth)) };
+          }
+          return effect;
+        }}
+        mysteryCardChoices={heldVisit.cardChoices}
+        mysteryGrantedGearInstances={heldVisit.grantedGearInstances}
+        mysteryChosenCardId={heldVisit.chosenCardId}
+        mysteryChosenChoice={heldVisit.chosenChoice}
+        runTalentXP={r.runTalentXP}
+        talentXP={r.talentXP}
+        onChoose={commands.handleChoice}
+        onChooseCard={commands.handleChooseCard}
+        onContinue={commands.handleContinue}
+        findCard={findCard}
+        findTrinket={findTrinket}
+      />
+    </CardDescriptionProvider>
   );
 }
