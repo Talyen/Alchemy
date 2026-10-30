@@ -16,8 +16,10 @@ const endsAt = (item: CombatTextPresentation) => item.launchAt + item.lifetimeMs
 
 function staggeredLaunch(item: QueueItem, ahead: QueueItem[], now: number) {
   const last = ahead.findLast((other) => other.presentation.lane === item.presentation.lane);
-  const deadline = Math.max(now, item.receivedAt + M.maximumQueueDelayMs);
-  return Math.min(deadline, Math.max(now, last ? last.presentation.launchAt + M.minimumLaunchGapMs : now));
+  const reaction = item.presentation.lane === "announcement";
+  const deadline = Math.max(now, item.receivedAt + (reaction ? M.maximumReactionQueueDelayMs : M.maximumQueueDelayMs));
+  const gap = reaction ? M.reactionLaunchGapMs : M.minimumLaunchGapMs;
+  return Math.min(deadline, Math.max(now, last ? last.presentation.launchAt + gap : now));
 }
 
 type Spread = NonNullable<CombatTextPresentation["spread"]>;

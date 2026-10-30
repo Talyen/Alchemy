@@ -70,3 +70,26 @@ html.alchemy-disable-animations .combat-text-critical {
   animation: none;
   background-position: 50% 50%;
 }
+
+.reaction-impact-accent {
+  animation: reaction-impact-accent 420ms ease-out both;
+}
+
+@keyframes reaction-impact-accent {
+  25% {
+    filter: drop-shadow(0 0 5px var(--reaction-accent)) drop-shadow(0 0 9px var(--reaction-secondary));
+  }
+  to {
+    filter: none;
+  }
+}
+
+html.alchemy-disable-animations .reaction-impact-accent {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reaction-impact-accent {
+    animation: none;
+  }
+}

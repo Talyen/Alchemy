@@ -275,7 +275,7 @@ describe("independent combat feedback launches", () => {
     feedback.showCombatTexts([...events]);
     const groups = feedback.store.getState().reactionAnnouncements;
     expect(groups[0]!.presentation).toBe(firstPath);
-    expect(groups[1]!.presentation!.launchAt - Date.now()).toBeLessThanOrEqual(180);
+    expect(groups[1]!.presentation!.launchAt - Date.now()).toBe(320);
     expect(groups[1]!.presentation!.spread).not.toBe(firstPath!.spread);
     feedback.reset();
   });

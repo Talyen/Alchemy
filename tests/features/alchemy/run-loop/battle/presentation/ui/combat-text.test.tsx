@@ -242,10 +242,11 @@ it("fans direct hits independently and gives simultaneous reactions separate sta
   expect(scheduled.reactionAnnouncements[0]!.presentation!.spread).not.toBe(
     scheduled.reactionAnnouncements[1]!.presentation!.spread,
   );
-  expect([...hits, ...scheduled.reactionAnnouncements].every((entry) => entry.presentation!.launchAt <= 180)).toBe(
-    true,
-  );
-  const shown = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 180);
+  expect(hits.every((entry) => entry.presentation!.launchAt <= 180)).toBe(true);
+  expect(scheduled.reactionAnnouncements.map((entry) => entry.presentation!.launchAt)).toEqual([0, 320]);
+  const early = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 180);
+  expect(early.reactionAnnouncements[1]!.presentation!.phase).toBe("waiting");
+  const shown = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 320);
   const { container } = render(
     <CombatTextRail bursts={shown.floatingCombatBursts} reactions={shown.reactionAnnouncements} />,
   );
@@ -254,6 +255,8 @@ it("fans direct hits independently and gives simultaneous reactions separate sta
     const pair = container.querySelector(`[data-reaction="${id}"]`)!.closest('[data-testid="combat-feedback-action"]');
     expect(pair?.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
     expect(pair?.querySelector(`[data-reaction-id="${id}"]`)).not.toBeNull();
+    const accent = pair?.querySelector(".reaction-impact-accent");
+    expect(accent?.getAttribute("style")).toContain("--reaction-accent");
   }
 });
 

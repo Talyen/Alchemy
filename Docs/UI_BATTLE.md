@@ -154,6 +154,10 @@ without changing combat math or status values.
 Status chips stay opaque through their existing entrance pop, so an entering or
 updated chip never briefly reintroduces its redundant corner feedback.
 
+A card-commanded Companion remains a separate action when choosing the card's
+primary result. Bonded Briar Shield shows its own Block centrally, while Bear's
+damage remains attached to Bear's later impact; neither result demotes the other.
+
 Direct typed damage retains its independent fan flights, including actions that
 trigger reactions. Each reaction has a separate central portrait-anchored pair:
 the localized name beside its actual typed bonus. Damage packets carry their exact
@@ -211,7 +215,11 @@ The [feedback owner](../src/features/alchemy/run-loop/battle/combat-feedback.ts)
 assigns each entry a waiting/visible phase, launch time, and post-launch lifetime.
 The [queue](../src/features/alchemy/run-loop/battle/combat-feedback-queue.ts) samples
 projected visible footprints with a preferred 6px clearance and 80 ms launch interval.
-Every entry launches within 180 ms of arrival, even when that permits overlap.
+Ordinary numeric and status entries launch within 180 ms of arrival, even when that permits overlap.
+Named reaction pairs instead use a 320 ms launch gap with a bounded 640 ms wait,
+so simultaneous reactions retain distinct readable beats. Their native keyword
+colors pulse briefly around the glyphs; reduced motion omits that accent. Damage
+resolution, Health, impact cues and audio remain immediate and unchanged.
 New numeric flights compare projected footprints before selecting a fixed center
 or diagonal path. Wider paths add vertical separation, protecting different damage
 types from receiving the same path when their queue deadlines coincide. Complete

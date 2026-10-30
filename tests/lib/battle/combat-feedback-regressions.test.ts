@@ -1,6 +1,8 @@
 import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { companionLibrary } from "@/lib/game-data";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyCrowdControlTriggerBonuses } from "@/lib/battle/bonus-effects";
@@ -10,6 +12,31 @@ import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("combat feedback regressions", () => {
+  it("keeps Bonded Briar Shield's Block primary without borrowing the commanded Bear's impact", () => {
+    const card = makeTestCard({
+      effects: [
+        { kind: "player-status", status: "block", amount: 2 },
+        { kind: "player-status", status: "thorns", amount: 4 },
+        { kind: "companion-action", amount: 1 },
+      ],
+    });
+    const state = regressionBattle({ hand: [card], activeCompanion: companionLibrary.bear, rng: () => 0.99 });
+    const before = structuredClone({ ...state, rng: undefined });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ kind: "status", stat: "block", amount: 2, feedback: "primary" }),
+    );
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ kind: "status", stat: "thorns", amount: 4, feedback: "secondary" }),
+    );
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ kind: "damage", stat: "stun", amount: 1, companionActionId: 1, feedback: "primary" }),
+    );
+    expect(result.state.playerStatuses).toMatchObject({ block: 2, thorns: 4 });
+    expect(result.state.enemyHealth).toBe(state.enemyHealth - 1);
+    expect({ ...state, rng: undefined }).toEqual(before);
+  });
+
   it("acknowledges a capped Mana restoration without inventing a resource gain or damage impact", () => {
     const state = regressionBattle({ mana: 3, maxMana: 3 });
     const texts: CombatTextEvent[] = [];

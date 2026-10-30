@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { REACTION_DEFINITIONS } from "@/lib/battle";
 import { COMBAT_TEXT_BASE_SIZE_PX } from "@/lib/game-constants";
@@ -62,11 +62,21 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
         >
           {announcement.reactionIds.map((id) => {
             const definition = REACTION_DEFINITIONS[id];
+            const colors = getKeywordTextShineColors(definition.keywords);
             return (
               <div
                 key={id}
-                className="flex max-w-full items-center justify-center gap-2"
-                style={{ fontSize: fontSize ?? "inherit" }}
+                className={cn(
+                  "flex max-w-full items-center justify-center gap-2",
+                  !staticMotion && "reaction-impact-accent",
+                )}
+                style={
+                  {
+                    fontSize: fontSize ?? "inherit",
+                    "--reaction-accent": colors[0],
+                    "--reaction-secondary": colors[2] ?? colors[0],
+                  } as CSSProperties
+                }
               >
                 <span
                   data-testid="reaction-text"
@@ -74,7 +84,7 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
                   className="block min-w-0 text-center whitespace-nowrap"
                 >
                   <ShineText
-                    colors={getKeywordTextShineColors(definition.keywords)}
+                    colors={colors}
                     className={cn("reaction-text-shine", staticMotion && "reaction-text-static")}
                   >
                     {i18n.displayText(definition.text)}

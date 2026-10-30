@@ -45,6 +45,8 @@ export const COMBAT_TEXT_MOTION = {
   reactionSize: 1.25,
   minimumLaunchGapMs: 80,
   maximumQueueDelayMs: 180,
+  reactionLaunchGapMs: 320,
+  maximumReactionQueueDelayMs: 640,
   nearbyLaunchWindowMs: 360,
   fanStartPx: 16,
   fanDriftPx: 20,

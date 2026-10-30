@@ -254,7 +254,9 @@ export function applyCardEffects(
   let firstMeaningful: CombatTextEvent | undefined;
   let hasImpact = false;
   for (const event of effectTexts) {
-    if (event.feedback !== "primary") continue;
+    // A commanded Companion owns its own later impact. It must not demote the
+    // card's Block or other authored result before that separate action plays.
+    if (event.feedback !== "primary" || event.companionActionId !== undefined) continue;
     firstDirect ??= event;
     if (event.kind === "notice" || event.amount !== 0) {
       firstMeaningful ??= event;
@@ -263,7 +265,7 @@ export function applyCardEffects(
   }
   const first = firstMeaningful ?? firstDirect;
   for (const event of effectTexts) {
-    if (!context.feedback) {
+    if (!context.feedback || event.companionActionId !== undefined) {
       mergeCombatText(combatTexts, event);
       continue;
     }
