@@ -60,9 +60,9 @@ describe("createBattleState", () => {
     expect(start.nextCardUid).toBe(0);
 
     const opened = drawOpeningHand(start);
-    expect(opened.hand).toHaveLength(5);
-    expect(opened.deck).toHaveLength(3);
-    expect(opened.hand.map((card) => card.uid)).toEqual([0, 1, 2, 3, 4]);
+    expect(opened.hand).toHaveLength(4);
+    expect(opened.deck).toHaveLength(4);
+    expect(opened.hand.map((card) => card.uid)).toEqual([0, 1, 2, 3]);
     expect([...opened.hand, ...opened.deck].map((card) => card.id).sort()).toEqual(
       runDeck.map((card) => card.id).sort(),
     );

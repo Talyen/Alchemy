@@ -9,7 +9,7 @@ import {
 describe("Trinket manifests", () => {
   it("retains the neutral fields used by saved battles", () => {
     expect(defaultTrinketEffects).toEqual({
-      extraDrawPerBattle: 0,
+      tatteredPagesBurnDrawChance: 0,
       brassCenserProcChance: 0,
       firstBurnDoubled: false,
       boneCharmHealOnKill: 0,
@@ -40,10 +40,10 @@ describe("Trinket manifests", () => {
 
   it("combines a boolean Boon and a numeric Boon without sharing mutable defaults", () => {
     const manifest = computeTrinketManifest(["meteorite", "tattered-pages"]);
-    expect(manifest).toEqual({ ...defaultTrinketEffects, firstBurnDoubled: true, extraDrawPerBattle: 1 });
+    expect(manifest).toEqual({ ...defaultTrinketEffects, firstBurnDoubled: true, tatteredPagesBurnDrawChance: 10 });
     manifest.firstBurnDoubled = false;
-    manifest.extraDrawPerBattle = 99;
-    expect(computeTrinketManifest(["meteorite", "tattered-pages"]).extraDrawPerBattle).toBe(1);
+    manifest.tatteredPagesBurnDrawChance = 99;
+    expect(computeTrinketManifest(["meteorite", "tattered-pages"]).tatteredPagesBurnDrawChance).toBe(10);
     expect(computeTrinketManifest([])).toEqual(defaultTrinketEffects);
     expect(defaultTrinketEffects.firstBurnDoubled).toBe(false);
   });
@@ -56,7 +56,7 @@ describe("Trinket manifests", () => {
     ).toEqual({
       ...defaultTrinketEffects,
       brassCenserProcChance: 20,
-      extraDrawPerBattle: 1,
+      tatteredPagesBurnDrawChance: 10,
       sunderingArmorPiercing: 2,
     });
   });

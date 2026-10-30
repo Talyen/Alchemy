@@ -5,6 +5,7 @@ import { decayArmorAfterDamage } from "./status-helpers";
 import { applyIronGuardReward } from "./status-player";
 import {
   applyBleedDamageDraw,
+  applyBurnDamageDraw,
   applyElementalDamageManaRestore,
   applyHitHealth,
   reportEnemyHitDamage,
@@ -30,6 +31,7 @@ export function resolveTypedEnemyHit(
   const { state: damaged, facts } = applyHitHealth(state, resolvedDamage, eligibility, options.critical ?? false);
   let next = applyIronGuardReward(damaged, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") next = applyBleedDamageDraw(next, facts.healthDamage, combatTexts);
+  if (effect.damageType === "burn") next = applyBurnDamageDraw(next, facts.healthDamage, combatTexts);
   if (isPlayerDefeated(next)) {
     next = decayArmorAfterDamage(next, resolvedDamage, "enemy", combatTexts);
     reportEnemyHitDamage(facts, effect.damageType, combatTexts);

@@ -20,7 +20,7 @@ import { payKillPayouts } from "./player-rewards";
 import { resolveBleedGoldReward } from "./bonus-effects";
 import { emitDamageText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./stun-leech-resolution";
-import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
+import { applyBleedDamageDraw, applyBurnDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
@@ -64,6 +64,13 @@ export function applyEnemyDotDamage(
   let nextState = decayArmorAfterDamage(shredded, finalDamage, "enemy", combatTexts);
   // Commit the tick's consumed stacks before rewards can apply fresh statuses.
   for (const pulse of pulses) nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
+
+  // Each pulse is one event; earlier pulses can exhaust the target's Health.
+  for (let index = 0; index < pulses.length; index++) {
+    if (pulses[index]!.status !== "burn") continue;
+    nextState = applyBurnDamageDraw(nextState, pulseHealthDamage(pulses, index, previousHealth), combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
+  }
 
   const bleedHealthDamage =
     bleedIndex >= 0 ? Math.min(pulses[bleedIndex]!.finalDamage, Math.max(0, previousHealth - damageBeforeBleed)) : 0;
