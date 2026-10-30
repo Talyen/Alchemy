@@ -3,8 +3,9 @@ import { collectEncounterFindings } from "./findings-encounters";
 import { collectPairedFindings } from "./findings-paired";
 import { finding } from "./findings-shared";
 import type { BalanceFinding } from "./findings-types";
-import { REPORT_TIERS } from "./report-catalog";
+import { REPORT_TIERS, titleFor } from "./report-catalog";
 import type { BalanceReportModel } from "./report-model";
+import { getTalentTreeKeywordIds, talentPool } from "@/lib/game-data";
 
 function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
   const findings: BalanceFinding[] = [];
@@ -50,6 +51,15 @@ export function collectBalanceFindings(model: BalanceReportModel): BalanceFindin
     ...collectPairedFindings(model.cardsIsolatedElite, "card", "isolated vs Mimic"),
     ...collectPairedFindings(model.cardsInClass, "card", "in-class"),
     ...collectPairedFindings(model.talents, "talent"),
+    ...getTalentTreeKeywordIds().flatMap((keyword) =>
+      collectPairedFindings(
+        model.talentTreeMembers.filter(
+          (row) => talentPool.find((talent) => talent.id === row.id)?.keywordId === keyword,
+        ),
+        "talent",
+        `${titleFor("keyword", keyword)} full tree`,
+      ),
+    ),
     ...collectPairedFindings(model.companions, "companion"),
     ...collectPairedFindings(model.gear, "gear"),
     ...collectPairedFindings(model.affixes, "affix"),

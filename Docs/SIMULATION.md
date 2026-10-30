@@ -115,6 +115,25 @@ Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-d
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
 
+The matrix also compares each fully unlocked talent tree with no tree, and each
+combat talent with the rest of its full tree. Results are paired on the same
+hero, deck, enemy and seeds, with talent-point HP held fixed. They cover every
+shipped tree at all three tiers across the boon gauntlet, Frostwarden, Blight
+Treant and configured deck seeds. Scenarios are equally weighted per hero.
+Affinity heroes use their class decks; otherwise a Wildcard deck receives
+up to five keyword cards. The full-tree setup is a hypothetical sensitivity
+probe, particularly at Early: it does not model earning points. Tree sizes and
+hero/deck contexts differ, so the tree ranking does not isolate keyword power.
+Economic-only talents are excluded from individual combat rankings; their
+out-of-combat value needs career simulations. Within-tree findings compare
+talents to their own tree's median; they are screening heuristics, not tests of
+significance against that median. Paired standard errors are conditional on the
+sampled scenarios and do not measure uncertainty across decks or enemies. Inspect
+the baseline and treatment win rates, sample counts and turn deltas, confirm candidates with more seeds, policies and
+targeted mechanics tests, and investigate inactive triggers or saturated win
+rates before interpreting near-zero results as weak talents. Turn deltas include
+defeats and timeouts. Full-tree and per-talent results are not additive.
+
 Report measurements share `RateCell` in `simulator-types.ts` and an
 extraction/aggregation record in `rate-statistics.ts`. Batch summaries and report
 aggregation use that record: counts always sum; rates and averages weight by

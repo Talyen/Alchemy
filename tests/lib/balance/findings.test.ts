@@ -10,7 +10,7 @@ import {
   type PairedTierRow,
   type RateCell,
 } from "@/lib/balance";
-import { enemyById } from "@/lib/game-data";
+import { enemyById, getTalentsForKeyword } from "@/lib/game-data";
 import { collectBalanceFindings } from "@/lib/balance/findings-collector";
 import { emptyPairedWinStats } from "@/lib/balance/report-rankings";
 
@@ -57,6 +57,8 @@ function emptyModel(): { -readonly [Key in keyof BalanceReportModel]: BalanceRep
     cardsIsolatedElite: [],
     cardsInClass: [],
     talents: [],
+    talentTrees: [],
+    talentTreeMembers: [],
     companions: [],
     gear: [],
     affixes: [],
@@ -66,6 +68,22 @@ function emptyModel(): { -readonly [Key in keyof BalanceReportModel]: BalanceRep
 }
 
 describe("evaluateBalanceFindings", () => {
+  it("screens talent outliers against their own tree instead of other trees", () => {
+    const model = emptyModel();
+    const first = getTalentsForKeyword("burn").slice(0, 3);
+    const second = getTalentsForKeyword("poison").slice(0, 3);
+    expect(first).toHaveLength(3);
+    expect(second).toHaveLength(3);
+    const row = (id: string, delta: number) =>
+      paired(id, { ...makePairedDelta(id, emptyPairedWinStats()), n: 100, delta, se: 0.01, noisy: false });
+    model.talentTreeMembers = [
+      ...first.map((talent, index) => row(talent.id, index === 2 ? 0.3 : 0.1)),
+      ...second.map((talent) => row(talent.id, 0.5)),
+    ];
+    const findings = collectBalanceFindings(model).filter((item) => item.metric === "delta" && item.scope === "talent");
+    expect(findings.map((item) => item.id)).toEqual([`${first[2]!.id}:Burn full tree`]);
+  });
+
   it("applies enemy win-rate bands to every progression tier", () => {
     const model = emptyModel();
     model.enemies = [

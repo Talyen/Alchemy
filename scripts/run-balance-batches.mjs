@@ -137,6 +137,8 @@ await withReportServer(async (server) => {
     ["cardsIsolatedElite", () => api.isolatedCardGroups(options, "mimic"), (group, runGroup) => runGroup(group)],
     ["cardsInClass", () => api.inClassCardGroups(options), (group, runGroup) => runGroup(group)],
     ["talents", () => api.talentGroups(options), (group, runGroup) => runGroup(group)],
+    ["talentTrees", () => api.talentTreeGroups(options, "tree"), (group, runGroup) => runGroup(group)],
+    ["talentTreeMembers", () => api.talentTreeGroups(options, "member"), (group, runGroup) => runGroup(group)],
     ["companions", () => api.companionGroups(options), (group, runGroup) => runGroup(group)],
     ["gear", () => api.gearGroups(options), (group, runGroup) => runGroup(group)],
     ["affixes", () => api.affixGroups(options), (group, runGroup) => runGroup(group)],

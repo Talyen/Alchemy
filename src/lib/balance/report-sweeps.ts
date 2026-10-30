@@ -6,6 +6,7 @@ import {
   computeTalentEffects,
   getCardKeywordView,
   getOfferableCardPoolView,
+  getTalentTreeKeywordIds,
   trinketLibrary,
   type BattleCard,
 } from "@/lib/game-data";
@@ -28,7 +29,13 @@ import {
 import type { PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import { runPairedSweep, type PairedSweepGroup } from "./report-sweep-runner";
-import { buildPresetUnlockedTalents, combatTalentsInPoolOrder, withTalent, withoutTalent } from "./talent-preset";
+import {
+  buildPresetUnlockedTalents,
+  combatTalentsInPoolOrder,
+  talentsInTreeOrder,
+  withTalent,
+  withoutTalent,
+} from "./talent-preset";
 
 export { IN_CLASS_CARD_GAUNTLET };
 export { buildBalanceBatchConfig } from "./report-sweep-runner";
@@ -213,6 +220,83 @@ export function* talentGroups(options: ReportRunOptions): Iterable<PairedSweepGr
 
 export function runTalentSweep(options: ReportRunOptions): PairedTierRow[] {
   return runPairedSweep(options, talentGroups(options));
+}
+
+const TALENT_TREE_GAUNTLET = [
+  ...BOON_GAUNTLET,
+  { enemyId: "frostwarden", depthDelta: 7 },
+  { enemyId: "blight-treant", depthDelta: 7 },
+] as const;
+
+// Full-tree sensitivity probes deliberately hold the talent-point HP budget fixed.
+// Trees without an affinity hero use a synthetic Wildcard deck with keyword cards.
+export function* talentTreeGroups(options: ReportRunOptions, measure: "tree" | "member"): Iterable<PairedSweepGroup> {
+  const pool = getOfferableCardPoolView();
+  for (const tier of REPORT_TIERS) {
+    for (const keyword of getTalentTreeKeywordIds()) {
+      const talents = combatTalentsInPoolOrder(keyword);
+      const allTalents = talentsInTreeOrder(keyword);
+      const unlocked = { [keyword]: allTalents.map((talent) => talent.id) };
+      const fullEffects = computeTalentEffects(unlocked);
+      const emptyEffects = computeTalentEffects({});
+      const heroes = reportCharacterIds().filter((id) => characters[id].keywords.includes(keyword));
+      if (heroes.length === 0) heroes.push("wildcard");
+      for (const characterId of heroes) {
+        for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
+          const deckSeed = balanceScenarioSeed("talent-tree-deck", tier.preset, keyword, characterId, deckIndex);
+          let deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
+          if (characterId === "wildcard") {
+            const keywordCards = sampleItems(
+              pool.filter((card) => getCardKeywordView(card).includes(keyword)),
+              5,
+              createRunStreamRng(deckSeed, "world"),
+            );
+            const chosen = new Set(keywordCards.map((card) => card.id));
+            deck = [...keywordCards, ...deck.filter((card) => !chosen.has(card.id))].slice(0, deck.length);
+          }
+          const variants =
+            measure === "tree"
+              ? [{ id: keyword, talentEffects: emptyEffects }]
+              : talents.map((talent) => ({
+                  id: talent.id,
+                  talentEffects: computeTalentEffects(withoutTalent(unlocked, talent)),
+                }));
+          for (const scenario of TALENT_TREE_GAUNTLET) {
+            const depth = tier.depthOffset + scenario.depthDelta;
+            const shared = {
+              characterId,
+              enemyId: scenario.enemyId,
+              depth,
+              preset: tier.preset,
+              seed: balanceScenarioSeed(
+                "talent-tree-fight",
+                tier.preset,
+                keyword,
+                characterId,
+                deckIndex,
+                scenario.enemyId,
+                depth,
+              ),
+              deck,
+              iterations: options.pairedIterations,
+            };
+            yield {
+              reference: { ...shared, talentEffects: fullEffects },
+              variants: variants.map(({ id, talentEffects }) => ({
+                id,
+                scenario: { ...shared, talentEffects },
+                referenceSide: "treatment" as const,
+              })),
+            };
+          }
+        }
+      }
+    }
+  }
+}
+
+export function runTalentTreeSweep(options: ReportRunOptions, measure: "tree" | "member"): PairedTierRow[] {
+  return runPairedSweep(options, talentTreeGroups(options, measure));
 }
 
 export function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {

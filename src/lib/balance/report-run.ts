@@ -23,6 +23,7 @@ import {
   runCompanionSweep,
   runGearSweep,
   runTalentSweep,
+  runTalentTreeSweep,
   runTrinketSweep,
 } from "./report-sweeps";
 import { simulateBatch } from "./simulator-batch";
@@ -189,6 +190,8 @@ type SweepSummary = Pick<
   | "cardsIsolatedElite"
   | "cardsInClass"
   | "talents"
+  | "talentTrees"
+  | "talentTreeMembers"
   | "companions"
   | "gear"
   | "affixes"
@@ -230,6 +233,8 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
     cardsIsolatedElite: rankedSweep("card isolated (elite)", () => runCardSweepIsolated(options, "mimic")),
     cardsInClass: rankedSweep("card in-class", () => runCardSweepInClass(options)),
     talents: rankedSweep("talent sweep", () => runTalentSweep(options)),
+    talentTrees: rankedSweep("talent trees", () => runTalentTreeSweep(options, "tree")),
+    talentTreeMembers: rankedSweep("talent tree members", () => runTalentTreeSweep(options, "member")),
     companions: rankedSweep("companion sweep", () => runCompanionSweep(options)),
     gear: rankedSweep("gear sweep", () => runGearSweep(options)),
     affixes: rankedSweep("affix sweep", () => runAffixSweep(options)),

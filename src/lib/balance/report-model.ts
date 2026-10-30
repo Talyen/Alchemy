@@ -58,6 +58,8 @@ export interface BalanceReportModel {
   readonly cardsIsolatedElite: readonly PairedTierRow[];
   readonly cardsInClass: readonly PairedTierRow[];
   readonly talents: readonly PairedTierRow[];
+  readonly talentTrees: readonly PairedTierRow[];
+  readonly talentTreeMembers: readonly PairedTierRow[];
   readonly companions: readonly PairedTierRow[];
   readonly gear: readonly PairedTierRow[];
   readonly affixes: readonly PairedTierRow[];

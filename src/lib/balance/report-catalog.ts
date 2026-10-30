@@ -6,6 +6,7 @@ import {
   enemiesByType,
   getDifficultyModifiers,
   talentPool,
+  keywordDefinitions,
   trinketLibrary,
   type CharacterId,
   type DifficultyModifier,
@@ -122,6 +123,7 @@ const TITLE_LOOKUPS = {
   affix: new Map<string, string>(gearAffixList.map((entry) => [entry.id, entry.name])),
   gear: new Map<string, string>(gearBaseItemList.map((entry) => [entry.id, entry.displayName])),
   talent: new Map<string, string | undefined>(talentPool.map((entry) => [entry.id, entry.name])),
+  keyword: new Map<string, string>(Object.values(keywordDefinitions).map((entry) => [entry.id, entry.label])),
 };
 
 export type TitleLookupKind = keyof typeof TITLE_LOOKUPS;

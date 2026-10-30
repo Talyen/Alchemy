@@ -1,4 +1,4 @@
-import { enemyById, isEnemyId } from "@/lib/game-data";
+import { enemyById, getTalentTreeKeywordIds, isEnemyId, talentPool } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-types";
 import {
@@ -13,6 +13,7 @@ import { reportMethodologyLines } from "./report-methodology";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import type { PairedDelta, RateCell } from "./report-rankings";
+import { talentsInTreeOrder } from "./talent-preset";
 
 const percent = formatPercent;
 
@@ -33,7 +34,7 @@ function deltaCell(delta: PairedDelta): string {
   const mark = delta.noisy ? " (noisy)" : "";
   const turns =
     delta.n > 0 ? `<div class="meta">${delta.turnDelta >= 0 ? "+" : ""}${delta.turnDelta.toFixed(1)} turns</div>` : "";
-  return `<td class="${cls}">${percent(delta.delta)}${mark}<div class="meta">SE ${percent(delta.se)} · n=${delta.n}</div>${turns}</td>`;
+  return `<td class="${cls}">${percent(delta.delta)}${mark}<div class="meta">${percent(delta.baseline)} → ${percent(delta.winRate)} · SE ${percent(delta.se)} · n=${delta.n}</div>${turns}</td>`;
 }
 
 function rateSection(title: string, explanation: string, headers: string, rows: string): string {
@@ -57,9 +58,16 @@ function pairedSection(
   title: string,
   explanation: string,
   rows: readonly PairedTierRow[],
-  kind: "boon" | "card" | "talent" | "companion" | "gear",
+  kind: "boon" | "card" | "talent" | "companion" | "gear" | "keyword",
 ): string {
-  const heading = { boon: "Boon", card: "Card", talent: "Talent", companion: "Companion", gear: "Item" }[kind];
+  const heading = {
+    boon: "Boon",
+    card: "Card",
+    talent: "Talent",
+    companion: "Companion",
+    gear: "Item",
+    keyword: "Tree",
+  }[kind];
   return `<h2>${escapeHtml(title)}</h2>
 ${explanation ? `<p class="meta">${escapeHtml(explanation)}</p>` : ""}
 <div class="scroll"><table><thead><tr><th>${heading}</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
@@ -144,6 +152,19 @@ ${pairedSection("Card Rankings — isolated vs Skeleton", "Target card + 9 rando
 ${pairedSection("Card Rankings — isolated vs Mimic", "", model.cardsIsolatedElite, "card")}
 ${pairedSection("Card Rankings — in-class decks", "Insert (or remove-then-compare) the card in a class-identity deck vs Skeleton.", model.cardsInClass, "card")}
 ${pairedSection("Talent ablation", "Affinity combat talents on vs off, class decks, gauntlet enemies, paired.", model.talents, "talent")}
+${pairedSection("Talent tree contribution", "Full tree vs no tree, matched fights. Trees have different sizes and hero/deck contexts; compare as a screening signal, not a direct causal ranking of keywords.", model.talentTrees, "keyword")}
+<h2>Talents within each tree</h2>
+<p class="meta">Each combat talent is removed from its full tree. Positive delta favors the talent. Compare peers within the same tree and tier; near-zero results can mean the effect was not exercised or wins were saturated. Economic-only talents are omitted; tree comparisons include them. Turn changes include losses and timeouts.</p>
+${getTalentTreeKeywordIds()
+  .map((keyword) =>
+    pairedSection(
+      `${titleFor("keyword", keyword)} (${talentsInTreeOrder(keyword).length} talents)`,
+      "",
+      model.talentTreeMembers.filter((row) => talentPool.find((talent) => talent.id === row.id)?.keywordId === keyword),
+      "talent",
+    ),
+  )
+  .join("\n")}
 ${pairedSection("Companion ablation", "Summon card in vs out of class decks on the gauntlet.", model.companions, "companion")}
 
 <h2>Item affix isolation</h2>

@@ -11,7 +11,15 @@ import { companionIdsFromDeck } from "@/lib/balance/companion-deck";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
-import { cardLibrary, trinketLibrary, companionLibrary } from "@/lib/game-data";
+import {
+  cardLibrary,
+  trinketLibrary,
+  companionLibrary,
+  characters,
+  computeTalentEffects,
+  getTalentTreeKeywordIds,
+} from "@/lib/game-data";
+import { combatTalentsInPoolOrder, talentsInTreeOrder, withoutTalent } from "@/lib/balance/talent-preset";
 import {
   IN_CLASS_CARD_GAUNTLET,
   runCardSweepInClass,
@@ -21,7 +29,53 @@ import {
   runTalentSweep,
   runCompanionSweep,
   runGearSweep,
+  talentTreeGroups,
 } from "@/lib/balance/report-sweeps";
+
+it("covers every tree and removes each combat talent from a matched full-tree fight", () => {
+  const options = {
+    iterations: 1,
+    pairedIterations: 2,
+    cardDeckSamples: 1,
+    deckSeeds: 2,
+    policy: "random-playable" as const,
+    loadoutMode: "bare" as const,
+  };
+  const treeGroups = [...talentTreeGroups(options, "tree")];
+  const memberGroups = [...talentTreeGroups(options, "member")];
+  expect(treeGroups).toHaveLength(memberGroups.length);
+  const seen = new Set<string>();
+  for (let index = 0; index < treeGroups.length; index++) {
+    const tree = treeGroups[index]!;
+    const members = memberGroups[index]!;
+    const [treeVariant] = [...tree.variants];
+    const keyword = getTalentTreeKeywordIds().find((id) => id === treeVariant?.id)!;
+    seen.add(keyword);
+    const unlocked = { [keyword]: talentsInTreeOrder(keyword).map((talent) => talent.id) };
+    expect(tree.reference.talentEffects).toEqual(computeTalentEffects(unlocked));
+    expect(treeVariant?.scenario.talentEffects).toEqual(computeTalentEffects({}));
+    expect(treeVariant?.referenceSide).toBe("treatment");
+    expect(members.reference).toEqual(tree.reference);
+    const variants = [...members.variants];
+    const talents = combatTalentsInPoolOrder(keyword);
+    expect(variants.map((entry) => entry.id)).toEqual(talents.map((talent) => talent.id));
+    for (const [variantIndex, talent] of talents.entries()) {
+      const variant = variants[variantIndex]!;
+      expect(variant.referenceSide).toBe("treatment");
+      expect(variant.scenario).toEqual({
+        ...members.reference,
+        talentEffects: computeTalentEffects(withoutTalent(unlocked, talent)),
+      });
+    }
+    const affinityHeroes = Object.values(characters).filter((hero) => hero.keywords.includes(keyword));
+    expect(
+      affinityHeroes.length
+        ? characters[tree.reference.characterId].keywords.includes(keyword)
+        : tree.reference.characterId === "wildcard",
+    ).toBe(true);
+  }
+  expect([...seen].sort()).toEqual(getTalentTreeKeywordIds().sort());
+});
 
 function affixScenarioViolations(groups: Map<number, BalanceBatchConfig[]>) {
   let count = 0;
