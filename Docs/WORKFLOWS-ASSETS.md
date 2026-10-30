@@ -120,11 +120,25 @@ Compare changes at their destination size, crop and surrounding UI under
 does not improve the game. Style references include Knight, Wizard and Fireball
 in `src/assets/optimized/`, plus Discordant Dice and Ascension Seal.
 
-Compose one prompt from the shared foundation and the applicable subject block.
+For illustrations, compose one prompt from the shared foundation and the applicable
+subject block. Logo and wordmark explorations use their own foundation below instead.
 References guide illustration treatment; screen composition follows the UI owners.
 
 ```text
 Illustrated in a bold, high-energy action-anime style in the visual tradition of kinetic modern action-anime studios. Sharp, angular exaggeration and dynamic motion implied by diagonal shadow shapes, never literal speed lines. Thick, confident near-black outlines of varying weight, saturated punchy colors, and two or three hard-edged flat shading steps. Minimal blending, no gradients or painterly subtlety. Dramatic perspective, sharp graphic highlight flares, and high-contrast graphic color blocking.
+```
+
+### Logo and wordmark explorations
+
+Use this foundation in place of the illustration foundation when exploring logos or
+wordmarks. It retains the game's illustrated ink and color treatment without requiring
+dramatic perspective or motion in the lettering. Add only the composition, imagery and
+wording needed for the particular concept; compare genuinely different typographic and
+compositional approaches instead of assuming one fantasy-logo treatment. A prompt is a
+starting point, not evidence that a design matches the art style or is readable in-game.
+
+```text
+Create a distinctive illustrated logo that belongs to the same world as Alchemy's game artwork. Use confident near-black outlines, deliberate color blocking and a limited number of clear shading shapes. Design the lettering for personality, balance and legibility at game-menu size. Let the composition, letterforms and visual rhythm suit the concept; use perspective, motion and highlights only where they strengthen the design. Keep the silhouette clear and the visual details purposeful.
 ```
 
 ### Master prompt (Playable Heroes, Bosses, and Enemy encounters)
