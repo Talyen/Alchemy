@@ -153,6 +153,9 @@ buildup. Receipts and expiry remain unchanged; the renderer checks live row visi
 without changing combat math or status values.
 Status chips stay opaque through their existing entrance pop, so an entering or
 updated chip never briefly reintroduces its redundant corner feedback.
+Untagged turn and retaliation control notices use that same active-chip check;
+Stun damage remains a separate central hit and ordinary buildup is not mistaken
+for a successfully Stunned opponent.
 
 A card-commanded Companion remains a separate action when choosing the card's
 primary result. Bonded Briar Shield shows its own Block centrally, while Bear's

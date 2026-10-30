@@ -8,9 +8,10 @@ function combatStatusKey(target: CombatTextEvent["target"], status: StatusChip["
 
 export function secondaryStatusFeedbackKey(event: CombatTextEvent, lane: CombatTextLane): string | undefined {
   if (event.feedback === "primary" || lane === "impact" || lane === "announcement") return;
-  // Applied control uses a distinct chip ID from its damage buildup. Only explicit
-  // secondary applications deduplicate; primary control and other notice outcomes stay.
-  if (event.kind === "notice" && event.feedback === "secondary" && event.signal === undefined) {
+  // Applied control uses a distinct chip ID from damage buildup. Untagged
+  // turn/retaliation notices also duplicate an active chip; explicit primary
+  // outcomes were retained above, and a missing chip keeps the ordinary fallback.
+  if (event.kind === "notice" && event.signal === undefined) {
     if (event.stat === "stun") return combatStatusKey(event.target, "stunned");
     if (event.stat === "freeze") return combatStatusKey(event.target, "frozen");
   }

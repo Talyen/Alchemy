@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
+import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyCrowdControlTriggerBonuses } from "@/lib/battle/bonus-effects";
@@ -12,6 +13,37 @@ import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("combat feedback regressions", () => {
+  it("retains secondary intent for the turn-start Bear's genuine Stunned notice and reward", () => {
+    const state = regressionBattle({
+      activeCompanion: companionLibrary.bear,
+      enemyHealth: 10,
+      enemyMaxHealth: 10,
+      enemyStatuses: { stun: 9 },
+      gearEffects: { blockOnStun: 6 },
+      rng: () => 0.99,
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = processCompanionTurnStart(state, texts);
+    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
+    expect(texts).toContainEqual(
+      expect.objectContaining({
+        kind: "notice",
+        stat: "stun",
+        text: "Stunned",
+        feedback: "secondary",
+        companionActionId: 1,
+      }),
+    );
+    expect(texts).toContainEqual(
+      expect.objectContaining({
+        kind: "status",
+        stat: "block",
+        amount: 6,
+        feedback: "secondary",
+        companionActionId: 1,
+      }),
+    );
+  });
   it("keeps Bonded Briar Shield's Block primary without borrowing the commanded Bear's impact", () => {
     const card = makeTestCard({
       effects: [
