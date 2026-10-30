@@ -32,6 +32,21 @@ describe("gear affixes", () => {
     },
   );
 
+  it("limits Astral Ashkeeper to 1 Armor while preserving Basic and Unique ranges", () => {
+    const affix = gearAffixCatalog["armor-on-consume"];
+    expect(affix.roll.basic).toEqual({ min: 1, max: 1 });
+    expect(affix.roll.astral).toEqual({ min: 1, max: 1 });
+    expect(affix.roll.unique).toEqual({ min: 1, max: 2 });
+    expect(rollAffixValue(affix, "astral", () => 0)).toBe(1);
+    expect(rollAffixValue(affix, "astral", () => 0.999)).toBe(1);
+
+    const oldRoll = [{ id: "armor-on-consume", value: 2 }];
+    expect(normalizeAffixRolls(oldRoll, "astral")).toEqual([{ id: "armor-on-consume", value: 1 }]);
+    expect(effectsForAffixRolls(oldRoll, "astral").armorOnConsume).toBe(1);
+    expect(getGearAffixTooltipEntries(oldRoll, "astral")[0]?.value).toBe(1);
+    expect(effectsForAffixRolls(oldRoll, "unique").armorOnConsume).toBe(2);
+  });
+
   it("shows both Saintfall magnitudes in its tooltip", () => {
     const [entry] = getGearAffixTooltipEntries([{ id: "saintfall", value: 4 }], "unique");
     expect(entry?.text).toBe("When Block is depleted, deal 4 Holy to the attacker and restore 4 Health");

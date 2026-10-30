@@ -18,6 +18,7 @@ const ASTRAL_BURN_POISON_BLEED_NATURE_ROLL = { ...ROLL_SMALL, astral: { min: 2, 
 const ASTRAL_ARCHERY_DAMAGE_ROLL = { ...rollRange(2, 3, 4, 5), astral: { min: 3, max: 4 } };
 const ASTRAL_BURN_PER_MANA_ROLL = { ...rollRange(5, 8, 8, 12), astral: { min: 8, max: 10 } };
 const ASTRAL_WARDING_ROLL = { ...ROLL_SMALL, astral: { min: 2, max: 3 } };
+const ASTRAL_ASHKEEPER_ROLL = { ...rollRange(1, 1, 1, 2), astral: { min: 1, max: 1 } };
 
 // Order is part of seeded Gear generation. Presentation and manifest defaults
 // derive from these same rows, without making combat depend on tooltip parsing.
@@ -505,7 +506,7 @@ export const gearAffixRows = [
   ),
   defensiveAffix(
     ["armor-on-consume", "Ashkeeper", "consume", "armor"],
-    ["armorOnConsume", rollRange(1, 1, 1, 2), "When you Consume a card, gain {value} Armor"],
+    ["armorOnConsume", ASTRAL_ASHKEEPER_ROLL, "When you Consume a card, gain {value} Armor"],
   ),
   offensiveAffix(
     ["holy-on-consume-without-mana", "Lastlight", "consume", "holy"],
