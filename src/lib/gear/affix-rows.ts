@@ -12,7 +12,7 @@ import {
   ROLL_MEDIUM,
   type AffixRowInput,
 } from "./affix-definition";
-import { AETHERWARD_MANA_REDUCTION_PERCENT } from "@/lib/game-constants";
+import { AETHERWARD_MANA_REDUCTION_PERCENT, ROOTMENDER_LEECH_PERCENT } from "@/lib/game-constants";
 
 const ASTRAL_BURN_POISON_BLEED_NATURE_ROLL = { ...ROLL_SMALL, astral: { min: 2, max: 3 } };
 const ASTRAL_ARCHERY_DAMAGE_ROLL = { ...rollRange(2, 3, 4, 5), astral: { min: 3, max: 4 } };
@@ -521,7 +521,11 @@ export const gearAffixRows = [
   ),
   offensiveAffix(
     ["nature-leech-vs-poisoned", "Rootmender", "nature", "leech"],
-    ["natureLeechVsPoisoned", rollRange(1, 1, 1, 1), "Nature damage against Poisoned enemies gains Leech"],
+    [
+      "natureLeechVsPoisoned",
+      rollRange(1, 1, 1, 1),
+      `Nature damage against Poisoned enemies restores ${ROOTMENDER_LEECH_PERCENT}% of Health damage as Leech`,
+    ],
   ),
   offensiveAffix(
     ["poison-bonus-vs-bleeding", "Venomtrail", "poison", "bleed"],

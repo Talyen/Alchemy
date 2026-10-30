@@ -154,7 +154,7 @@ describe("keyword catalog expansion", () => {
       gearEffects: { natureLeechVsPoisoned: 1 },
       rng: missChance,
     });
-    expect(dealDamageToEnemy(natureState, nature.card, nature.effect, []).playerHealth).toBeGreaterThan(10);
+    expect(dealDamageToEnemy(natureState, nature.card, nature.effect, []).playerHealth).toBe(11);
     expect(
       dealDamageToEnemy(
         { ...natureState, enemyStatuses: { ...natureState.enemyStatuses, poison: 0 } },
@@ -168,7 +168,22 @@ describe("keyword catalog expansion", () => {
       { source: "player-follow-up", damageType: "nature", amount: 4 },
       [],
     );
-    expect(triggered.playerHealth).toBeGreaterThan(10);
+    expect(triggered.playerHealth).toBe(11);
+    expect(
+      resolveFollowUpHit(triggered, { source: "player-follow-up", damageType: "nature", amount: 4 }, []).playerHealth,
+    ).toBe(12);
+    const sylvan = { ...natureState, talentEffects: { ...natureState.talentEffects, natureLeechChance: 100 } };
+    expect(dealDamageToEnemy(sylvan, nature.card, nature.effect, []).playerHealth).toBe(12);
+    expect(
+      dealDamageToEnemy(
+        { ...sylvan, gearEffects: { ...sylvan.gearEffects, natureLeechVsPoisoned: 0 } },
+        nature.card,
+        nature.effect,
+        [],
+      ).playerHealth,
+    ).toBe(12);
+    const boosted = { ...natureState, talentEffects: { ...natureState.talentEffects, leechHealingBonus: 1 } };
+    expect(dealDamageToEnemy(boosted, nature.card, nature.effect, []).playerHealth).toBe(12);
     const blockedNature = dealDamageToEnemy(
       { ...natureState, enemyMitigation: { ...natureState.enemyMitigation, block: 10 } },
       nature.card,

@@ -13,6 +13,7 @@ import {
   applyHolyLifesteal,
   applyHolyTithe,
   applyLeechHitHealing,
+  applyRootmenderHitHealing,
 } from "./stun-leech-resolution";
 import { applyBrassCenser, applyTalentHitConversions, resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -96,7 +97,7 @@ function resolveNatureRestorationRewards(
   const guaranteed =
     !alreadyLeeches && state.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0;
   const chance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
-  if (guaranteed || (chance > 0 && rollBattleChance(chance, next)))
-    next = applyLeechHitHealing(next, guaranteed ? healthDamage : damage, texts);
+  if (chance > 0 && rollBattleChance(chance, next)) next = applyLeechHitHealing(next, damage, texts);
+  else if (guaranteed) next = applyRootmenderHitHealing(next, healthDamage, texts);
   return next;
 }

@@ -323,7 +323,7 @@ describe("gear stun integration", () => {
     });
     const next = applyScaledLeechHealing(state, 2, []);
     expect(next.enemyHealth).toBe(30);
-    expect(next.playerHealth).toBe(15);
+    expect(next.playerHealth).toBe(14);
     expect(next.mana).toBe(2);
     expect(next.enemyCC.stunSkipTurns).toBe(1);
   });
@@ -339,7 +339,17 @@ describe("gear stun integration", () => {
     });
     const next = resolveStunTrigger(state, []);
     expect(next.enemyHealth).toBe(24);
-    expect(next.playerHealth).toBe(13);
+    expect(next.playerHealth).toBe(12);
+    const tinyHit = patchBattleState({
+      playerHealth: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { stun: 30, poison: 1 },
+      trinketEffects: { thunderstoneDamageOnStun: 1 },
+      gearEffects: { natureLeechVsPoisoned: 1 },
+      talentEffects: { leechHealingBonus: 1 },
+    });
+    expect(resolveStunTrigger(tinyHit, []).playerHealth).toBe(10);
   });
 
   it("Thunderstone cannot reward damage after Stun gear kills the enemy", () => {

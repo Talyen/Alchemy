@@ -34,6 +34,7 @@ export const PERCENT_DENOMINATOR = 100;
 export const HALF_DIVISOR = 2;
 
 export const LEECH_HEAL_FRACTION = 0.5;
+export const ROOTMENDER_LEECH_PERCENT = 25;
 
 export const MANABURN_DAMAGE_PERCENT = 20;
 export const BLACKFLETCH_EXECUTE_HEALTH_PERCENT = 30;
