@@ -12,6 +12,7 @@ describe("gear affixes", () => {
     ["flat-nature", "flatNatureDamage", 1, 2, 2, 3, 3, 4, "huntsmasters-call"],
     ["archery-damage", "flatArrowDamage", 2, 3, 3, 4, 4, 5, "blackfletch"],
     ["burn-per-mana", "burnDamagePerManaPercent", 5, 8, 8, 10, 8, 12, "twin-casting"],
+    ["block-gain", "flatBlockGained", 1, 2, 2, 3, 3, 4, "laughing-guard"],
   ] as const)(
     "keeps %s Astral rolls within their tuned range without changing Basic or Unique rolls",
     (id, effectKey, basicMin, basicMax, astralMin, astralMax, uniqueMin, uniqueMax, uniqueId) => {

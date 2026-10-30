@@ -1,6 +1,7 @@
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   BATTLE_CONFIG,
+  AETHERWARD_MANA_REDUCTION_PERCENT,
   ELEMENTAL_WARD_ARMOR_PERCENT,
   HALF_DIVISOR,
   LABYRINTH_HALF_DAMAGE_WARDS,
@@ -111,7 +112,8 @@ export function reduceDamageByMana(
 ): number {
   const fullCrystals =
     state.gearEffects.damageReductionPerMana > 0 ? Math.max(0, Math.min(state.mana, state.maxMana)) : 0;
-  return Math.max(0, amount - fullCrystals);
+  const reduction = Math.round((fullCrystals * AETHERWARD_MANA_REDUCTION_PERCENT) / PERCENT_DENOMINATOR);
+  return Math.max(0, amount - reduction);
 }
 
 /** Status ticks and typed self-damage share mitigation; Health costs bypass it. */

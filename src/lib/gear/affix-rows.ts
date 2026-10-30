@@ -12,10 +12,12 @@ import {
   ROLL_MEDIUM,
   type AffixRowInput,
 } from "./affix-definition";
+import { AETHERWARD_MANA_REDUCTION_PERCENT } from "@/lib/game-constants";
 
 const ASTRAL_BURN_POISON_BLEED_NATURE_ROLL = { ...ROLL_SMALL, astral: { min: 2, max: 3 } };
 const ASTRAL_ARCHERY_DAMAGE_ROLL = { ...rollRange(2, 3, 4, 5), astral: { min: 3, max: 4 } };
 const ASTRAL_BURN_PER_MANA_ROLL = { ...rollRange(5, 8, 8, 12), astral: { min: 8, max: 10 } };
+const ASTRAL_WARDING_ROLL = { ...ROLL_SMALL, astral: { min: 2, max: 3 } };
 
 // Order is part of seeded Gear generation. Presentation and manifest defaults
 // derive from these same rows, without making combat depend on tooltip parsing.
@@ -243,7 +245,7 @@ export const gearAffixRows = [
   ),
   defensiveAffix(
     ["block-gain", "Warding", "block"],
-    ["flatBlockGained", ROLL_SMALL, "Increases Block gained by {value}"],
+    ["flatBlockGained", ASTRAL_WARDING_ROLL, "Increases Block gained by {value}"],
   ),
   defensiveAffix(
     ["gold-gain", "Prosperous", "gold"],
@@ -263,7 +265,11 @@ export const gearAffixRows = [
   ),
   defensiveAffix(
     ["absorb-per-mana", "Aetherward", "mana", "block"],
-    ["damageReductionPerMana", rollRange(1, 1, 1, 1), "Reduce damage taken by the number of full Mana Crystals"],
+    [
+      "damageReductionPerMana",
+      rollRange(1, 1, 1, 1),
+      `Reduce damage taken by ${AETHERWARD_MANA_REDUCTION_PERCENT}% of full Mana Crystals, rounded`,
+    ],
   ),
   defensiveAffix(
     ["heal-on-burn-death", "Cauterizing", "burn", "health"],
