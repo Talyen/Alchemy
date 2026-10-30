@@ -6,17 +6,19 @@ import { getUniqueAffixes } from "@/lib/gear/unique-catalog";
 
 describe("gear affixes", () => {
   it.each([
-    ["flat-burn", "flatBurnDamage", 1, 2, 2, 3, 4, "bloodfire-signet"],
-    ["flat-poison", "flatPoisonDamage", 1, 2, 2, 3, 4, "blackfletch"],
-    ["flat-nature", "flatNatureDamage", 1, 2, 2, 3, 4, "huntsmasters-call"],
-    ["archery-damage", "flatArrowDamage", 2, 3, 3, 4, 5, "blackfletch"],
+    ["flat-burn", "flatBurnDamage", 1, 2, 2, 3, 3, 4, "bloodfire-signet"],
+    ["flat-poison", "flatPoisonDamage", 1, 2, 2, 3, 3, 4, "blackfletch"],
+    ["flat-bleed", "flatBleedDamage", 1, 2, 2, 3, 3, 4, "blackfletch"],
+    ["flat-nature", "flatNatureDamage", 1, 2, 2, 3, 3, 4, "huntsmasters-call"],
+    ["archery-damage", "flatArrowDamage", 2, 3, 3, 4, 4, 5, "blackfletch"],
+    ["burn-per-mana", "burnDamagePerManaPercent", 5, 8, 8, 10, 8, 12, "twin-casting"],
   ] as const)(
     "keeps %s Astral rolls within their tuned range without changing Basic or Unique rolls",
-    (id, effectKey, basicMin, basicMax, astralMin, astralMax, uniqueMax, uniqueId) => {
+    (id, effectKey, basicMin, basicMax, astralMin, astralMax, uniqueMin, uniqueMax, uniqueId) => {
       const affix = gearAffixCatalog[id];
       expect(affix.roll.basic).toEqual({ min: basicMin, max: basicMax });
       expect(affix.roll.astral).toEqual({ min: astralMin, max: astralMax });
-      expect(affix.roll.unique).toEqual({ min: uniqueMax - 1, max: uniqueMax });
+      expect(affix.roll.unique).toEqual({ min: uniqueMin, max: uniqueMax });
       expect(rollAffixValue(affix, "astral", () => 0)).toBe(astralMin);
       expect(rollAffixValue(affix, "astral", () => 0.999)).toBe(astralMax);
 
