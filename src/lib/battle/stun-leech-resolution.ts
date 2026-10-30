@@ -20,7 +20,6 @@ import {
   LABYRINTH_MODIFIER_CONFIG,
   MIN_CC_THRESHOLD_FRACTION,
   PERCENT_DENOMINATOR,
-  ROOTMENDER_LEECH_PERCENT,
   STUN_THRESHOLD_FRACTION,
   UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
@@ -96,7 +95,7 @@ export function applyScaledLeechHealing(
 
 /** Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders. */
 function applyThunderstoneLeech(state: BattleState, damage: number, texts: CombatTextEvent[]): BattleState {
-  return applyScaledLeechHealing(state, Math.round((damage * ROOTMENDER_LEECH_PERCENT) / PERCENT_DENOMINATOR), texts);
+  return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
 }
 
 /** Amount already includes Leech scaling; all riders use this restoration's own facts. */
@@ -149,23 +148,8 @@ export function applyLeechHitHealing(
   combatTexts: CombatTextEvent[],
   cardHealing = false,
 ) {
-  return applyHitLeechHealing(state, damage, computeLeechHeal(damage), combatTexts, cardHealing);
-}
-
-export function applyRootmenderHitHealing(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  const baseHealing = Math.round((damage * ROOTMENDER_LEECH_PERCENT) / PERCENT_DENOMINATOR);
-  return applyHitLeechHealing(state, damage, baseHealing, combatTexts);
-}
-
-function applyHitLeechHealing(
-  state: BattleState,
-  damage: number,
-  baseHealing: number,
-  combatTexts: CombatTextEvent[],
-  cardHealing = false,
-): BattleState {
   if (damage <= 0) return state;
-  const healAmount = scaleLeechBase(state, baseHealing);
+  const healAmount = scaleLeechBase(state, computeLeechHeal(damage));
   return healAmount > 0 ? applyLeechHealing(state, healAmount, combatTexts, { cardHealing }) : state;
 }
 
@@ -242,7 +226,9 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
         riders: (damagedState, finalDamage, texts) => {
           const healthDamage = Math.max(0, previousHealth - damagedState.enemyHealth);
           const leeched =
-            state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0
+            healthDamage > 0 &&
+            state.enemyStatuses.poison > 0 &&
+            rollBattleChance(state.gearEffects.natureLeechVsPoisoned, damagedState)
               ? applyThunderstoneLeech(damagedState, healthDamage, texts)
               : damagedState;
           let rewarded = applyNatureManaRefund(leeched, finalDamage, texts);

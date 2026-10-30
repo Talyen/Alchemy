@@ -21,7 +21,6 @@ import {
   applyHolyBlockChance,
   applyHolyTithe,
   applyLeechHitHealing,
-  applyRootmenderHitHealing,
   resolveStunFollowUpHit,
 } from "./stun-leech-resolution";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
@@ -120,8 +119,12 @@ function applyFollowUpNatureRiders(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = state;
-  if (eligibility.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0 && healthDamage > 0) {
-    nextState = applyRootmenderHitHealing(nextState, healthDamage, combatTexts);
+  if (
+    healthDamage > 0 &&
+    eligibility.enemyStatuses.poison > 0 &&
+    rollBattleChance(eligibility.gearEffects.natureLeechVsPoisoned, nextState)
+  ) {
+    nextState = applyLeechHitHealing(nextState, healthDamage, combatTexts);
   }
   nextState = applyLuckyCloverGold(nextState, healthDamage, combatTexts);
   nextState = applyNatureGoldReward(nextState, healthDamage, combatTexts);
