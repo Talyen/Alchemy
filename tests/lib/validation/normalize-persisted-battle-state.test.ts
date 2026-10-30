@@ -199,7 +199,7 @@ describe("normalizePersistedBattleState", () => {
     const resumed = normalizePersistedBattleState(saved);
     expect(resumed.enemyStatuses).toMatchObject({ freezeBonus: 0, poison: 4 });
     expect(resumed.currentEnemy.traits.find((trait) => trait.id === "glacial-shell")?.description).toBe(
-      "Deals 1 additional Freeze damage. Receives half Freeze damage.",
+      "Deals 1 additional Freeze damage and receives half Freeze damage.",
     );
     expect(resumed).toMatchObject({ enemyHealth: 100, enemyMaxHealth: 234, turn: 8 });
     expect(normalizePersistedBattleState(resumed)).toEqual(resumed);
