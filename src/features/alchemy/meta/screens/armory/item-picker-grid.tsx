@@ -42,6 +42,7 @@ export function ItemPickerGrid({
   activeCurrencyId,
   onEquip,
   craftingResult,
+  craftingChanges,
   onSalvage,
   onApplyCurrency,
   onCombatLockedAttempt,
@@ -64,6 +65,7 @@ export function ItemPickerGrid({
   activeCurrencyId: CraftingCurrencyId | null;
   onEquip: (instance: GearInstance) => void;
   craftingResult: CraftingResult | null;
+  craftingChanges: Record<string, Record<string, "new" | "modified">>;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
   onCombatLockedAttempt: () => void;
@@ -180,6 +182,7 @@ export function ItemPickerGrid({
                   <GearDetailPopup
                     definition={definition}
                     instance={item}
+                    craftingChanges={craftingChanges[item.instanceId]}
                     visible={visible}
                     triggerRef={triggerRef}
                     placement="below"

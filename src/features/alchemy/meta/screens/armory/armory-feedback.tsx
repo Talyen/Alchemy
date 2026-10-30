@@ -2,8 +2,6 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
-import { type GearInstance } from "@/lib/gear";
-import { CraftingResultPreview, type CraftingResult } from "./crafting-result";
 import { useFadePresence, useHeldWhile, fadePhaseClass } from "../../../shared/ui/use-fade";
 import { cn } from "@/lib/utils";
 
@@ -11,21 +9,17 @@ export type ArmoryFeedbackTone = "success" | "warning" | "error";
 
 export function ArmoryFeedback({
   notice,
-  result,
-  after,
   onDismiss,
   tone = "success",
 }: {
   notice: string;
-  result: CraftingResult | null;
-  after: GearInstance | undefined;
   onDismiss: () => void;
   tone?: ArmoryFeedbackTone;
 }) {
   const i18n = useGameTranslation();
-  const open = Boolean(notice || (result && after));
+  const open = Boolean(notice);
   const { mounted, phase } = useFadePresence(open);
-  const content = useMemo(() => ({ notice, result, after, tone }), [notice, result, after, tone]);
+  const content = useMemo(() => ({ notice, tone }), [notice, tone]);
   const held = useHeldWhile(open, content);
   if (!mounted) return null;
   return createPortal(
@@ -60,8 +54,6 @@ export function ArmoryFeedback({
             {i18n.text("ui.armory-feedback.1", "Dismiss message")}
           </button>
         </>
-      ) : held.result && held.after ? (
-        <CraftingResultPreview result={held.result} after={held.after} onDismiss={onDismiss} />
       ) : null}
     </div>,
     document.body,

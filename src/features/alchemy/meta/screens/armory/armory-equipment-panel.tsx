@@ -57,7 +57,7 @@ export function ArmoryEquipmentPanel({
   onToggleSalvageMode,
 }: ArmoryEquipmentPanelProps) {
   const i18n = useGameTranslation();
-  const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
+  const { editable, salvageMode, activeCurrencyId, craftingResult, craftingChanges } = targeting;
   return (
     <section
       data-testid="armory-left-panel"
@@ -105,6 +105,7 @@ export function ArmoryEquipmentPanel({
               onSelect={onSelectSlot}
               onUnequip={onUnequipSlot}
               craftingResult={craftingResult}
+              craftingChanges={instanceId ? craftingChanges[instanceId] : undefined}
               onSalvage={onSalvage}
               onApplyCurrency={onApplyCurrency}
               onCombatLockedAttempt={onCombatLockedAttempt}
