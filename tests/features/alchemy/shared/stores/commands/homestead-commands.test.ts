@@ -106,9 +106,8 @@ describe("four-tier Homestead persistence and settlement", () => {
     const initialSave = SaveDataSchema.parse({
       constructedBuildings: { "sparring-grounds": 3 },
       materialInventory: { ...emptyInventory(), wood: 16, stone: 16 },
-      activeRun: makeActiveRunData({
-        runDeck: [card],
-        runPlayerHealth: 7,
+      activeRun: {
+        ...makeActiveRunData({ runDeck: [card], runPlayerHealth: 7 }),
         activity: {
           kind: "battle",
           data: {
@@ -124,7 +123,7 @@ describe("four-tier Homestead persistence and settlement", () => {
             },
           },
         },
-      }),
+      },
     });
     await using session = createGameSession({ initialSave });
     const rng = structuredClone(readActiveRun(session).rng);
