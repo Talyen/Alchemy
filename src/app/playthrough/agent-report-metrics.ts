@@ -197,21 +197,24 @@ export function buildDeckCohesion(careers: CompletedCareer[]): AgentDeckCohesion
   let totalKeywords = 0;
   const allKeywords = new Map<string, number>();
   let heroKeywordCount = 0;
+  let heroKeywordTotal = 0;
   for (const sample of samples) {
     let sampleTotal = 0;
+    const heroKeywords: readonly string[] = characters[sample.hero].keywords;
     for (const [keyword, count] of Object.entries(sample.keywordCounts)) {
       sampleTotal += count;
       allKeywords.set(keyword, (allKeywords.get(keyword) ?? 0) + count);
-      if ((characters[sample.hero].keywords as readonly string[]).includes(keyword)) heroKeywordCount += count;
+      if (heroKeywords.includes(keyword)) heroKeywordCount += count;
     }
     totalKeywords += sampleTotal;
+    if (heroKeywords.length > 0) heroKeywordTotal += sampleTotal;
   }
   if (!samples.length || totalKeywords === 0)
     return { samples: samples.length, heroKeywordShare: null, dominantKeywordShare: null, topKeywords: [] };
   const sorted = [...allKeywords.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return {
     samples: samples.length,
-    heroKeywordShare: characters[samples[0]!.hero].keywords.length ? rate(heroKeywordCount, totalKeywords) : null,
+    heroKeywordShare: heroKeywordTotal > 0 ? rate(heroKeywordCount, heroKeywordTotal) : null,
     dominantKeywordShare: rate(sorted[0]?.[1] ?? 0, totalKeywords),
     topKeywords: sorted.slice(0, 5).map(([keyword, count]) => ({ keyword, count })),
   };
