@@ -1,8 +1,16 @@
 import { expect, it } from "vitest";
-import { buildBattles, buildMilestones, buildSurvival } from "@/app/playthrough/agent-report-metrics";
+import {
+  buildBattles,
+  buildDeckCohesion,
+  buildMilestones,
+  buildSurvival,
+} from "@/app/playthrough/agent-report-metrics";
 import { groupCareersByCohort, summarizeProgress } from "@/app/playthrough/progress-telemetry";
 import type { CompletedCareer } from "@/app/playthrough/agent-report-types";
 import type { CareerResult } from "@/app/playthrough/types";
+import { snapshotBattle } from "@/app/playthrough/telemetry";
+import { getCardKeywordView, cardById } from "@/lib/game-data";
+import { patchBattleState } from "../fixtures/battle";
 
 function career(milestones: Record<string, number>, rooms: number, status: CareerResult["status"] = "completed") {
   return {
@@ -97,4 +105,40 @@ it("preserves boss discovery order and counts careers separately from encounters
       { enemy: "b", boss: true, encounters: 1, victories: 1, defeats: 0, winRate: 100, meanTurns: 5 },
     ],
   });
+});
+
+it("profiles every battle card pile when cards move between them", () => {
+  const card = cardById.sunder!;
+  const keywords = getCardKeywordView(card);
+  expect(keywords.length).toBeGreaterThan(0);
+  const state = patchBattleState({
+    deck: [card],
+    hand: [card],
+    pendingHandCards: [card],
+    discard: [card],
+    exhausted: [card],
+  });
+  const snapshot = snapshotBattle(1, 0, 1, "settle", state);
+  expect(snapshot.deckSize).toBe(5);
+  for (const keyword of keywords) expect(snapshot.keywordCounts[keyword]).toBe(5);
+  expect(snapshotBattle(1, 0, 1, "settle", { ...state, deck: [card, card], hand: [] }).keywordCounts).toEqual(
+    snapshot.keywordCounts,
+  );
+});
+
+it("computes hero keyword share independently of order and excludes heroes without keywords", () => {
+  const knight = career({}, 1) as CompletedCareer;
+  const wildcard = career({}, 1) as CompletedCareer;
+  wildcard.config.hero = "wildcard";
+  const snapshot = {
+    run: 0,
+    rooms: 1,
+    step: 1,
+    keywordCounts: { block: 1, burn: 1 },
+  } as CareerResult["telemetry"]["runSnapshots"][number];
+  knight.telemetry.runSnapshots = [snapshot];
+  wildcard.telemetry.runSnapshots = [{ ...snapshot, keywordCounts: { burn: 20 } }];
+  expect(buildDeckCohesion([knight, wildcard]).heroKeywordShare).toBe(50);
+  expect(buildDeckCohesion([wildcard, knight]).heroKeywordShare).toBe(50);
+  expect(buildDeckCohesion([wildcard]).heroKeywordShare).toBeNull();
 });

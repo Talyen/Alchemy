@@ -333,6 +333,11 @@ combat records and maxima, bounded run/deck keyword snapshots, battle-start and
 pre-settlement state snapshots, and first reached spending milestones. The
 agent-facing summary also reports first-victory timing, run-by-run victory rates,
 hero variance when multiple cohorts are supplied, and deck/archetype cohesion.
+Battle deck profiles include the draw pile, hand, queued hand cards, discard and
+exhausted cards at the sampled moment, including cards created during combat.
+Hero-keyword share excludes samples from heroes without fixed keywords, such as
+Wildcard; dominant-keyword share still includes their decks. Existing recorded
+snapshots retain the measurement produced by their original source revision.
 `progress-telemetry.ts` owns the shared cohort grouping, battle counts, first
 milestone observations and room mortality used by both reports. The detailed
 report retains every room and unrounded milestone means; the agent summary bounds
