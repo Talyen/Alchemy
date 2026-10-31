@@ -74,6 +74,7 @@ export function ArmoryScreen({
   const salvageButtonRef = useRef<HTMLButtonElement>(null);
   const [characterId, setCharacterId] = useState<CharacterId>(initialCharacterId);
   const [selectedSlot, setSelectedSlot] = useState<ArmorySlot>("main-hand");
+  const [craftingChanges, setCraftingChanges] = useState<Record<string, Record<string, "new" | "modified">>>({});
   const [craftingResult, setCraftingResult] = useState<CraftingResult | null>(null);
   const [notice, setNotice] = useState<string | { item: string }>("");
   const [noticeTone, setNoticeTone] = useState<ArmoryFeedbackTone>("success");
@@ -180,6 +181,7 @@ export function ArmoryScreen({
     feedbackSequence.current++;
     settleActiveTransfers();
     setCharacterId(id);
+    setCraftingChanges({});
     setCraftingResult(null);
     setNotice("");
     clearTargeting();
@@ -222,8 +224,9 @@ export function ArmoryScreen({
       setNotice("");
       const sequence = ++feedbackSequence.current;
       afterProgressSaved(() => {
-        if (feedbackSequence.current === sequence)
+        if (feedbackSequence.current === sequence) {
           setCraftingResult({ before: instance, currencyId: activeCurrencyId });
+        }
       });
     });
   };
@@ -232,16 +235,23 @@ export function ArmoryScreen({
     feedbackSequence.current++;
     settleActiveTransfers();
     setSelectedSlot(slot);
+    setCraftingChanges({});
+    setCraftingResult(null);
     if (slot === "trinket") clearTargeting();
   };
 
   const handlePageChange = (page: number) => {
+    feedbackSequence.current++;
+    setCraftingChanges({});
+    setCraftingResult(null);
     settleActiveTransfers();
     ordering.setPage(page);
     playUISound("selection");
   };
 
   const handleFiltersChange = (filters: ArmoryInventoryFilters) => {
+    setCraftingChanges({});
+    setCraftingResult(null);
     feedbackSequence.current++;
     settleActiveTransfers();
     clearTargeting();
@@ -250,6 +260,9 @@ export function ArmoryScreen({
   };
 
   const handleSort = (option: ArmorySortOption) => {
+    feedbackSequence.current++;
+    setCraftingChanges({});
+    setCraftingResult(null);
     settleActiveTransfers();
     ordering.onSort(option);
     playUISound("selection");
@@ -258,7 +271,31 @@ export function ArmoryScreen({
   const equippedSalvageCharacter = salvagePending
     ? findGearEquippedCharacter(loadouts, salvagePending.instance.instanceId)
     : null;
+
   const craftedItem = craftingResult ? inventoryById.get(craftingResult.before.instanceId) : undefined;
+  const processedResult = useRef<CraftingResult | null>(null);
+  useEffect(() => {
+    if (
+      !craftingResult ||
+      !craftedItem ||
+      craftedItem === craftingResult.before ||
+      processedResult.current === craftingResult
+    )
+      return;
+    processedResult.current = craftingResult;
+    const before = new Map(craftingResult.before.affixes.map((affix) => [affix.id, affix.value]));
+    setCraftingChanges((current) => {
+      const present = new Set<string>(craftedItem.affixes.map((affix) => affix.id));
+      const changes = Object.fromEntries(
+        Object.entries(current[craftedItem.instanceId] ?? {}).filter(([id]) => present.has(id)),
+      );
+      for (const affix of craftedItem.affixes) {
+        if (!before.has(affix.id)) changes[affix.id] = "new";
+        else if (before.get(affix.id) !== affix.value) changes[affix.id] = "modified";
+      }
+      return { ...current, [craftedItem.instanceId]: changes };
+    });
+  }, [craftingResult, craftedItem]);
 
   return (
     <PageLayout>
@@ -294,7 +331,7 @@ export function ArmoryScreen({
                 modificationReservations={modificationReservations}
                 equippedTrinket={equippedTrinket}
                 selectedSlot={selectedSlot}
-                targeting={{ editable, salvageMode, activeCurrencyId, craftingResult }}
+                targeting={{ editable, salvageMode, activeCurrencyId, craftingResult, craftingChanges }}
                 hiddenArtworkSlots={hiddenArtworkSlots}
                 salvageButtonRef={salvageButtonRef}
                 craftingCurrencies={craftingCurrencies}
@@ -322,7 +359,7 @@ export function ArmoryScreen({
                 loadout={loadout}
                 loadouts={loadouts}
                 inventory={sharedInventory}
-                targeting={{ editable, salvageMode, activeCurrencyId, craftingResult }}
+                targeting={{ editable, salvageMode, activeCurrencyId, craftingResult, craftingChanges }}
                 actions={{
                   onEquipGear: handleEquipGear,
                   onEquipTrinket: handleEquipTrinket,
@@ -358,8 +395,6 @@ export function ArmoryScreen({
                   item: i18n.displayText(notice.item),
                 })
           }
-          result={craftingResult}
-          after={craftedItem}
           tone={noticeTone}
           onDismiss={() => {
             setNotice("");

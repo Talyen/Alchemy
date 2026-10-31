@@ -35,6 +35,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   onSelect,
   onUnequip,
   craftingResult,
+  craftingChanges,
   onSalvage,
   onApplyCurrency,
   onCombatLockedAttempt,
@@ -50,6 +51,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   onSelect: (slot: GearSlot) => void;
   onUnequip: (slot: GearSlot) => void;
   craftingResult: CraftingResult | null;
+  craftingChanges?: Record<string, "new" | "modified"> | undefined;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
   onCombatLockedAttempt: () => void;
@@ -97,7 +99,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           placement="below"
           preservePlacementOnResize
         >
-          <GearTooltipContent definition={definition} instance={instance} />
+          <GearTooltipContent definition={definition} instance={instance} craftingChanges={craftingChanges} />
           {blockedReason ? <p className="mt-3 text-sm text-warning">{i18n.displayText(blockedReason)}</p> : null}
         </PortaledTooltip>
       ) : null}

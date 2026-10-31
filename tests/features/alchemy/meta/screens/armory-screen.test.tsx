@@ -292,6 +292,45 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: /Apply Voidstone/ })).toBeNull());
   });
 
+  it("keeps crafted affix chips for the page visit and clears them on navigation", async () => {
+    const user = userEvent.setup();
+    const sword = {
+      instanceId: "gear-sword",
+      definitionId: "longsword-basic",
+      affixes: [{ id: "flat-physical" as const, value: 1 }],
+    };
+    const { props, rerender } = renderArmoryScreen({
+      inventories: createArmoryInventories([sword]),
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, "sprig-of-growth": 1, "discordant-dice": 1 },
+      onApplyCurrency: () => true,
+    });
+    await user.click(screen.getByLabelText(/^Use Sprig of Growth,/));
+    await user.click(screen.getByRole("button", { name: /Apply Sprig of Growth/ }));
+    const crafted = { ...sword, affixes: [...sword.affixes, { id: "flat-burn" as const, value: 1 }] };
+    rerender(<ArmoryScreen {...props} inventories={createArmoryInventories([crafted])} />);
+    await user.hover(screen.getByRole("button", { name: "Longsword" }));
+    await waitFor(() => expect(screen.getByTestId("crafting-affix-chip").textContent).toBe("New"));
+    expect(document.querySelector('[data-affix-id="flat-physical"] [data-testid="crafting-affix-chip"]')).toBeNull();
+    expect(screen.queryByTestId("armory-crafting-result")).toBeNull();
+    await user.click(screen.getByLabelText(/^Use Discordant Dice,/));
+    await user.click(screen.getByRole("button", { name: /Apply Discordant Dice/ }));
+    const rerolled = { ...crafted, affixes: [{ id: "flat-physical" as const, value: 2 }, crafted.affixes[1]!] };
+    rerender(<ArmoryScreen {...props} inventories={createArmoryInventories([rerolled])} />);
+    await user.hover(screen.getByRole("button", { name: "Longsword" }));
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-affix-id="flat-physical"] [data-testid="crafting-affix-chip"]')?.textContent,
+      ).toBe("Modified"),
+    );
+    expect(document.querySelector('[data-affix-id="flat-burn"] [data-testid="crafting-affix-chip"]')?.textContent).toBe(
+      "New",
+    );
+    await user.click(screen.getByLabelText("Armor equipment slot"));
+    await user.click(screen.getByLabelText("Main-hand equipment slot"));
+    await user.hover(screen.getByRole("button", { name: "Longsword" }));
+    expect(screen.queryByTestId("crafting-affix-chip")).toBeNull();
+  });
+
   it("reports blocked and rejected crafts without spending or disarming the currency", async () => {
     const user = userEvent.setup();
     const onApplyCurrency = vi.fn(() => false);
