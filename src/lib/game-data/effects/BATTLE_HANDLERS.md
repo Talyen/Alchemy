@@ -198,6 +198,7 @@ alternatives without consuming gameplay RNG. Unknown draws stop dependent projec
 `battle/stun-leech-resolution.ts` owns Leech restoration facts and riders;
 `elemental-hit-reactions.ts` owns Nature and Holy resource payouts, and
 `damage-status-riders.ts` owns Poison rewards and Bloodfire's Leech eligibility.
+`player-hit-core.ts` shares Tattered Pages Burn draw across direct hits and status pulses. It rolls once per Burn packet that removes enemy Health, including follow-ups, ticks and detonations; fully blocked or zero-Health-loss packets and reaction damage do not roll. Draws use the normal empty-draw and reaction handling.
 `bonus-effects.ts` shares Cutpurse Gold and ordinary Gold/Mana rewards across hit
 and tick callers. These owners call the production operations directly, so
 inspection carries earned resources between damage packets using the same rules.

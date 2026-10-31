@@ -90,6 +90,17 @@ export function applyBleedDamageDraw(
   return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
 }
 
+/** One roll per Burn packet that actually removes enemy Health. */
+export function applyBurnDamageDraw(
+  state: BattleState,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (healthDamage <= 0 || !rollBattleChance(state.trinketEffects.tatteredPagesBurnDrawChance, state)) return state;
+  const drawn = applyDrawResult(state, drawFromState(state, 1), combatTexts);
+  return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
+}
+
 export function applyElementalDamageManaRestore(
   state: BattleState,
   damageType: DamageType,

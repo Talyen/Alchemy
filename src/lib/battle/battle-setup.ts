@@ -55,7 +55,7 @@ export function drawOpeningHand(state: BattleState, combatTexts: CombatTextEvent
       state.deck,
       state.discard,
       state.hand,
-      CARDS_PER_TURN + state.trinketEffects.extraDrawPerBattle,
+      CARDS_PER_TURN,
       state.nextCardUid,
       getBattleRng(state),
       state.pendingHandCards,

@@ -23,8 +23,8 @@ export const trinketDefinitions = [
   defineTrinket(
     "tattered-pages",
     "Tattered Pages",
-    { extraDrawPerBattle: 1 },
-    (effects) => `Draw ${effects.extraDrawPerBattle} at the start of combat`,
+    { tatteredPagesBurnDrawChance: 10 },
+    (effects) => `Burn damage has a ${effects.tatteredPagesBurnDrawChance}% chance to draw a card`,
   ),
   defineTrinket(
     "meteorite",
