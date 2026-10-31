@@ -232,4 +232,42 @@ describe("Armory crafting cursor", () => {
     view.unmount();
     expect(resizeImage).toBeUndefined();
   });
+
+  it("measures and follows window resizing without ResizeObserver, releasing listeners when selection ends", () => {
+    vi.stubGlobal("ResizeObserver", undefined);
+    const addListener = vi.spyOn(window, "addEventListener");
+    const removeListener = vi.spyOn(window, "removeEventListener");
+    const harness = (id: "voidstone" | "discordant-dice" | null) => (
+      <>
+        <Workspace />
+        <ArmoryCurrencyCursor activeCurrencyId={id} />
+      </>
+    );
+    const view = render(harness("voidstone"));
+    const firstResize = addListener.mock.calls.find(([name]) => name === "resize")?.[1];
+    expect(firstResize).toBeTypeOf("function");
+    move(screen.getByTestId("armory-workspace"), 790, 590);
+    nextFrame();
+    const cursor = screen.getByTestId("armory-crafting-cursor");
+    expect(cursor.style.width).toBe("62.75px");
+    imageSize = { width: 48, height: 46 };
+    fireEvent(window, new Event("resize"));
+    expect(cursor.style.width).toBe("48px");
+    expect(cursor.style.height).toBe("46px");
+    expect(cursor.style.left).toBe("720px");
+    expect(cursor.style.top).toBe("522px");
+
+    view.rerender(harness(null));
+    expect(screen.queryByTestId("armory-crafting-cursor")).toBeNull();
+    expect(removeListener).toHaveBeenCalledWith("resize", firstResize);
+    addListener.mockClear();
+    imageSize = { width: 38, height: 40 };
+    view.rerender(harness("discordant-dice"));
+    const reopenedResize = addListener.mock.calls.find(([name]) => name === "resize")?.[1];
+    expect(reopenedResize).toBeTypeOf("function");
+    expect(reopenedResize).not.toBe(firstResize);
+    expect(screen.getByTestId("armory-crafting-cursor").style.width).toBe("38px");
+    view.unmount();
+    expect(removeListener).toHaveBeenCalledWith("resize", reopenedResize);
+  });
 });

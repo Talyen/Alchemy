@@ -54,11 +54,11 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
     // excluding the chip's border, before the first carried frame is painted.
     measureImage();
     if (!image) return;
-    const observer = new ResizeObserver(measureImage);
-    observer.observe(image);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measureImage);
+    observer?.observe(image);
     window.addEventListener("resize", measureImage);
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       window.removeEventListener("resize", measureImage);
     };
   }, [activeCurrencyId]);
