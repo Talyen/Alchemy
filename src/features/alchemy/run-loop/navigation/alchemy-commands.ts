@@ -115,22 +115,24 @@ export function transmuteCard(sourceIndex: number, offerIndex: number, gameSessi
       const snapshot = snapshotTransactionValue(visit);
       const selection = snapshot.transmutation;
       const offer = getTransmutationOffers(snapshot)[offerIndex];
+      if (!selection || selection.sourceIndex !== sourceIndex || selection.offerIndex !== offerIndex)
+        return rejectCommand("Alchemy action is unavailable", null);
+      const deckSnapshot = snapshotTransactionValue(deck);
+      const source = deckSnapshot[sourceIndex];
       if (
-        !selection ||
-        selection.sourceIndex !== sourceIndex ||
-        selection.offerIndex !== offerIndex ||
-        !isTransmutationSourceCurrent(snapshot, snapshotTransactionValue(deck)) ||
+        !isTransmutationSourceCurrent(snapshot, deckSnapshot) ||
         !Number.isInteger(sourceIndex) ||
         !Number.isInteger(offerIndex) ||
         !original ||
+        !source ||
         !offer ||
         original.id !== offer.id ||
         offer.transmuted !== selection.keyword ||
         !canTransmuteCard(
           selection.choices.filter((choice) => choice.keyword === offer.transmuted),
-          snapshotTransactionValue(original),
+          source,
           sourceIndex,
-          snapshotTransactionValue(deck),
+          deckSnapshot,
         )
       )
         return rejectCommand("Alchemy action is unavailable", null);

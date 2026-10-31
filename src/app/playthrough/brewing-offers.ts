@@ -1,10 +1,9 @@
-import { isPotionCard } from "@/lib/game-data";
 import { HALF_DIVISOR } from "@/lib/game-constants";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { getCampfireBrewKind } from "@/lib/alchemist/brewing";
-import { brewCandidates, potionPurchaseScore, potionUtility } from "./brewing-policy";
+import { brewCandidates, hasPotionRoom, potionPurchaseScore, potionUtility } from "./brewing-policy";
 import type { OfferChoice } from "./choice-catalog";
 import type { createPlaythroughController } from "./controller";
 import type { CareerConfig } from "./types";
@@ -71,7 +70,7 @@ export function offerBrewingChoices(
       });
     else
       for (const c of combinations) {
-        const [a, b] = c.indices as [number, number];
+        const [a, b] = c.indices;
         offer("campfire-mix", `${a}:${b}`, c.improvement > 0 ? 2 + c.improvement : -1, () =>
           controller.alchemy.brewAtCampfire({ kind: "combine", indices: [a, b] }),
         );
@@ -127,9 +126,8 @@ export function offerBrewingChoices(
     });
     if (!enabled || !serviceOpen || profile.gold < price) continue;
     for (const c of selected) {
-      const [a, b] = c.indices;
       offer(kind, c.indices.join(":"), c.improvement > 0 ? 10 + c.improvement : -1, () =>
-        kind === "mix" ? actions.mixPotions(a!, b!) : actions.strengthenPotion(a!),
+        c.kind === "mix" ? actions.mixPotions(...c.indices) : actions.strengthenPotion(...c.indices),
       );
     }
   }
@@ -173,15 +171,11 @@ export function offerBrewingChoices(
     );
   // A refresh also needs enough remaining Gold to buy the cheapest visible Potion.
   // This uses visible prices only; it never peeks at future shop RNG.
-  let potionCount = 0;
-  for (const card of run.runDeck) {
-    if (isPotionCard(card) && ++potionCount === 4) break;
-  }
-  const hasPotionRoom = potionCount < 4;
+  const potionRoom = hasPotionRoom(run.runDeck);
   const cheapest = Math.min(...activity.data.potions.map((card) => actions.getPotionBuyPrice(card)));
   const worthwhile =
     !usefulAvailable &&
-    hasPotionRoom &&
+    potionRoom &&
     profile.gold >= refreshPrice + reserve + cheapest &&
     activity.data.potions.some((card) => potionUtility(card) > 0);
   opportunities.push({
@@ -193,7 +187,7 @@ export function offerBrewingChoices(
       ? "service-exhausted"
       : !canAffordRefresh
         ? "insufficient-gold"
-        : !hasPotionRoom
+        : !potionRoom
           ? "potion-cap"
           : usefulAvailable
             ? "available-option-preferred"
