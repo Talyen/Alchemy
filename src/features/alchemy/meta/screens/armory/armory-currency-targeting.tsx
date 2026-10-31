@@ -25,22 +25,28 @@ function positionCursor(cursor: HTMLDivElement, point: CursorPoint): void {
 export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: CraftingCurrencyId | null }) {
   const lastPoint = useRef<CursorPoint | null>(null);
   const displayedPoint = useRef<CursorPoint | null>(null);
+  const activeCurrencyIdRef = useRef(activeCurrencyId);
   const cursorRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    activeCurrencyIdRef.current = activeCurrencyId;
+    // Selection can occur before the next movement frame. Start the new artwork
+    // at the live pointer, never at the previous currency's application point.
+    displayedPoint.current = activeCurrencyId ? lastPoint.current : null;
+    setVisible(displayedPoint.current !== null);
+  }, [activeCurrencyId]);
 
   useLayoutEffect(() => {
     if (cursorRef.current && displayedPoint.current) positionCursor(cursorRef.current, displayedPoint.current);
   });
 
   useEffect(() => {
-    if (!activeCurrencyId) {
-      return;
-    }
     let raf = 0;
     let pending = lastPoint.current;
     function flush() {
       raf = 0;
-      const next = pending;
+      const next = activeCurrencyIdRef.current ? pending : null;
       const visibilityChanged = (displayedPoint.current !== null) !== (next !== null);
       displayedPoint.current = next;
       const cursor = cursorRef.current;
@@ -58,18 +64,20 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
           ? { x: event.clientX, y: event.clientY }
           : null;
       lastPoint.current = pending;
+      if (!activeCurrencyIdRef.current) return;
       if (!raf) raf = requestAnimationFrame(flush);
     }
     function handlePointerLeave() {
       pending = null;
       lastPoint.current = pending;
+      if (!activeCurrencyIdRef.current) return;
       if (!raf) raf = requestAnimationFrame(flush);
       else {
         displayedPoint.current = null;
         setVisible(false);
       }
     }
-    raf = requestAnimationFrame(flush);
+    if (activeCurrencyIdRef.current) raf = requestAnimationFrame(flush);
     document.addEventListener("pointerdown", handlePointerMove, { passive: true });
     document.addEventListener("pointermove", handlePointerMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", handlePointerLeave);
@@ -81,7 +89,7 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
       displayedPoint.current = null;
       setVisible(false);
     };
-  }, [activeCurrencyId]);
+  }, []);
 
   if (!activeCurrencyId || !visible) return null;
   const activeCurrency = getCraftingCurrencyDefinition(activeCurrencyId);

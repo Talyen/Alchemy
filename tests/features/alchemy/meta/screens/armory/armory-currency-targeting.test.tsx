@@ -36,6 +36,48 @@ describe("Armory crafting cursor", () => {
     fireEvent(target, event);
   }
 
+  it("initializes first pickup and subsequent currency artwork at the current pointer before a movement frame", () => {
+    const harness = (activeCurrencyId: "severance-maw" | "sprig-of-growth" | "voidstone" | null) => (
+      <>
+        <div data-testid="armory-workspace" />
+        <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} />
+      </>
+    );
+    const view = render(harness(null));
+    const workspace = screen.getByTestId("armory-workspace");
+    move(workspace, 40, 50);
+    expect(frames.size).toBe(0);
+    expect(screen.queryByTestId("armory-crafting-cursor")).toBeNull();
+    view.rerender(harness("severance-maw"));
+    let cursor = screen.getByTestId("armory-crafting-cursor");
+    expect(cursor.style.left).toBe("40px");
+    expect(cursor.style.top).toBe("50px");
+    const firstArt = cursor.querySelector("img")?.getAttribute("src");
+
+    move(workspace, 300, 200);
+    nextFrame();
+    view.rerender(harness(null));
+    expect(screen.queryByTestId("armory-crafting-cursor")).toBeNull();
+    move(workspace, 130, 400);
+    const pickup = new Event("pointerdown", { bubbles: true });
+    Object.assign(pickup, { clientX: 180, clientY: 420, pointerType: "mouse" });
+    fireEvent(workspace, pickup);
+    expect(frames.size).toBe(0);
+    view.rerender(harness("sprig-of-growth"));
+    cursor = screen.getByTestId("armory-crafting-cursor");
+    expect(cursor.style.left).toBe("180px");
+    expect(cursor.style.top).toBe("420px");
+    expect(cursor.querySelector("img")?.getAttribute("src")).not.toBe(firstArt);
+
+    // Replacing an already selected currency must also initialize before its queued RAF.
+    move(workspace, 250, 350);
+    view.rerender(harness("voidstone"));
+    expect(screen.getByTestId("armory-crafting-cursor").style.left).toBe("250px");
+    expect(screen.getByTestId("armory-crafting-cursor").style.top).toBe("350px");
+    nextFrame();
+    expect(screen.getByTestId("armory-crafting-cursor").style.left).toBe("250px");
+  });
+
   it("coalesces pointer movement and preserves placement without React commits on movement frames", () => {
     const onRender = vi.fn();
     const { rerender } = render(
