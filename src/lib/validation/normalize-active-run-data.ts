@@ -28,8 +28,16 @@ function wildwoodPhaseForActivity(kind: ValidatedActiveRunData["activity"]["kind
   return null;
 }
 
-export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedActiveRunData {
-  const runDeck = filterLiveCards(data.runDeck);
+export function normalizeActiveRunData(
+  data: ValidatedActiveRunData,
+): Omit<ValidatedActiveRunData, "runDeck"> & { runDeck: PersistedBattleCard[] } {
+  const runDeck: PersistedBattleCard[] = [];
+  const deckIndices = new Map<number, number>();
+  for (const [index, card] of data.runDeck.entries()) {
+    if (!card || !isRecoverableCard(card)) continue;
+    deckIndices.set(index, runDeck.length);
+    runDeck.push(card);
+  }
   const rngState: RunRngState = { seed: data.rng.seed, counters: { ...data.rng.counters } };
   function repairChoices(
     choices: PersistedBattleCard[],
@@ -111,6 +119,29 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
         : null,
   };
   let activity = data.activity;
+  if (activity.kind === "transmutation" && activity.data.transmutation) {
+    const selection = activity.data.transmutation;
+    const sourceIndex = selection.sourceIndex === null ? undefined : deckIndices.get(selection.sourceIndex);
+    activity = {
+      ...activity,
+      data: {
+        ...activity.data,
+        transmutation: {
+          ...selection,
+          choices: selection.choices.map((choice) => ({
+            ...choice,
+            alterations: choice.alterations.flatMap((alteration) => {
+              const index = deckIndices.get(alteration.sourceIndex);
+              return index === undefined ? [] : [{ ...alteration, sourceIndex: index }];
+            }),
+          })),
+          ...(sourceIndex === undefined
+            ? { sourceIndex: null, source: null, keyword: null, offerIndex: null }
+            : { sourceIndex }),
+        },
+      },
+    };
+  }
   if (activity.kind === "battle")
     activity = {
       ...activity,
