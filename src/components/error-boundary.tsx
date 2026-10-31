@@ -19,14 +19,19 @@ interface State {
   error?: Error | undefined;
 }
 
+function normalizeError(value: unknown): Error {
+  return value instanceof Error ? value : new Error("A non-Error value was thrown", { cause: value });
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   override state: State = { hasError: false };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: unknown): State {
+    return { hasError: true, error: normalizeError(error) };
   }
 
-  override componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(thrown: unknown, info: ErrorInfo) {
+    const error = this.state.error ?? normalizeError(thrown);
     const label = this.props.label ?? undefined;
     logError(
       label ? `ErrorBoundary (${label}): ${error.message}` : `ErrorBoundary: ${error.message}`,
@@ -34,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
       label ? { screen: label } : undefined,
       error.stack ?? undefined,
       info.componentStack ?? undefined,
-      error,
+      thrown,
     );
     this.props.onError?.(error, info);
   }
