@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { anchoredPage, getPagination } from "./pagination";
 
-function preservedPageOnResize(
-  currentPage: number,
-  currentSize: number,
-  pageSize: number,
-  itemCount: number,
-  selectedIndex: number,
-) {
-  return anchoredPage(currentPage, currentSize, pageSize, itemCount, selectedIndex);
-}
-
 export function usePagination(itemCount: number, pageSize: number, resetKey?: unknown, selectedIndex = -1) {
   const [state, setState] = useState({ resetKey, pageSize, page: 0 });
   const resetChanged = !Object.is(state.resetKey, resetKey);
@@ -18,7 +8,7 @@ export function usePagination(itemCount: number, pageSize: number, resetKey?: un
   const candidatePage = resetChanged
     ? 0
     : sizeChanged
-      ? preservedPageOnResize(state.page, state.pageSize, pageSize, itemCount, selectedIndex)
+      ? anchoredPage(state.page, state.pageSize, pageSize, itemCount, selectedIndex)
       : state.page;
   const pagination = getPagination(itemCount, candidatePage, pageSize);
 
@@ -61,7 +51,7 @@ export function useControlledPagination({
     contextChanged || externalChanged
       ? externalPage
       : sizeChanged
-        ? preservedPageOnResize(state.page, state.pageSize, pageSize, itemCount, selectedIndex)
+        ? anchoredPage(state.page, state.pageSize, pageSize, itemCount, selectedIndex)
         : state.page;
   const pagination = getPagination(itemCount, candidatePage, pageSize);
   const { page } = pagination;
