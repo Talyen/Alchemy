@@ -80,7 +80,6 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatArrowDamage",
   "flatFreezeDamage",
   "flatNatureDamage",
-  "startBlock",
   "startThorns",
   "healthRestorePerCombat",
   "freezeDamagePerMana",

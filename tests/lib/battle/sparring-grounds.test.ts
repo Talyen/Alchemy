@@ -14,7 +14,7 @@ describe("Sparring Grounds Physical critical damage", () => {
     const homestead = computeHomesteadEffects({ "sparring-grounds": tier }, {}, {});
     expect(homestead.homesteadPhysicalCritDamagePercent).toBe(10 * tier);
     expect(homestead.ironFindBonus).toBeCloseTo(0.1 * tier);
-    expect(homestead.startBlock).toBe(0);
+    expect(homestead).not.toHaveProperty("startBlock");
     expect(buildings.find((b) => b.id === "sparring-grounds")!.tiers[tier - 1]!.benefitDescription).toBe(
       `Physical Critical Hits deal ${10 * tier}% more damage`,
     );

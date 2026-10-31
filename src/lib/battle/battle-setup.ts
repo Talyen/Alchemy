@@ -150,8 +150,7 @@ export function createBattleStartState(
   const openingForge = battleTalents.startForge + battleGearEffects.startForge;
   const openingArmor =
     battleTalents.startArmor + battleGearEffects.startArmor + (battleTalents.manaShellActive ? mana : 0);
-  const openingBlock =
-    battleTalents.startBlock + startBlock + battleGearEffects.startBlock + (battleTalents.manaBulwarkActive ? mana : 0);
+  const openingBlock = startBlock + battleGearEffects.startBlock + (battleTalents.manaBulwarkActive ? mana : 0);
   const baseState = defaultBattleState();
   const state: BattleState = {
     ...baseState,

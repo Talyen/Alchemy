@@ -133,8 +133,9 @@ describe("four-tier Homestead persistence and settlement", () => {
       enemyHealth: 17,
       mana: 2,
       playerStatuses: { block: 6 },
-      talentEffects: { startBlock: 0, homesteadPhysicalCritDamagePercent: 30 },
+      talentEffects: { homesteadPhysicalCritDamagePercent: 30 },
     });
+    expect(readBattle(session).battleState!.talentEffects).not.toHaveProperty("startBlock");
     expect(constructBuilding("sparring-grounds", session)).toBe(true);
     expect(readRunProfile(session).materialInventory).toEqual(emptyInventory());
     expect(readBattle(session).battleState!.talentEffects.homesteadPhysicalCritDamagePercent).toBe(40);

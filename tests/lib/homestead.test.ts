@@ -55,7 +55,7 @@ it("mergeIntoManifest adds combat bonuses and takes the higher companion bond wi
   const talent = {
     ...createEmptyTalentEffectManifest(),
     flatPhysicalDamage: 3,
-    startBlock: 2,
+    startForge: 2,
   };
   talent.firstBurnCardFree = true;
   talent.armorPhysicalDamagePercent = 100;
@@ -71,7 +71,7 @@ it("mergeIntoManifest adds combat bonuses and takes the higher companion bond wi
   const merged = mergeIntoManifest(talent, homestead);
   expect(merged).toMatchObject({
     flatPhysicalDamage: 4,
-    startBlock: 2,
+    startForge: 2,
     firstBurnCardFree: true,
     armorPhysicalDamagePercent: 100,
     homesteadPotionBonus: 1,
