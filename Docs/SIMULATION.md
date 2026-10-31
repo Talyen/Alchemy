@@ -254,6 +254,9 @@ differ. It requires the same code/content identity and ordered scenario manifest
 including starting saves, seeds, budgets and policies. Normal comparisons remain
 strict. An incomplete career cannot enter a balance comparison. Results use
 paired career means and standard errors; battles within careers are correlated.
+For net Health lost per battle, a career pair contributes only when both sides
+have matching start and settlement snapshots. The metric reports its contributing
+career count and a null mean when no pair has that evidence.
 The `firstVictoryRunCensored` metric records careers without a victory as
 `runs + 1`, not as a measured later victory. Treatment decisions can change
 routes, spending and RNG consumption: matched seeds do not guarantee matched
