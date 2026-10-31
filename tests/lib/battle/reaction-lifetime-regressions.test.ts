@@ -41,10 +41,10 @@ describe("reaction lifetimes", () => {
     expect(second.pendingBleedLeechHealing).toBe(2);
   });
 
-  it("Forged Bulwark does not reward Block removed by an enemy Purge", () => {
+  it("Forged Bulwark does not gain Forge when an enemy Purge removes Block", () => {
     const state = patchBattleState({
       playerStatuses: { block: 3 },
-      talentEffects: { forgeOnBlockDepleted: 1 },
+      talentEffects: { blockOnForgeGain: 1 },
       rng: () => 0.99,
     });
     const result = purgeOnePlayerBenefit(state, []).state;

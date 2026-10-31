@@ -93,9 +93,6 @@ function applyBlockDepletedHeal(
   if (isPlayerDefeated(nextState)) return nextState;
   // The hit depleted Block even if threshold or healing rewards refilled it.
   let finalState = applyBlockDepletionRewards(prevState, nextState, combatTexts, isBlockDepleted);
-  if (isBlockDepleted)
-    finalState = addForgeToPlayer(finalState, prevState.talentEffects.forgeOnBlockDepleted, combatTexts);
-
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
     finalState = resolveFollowUpHit(
       finalState,

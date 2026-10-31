@@ -192,8 +192,8 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     if (!state.uniqueGear.everkeenReady && nextState.uniqueGear.everkeenReady && combatTexts) {
       port.forgeReady(combatTexts);
     }
-    if (state.gearEffects.blockOnForgeGain > 0)
-      nextState = applyBlockReward(nextState, state.gearEffects.blockOnForgeGain, combatTexts ?? []);
+    const blockOnForgeGain = state.gearEffects.blockOnForgeGain + state.talentEffects.blockOnForgeGain;
+    if (blockOnForgeGain > 0) nextState = applyBlockReward(nextState, blockOnForgeGain, combatTexts ?? []);
     if (combatTexts) {
       emitStatusText(combatTexts, "player", "forge", amount, { ...feedbackIntent(options) });
     }

@@ -133,6 +133,10 @@ function isHealthThresholdReward(value: unknown): value is { threshold: number; 
   );
 }
 
+function hasFormerForgedBulwark(value: unknown): boolean {
+  return isRecord(value) && value.forgeOnBlockDepleted === 1;
+}
+
 function normalizeTalentEffects(
   defaults: TalentEffectManifest,
   saved: Partial<TalentEffectManifest> | undefined,
@@ -148,6 +152,9 @@ function normalizeTalentEffects(
     if (typeof fallback === "boolean" && typeof value !== "boolean") continue;
     writable[key] = value;
   }
+  // Existing active battles record the old Forged Bulwark effect rather than
+  // unlocked talent IDs. Carry its ownership into the new effect on resume.
+  if (saved && !Object.hasOwn(saved, "blockOnForgeGain") && hasFormerForgedBulwark(saved)) merged.blockOnForgeGain = 1;
   merged.cardHealMultipliers = normalizeMagnitudeDictionary(merged.cardHealMultipliers);
   merged.companionBondLevels = normalizeNonNegativeRecord(defaults.companionBondLevels, merged.companionBondLevels);
   merged.healthThresholdArmor = Array.isArray(merged.healthThresholdArmor)

@@ -132,7 +132,7 @@ describe("Block depletion outside enemy hits", () => {
       playerHealth: 10,
       playerMaxHealth: 30,
       playerStatuses: { block: 3 },
-      talentEffects: { blockDepletedHeal: 2, forgeOnBlockDepleted: 1 },
+      talentEffects: { blockDepletedHeal: 2 },
       gearEffects: { thornsOnBlockDepleted: 3, blockPaysFreezeMana: 1 },
       rng: () => 0.99,
     });

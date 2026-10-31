@@ -312,8 +312,8 @@ export const talentRows = [
     "Below half Health, gaining Forge has a 25% chance to grant 1 additional Forge",
     { forgeLowHealthBonusChance: 25 },
   ),
-  forge("forge-strength-6", "Forged Bulwark")("Castle", "Gain 1 Forge when an enemy attack depletes your Block", {
-    forgeOnBlockDepleted: 1,
+  forge("forge-strength-6", "Forged Bulwark")("Castle", "When you gain Forge, gain 1 Block", {
+    blockOnForgeGain: 1,
   }),
   freeze("freeze-threshold", "Bitter Cold")(
     "ThermometerSnowflake",
