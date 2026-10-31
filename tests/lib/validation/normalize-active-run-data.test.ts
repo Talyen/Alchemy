@@ -80,6 +80,18 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.success).toBe(false);
   });
 
+  it("does not resume a mapless Labyrinth past the Wildcard draft", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      ...baseActiveRunInput(),
+      characterId: "wildcard",
+      contentSystemType: "labyrinth",
+      starterDraftChoices: [liveCard],
+      labyrinthMap: null,
+      activity: savedActivityFixture("destination"),
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("clamps player health to maxHealth", () => {
     const result = parseActiveRunData({ runPlayerHealth: 50, runMaxHealth: 30 });
     expect(result.runPlayerHealth).toBe(30);
@@ -132,6 +144,28 @@ describe("ActiveRunDataSchema normalize", () => {
     });
     expect(result.starterDraftChoices).toBeNull();
   });
+
+  it.each(["campaign", "labyrinth"] as const)(
+    "repairs missing Wildcard draft offers in %s and clears stale offers after the last pick",
+    (contentSystemType) => {
+      const input = {
+        characterId: "wildcard",
+        contentSystemType,
+        activity: savedActivityFixture("draft-deck"),
+        starterDraftChoices: null,
+      };
+      const unfinished = parseActiveRunData(input);
+      expect(unfinished.starterDraftChoices).toHaveLength(3);
+      expect(unfinished.rng.counters.rewards).toBeGreaterThan(0);
+
+      const completed = parseActiveRunData({
+        ...input,
+        runDeck: Array.from({ length: DRAFT_ROUNDS }, () => liveCard),
+        starterDraftChoices: [liveCard],
+      });
+      expect(completed.starterDraftChoices).toEqual([]);
+    },
+  );
 
   it.each([
     ["draft-deck", "draft", [], []],

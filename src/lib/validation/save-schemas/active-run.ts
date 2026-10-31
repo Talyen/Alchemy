@@ -285,7 +285,7 @@ export const ActiveRunDataSchema = z
     (data) =>
       data.contentSystemType !== "labyrinth" ||
       data.labyrinthMap !== null ||
-      (data.characterId === "wildcard" && data.starterDraftChoices !== null && data.activity.kind !== "battle"),
+      (data.characterId === "wildcard" && data.starterDraftChoices !== null && data.activity.kind === "draft-deck"),
     { message: "Labyrinth runs require a valid labyrinth map or an unfinished Wildcard starter draft" },
   )
   .refine((data) => data.contentSystemType !== "wildwood" || data.wildwoodDraft !== null, {

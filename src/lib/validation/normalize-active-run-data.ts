@@ -83,10 +83,13 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
       seedKeywords: characters[data.characterId].keywords,
     }),
   };
+  const resumingStarterDraft =
+    data.contentSystemType !== "wildwood" && data.characterId === "wildcard" && data.activity.kind === "draft-deck";
   const starterDraftChoices =
-    data.contentSystemType !== "wildwood" && data.starterDraftChoices
+    data.contentSystemType !== "wildwood" && (data.starterDraftChoices || resumingStarterDraft)
       ? (() => {
-          const choices = filterLiveCards(data.starterDraftChoices);
+          if (resumingStarterDraft && !drafting) return [];
+          const choices = filterLiveCards(data.starterDraftChoices ?? []);
           return choices.length > 0 || !drafting
             ? choices
             : createStarterDraftChoices(runDeck, createRunStateRng(rngState, "rewards")).map(cloneBattleCard);

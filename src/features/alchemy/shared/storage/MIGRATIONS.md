@@ -286,8 +286,11 @@ ledger is needed.
 
 Missing Mystery visits recover within their mode: Campaign restores its destination
 offer; Labyrinth releases the pending room and returns to the map without clearing
-that room. Empty Wildcard starter offers use the normal guaranteed repeatable
-damage/defense recipe and rewards RNG, then persist the repaired choices.
+that room. Missing or empty Wildcard starter offers use the normal guaranteed
+repeatable damage/defense recipe and rewards RNG, then persist the repaired choices.
+A completed draft clears stale offers so it can continue. A Labyrinth without a
+map is recoverable only while the Wildcard draft is still the saved activity;
+later activities require the map and otherwise abandon the active run.
 
 Campfire and Transmutation are branches of `activeRun.activity`, each carrying
 its `AlchemyVisit` data. They are not separate optional top-level visit records.
