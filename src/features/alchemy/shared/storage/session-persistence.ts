@@ -20,7 +20,7 @@ import {
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
   setWritesDisabled,
-  subscribeSaveEvents,
+  subscribePersistenceInterruptions,
   subscribeSaveWriteFailure,
   waitForPendingSaveWrites,
 } from "./io";
@@ -28,10 +28,9 @@ import { buildAlchemySaveDataFromStores, subscribeAlchemyPersistence } from "./p
 import { configureAlchemySaveBackend } from "./bootstrap-save-state";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import type { SaveLoadState, SaveRestoreAction } from "./save-candidates";
-import type { SaveStorageEvent, SaveWriteOutcome } from "./save-operation-queue";
+import type { SaveWriteOutcome } from "./save-operation-queue";
 import type { UnstampedSaveData } from "./types";
-
-type PersistenceInterruption = SaveStorageEvent | "restored";
+import type { PersistenceInterruption } from "./io";
 
 export interface SessionPersistenceRestoreOptions {
   restoreActions?: readonly SaveRestoreAction[] | undefined;
@@ -72,12 +71,10 @@ export function snapshotSessionSave(gameSession: GameSession) {
 export function createSessionPersistence(gameSession: GameSession): SessionPersistence {
   const progress = sessionProgressCompletion(gameSession);
   const snapshot = () => snapshotSessionSave(gameSession);
-  const write = (save: UnstampedSaveData, exit = false) =>
-    exit ? saveAlchemySaveDataForExit(save, gameSession) : saveAlchemySaveData(save, gameSession);
   const checkpoint = () => {
     markSessionProgress(gameSession, true);
     try {
-      return write(snapshot());
+      return saveAlchemySaveData(snapshot(), gameSession);
     } catch (error) {
       logStorageFailure("Progress snapshot could not be built", error);
       return Promise.resolve("failed" as const);
@@ -111,8 +108,8 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
     },
     configurePlatform: () => configureAlchemySaveBackend(gameSession),
     load: () => loadAlchemySaveState(gameSession),
-    write: (save: UnstampedSaveData) => write(save),
-    writeOnExit: (save: UnstampedSaveData) => write(save, true),
+    write: (save: UnstampedSaveData) => saveAlchemySaveData(save, gameSession),
+    writeOnExit: (save: UnstampedSaveData) => saveAlchemySaveDataForExit(save, gameSession),
     waitForWrites: () => waitForPendingSaveWrites(gameSession),
     clear: (mode: "default" | "localWipe" = "default") => {
       return clearAlchemySaveData(mode, gameSession);
@@ -126,14 +123,8 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
     },
     subscribe: (listener: () => void) => subscribeAlchemyPersistence(listener, gameSession),
     isClearing: () => isSaveClearPending(gameSession),
-    subscribeInterruption: (listener: (event: PersistenceInterruption) => void) => {
-      const cancelStorage = subscribeSaveEvents(listener, gameSession);
-      const cancelRestore = progress.subscribeRestore(() => listener("restored"));
-      return registerSessionCleanup(gameSession, () => {
-        cancelStorage();
-        cancelRestore();
-      });
-    },
+    subscribeInterruption: (listener: (event: PersistenceInterruption) => void) =>
+      subscribePersistenceInterruptions(listener, gameSession),
     readFailure: () => getSaveWriteFailure(gameSession),
     subscribeFailure: (listener: () => void) => subscribeSaveWriteFailure(listener, gameSession),
   });
