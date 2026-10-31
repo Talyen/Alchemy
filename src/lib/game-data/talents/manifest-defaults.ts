@@ -31,7 +31,7 @@ const additionalDefaults = {
   homesteadPotionBonus: 0,
   homesteadFreeManaChance: 0,
   homesteadForgeBurnPercent: 0,
-  startBlock: 0,
+  homesteadPhysicalCritDamagePercent: 0,
   startThorns: 0,
   healMultiplier: 1,
   burnDamageReduction: 0,
