@@ -487,6 +487,22 @@ describe("platform save backend", () => {
     },
   );
 
+  it("preserves an exception thrown while accessing browser storage", async () => {
+    const error = new DOMException("Storage denied", "SecurityError");
+    Object.defineProperty(window, "localStorage", {
+      get: () => {
+        throw error;
+      },
+      configurable: true,
+    });
+    const backend = createBrowserSaveBackend();
+
+    await expect(backend.readCandidates(SAVE_KEY)).resolves.toEqual({ ok: false, error });
+    await expect(backend.write(SAVE_KEY, "payload")).resolves.toEqual({ ok: false, error });
+    expect(backend.writeSync(SAVE_KEY, "payload")).toEqual({ ok: false, error });
+    await expect(backend.clear(SAVE_KEY)).resolves.toEqual({ ok: false, error });
+  });
+
   it("reports browser storage failure instead of throwing without browser globals", async () => {
     vi.stubGlobal("window", undefined);
     vi.stubGlobal("localStorage", undefined);
