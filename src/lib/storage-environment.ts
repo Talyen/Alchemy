@@ -6,16 +6,6 @@ export function isClientContext(): boolean {
   return typeof window !== "undefined";
 }
 
-function getBrowserStorage(): Storage | null {
-  try {
-    if (typeof window !== "undefined" && window.localStorage) return window.localStorage;
-    if (typeof localStorage !== "undefined") return localStorage;
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 /** Sentinel message shared by unavailableResult and isStorageUnavailable so rewording one cannot desync the other. */
 const STORAGE_UNAVAILABLE_MESSAGE = "localStorage is unavailable in this context";
 
@@ -31,9 +21,11 @@ export function isStorageUnavailable(error: unknown): boolean {
 function withBrowserStorage<T extends { ok: true }>(
   operation: (storage: Storage) => T,
 ): T | { ok: false; error: unknown } {
-  const storage = getBrowserStorage();
-  if (!storage) return unavailableResult();
   try {
+    const storage =
+      (typeof window !== "undefined" ? window.localStorage : undefined) ??
+      (typeof localStorage !== "undefined" ? localStorage : undefined);
+    if (!storage) return unavailableResult();
     return operation(storage);
   } catch (error) {
     return { ok: false, error };

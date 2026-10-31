@@ -240,4 +240,25 @@ describe("agent playthrough reports", () => {
     expect(summary.findings[0]?.id).toBe("worker-failures");
     expect(summary.findings[0]?.evidence.failure1).toContain("timed out");
   });
+
+  it("excludes careers without paired battle health evidence from that metric", () => {
+    const snapshot = (stage: "start" | "settle", playerHealth: number) =>
+      ({ stage, run: 0, room: 1, playerHealth }) as CareerResult["telemetry"]["battleSnapshots"][number];
+    const baseline = [career(), career({ config: { ...config, seed: 2 } })];
+    const current = [career(), career({ config: { ...config, seed: 2 } })];
+    baseline[0]!.telemetry.battleSnapshots = [snapshot("start", 100), snapshot("settle", 80)];
+    current[0]!.telemetry.battleSnapshots = [snapshot("start", 100), snapshot("settle", 70)];
+    current[1]!.telemetry.battleSnapshots = [snapshot("start", 100), snapshot("settle", 50)];
+
+    const metric = comparePlaythroughReports(baseline, current)[0]!.metrics.find(
+      ({ metric }) => metric === "netHealthLostPerBattle",
+    );
+    expect(metric).toMatchObject({ careers: 1, meanDelta: 10, standardError: null });
+
+    baseline[0]!.telemetry.battleSnapshots = [];
+    const missing = comparePlaythroughReports(baseline, current)[0]!.metrics.find(
+      ({ metric }) => metric === "netHealthLostPerBattle",
+    );
+    expect(missing).toMatchObject({ careers: 0, meanDelta: null, standardError: null });
+  });
 });
