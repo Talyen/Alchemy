@@ -28,10 +28,9 @@
   height: calc(5 * var(--content-rem, 1rem));
 }
 
-/* The floating pointer preview lives outside the stage and keeps a cursor-sized footprint. */
-.armory-currency-cursor {
-  width: 5rem;
-  height: 5rem;
+/* Filter the artwork alpha, so the carried glow never has a rectangular backing. */
+.armory-currency-cursor img {
+  filter: drop-shadow(0 0 3px rgb(245 222 170 / 28%));
 }
 
 @keyframes armory-item-feedback {

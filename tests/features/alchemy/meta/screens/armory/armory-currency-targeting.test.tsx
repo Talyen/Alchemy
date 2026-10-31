@@ -3,10 +3,43 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ArmoryCurrencyCursor } from "@/features/alchemy/meta/screens/armory/armory-currency-targeting";
 
+function Workspace() {
+  return (
+    <div data-testid="armory-workspace">
+      <div data-testid="armory-crafting-strip">
+        {(["severance-maw", "sprig-of-growth", "voidstone", "discordant-dice"] as const).map((id) => (
+          <button key={id} type="button" data-currency-id={id} aria-label={id} style={{ width: 64.75, height: 64.75 }}>
+            <img alt="" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 describe("Armory crafting cursor", () => {
   const frames = new Map<number, FrameRequestCallback>();
+  let imageSize = { width: 62.75, height: 62.75 };
+  let resizeImage: (() => void) | undefined;
 
   beforeEach(() => {
+    imageSize = { width: 62.75, height: 62.75 };
+    resizeImage = undefined;
+    vi.spyOn(HTMLImageElement.prototype, "getBoundingClientRect").mockImplementation(
+      () => new DOMRect(0, 0, imageSize.width, imageSize.height),
+    );
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          resizeImage = callback;
+        }
+        observe() {}
+        disconnect() {
+          resizeImage = undefined;
+        }
+      },
+    );
     let nextId = 0;
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       const id = ++nextId;
@@ -21,6 +54,7 @@ describe("Armory crafting cursor", () => {
   afterEach(() => {
     cleanup();
     frames.clear();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -39,7 +73,7 @@ describe("Armory crafting cursor", () => {
   it("initializes first pickup and subsequent currency artwork at the current pointer before a movement frame", () => {
     const harness = (activeCurrencyId: "severance-maw" | "sprig-of-growth" | "voidstone" | null) => (
       <>
-        <div data-testid="armory-workspace" />
+        <Workspace />
         <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} />
       </>
     );
@@ -82,7 +116,7 @@ describe("Armory crafting cursor", () => {
     const onRender = vi.fn();
     const { rerender } = render(
       <>
-        <div data-testid="armory-workspace" />
+        <Workspace />
         <Profiler id="cursor" onRender={onRender}>
           <ArmoryCurrencyCursor activeCurrencyId="voidstone" />
         </Profiler>
@@ -102,8 +136,8 @@ describe("Armory crafting cursor", () => {
     expect(frames.size).toBe(1);
     nextFrame();
     expect(screen.getByTestId("armory-crafting-cursor")).toBe(cursor);
-    expect(cursor.style.left).toBe("688px");
-    expect(cursor.style.top).toBe("488px");
+    expect(cursor.style.left).toBe("705.25px");
+    expect(cursor.style.top).toBe("505.25px");
     move(workspace, 400, 350);
     nextFrame();
     expect(cursor.style.left).toBe("400px");
@@ -114,20 +148,20 @@ describe("Armory crafting cursor", () => {
     vi.stubGlobal("innerWidth", 450);
     rerender(
       <>
-        <div data-testid="armory-workspace" />
+        <Workspace />
         <Profiler id="cursor" onRender={onRender}>
           <ArmoryCurrencyCursor activeCurrencyId="voidstone" />
         </Profiler>
       </>,
     );
-    expect(cursor.style.left).toBe("338px");
+    expect(cursor.style.left).toBe("355.25px");
     expect(cursor.style.top).toBe("350px");
   });
 
   it("hides outside the workspace and for touch, replaces artwork, and cancels pending work on teardown", () => {
     const { rerender, unmount } = render(
       <>
-        <div data-testid="armory-workspace" />
+        <Workspace />
         <ArmoryCurrencyCursor activeCurrencyId="voidstone" />
       </>,
     );
@@ -146,7 +180,7 @@ describe("Armory crafting cursor", () => {
 
     rerender(
       <>
-        <div data-testid="armory-workspace" />
+        <Workspace />
         <ArmoryCurrencyCursor activeCurrencyId="discordant-dice" />
       </>,
     );
@@ -168,5 +202,34 @@ describe("Armory crafting cursor", () => {
     expect(frames.size).toBe(0);
     move(workspace, 230, 240);
     expect(frames.size).toBe(0);
+  });
+
+  it("matches the rendered chip image rather than its tile and refreshes hidden or changed sources", () => {
+    const harness = (id: "voidstone" | "discordant-dice") => (
+      <>
+        <Workspace />
+        <ArmoryCurrencyCursor activeCurrencyId={id} />
+      </>
+    );
+    const view = render(harness("voidstone"));
+    move(screen.getByTestId("armory-workspace"), 100, 120);
+    nextFrame();
+    const cursor = screen.getByTestId("armory-crafting-cursor");
+    expect(cursor.style.width).toBe("62.75px");
+    expect(cursor.style.height).toBe("62.75px");
+    imageSize = { width: 48.25, height: 46 };
+    act(() => resizeImage?.());
+    expect(cursor.style.width).toBe("48.25px");
+    expect(cursor.style.height).toBe("46px");
+    imageSize = { width: 0, height: 0 };
+    fireEvent(window, new Event("resize"));
+    expect(screen.queryByTestId("armory-crafting-cursor")).toBeNull();
+    imageSize = { width: 38, height: 40 };
+    view.rerender(harness("discordant-dice"));
+    expect(screen.getByTestId("armory-crafting-cursor").style.width).toBe("38px");
+    expect(screen.getByTestId("armory-crafting-cursor").style.height).toBe("40px");
+    expect(screen.getByTestId("armory-crafting-cursor").style.left).toBe("100px");
+    view.unmount();
+    expect(resizeImage).toBeUndefined();
   });
 });

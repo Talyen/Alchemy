@@ -7,9 +7,14 @@ interface CursorPoint {
   y: number;
 }
 
-function positionCursor(cursor: HTMLDivElement, point: CursorPoint): void {
-  cursor.style.left = `${Math.min(point.x, window.innerWidth - 112)}px`;
-  cursor.style.top = `${Math.min(point.y, window.innerHeight - 112)}px`;
+interface CursorSize {
+  width: number;
+  height: number;
+}
+
+function positionCursor(cursor: HTMLDivElement, point: CursorPoint, size: CursorSize): void {
+  cursor.style.left = `${Math.min(point.x, window.innerWidth - size.width - 32)}px`;
+  cursor.style.top = `${Math.min(point.y, window.innerHeight - size.height - 32)}px`;
 }
 
 export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: CraftingCurrencyId | null }) {
@@ -17,6 +22,8 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
   const displayedPoint = useRef<CursorPoint | null>(null);
   const activeCurrencyIdRef = useRef(activeCurrencyId);
   const cursorRef = useRef<HTMLDivElement>(null);
+  const sizeRef = useRef<CursorSize | null>(null);
+  const [size, setSize] = useState<CursorSize | null>(null);
   const [visible, setVisible] = useState(false);
 
   useLayoutEffect(() => {
@@ -28,7 +35,38 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
   }, [activeCurrencyId]);
 
   useLayoutEffect(() => {
-    if (cursorRef.current && displayedPoint.current) positionCursor(cursorRef.current, displayedPoint.current);
+    const image = activeCurrencyId
+      ? document.querySelector<HTMLImageElement>(
+          `[data-testid="armory-crafting-strip"] [data-currency-id="${activeCurrencyId}"] img`,
+        )
+      : null;
+    function measureImage() {
+      const bounds = image?.getBoundingClientRect();
+      const next =
+        bounds && bounds.width > 0 && bounds.height > 0 ? { width: bounds.width, height: bounds.height } : null;
+      sizeRef.current = next;
+      setSize((previous) => (previous?.width === next?.width && previous?.height === next?.height ? previous : next));
+      if (cursorRef.current && displayedPoint.current && next) {
+        positionCursor(cursorRef.current, displayedPoint.current, next);
+      }
+    }
+    // The portal is outside the scaled Armory stage. Match its actual image,
+    // excluding the chip's border, before the first carried frame is painted.
+    measureImage();
+    if (!image) return;
+    const observer = new ResizeObserver(measureImage);
+    observer.observe(image);
+    window.addEventListener("resize", measureImage);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measureImage);
+    };
+  }, [activeCurrencyId]);
+
+  useLayoutEffect(() => {
+    if (cursorRef.current && displayedPoint.current && sizeRef.current) {
+      positionCursor(cursorRef.current, displayedPoint.current, sizeRef.current);
+    }
   });
 
   useEffect(() => {
@@ -40,10 +78,10 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
       const visibilityChanged = (displayedPoint.current !== null) !== (next !== null);
       displayedPoint.current = next;
       const cursor = cursorRef.current;
-      if (cursor && next) {
+      if (cursor && next && sizeRef.current) {
         // React owns mounting and artwork; pointer frames only move the
         // existing node, retaining the same CSS offsets and viewport clamp.
-        positionCursor(cursor, next);
+        positionCursor(cursor, next, sizeRef.current);
       }
       if (visibilityChanged) setVisible(next !== null);
     }
@@ -81,13 +119,14 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
     };
   }, []);
 
-  if (!activeCurrencyId || !visible) return null;
+  if (!activeCurrencyId || !visible || !size) return null;
   const activeCurrency = getCraftingCurrencyDefinition(activeCurrencyId);
   return createPortal(
     <div
       ref={cursorRef}
       data-testid="armory-crafting-cursor"
       className="armory-currency-cursor pointer-events-none fixed z-[130] translate-x-4 translate-y-4"
+      style={{ width: size.width, height: size.height }}
     >
       <img src={activeCurrency.art} alt="" decoding="async" className="h-full w-full object-cover" />
     </div>,
