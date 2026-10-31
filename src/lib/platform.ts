@@ -3,11 +3,6 @@ import type { DisplayMode } from "./settings-values";
 
 export type { DisplayMode } from "./settings-values";
 
-export interface SteamInitialization {
-  playerName: string | null;
-  cloudSyncEnabled: boolean;
-}
-
 export function isDesktop(): boolean {
   return isDesktopApiAvailable();
 }
@@ -24,18 +19,16 @@ export function openFullGameWishlist(): void {
   void getDesktopApi()?.openWishlist?.();
 }
 
-export async function initializeSteam(): Promise<SteamInitialization> {
+export async function initializeSteamCloudSync(): Promise<boolean> {
   const getPlayerName = getDesktopApi()?.steamGetName;
-  if (!getPlayerName) return { playerName: null, cloudSyncEnabled: false };
+  if (!getPlayerName) return false;
 
   try {
-    const playerName = await getPlayerName();
-    if (!playerName) return { playerName: null, cloudSyncEnabled: false };
-    const cloudSyncEnabled = (await getDesktopApi()?.steamIsCloudEnabled?.()) === true;
-    return { playerName, cloudSyncEnabled };
+    if (!(await getPlayerName())) return false;
+    return (await getDesktopApi()?.steamIsCloudEnabled?.()) === true;
   } catch (error) {
-    console.warn("Failed to retrieve Steam player name:", error);
-    return { playerName: null, cloudSyncEnabled: false };
+    console.warn("Failed to initialize Steam Cloud:", error);
+    return false;
   }
 }
 

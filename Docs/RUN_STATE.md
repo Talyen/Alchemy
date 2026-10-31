@@ -609,7 +609,8 @@ one tagged activity, independently of presentation navigation. `idle` is constru
 inactive runs save no active run. [Recovery](../src/features/alchemy/shared/storage/MIGRATIONS.md#current-data-recovery)
 owns malformed selected activities without reviving stale visits.
 
-`platform-save-backend.ts` owns transport; Steam initialization returns capabilities.
+`platform-save-backend.ts` owns transport; Steam initialization returns Cloud availability
+without exposing the player name used for its readiness check.
 Configure backends only while storage is idle, retaining method receivers so
 submitted work cannot switch transport. Independent sessions configure their own;
 only the application retains platform/SSR defaults. Storage drain includes published
