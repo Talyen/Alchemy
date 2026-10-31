@@ -206,6 +206,23 @@ it.each([false, true])("a replacement autosave driver respects a pending clear t
   expect(persistence.readProgress().kind).toBe("idle");
 });
 
+it("unsubscribes from both restore and storage interruptions together", async () => {
+  await using session = createGameSession({ saveBackend: createSaveBackend() });
+  const persistence = createSessionPersistence(session);
+  const listener = vi.fn();
+  const unsubscribe = persistence.subscribeInterruption(listener);
+
+  persistence.restore(persistence.snapshot());
+  persistence.setWritesDisabled(true);
+  expect(listener.mock.calls).toEqual([["restored"], ["writes-disabled"]]);
+
+  unsubscribe();
+  unsubscribe();
+  persistence.restore(persistence.snapshot());
+  persistence.setWritesDisabled(true);
+  expect(listener).toHaveBeenCalledTimes(2);
+});
+
 it("revokes captured storage observers if a clear notification closes their session", async () => {
   await using session = createGameSession({ saveBackend: createSaveBackend() });
   const persistence = createSessionPersistence(session);
