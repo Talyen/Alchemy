@@ -69,8 +69,8 @@ export const buildings: HomesteadBuilding[] = [
     "sparring-grounds",
     "Sparring Grounds",
     scaledMaterialCosts({ wood: 4, stone: 4 }),
-    { startBlock: 2, ironFindBonus: 0.1 },
-    (t) => `Start each combat with ${2 * t} Block`,
+    { homesteadPhysicalCritDamagePercent: 10, ironFindBonus: 0.1 },
+    (t) => `Physical Critical Hits deal ${10 * t}% more damage`,
     (t) => `Find ${10 * t}% more Iron`,
   ),
   stackingUpgrade(

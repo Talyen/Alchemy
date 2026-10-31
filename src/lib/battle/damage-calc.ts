@@ -22,15 +22,23 @@ import { hasEncounterBenefit } from "./encounter-trait-state";
 import { applySunderingArmorRemoval } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
-function applyCrit(damage: number, state: BattleState, guaranteed = false, rollCritical = true) {
+function applyCrit(
+  damage: number,
+  state: BattleState,
+  damageType: DamageType,
+  guaranteed = false,
+  rollCritical = true,
+) {
   const chance =
     GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
   const critical =
     guaranteed ||
     readCombatFlag(state, "nextHitCrit") ||
     (rollCritical && rollPercent(chance, getBattleRng(state), "critical"));
+  const bonusPercent = damageType === "physical" ? state.talentEffects.homesteadPhysicalCritDamagePercent : 0;
+  const criticalMultiplier = CRIT_MULTIPLIER * (1 + bonusPercent / PERCENT_DENOMINATOR);
   return {
-    damage: critical && damage > 0 ? damage * CRIT_MULTIPLIER : damage,
+    damage: critical && damage > 0 ? damage * criticalMultiplier : damage,
     critical: critical && damage > 0,
   };
 }
@@ -204,6 +212,7 @@ export function computeCardDamageToEnemy(
   const criticalResult = applyCrit(
     power.damage,
     stateAfterFirst,
+    effect.damageType,
     context?.guaranteedCrit === true || physicalCritReady || hawkEyeCritReady,
     criticalMode === "random",
   );

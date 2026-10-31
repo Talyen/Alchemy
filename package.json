@@ -156,7 +156,8 @@
     "test:visual": "cross-env PLAYWRIGHT_VITE_MODE=preview node scripts/run-compact.mjs playwright test --config playwright.visual.config.ts",
     "check:all": "node scripts/check.mjs --full --all",
     "steam:build-native": "node scripts/ensure-steamworks.mjs",
-    "trailer": "node scripts/trailer.mjs"
+    "trailer": "node scripts/trailer.mjs",
+    "postinstall": "node scripts/patch-dependency-compat.mjs"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
@@ -264,6 +265,8 @@
     },
     "typed-rest-client": {
       "qs": "^6.16.1"
-    }
+    },
+    "minimatch": "11.0.3",
+    "glob@^13": "14.0.3"
   }
 }
