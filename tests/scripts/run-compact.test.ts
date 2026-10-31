@@ -102,9 +102,11 @@ it("rejects a missing path in a mixed unit selection before starting a process o
 
   fs.mkdirSync(path.join(root, "tests"));
   fs.writeFileSync(path.join(root, "tests/real.test.ts"), "");
-  await expect(runCompact(["vitest", "run", "tests/real.test.ts", "tests/typo.test.ts"], root)).rejects.toThrow(
-    "Unit test path does not exist: tests/typo.test.ts",
-  );
+  for (const command of [["vitest"], ["npx", "vitest"], ["/bin/npx", "vitest"]]) {
+    await expect(runCompact([...command, "run", "tests/real.test.ts", "tests/typo.test.ts"], root)).rejects.toThrow(
+      "Unit test path does not exist: tests/typo.test.ts",
+    );
+  }
   expect(fs.existsSync(path.join(root, "reports"))).toBe(false);
   expect(
     unitSelection(["run", "tests/real.test.ts", "--exclude", "tests/missing.test.ts", "-t", "name / filter"], root)
