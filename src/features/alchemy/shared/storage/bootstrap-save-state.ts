@@ -1,12 +1,12 @@
 import type { GameSession } from "../stores/session/game-session-types";
-import { initializeSteam, isDesktop } from "@/lib/platform";
+import { initializeSteamCloudSync, isDesktop } from "@/lib/platform";
 import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
 import { configureSaveBackend, loadAlchemySaveState } from "./io";
 import type { SaveLoadState } from "./save-candidates";
 
 export async function configureAlchemySaveBackend(gameSession: GameSession): Promise<void> {
-  const steam = isDesktop() ? await initializeSteam() : { playerName: null, cloudSyncEnabled: false };
-  configureSaveBackend(createPlatformSaveBackend({ cloudSyncEnabled: steam.cloudSyncEnabled }), gameSession);
+  const cloudSyncEnabled = isDesktop() && (await initializeSteamCloudSync());
+  configureSaveBackend(createPlatformSaveBackend({ cloudSyncEnabled }), gameSession);
 }
 
 export async function bootstrapAlchemySaveState(gameSession: GameSession): Promise<SaveLoadState> {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
 import {
-  initializeSteam,
+  initializeSteamCloudSync,
   isDesktop,
   openFullGameWishlist,
   quitDesktopApp,
@@ -53,20 +53,17 @@ describe("desktop runtime", () => {
     expect(openWishlist).toHaveBeenCalledOnce();
   });
 
-  it("returns Steam capabilities instead of mutating shared state", async () => {
+  it("returns Cloud availability instead of exposing the Steam name", async () => {
     installDesktopApi({ steamName: "PlayerOne", cloudSyncEnabled: true });
 
-    await expect(initializeSteam()).resolves.toEqual({
-      playerName: "PlayerOne",
-      cloudSyncEnabled: true,
-    });
+    await expect(initializeSteamCloudSync()).resolves.toBe(true);
   });
 
   it("honors disabled Cloud without logging the Steam name", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       installDesktopApi({ steamName: "PrivatePlayer", cloudSyncEnabled: false });
-      await expect(initializeSteam()).resolves.toEqual({ playerName: "PrivatePlayer", cloudSyncEnabled: false });
+      await expect(initializeSteamCloudSync()).resolves.toBe(false);
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
@@ -74,12 +71,25 @@ describe("desktop runtime", () => {
   });
 
   it("keeps cloud sync disabled when Steam identity is unavailable", async () => {
-    installDesktopApi();
+    const cloudProbe = vi.fn().mockResolvedValue(true);
+    installDesktopApi({ overrides: { steamIsCloudEnabled: cloudProbe } });
 
-    await expect(initializeSteam()).resolves.toEqual({
-      playerName: null,
-      cloudSyncEnabled: false,
-    });
+    await expect(initializeSteamCloudSync()).resolves.toBe(false);
+    expect(cloudProbe).not.toHaveBeenCalled();
+  });
+
+  it("keeps Cloud disabled when initialization fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      installDesktopApi({
+        steamName: "PlayerOne",
+        overrides: { steamIsCloudEnabled: vi.fn().mockRejectedValue(new Error("unavailable")) },
+      });
+      await expect(initializeSteamCloudSync()).resolves.toBe(false);
+      expect(warn).toHaveBeenCalledOnce();
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("delegates rich presence without requiring initialization state", async () => {
