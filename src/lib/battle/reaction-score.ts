@@ -156,6 +156,7 @@ const playerResources = createPlayerResourceResolver({
 // These are deliberate score approximations. The production utility owner still
 // owns effect ordering, conversions, resource floors, and prepared flags.
 const utilityHandlers = createCardUtilityHandlers({
+  // Nominal healing intentionally excludes card-specific and potion bonuses.
   healingAmount: (_state, _card, effect) => effect.amount,
   heal: (state, amount) => ({ ...state, playerHealth: Math.min(state.playerMaxHealth, state.playerHealth + amount) }),
   mana: (state, amount, _texts, overflow) => gainMana(state, amount, overflow),
@@ -245,13 +246,14 @@ function projectEffects(
         if (effect.kind === "cleanse-player-status-to-damage") {
           const stacks = path.state.playerStatuses[effect.status] ?? 0;
           if (stacks <= 0) return [path];
-          const cleansedState = {
-            ...path.state,
-            playerStatuses: {
-              ...path.state.playerStatuses,
-              [effect.status]: 0,
-            },
-          };
+          const cleansedState = utilityHandlers["remove-player-status"](
+            path.state,
+            card,
+            { kind: "remove-player-status", status: effect.status },
+            1,
+            [],
+            { manaAtStart },
+          );
           return [
             projectHit({ ...path, state: cleansedState }, card, {
               kind: "damage",
@@ -303,7 +305,6 @@ function projectEffects(
           return [{ ...path, state: withStatus }];
         }
         if (
-          effect.kind !== "heal" &&
           effect.kind !== "gain-gold" &&
           effect.kind !== "summon-companion" &&
           Object.hasOwn(utilityHandlers, effect.kind)
@@ -311,9 +312,6 @@ function projectEffects(
           const apply = utilityHandlers[effect.kind as keyof typeof utilityHandlers] as EffectHandler;
           return [{ ...path, state: apply(path.state, card, effect, 1, [], { manaAtStart }) }];
         }
-        // Nominal healing intentionally excludes card-specific/potion bonuses.
-        if (effect.kind === "heal")
-          return [{ ...path, state: utilityHandlers.heal(path.state, card, effect, 1, [], { manaAtStart }) }];
         if (effect.kind === "companion-action" && path.state.activeCompanion) {
           const companionCard = createCompanionActionCard(path.state, path.state.activeCompanion);
           let next = [path];
