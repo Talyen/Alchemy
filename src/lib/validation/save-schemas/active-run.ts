@@ -267,6 +267,11 @@ const PersistedRunActivitySchema = z.discriminatedUnion("kind", [
 
 const ActiveRunDataObjectSchema = z.object({
   ...RunProgressSchema.shape,
+  // Keep deck positions until visit references have been repaired. Invalid
+  // entries are removed by normalizeActiveRunData after indices are remapped.
+  runDeck: z
+    .array(z.unknown())
+    .transform((cards) => cards.map((card, index) => parseSavedCard(card, "runDeck", index))),
   labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   labyrinthPendingNode: LabyrinthPendingNodeSchema,
   activeLabyrinthModifiers: EncounterCombatTraitArraySchema,

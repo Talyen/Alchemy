@@ -305,8 +305,10 @@ alterations, including source snapshots/indices, selected source keywords, and
 result cards, plus the current source/keyword/preview selection. Prismatic
 Crucible selections may reference any compatible keyword beyond the normal
 three offers; validation bounds indices by the registered Transmutation keywords.
-This widens accepted selections without changing the saved shape. Hydration
-restores every source/result card. Completed Transmutation follows the saved-result and missing-result
+This widens accepted selections without changing the saved shape. When damaged
+deck cards are removed, repair remaps surviving source indices and clears a
+selection whose source was lost. Hydration restores every source/result card.
+Completed Transmutation follows the saved-result and missing-result
 [interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation). Retired
 replacement-card offers repair to an uninitialized selection, not a parallel
 workflow.

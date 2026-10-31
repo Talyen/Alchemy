@@ -489,9 +489,7 @@ export function canTransmuteCard(
 
 export function isTransmutationSourceCurrent(visit: AlchemyVisit, deck: readonly BattleCard[]): boolean {
   const selection = visit.transmutation;
-  const source =
-    selection?.sourceIndex === null || selection?.sourceIndex === undefined ? undefined : deck[selection.sourceIndex];
-  return (
-    !!source && source.id === selection?.source?.id && cardSnapshotKey(source) === cardSnapshotKey(selection?.source)
-  );
+  if (!selection?.source || selection.sourceIndex == null) return false;
+  const source = deck[selection.sourceIndex];
+  return !!source && source.id === selection.source.id && cardSnapshotKey(source) === cardSnapshotKey(selection.source);
 }
