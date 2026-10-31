@@ -60,6 +60,8 @@ export const coreAssets = [
   // Crafting
   ...artGroup({ folder: "Items/Crafting", preset: ART_PRESETS.crafting }, [
     ["Salvage - Illustrated.png", "armory-salvage.webp"],
+  ]),
+  ...artGroup({ folder: "Items/Crafting", preset: ART_PRESETS.crafting, requiresTransparency: true }, [
     ["Ascension Seal/Ascension Seal - Illustrated.png", "crafting-ascension-seal.webp"],
     ["Discordant Dice/Discordant Dice - Illustrated.png", "crafting-discordant-dice.webp"],
     ["Severance Maw/Severance Maw - Illustrated.png", "crafting-severance-maw.webp"],

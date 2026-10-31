@@ -151,10 +151,10 @@ Full-frame environment with no character focus. Exaggerated perspective and stre
 A clear weapon, armor, accessory or trinket silhouette on a 3:4 or square canvas. Dramatic three-quarter perspective and strong foreshortening, angular material design, weight and tension, with sharp highlights on metal, gems or leather. Tactile hand-drawn physical depth; no photorealism, 3D rendering or fine filigree.
 ```
 
-### Crafting Currencies & Artifacts (Opaque background)
+### Crafting Currencies (Transparent background)
 
 ```text
-One distinctive object occupying 80–88% of a square on a quiet opaque dark ink/charcoal background. Broad features, minimal decorative microtexture, two or three major shading steps. No text, runes or realistic photography.
+One distinctive object occupying 80–88% of a square with a genuinely transparent alpha background. Preserve dark internal shading and the full illustrated silhouette; no ground, panel or backdrop. Broad features, minimal decorative microtexture, two or three major shading steps. No text, runes or realistic photography.
 ```
 
 ### Inventory Resources, Mana & UI Icons (Transparent background)
@@ -200,12 +200,12 @@ superseded studies, approval transcripts and duplicate sources. Use ignored
 in [design inputs](./design/README.md).
 
 Homestead resource masters live in `2d Assets/Game Sources/Items/Resources/`; crafting
-currency PNG masters live in `2d Assets/Game Sources/Items/Crafting/`. Resources and battle Mana
-use transparent backgrounds, while crafting currencies retain their illustrated
-dark backgrounds. Check the actual alpha channel before importing transparent
+currency PNG masters live in `2d Assets/Game Sources/Items/Crafting/`. Resources, battle Mana
+and the six crafting currencies use transparent backgrounds. Salvage remains a
+separate illustrated action, not a carried currency. Check the actual alpha channel before importing transparent
 art: a visible checkerboard may be baked into an opaque image.
 
-Set `requiresTransparency: true` in the owning art manifest when an image must have a transparent background; omission defaults to false. The eight resource icons, battle Mana, and both piles require it. Preparation and read-only freshness checks validate decoded source and prepared pixels, including cache hits: each must contain fully transparent pixels and visible artwork. The requirement participates in the asset fingerprint. Replacement images are staged and validated before publication; failure preserves that image's previous output and skips manifest publication and orphan removal.
+Set `requiresTransparency: true` in the owning art manifest when an image must have a transparent background; omission defaults to false. The eight resource icons, six crafting currencies, battle Mana, and both piles require it. Preparation and read-only freshness checks validate decoded source and prepared pixels, including cache hits: each must contain fully transparent pixels and visible artwork. The requirement participates in the asset fingerprint. Replacement images are staged and validated before publication; failure preserves that image's previous output and skips manifest publication and orphan removal.
 
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 

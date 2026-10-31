@@ -48,7 +48,7 @@ export function CurrencyChip({
     ? i18n.text("currency.available", "{{name}}, {{count}} available", { name, count })
     : i18n.text("currency.count", "{{name}}, {{count}}", { name, count });
   const className = cn(
-    "armory-currency-art relative block overflow-hidden rounded-xl border border-border/80 bg-black",
+    "armory-currency-art relative block rounded-xl border border-border/80",
     armed && surfaceSelectedRingClass,
     disabled && "opacity-50",
   );
