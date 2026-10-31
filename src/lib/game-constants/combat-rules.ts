@@ -90,6 +90,7 @@ export const BATTLE_CONFIG = {
 } as const;
 
 export const POISON_DECAY_PERCENT = 20;
+export const CORROSIVE_POISON_THRESHOLD = 5;
 export const POISON_GAIN_AMOUNT = 1;
 export const BURN_BLEED_MIRROR_CHANCE_PERCENT = 20;
 export const STATUS_DECAY_THRESHOLD = 1;

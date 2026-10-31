@@ -219,7 +219,7 @@ describe("resolved card damage", () => {
 
   it.each<[string, BattleStatePatch]>([
     ["Brittle Ice", { enemyCC: { freezeSkipTurns: 1 }, talentEffects: { freezeDamageBonusVsFrozen: 1 } }],
-    ["Corrosive", { enemyStatuses: { poison: 1 }, talentEffects: { poisonDamageBonusVsPoisoned: 1 } }],
+    ["Corrosive", { enemyStatuses: { poison: 5 }, talentEffects: { poisonDamageBonusVsPoisoned: 1 } }],
   ])("%s cannot turn zero damage into a hit", (_name, patch) => {
     const state = patchBattleState(patch);
     expect(computeBaseDamage(state, { kind: "damage", damageType: "nature", amount: 0 })).toBe(0);

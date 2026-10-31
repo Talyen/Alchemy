@@ -1,6 +1,7 @@
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   BATTLE_CONFIG,
+  CORROSIVE_POISON_THRESHOLD,
   AETHERWARD_MANA_REDUCTION_PERCENT,
   ELEMENTAL_WARD_ARMOR_PERCENT,
   HALF_DIVISOR,
@@ -94,7 +95,7 @@ export function getEnemyDamageVulnerabilityBonus(
 ): number {
   return (
     (state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0) +
-    (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0)
+    (state.enemyStatuses.poison >= CORROSIVE_POISON_THRESHOLD ? state.talentEffects.poisonDamageBonusVsPoisoned : 0)
   );
 }
 

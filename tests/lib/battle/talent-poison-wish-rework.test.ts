@@ -14,14 +14,18 @@ function playCard(state: ReturnType<typeof patchBattleState>, card: ReturnType<t
 }
 
 describe("Poison, Stun, and Wish Talent reworks", () => {
-  it("adds Corrosive damage to player and Companion packets against Poisoned enemies", () => {
+  it("adds Corrosive damage to player and Companion packets starting at five Poison", () => {
     const state = patchBattleState({
-      enemyStatuses: { poison: 2 },
+      enemyStatuses: { poison: 5 },
       talentEffects: computeTalentEffects({ poison: ["poison-physical-bonus"] }),
       rng: () => 0.99,
     });
     const effect = makeEffect("physical", 5) as Extract<BattleCardEffect, { kind: "damage" }>;
 
+    expect(
+      computeCardDamageToEnemy({ ...state, enemyStatuses: { ...state.enemyStatuses, poison: 4 } }, effect)
+        .modifiedDamage,
+    ).toBe(5);
     expect(computeCardDamageToEnemy(state, effect).modifiedDamage).toBe(6);
     expect(
       computeCardDamageToEnemy(state, effect, undefined, {
@@ -35,10 +39,24 @@ describe("Poison, Stun, and Wish Talent reworks", () => {
     ).toBe(0);
   });
 
+  it("rechecks Corrosive after a hit raises Poison to the threshold", () => {
+    const card = makeTestCard({ effects: [makeEffect("poison", 1), makeEffect("physical", 1)] });
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { poison: 4 },
+      talentEffects: computeTalentEffects({ poison: ["poison-physical-bonus"] }),
+      rng: () => 0.99,
+    });
+    const next = playCard(state, card);
+    expect(next.enemyStatuses.poison).toBe(5);
+    expect(next.enemyHealth).toBe(27);
+  });
+
   it("applies Corrosive and Shatter to resource-based attack damage", () => {
     const state = patchBattleState({
       playerStatuses: { forge: 3, block: 3, armor: 3 },
-      enemyStatuses: { poison: 1 },
+      enemyStatuses: { poison: 5 },
       enemyCC: { freezeSkipTurns: 1 },
       talentEffects: { poisonDamageBonusVsPoisoned: 1, freezeDamageBonusVsFrozen: 1 },
       rng: () => 0.99,

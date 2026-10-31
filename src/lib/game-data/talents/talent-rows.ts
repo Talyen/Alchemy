@@ -573,7 +573,7 @@ export const talentRows = [
   poison("poison-leech-chance", "Hemotoxin")("Biohazard", "Poison has a 10% chance to also deal Bleed damage", {
     poisonBleedDamageChance: 10,
   }),
-  poison("poison-physical-bonus", "Corrosive")("Droplets", "Poisoned enemies take 1 additional damage", {
+  poison("poison-physical-bonus", "Corrosive")("Droplets", "Enemies with at least 5 Poison take 1 additional damage", {
     poisonDamageBonusVsPoisoned: 1,
   }),
   poison("poison-strip-armor", "Caustic")("FlaskRound", "Poison damage removes enemy Armor equal to damage dealt", {

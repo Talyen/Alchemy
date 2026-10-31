@@ -86,7 +86,7 @@ describe("talent damage conversions", () => {
       playerStatuses: { forge: 50 },
       flags: { nextHitCrit: true, nextHitPhysicalBonus: 40 },
       enemyCC: { freezeSkipTurns: 1 },
-      enemyStatuses: { poison: 2 },
+      enemyStatuses: { poison: 5 },
       talentEffects: {
         flatBurnDamage: 100,
         forgeBurnDamagePercent: 100,

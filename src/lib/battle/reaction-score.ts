@@ -298,7 +298,17 @@ function projectEffects(
         }
         if (effect.kind === "self-damage") {
           if (path.state.enemyHealth <= 0 || path.state.playerHealth <= 0) return [path];
-          const { state: nextState, healthLost } = dealSelfDamage(path.state, effect.amount, effect.damageType, []);
+          // Armor can break during self-damage and grant Block. Live Block
+          // rewards may roll to draw a Holy card, but this projection does not
+          // simulate draws and must not consume combat RNG.
+          const talents = path.state.talentEffects;
+          const projected =
+            talents.drawHolyOnBlockChance > 0
+              ? { ...path.state, talentEffects: { ...talents, drawHolyOnBlockChance: 0 } }
+              : path.state;
+          const result = dealSelfDamage(projected, effect.amount, effect.damageType, []);
+          const nextState = projected === path.state ? result.state : { ...result.state, talentEffects: talents };
+          const { healthLost } = result;
           const statusType = harmfulPlayerStatusIds.find((id) => id === effect.damageType);
           const withStatus =
             statusType && healthLost > 0 ? addPlayerStatus(nextState, statusType, healthLost) : nextState;

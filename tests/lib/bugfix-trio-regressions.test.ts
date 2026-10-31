@@ -496,6 +496,33 @@ describe("bugfix trio regressions", () => {
     expect(scoreAvailableReactions(exorcism, fragileState)).toBe(0);
   });
 
+  it("projects self-damage breaking Armor without rolling Holy-draw rewards", () => {
+    let rolls = 0;
+    const state = patchBattleState({
+      rng: () => {
+        rolls++;
+        return 0;
+      },
+      playerHealth: 20,
+      playerMaxHealth: 20,
+      playerStatuses: { armor: 1, block: 0 },
+      talentEffects: { armorBreakBlock: 3, drawHolyOnBlockChance: 10 },
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { burn: 5 },
+      reactions: { wildfireDamage: 10 },
+    });
+    const card = makeTestCard({
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 1 },
+        { kind: "damage", damageType: "nature", amount: 0, equalToBlock: true },
+      ],
+    });
+    expect(scoreAvailableReactions(card, state)).toBe(10);
+    expect(rolls).toBe(0);
+    expect(state.playerStatuses).toMatchObject({ armor: 1, block: 0 });
+  });
+
   it("projects repeated execution when playNextCardTwice combat flag is set", () => {
     const state = patchBattleState({
       enemyHealth: 30,
