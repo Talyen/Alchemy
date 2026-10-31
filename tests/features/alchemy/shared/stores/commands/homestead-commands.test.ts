@@ -6,6 +6,7 @@ import {
   readRunProfile,
   readRunRevision,
   readRunSession,
+  readBattle,
 } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   addMaterialsToStockpile,
@@ -23,6 +24,10 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultGameSession } from "@/app/application-session";
 import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
+import { makeActiveRunData } from "../session/active-run-data-fixture";
+import { defaultBattleState } from "@/lib/battle";
+import { cardById } from "@/lib/game-data";
+import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -92,6 +97,56 @@ describe("homestead write commands", () => {
 });
 
 describe("four-tier Homestead persistence and settlement", () => {
+  it("rebuilds Sparring critical damage on upgrade and resume without losing live battle progress", async () => {
+    const { constructBuilding } = await import("@/features/alchemy/shared/stores/commands/meta-commands");
+    const card = cardById.slash!;
+    const oldBattle = defaultBattleState();
+    const legacyTalentEffects: Record<string, unknown> = { ...oldBattle.talentEffects, startBlock: 6 };
+    delete legacyTalentEffects.homesteadPhysicalCritDamagePercent;
+    const initialSave = SaveDataSchema.parse({
+      constructedBuildings: { "sparring-grounds": 3 },
+      materialInventory: { ...emptyInventory(), wood: 16, stone: 16 },
+      activeRun: makeActiveRunData({
+        runDeck: [card],
+        runPlayerHealth: 7,
+        activity: {
+          kind: "battle",
+          data: {
+            battleState: {
+              ...oldBattle,
+              turn: 4,
+              playerHealth: 7,
+              enemyHealth: 17,
+              mana: 2,
+              hand: [{ ...card, uid: 1 }],
+              talentEffects: legacyTalentEffects,
+              playerStatuses: { ...oldBattle.playerStatuses, block: 6 },
+            },
+          },
+        },
+      }),
+    });
+    await using session = createGameSession({ initialSave });
+    const rng = structuredClone(readActiveRun(session).rng);
+    expect(readBattle(session).battleState).toMatchObject({
+      turn: 4,
+      playerHealth: 7,
+      enemyHealth: 17,
+      mana: 2,
+      playerStatuses: { block: 6 },
+      talentEffects: { startBlock: 0, homesteadPhysicalCritDamagePercent: 30 },
+    });
+    expect(constructBuilding("sparring-grounds", session)).toBe(true);
+    expect(readRunProfile(session).materialInventory).toEqual(emptyInventory());
+    expect(readBattle(session).battleState!.talentEffects.homesteadPhysicalCritDamagePercent).toBe(40);
+    const before = readBattle(session).battleState;
+    const saved = SaveDataSchema.parse(JSON.parse(JSON.stringify(buildAlchemySaveDataFromStores(session))));
+    await using restored = createGameSession({ initialSave: saved });
+    expect(readBattle(restored).battleState).toEqual(before);
+    expect(readActiveRun(restored).rng).toEqual(rng);
+    expect(readRunProfile(restored).constructedBuildings["sparring-grounds"]).toBe(4);
+  });
+
   it("preserves levels three and four without extending Companion Bonds", () => {
     const source = {
       constructedBuildings: { "blacksmiths-forge": 3, "runesmiths-workshop": 4 },

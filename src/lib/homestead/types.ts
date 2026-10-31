@@ -72,6 +72,7 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "homesteadPotionBonus",
   "homesteadFreeManaChance",
   "homesteadForgeBurnPercent",
+  "homesteadPhysicalCritDamagePercent",
   "dodgeChance",
   "wishExtraChoiceChance",
   "companionDamage",
