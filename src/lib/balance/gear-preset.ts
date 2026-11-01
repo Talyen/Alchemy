@@ -22,22 +22,39 @@ const LATE_GEAR_SLOTS: GearSlot[] = ["main-hand", "off-hand", "body", "left-acce
 export const SIM_GEAR_ROLL_DEPTH = 24;
 export const SIM_GEAR_ROLL_SOURCE = "mystery" as const;
 
+const SIM_GEAR_INSTANCE_ID = () => "sim-gear";
+const NO_OWNED_UNIQUES: ReadonlySet<string> = new Set();
+
 function slotsForPreset(preset: TalentPreset): GearSlot[] {
   if (preset === "early") return [];
   if (preset === "mid") return MID_GEAR_SLOTS;
   return LATE_GEAR_SLOTS;
 }
 
-function poolForSlot(slot: GearSlot, keywords: readonly string[], rangedMainHand: boolean): GearBaseItemDefinition[] {
-  const inSlot: GearBaseItemDefinition[] = [];
-  const affinity: GearBaseItemDefinition[] = [];
-  for (const item of gearBaseItemList) {
-    if (!item.compatibleSlots.includes(slot)) continue;
-    if (slot === "off-hand" && (rangedMainHand ? item.slotRule !== "quiver" : item.slotRule === "quiver")) continue;
-    inSlot.push(item);
-    if (keywords.length > 0 && item.affinityKeywords.some((keyword) => keywords.includes(keyword))) affinity.push(item);
+const SLOT_POOL_CACHE = new Map<string, readonly GearBaseItemDefinition[]>();
+
+function poolForSlot(
+  characterId: CharacterId,
+  slot: GearSlot,
+  rangedMainHand: boolean,
+): readonly GearBaseItemDefinition[] {
+  const key = `${characterId}:${slot}:${rangedMainHand}`;
+  let pool = SLOT_POOL_CACHE.get(key);
+  if (!pool) {
+    const keywords = characters[characterId].keywords;
+    const inSlot: GearBaseItemDefinition[] = [];
+    const affinity: GearBaseItemDefinition[] = [];
+    for (const item of gearBaseItemList) {
+      if (!item.compatibleSlots.includes(slot)) continue;
+      if (slot === "off-hand" && (rangedMainHand ? item.slotRule !== "quiver" : item.slotRule === "quiver")) continue;
+      inSlot.push(item);
+      if (keywords.length > 0 && item.affinityKeywords.some((keyword) => keywords.includes(keyword)))
+        affinity.push(item);
+    }
+    pool = affinity.length > 0 ? affinity : inSlot;
+    SLOT_POOL_CACHE.set(key, pool);
   }
-  return affinity.length > 0 ? affinity : inSlot;
+  return pool;
 }
 
 export function buildTypicalGearEffects(
@@ -61,10 +78,19 @@ export function buildTypicalGearEffects(
 
   for (const slot of slots) {
     if (slot === "off-hand" && skipOffHand) continue;
-    const pool = poolForSlot(slot, keywords, rangedMainHand);
+    const pool = poolForSlot(characterId, slot, rangedMainHand);
     const chosen = pickRandom(pool, rng);
     if (!chosen) continue;
-    const instance = generateLootGearChoices(1, rng, weights, new Set(), [chosen.id])[0];
+    const instance = generateLootGearChoices(
+      1,
+      rng,
+      weights,
+      NO_OWNED_UNIQUES,
+      [chosen.id],
+      false,
+      SIM_GEAR_INSTANCE_ID,
+      keywords,
+    )[0];
     if (!instance) continue;
     addAffixRollEffects(effects, getGearInstanceAffixes(instance), gearDefinitions[instance.definitionId]!.rarity);
     if (slot === "main-hand") {

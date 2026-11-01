@@ -364,6 +364,8 @@ export function* gearGroups(options: ReportRunOptions): Iterable<PairedSweepGrou
     source: SIM_GEAR_ROLL_SOURCE,
     progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
   });
+  const emptyOwnedUniques = new Set<string>();
+  const simGearId = () => "sim-gear";
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const keywords = characters[characterId].keywords;
@@ -388,7 +390,16 @@ export function* gearGroups(options: ReportRunOptions): Iterable<PairedSweepGrou
             item.affinityKeywords.some((keyword) => keywords.includes(keyword));
           if (!matches) return [];
           const rng = createRunStreamRng(seed, "rewards");
-          const instance = generateLootGearChoices(1, rng, lootWeights, new Set(), [item.id])[0];
+          const instance = generateLootGearChoices(
+            1,
+            rng,
+            lootWeights,
+            emptyOwnedUniques,
+            [item.id],
+            false,
+            simGearId,
+            keywords,
+          )[0];
           return [
             {
               id: item.id,
