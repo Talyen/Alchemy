@@ -17,7 +17,7 @@ proposals: Balanced, Quiet & readable, and Punchy & compact. Seven deterministic
 sequences exercise single hits, Criticals, fast and spaced repeats, mixed outcomes,
 reaction names, and crowded actions. Static feedback applies to both lanes.
 
-Balanced now uses 32px text (down from 37.8px), independent paths, and queued
+Balanced uses 32px text, independent paths, and queued
 launches. Damage and healing share the center queue; benefits and setbacks use
 the lower-left and lower-right queues. Names have a separate upper queue. Status
 entries stay stationary and use a quieter pop. No incoming entry moves a previous
@@ -29,15 +29,12 @@ Overlap is allowed when the deadline arrives. No queued or visible entry is evic
 and each receives its full lifetime after launch. Queue delay, clearance, and fan
 distance are adjustable.
 
-Revision 3 keeps previous browser settings under their original storage keys
-and starts a fresh comparison. Exported revision 1 and 2 settings can still be imported.
-Legacy push modes remain available for comparison; each push now retains its own
-transition progress rather than restarting all earlier pushes on every arrival.
+Earlier exported settings can still be imported. Push modes remain available for
+comparison, with independent transition progress for each push.
 
 This developer tool uses local artwork and fonts without a build or dependencies.
-It does not change gameplay or saves. Timing/scale baselines were read from
-Alchemy `ac4c10cd1` and Trinket `65c079a36`; they are snapshots, not imports of live
-production renderers. Trinket points map to CSS pixels for this comparison. Rounded
+It does not change gameplay or saves. Timing and scale presets are snapshots,
+not imports of live production renderers. Trinket points map to CSS pixels for this comparison. Rounded
 system typography is an approximation. Portrait fitting, packing, region eviction,
 and group pushes are representative, not pixel parity. Audio, portrait recoil,
 and card flights are outside this tool. Validate a chosen treatment in the live

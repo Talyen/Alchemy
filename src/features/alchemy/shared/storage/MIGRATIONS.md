@@ -32,7 +32,7 @@ compatibility readers described below record implementation, not a promise to
 retain retired mechanics. Remove their consumers and fixtures together when
 retiring them, keeping current-format resume and future-save protection intact.
 
-`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the minimum supported format. Version 21 is the current development baseline and stores one tagged run activity plus resolved Mystery offers. The retired version 19 and 20 formats are not migrated. Development formats below the floor are disposable. `evaluateSaveCandidates` rejects those candidates before permissive field validation can stamp defaults. If no supported or protecting future candidate remains, load defaults without explicitly clearing backup or Cloud sources. A retired-format payload can be replaced by the next normal save; new progress is routed away from a newer-format payload when another slot is available. Do not salvage old profiles or parked runs.
+`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the minimum supported format. Development formats below the floor are disposable; `evaluateSaveCandidates` rejects them before permissive field validation can stamp defaults. If no supported or protecting future candidate remains, load defaults without explicitly clearing backup or Cloud sources. A retired-format payload can be replaced by the next normal save; new progress is routed away from a newer-format payload when another slot is available. Do not salvage old profiles or parked runs.
 
 Game build identity is distinct from schema and content versions. Ordinary compatible builds do not reset saves. Freeze the supported floor at the first distribution whose progress is promised to persist, including a playtest or Early Access release. Preserve subsequent supported formats. Version sources are split: the build version is generated from `package.json` by `scripts/sync-version-metadata.mjs`, while schema and content versions are hardcoded in `src/lib/validation/metadata.ts`.
 
@@ -90,7 +90,7 @@ for implementation and verification.
 
 ### Test expectations
 
-Current saves must round-trip valid profile progress, inventories/loadouts, current-run geography, deck modifications, each activity branch, choices, and committed battle results/RNG. Test malformed current fields, an invalid run alongside a valid profile, stale autosaves after run end, and future-candidate precedence. Historical below-baseline tests are retired; `save-migration-guard.test.ts` covers baseline rejection and current recovery.
+Current saves must round-trip valid profile progress, inventories/loadouts, current-run geography, deck modifications, each activity branch, choices, and committed battle results/RNG. Test malformed current fields, an invalid run alongside a valid profile, stale autosaves after run end, and future-candidate precedence. `save-migration-guard.test.ts` covers baseline rejection and current recovery.
 
 Current-data cases follow [recovery rules](#current-data-recovery). Use them to
 select consequential assertions; existing fixtures and shared validators remain
@@ -191,8 +191,7 @@ Serialized reward/destination payloads remain owned by their codecs.
 
 ### Implementation rules
 
-- Card IDs that disappear from the live catalog are stripped against the live catalog at load in `normalize-active-run-data.ts`. Record deliberate removals in `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts` so fixtures stay explicit. The guard test in `save-migration-guard.test.ts` checks `discoveredCardIds` for catalog or tombstone membership; deck, shop, battle, mystery, and corruption piles rely on silent live-catalog stripping without a tombstone requirement.
-- Saved active-run decks are eagerly hydrated at load time: card IDs are resolved against the live library, and any card whose ID no longer exists is silently dropped from the deck. Filtering can leave an empty deck; the battle engine handles empty piles through Emergency Wish. No player-facing diagnostics.
+- Card IDs absent from the live catalog are silently stripped on load in `normalize-active-run-data.ts`. Record deliberate removals in `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts` so fixtures stay explicit. The guard test in `save-migration-guard.test.ts` checks `discoveredCardIds` for catalog or tombstone membership; deck, shop, battle, mystery, and corruption piles do not require tombstones. Filtering can leave an empty deck; the battle engine handles empty piles through Emergency Wish.
 - Card validation and hydration treat saved effects and descriptions as one content unit. `BattleCardSchema` returns an empty effect list if any effect fails validation, including nested effects; missing or malformed lists likewise become empty. `hydrateCard` preserves both saved lists only when both are usable, without comparing their lengths against the current catalog. Otherwise it restores both from the library and clears saved `corrupted` and `baseTitle`. Valid saved cost, UID, and explicit Consume overrides survive; title, art, and catalog metadata refresh from the library. The empty-list recovery signal survives normalization and JSON round trips without extra saved fields.
 - Saved `description` models follow [card-description authoring](../../../../../Docs/CONTENT_AUTHORING.md#card-descriptions). Validation checks structure against actual effect kinds, numeric fields, nested paths, shared-value agreement and magnitude identity. Valid bindings regenerate stale/missing text caches. Invalid bindings are discarded with a diagnostic while valid effects/text retain the existing recovery policy. Records without bindings still load as complete effects/text units; subsequent mutations derive bindings from effects rather than saved prose. Custom wording, Mixed Potion boundaries and Corruption/Distill marks survive. Clone and hydrate deep-copy references/paths; catalog metadata cannot overwrite a saved model. Derived localization messages and character offsets are never saved.
 
@@ -205,13 +204,6 @@ Serialized reward/destination payloads remain owned by their codecs.
 
 Preserve the valid fields and cross-field relationships below; missing-field
 recovery may intentionally differ from new-career initialization.
-
-#### Discarded presentation fields
-
-Current-shape normalization drops obsolete board ownership, selection, resolved
-background and pending-reward fields, plus `selectedAspectRatio`. They are absent
-from new writes; the game fills the viewport. Preserve all other valid profile and
-active-run data. These removals require no schema bump or supported transformation.
 
 #### Progression gate fields
 

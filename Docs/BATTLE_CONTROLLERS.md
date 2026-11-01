@@ -27,15 +27,11 @@ offered the input. The command compares its identity with the current battle
 inside the transaction, before resolving gameplay, consuming RNG, or awarding XP.
 A retained action cannot affect a later turn, Wish queue, replacement battle, or
 restored save even when card IDs and turn numbers repeat. Unrelated navigation
-leaves the battle snapshot intact and does not invalidate input. Autoplay retains
-its snapshot across preview delays; headless offers retain it in their callbacks.
-The battle route binds manual Card and Wish callbacks to the committed input
-snapshot captured for that render, separately from copied playback frames.
-Autoplay retains the snapshot used to select
-its card, and automatic turn endings retain the snapshot that scheduled their
-timer. The corner End Turn button passes its captured snapshot
-to `handleEndTurn(expected)`; all input handlers require that identity and reject
-a changed snapshot before playback. End Turn commits directly after the current playback and save gates pass.
+leaves the battle snapshot intact and does not invalidate input. Manual Card and
+Wish callbacks capture the committed render snapshot; autoplay, headless offers,
+and automatic turn endings retain the snapshot that scheduled their action. The
+corner End Turn button passes its captured snapshot to `handleEndTurn(expected)`
+and commits after the playback and save gates pass.
 
 `battle-presentation-store.ts` keeps its mutable Zustand store private. The public
 port exposes React-compatible reads and selector subscriptions; every action in

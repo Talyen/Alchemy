@@ -4,8 +4,8 @@ Use this checklist for each release candidate under the
 [approved scope](./STEAM_DEMO.md). Readiness requires evidence for the candidate being promoted. Earlier local passes
 do not certify later gameplay, layouts, packages, or Steam configuration.
 
-Adapted from Marnix Wyns' [Steam Demo Checklist](https://app.notion.com/p/marnixwyns/Steam-Demo-Checklist-38fc5591ef1a803ca510f20ff3d9b1f7),
-read on September 29, 2026. Steam configuration follows
+Adapted from Marnix Wyns' [Steam Demo Checklist](https://app.notion.com/p/marnixwyns/Steam-Demo-Checklist-38fc5591ef1a803ca510f20ff3d9b1f7).
+Steam configuration follows
 [Valve's demo guidance](https://partner.steamgames.com/doc/store/application/demos);
 recheck it before release. [Release](./RELEASE.md) and
 [release setup](./RELEASE_SETUP.md) own shipping procedures. This checklist does
@@ -87,7 +87,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 ## 5. Readability, feedback, and Options
 
 Follow [UI](./UI.md), [interaction](./UI_INTERACTION.md), and [motion](./UI_MOTION.md).
-Use the current [display sizing](./UI.md#display-sizing) bounds, not historical test requests.
+Use the current [display sizing](./UI.md#display-sizing) bounds.
 
 - [ ] Inspect battle/hand, enemy/deck inspection and tooltips at 1280×720 and 1280×800, Game Size 80/100/120 and Tooltip Size 90/125. Seven-card hands and End Turn remain usable.
 - [ ] Inspect the production menu/footer and Options in isolated Electron at size extremes. Record actual native bounds when the host work area limits the requested size.
