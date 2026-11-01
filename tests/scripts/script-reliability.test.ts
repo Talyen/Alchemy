@@ -129,23 +129,16 @@ describe("script execution reliability", () => {
     copyFixtureFiles(root, [".versionrc.json"]);
     copyFixtureFiles(root, ["game-edition.mjs"]);
     fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "1.2.3" }));
-    const changelog = path.join(root, "CHANGELOG.md");
     const metadata = path.join(root, "src/lib/validation/metadata.generated.ts");
     const appId = path.join(root, "steam_appid.txt");
     fs.mkdirSync(path.join(root, "steam"));
     fs.writeFileSync(path.join(root, "steam/platforms.json"), JSON.stringify({ devAppId: 480 }));
     fs.mkdirSync(path.dirname(metadata), { recursive: true });
-    fs.writeFileSync(changelog, "# Changelog\n\n## [Unreleased]\n\n_Stale._\n");
     fs.writeFileSync(metadata, "original metadata");
     fs.writeFileSync(appId, "original app ID");
-    const files = [changelog, metadata, appId];
+    const files = [metadata, appId];
     const before = files.map((file) => fs.readFileSync(file, "utf8"));
-    for (const script of [
-      "sync-changelog.mjs",
-      "sync-version-metadata.mjs",
-      "release-changelog.mjs",
-      "sync-steam-appid.mjs",
-    ]) {
+    for (const script of ["sync-version-metadata.mjs", "sync-steam-appid.mjs"]) {
       for (const arg of ["--chek", "unexpected", "-x"]) {
         const result = runNode([path.join(root, "scripts", script), arg], { cwd: root });
         expect(result.status, result.stderr).toBe(2);

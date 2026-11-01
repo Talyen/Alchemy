@@ -137,44 +137,19 @@ conversions are not aliases for current fields.
 
 #### Current-data recovery
 
-Battle difficulty modifiers are validated individually during load. Keep valid
-entries and drop malformed ones so the next enemy turn can resolve safely.
-Profile and run XP retain only current keyword IDs; unknown entries cannot
-contribute Talent points or starting Health.
-Unsafe numeric XP entries are dropped independently so valid sibling progress
-survives. Save timestamps use the same safe-integer policy for raw candidate
-ordering and parsed freshness. Crafting currencies must remain safely spendable.
-Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
-identity repair and catalog hydration restore them. Invalid optional card metadata is repaired without discarding the card; a damaged
-Consume flag falls back to the catalog or Mixed Potion rule, and valid keyword
-tags survive damaged siblings.
-Scheduled battle pulses retain valid child effects and source metadata independently,
-while keeping the card effect schema's one-to-ten-turn duration limit. Labyrinth
-battles recover encounter benefits from the active run when the battle snapshot
-loses its mode or benefits.
-Saved enemies regain their current native Traits from the catalog and retain
-only current combat encounter Traits. Reward benefits stay in their separate
-field; unsupported saved Traits cannot enter combat.
+Preserve valid profile progress and independent valid siblings when repairing a
+current-format save. Validate timestamps and spendable numbers safely, hydrate
+card identities from the catalog, and preserve valid card modifications, combat
+flags, RNG and committed choices. Never replay actions, grants or earnings.
+[Active-run normalization](../../../../../src/lib/validation/normalize-active-run-data.ts),
+[battle normalization](../../../../../src/lib/validation/normalize-persisted-battle-state.ts)
+and their schemas own individual field defaults and cross-field repair.
 
-[Activity and committed playback](../../../../../Docs/RUN_STATE.md#committed-battle-playback)
-own the single tagged activity and commit-before-animation model.
-Only the selected candidate may request abandonment of a nonterminal snapshot
-marked as an enemy turn;
-the current engine cannot commit a resumable intermediate enemy phase.
-Restore uses current abandonment settlement atomically, then queues the terminal
-snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
-committed battles remain resumable. Unusable selected activity structure drops
-only the run; permanent progress and future-save protection remain intact.
-A damaged Mystery offer retains its tag with null data so restore can exit that
-visit through the existing repair operation.
-An unfinished Campfire with no usable Potion offer rebuilds its standard offers
-once using the saved events stream. A resumed Labyrinth map clears stale pending
-room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
-the battle and profile; a valid zero balance remains authoritative.
-Malformed entries in saved Boons, destination lists, encounter Traits and reward
-choice IDs are dropped individually, preserving valid siblings and their order.
-Trinket shop repair also remaps purchased slot keys when a malformed offering is
-removed, so sold items remain sold after restoration.
+Only the selected candidate may abandon an unsupported intermediate enemy turn;
+terminal committed battles remain resumable. Invalid activity structure drops the
+run without discarding permanent progress or future-save protection. Recover
+special visits and malformed choices without rerolling valid offers; see
+[Alchemy visits](#alchemy-visits-and-modified-cards).
 
 ### Load order
 
@@ -202,137 +177,31 @@ Serialized reward/destination payloads remain owned by their codecs.
 
 ### Current field recovery
 
-Preserve the valid fields and cross-field relationships below; missing-field
-recovery may intentionally differ from new-career initialization.
+The save schema and normalizers own individual defaults. Missing-field recovery
+may intentionally differ from new-career initialization; retain valid values and
+cross-field relationships. Rebuild derived Talent, Homestead and Unique data from
+current definitions without replaying opening grants, spending allowances or RNG.
+Preserve battle reaction progress and spent per-turn or until-consumed flags. An
+unusable battle must not be fabricated; exit or repair it under the current rules.
 
-#### Progression gate fields
-
-Choose the intended new-player default. Safe additive fields retain that default and valid saved values; transformations of supported progress require versioned evidence and gameplay assertions. Current authoring validation remains strict and separate from load-tolerant recovery.
-
-#### Content changes without a save bump
-
-Catalog tuning and compatible defaults do not require a schema bump. Derived
-Talent and Homestead manifests rebuild from purchased IDs; Unique affixes resolve
-from the current catalog. Preserve valid modified card effects, descriptions,
-explicit Consume overrides, identities and pile membership together. Incomplete
-card content follows [current-data repair](#implementation-rules).
-
-Retired mechanics and undeclared manifest/flag keys are discarded under the
-[supported baseline](#supported-baseline), without historical aliases or parallel
-combat rules. Battle defaults repair fields individually. Native enemy identity
-and Traits refresh from the live catalog. A saved battle requires a known enemy
-and at least one card-pile array, even when empty; otherwise drop combat and report
-repair rather than fabricating a fight. The run remains playable.
-
-Current combat flags retain their declared boolean or finite nonnegative numeric
-values and lifetimes from [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts).
-Preserve spent per-turn allowances and until-consumed readiness; never infer them
-from current statuses or replay grants. Missing fields use their declared defaults.
-
-Reaction progress is saved separately from turn flags. Preserve earned amounts,
-spent CC opportunities, unmatched Wildfire ticks and Consecration marks. Missing
-progress starts empty; invalid scalars repair independently. Clear CC rewards
-outside active control and Consecration without Bleed; never reconstruct them from
-current buildup. Phase-local Bloodboil/Venomflash facts add no saved counters.
-`pendingCardBleedLeechHealing` defaults to zero and cannot exceed total queued Leech;
-it retains card attribution for Clean Slate, independently of Deep Siphon's eligibility.
-
-Summon hydration removes hidden Consume only when no explicit Consume description
-exists; an explicitly added keyword remains a valid card modification. New battles
-use current constructors. Gameplay meanings remain with
-[Game rules](../../../../../Docs/GAME_RULES.md),
-[Talent rules](../../../../../Docs/TALENT_RULES.md), and
-[Armory](../../../../../Docs/ARMORY.md).
-
-#### Run recap tracking
-
-`runHistory`, `runHistoryPartial`, and nullable `runGoldEarned` track recaps.
-New runs start with empty complete
-history and zero earned Gold. Older runs default to empty partial history and unknown
-Gold (`null`): subsequent visits are recorded with an omitted-history marker, while
-Gold remains unknown until a fresh run. Never infer missing earnings from the purse.
-Damaged room entries are dropped individually and mark the recap partial; a missing
-or invalid history also marks it partial even if its saved flag claimed otherwise.
-History and earnings round-trip without recording visits or replaying earnings on
-load. [Recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership) governs
-the transient ending snapshot.
-
-#### Four-tier Homestead
-
-Building, farm, and research level bounds come from the current four-tier catalog;
-existing levels retain their values and level four survives reload. Companion
-Bonds keep three tiers. New numeric Homestead combat fields default to zero in
-the talent manifest and rebind from purchased levels during run restoration.
-Preserve resolved starting Thorns, pending modified Wish materials, and RNG;
-never replay opening grants or apply find bonuses again while rebinding.
-[Homestead rules](../../../../../Docs/TALENT_RULES.md#talent-manifests-and-progression)
-own effects and discounts; find bonuses modify eligible rewards at their source.
-
-Reset Homestead persists zeroed node/bond levels and the refunded material
-stockpile in one command. Refunds use current catalog tier costs; hydration only
-recomputes effects and never refunds again. Discovery remains independent from
-bonds. Purchase feedback is presentation-only and never serialized; no refund
-ledger is needed.
+Run recap history and earned Gold are saved separately from the purse. Missing or
+damaged history is partial and unknown earnings remain unknown, not inferred from
+current Gold. See [recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership).
 
 #### Alchemy visits and modified cards
 
-Missing Mystery visits recover within their mode: Campaign restores its destination
-offer; Labyrinth releases the pending room and returns to the map without clearing
-that room. Missing or empty Wildcard starter offers use the normal guaranteed
-repeatable damage/defense recipe and rewards RNG, then persist the repaired choices.
-A completed draft clears stale offers so it can continue. A Labyrinth without a
-map is recoverable only while the Wildcard draft is still the saved activity;
-later activities require the map and otherwise abandon the active run.
-
-Campfire and Transmutation are branches of `activeRun.activity`, each carrying
-its `AlchemyVisit` data. They are not separate optional top-level visit records.
-Save fixed offers, original/result cards, and completion together. Uninitialized
-visits receive offers on entry; initialized visits survive resume without
-rerolling or repeated grants. Campfire Rest/Brew and Alchemist Mix/Distill limits
-survive reload; eligible Potions may be brewed again at later visits under the
-[brewing rules](../../../../../Docs/GAME_RULES.md#brewing-and-transmutation).
-
-`AlchemyVisit.transmutation` additionally saves each keyword choice's exact
-alterations, including source snapshots/indices, selected source keywords, and
-result cards, plus the current source/keyword/preview selection. Prismatic
-Crucible selections may reference any compatible keyword beyond the normal
-three offers; validation bounds indices by the registered Transmutation keywords.
-This widens accepted selections without changing the saved shape. When damaged
-deck cards are removed, repair remaps surviving source indices and clears a
-selection whose source was lost. Hydration restores every source/result card.
-Completed Transmutation follows the saved-result and missing-result
-[interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation). Retired
-replacement-card offers repair to an uninitialized selection, not a parallel
-workflow.
-
-Modified cards retain effects, descriptions, explicit Consume overrides,
-`transmuted`, `baseTitle`, and added tags together. Optional `lifesteal` on random
-damage and cleanse-to-damage preserves Transmutation's Leech addition; omission
-does not grant Leech. Structured description magnitudes retain `distilled` marks
-through hydration and mixing so upgraded values remain green. Incompatible changes follow the [supported baseline](#supported-baseline).
-
-#### Independent Alchemist services
-
-Alchemist visits retain `brewOffers` plus independent `brewUsed`, `mixUsed`, and
-`distillUsed` flags. New visits roll three fixed Brew offers from the shops RNG;
-refreshes preserve them and all spent flags. Hydration preserves current saved
-offers and flags. An unused Brew service with no surviving offers regenerates
-its shelf once from the saved shops RNG, including Strong Spirits in Labyrinth.
-Spent Brew services remain spent and do not draw RNG.
-
-#### Starter Homestead grant
-
-`starterHomesteadGrantResolved` is an additive permanent run-profile boolean.
-New careers start false. Missing or malformed values recover as true when any
-valid Homestead tier or Companion Bond is purchased, otherwise false. Valid
-saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
-resolves the receipt atomically with any material top-up. A successful Homestead
-purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
-it.
-
-#### Localized descriptions
-
-The renderer derives localized messages from literal parts, effects and magnitude bindings when they are displayed or extracted. Template IDs and keyword/magnitude slots are not persisted; saved cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud. See [Localization](../../../../../Docs/LOCALIZATION.md).
+Campfire and Transmutation are branches of `activeRun.activity`. Preserve their
+fixed offers, choices, source/result cards, service limits and completion together;
+resuming must not reroll choices or repeat grants. Repair missing or malformed
+visits using their mode's existing recovery path, and remap references when damaged
+cards are removed. Saved modifications preserve effects, descriptions, Consume
+overrides, marks and identities as one unit under [card recovery](#implementation-rules).
+The [active-run schema](../../../../../src/lib/validation/save-schemas/active-run.ts),
+[normalizer](../../../../../src/lib/validation/normalize-active-run-data.ts) and
+[resume codec](../../../../../src/features/alchemy/shared/stores/persistence/run-resume-codec.ts)
+own field details; [brewing rules](../../../../../Docs/GAME_RULES.md#brewing-and-transmutation)
+and [visit interaction](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation)
+own gameplay behavior.
 
 ## Storage transport
 

@@ -71,9 +71,7 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["public/icon-512.png", ["assets", "runtime"], ["assets"]],
   ["scripts/sync-art-barrels.mjs", ["assets", "tooling"], ["assets"]],
   ["scripts/assets/optimize-pipelines.mjs", ["assets", "tooling"], ["assets"]],
-  // Release/desktop sync helpers share the sync-* prefix but reproduce no
-  // committed asset output: tooling route only, no CI gate.
-  ["scripts/sync-changelog.mjs", ["tooling"], []],
+  // Steam App ID sync is tooling, not committed asset generation.
   ["scripts/sync-steam-appid.mjs", ["tooling"], ["desktop"]],
   ["scripts/ensure-steamworks.mjs", ["desktop", "tooling"], ["desktop"]],
   ["scripts/steamworks/overlay.patch", ["desktop", "tooling"], ["desktop"]],

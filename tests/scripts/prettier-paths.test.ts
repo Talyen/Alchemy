@@ -30,19 +30,14 @@ describe("prettier-paths", () => {
   });
 
   it("skips prettier-ignored paths even when staged explicitly", () => {
-    expect(
-      filterPrettierPaths([
-        "package-lock.json",
-        "CHANGELOG.md",
-        "src/lib/game-data/assets.generated.ts",
-        "src/App.tsx",
-      ]),
-    ).toEqual(["src/App.tsx"]);
+    expect(filterPrettierPaths(["package-lock.json", "src/lib/game-data/assets.generated.ts", "src/App.tsx"])).toEqual([
+      "src/App.tsx",
+    ]);
   });
 
   it("keeps the staged-path skip subset in sync with .prettierignore", () => {
     const ignore = readFileSync(join(process.cwd(), ".prettierignore"), "utf8");
-    for (const entry of ["package-lock.json", "CHANGELOG.md", "assets.generated.ts"]) {
+    for (const entry of ["package-lock.json", "assets.generated.ts"]) {
       expect(ignore).toContain(entry);
     }
     // The regex is the staged-path subset, not a full mirror: build outputs

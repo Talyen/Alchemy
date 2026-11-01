@@ -124,5 +124,5 @@ uploads to separate App IDs/depots. Public Steam promotion remains manual, with
 independent rollback. A failed publishing-job retry downloads the producer's
 immutable artifact IDs rather than rebuilding.
 
-Candidate sign-off follows the [demo checklist](./STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off),
+Candidate sign-off follows the [demo checklist](./STEAM_DEMO_CHECKLIST.md#6-candidate-evidence-and-release-sign-off),
 including notices, provenance and Steamworks review before public promotion.

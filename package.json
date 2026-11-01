@@ -64,8 +64,6 @@
     "docs:check": "node scripts/check-docs.mjs",
     "docs:check:final": "node scripts/check-docs.mjs --final",
     "prune:transient": "node scripts/prune-transient-artifacts.mjs",
-    "sync:changelog": "node scripts/sync-changelog.mjs",
-    "changelog:promote": "node scripts/release-changelog.mjs",
     "sync:version": "node scripts/sync-version-metadata.mjs",
     "sync:steam-appid": "node scripts/sync-steam-appid.mjs",
     "sync:gear-art": "node scripts/sync-generated.mjs --gear-only",
