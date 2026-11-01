@@ -62,7 +62,7 @@ interpretation. Discovery metadata must reference canonical prose rather than
 copying it, and it does not own verification selection. The search fallback skips deleted
 tracked files and files removed during a search, while other read errors fail.
 
-## Release (shared `lib/release/patch-notes-core.mjs` + `lib/release/git-release.mjs`)
+## Release and patch notes
 
 | Output or operation                                          | Implementation owner                                                                    |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
@@ -74,7 +74,7 @@ tracked files and files removed during a search, while other read errors fail.
 | Steam upload                                                 | `steam-upload.mjs`                                                                      |
 | Verified build                                               | `build-verified.mjs`                                                                    |
 
-[RELEASE](../Docs/RELEASE.md#patch-notes) owns timing, note policy,
+[RELEASE](../Docs/RELEASE.md#patch-notes-and-commit-messages) owns timing, note policy,
 and the release decision flow.
 
 Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `electron-path.mjs`

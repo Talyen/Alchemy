@@ -41,7 +41,6 @@ const INFRA_PREFIXES = [
   "steam/",
 ];
 const INFRA_NAMES = new Set([
-  "CHANGELOG.md",
   "package-lock.json",
   "package.json",
   "knip.config.js",

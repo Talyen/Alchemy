@@ -36,7 +36,7 @@ Publishing jobs share one Steam concurrency group across release tags, with
 `queue: max` and `cancel-in-progress: false`, so uploads cannot overlap or interrupt
 an active delivery. Build and test jobs can still run independently across tags.
 
-## Patch notes
+## Patch notes and commit messages
 
 Commit with [Conventional Commits](https://www.conventionalcommits.org/).
 Player-facing types are `feat`, `fix`, `balance`, and `perf`; optional
