@@ -162,9 +162,13 @@ linked dependency ancestors into another checkout's shared caches.
 `npm run prune:transient` automatically expires reproducible Git diff inventories
 after 24 hours and known expired verification-cache receipts after 24 hours. New
 managed run receipts declare their retention policy: old unpinned, unreferenced
-successful runs expire after 30 days and failed runs after 90 days. The latest
+successful runs expire after 24 hours and failed runs after 72 hours. When managed
+diagnostics exceed 1 GiB, older runs become eligible after 24 hours, oldest first.
+The budget never shortens that minimum window. The latest
 success and failure per command, current run, referenced baselines, pinned or
-owned runs, legacy runs, and unknown evidence stay protected. Other performance,
+owned or locked runs, legacy runs, and unknown evidence stay protected. Source
+files, save databases, original artwork, footage, patches and release artifacts
+also protect a run even if a producer accidentally places them there. Other performance,
 visual, integration and experimental evidence is not automatically expired.
 Automatically managed lyric and font tool environments are also removed after 30
 days without use, but only while their inherited process locks can be acquired.
