@@ -7,7 +7,8 @@ import type { SaveStorageEvent } from "./save-operation-queue";
 export type PersistenceInterruption = SaveStorageEvent | "restored";
 
 export function isSaveClearPending(gameSession: GameSession): boolean {
-  return sessionRuntime(gameSession).io.isClearing();
+  const runtime = sessionRuntime(gameSession);
+  return runtime.io.isClearing() || runtime.persistentClearInFlight;
 }
 
 export function getSaveWriteFailure(gameSession: GameSession) {
