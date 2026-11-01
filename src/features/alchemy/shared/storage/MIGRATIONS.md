@@ -42,33 +42,21 @@ Increment the schema version for structural or meaning changes that require a su
 
 ### Saved card definition revisions
 
-`BattleCard.definitionVersion` is optional additive metadata for an identifiable
-card-rule normalization within the current save format; absence means revision 0.
-It does not raise the supported schema floor or reset a saved card from the catalog.
-Ordinary numerical tuning does not advance it.
+`BattleCard.definitionVersion` is optional metadata for identifiable card-rule
+normalization within the current save format; absence means revision 0. It does
+not raise the schema floor. Ordinary numerical tuning does not advance it.
 
-Shield Bash revision 1 changes its single half-Block damage selector to spend that
-Block. `normalizeSavedCardDefinition()` runs through `hydrateCard()` for active-run
-decks, saved offers and restored battle piles (including pending hands and Wish
-queues). It updates only that selector, its matching description clause and the
-revision marker. Modified numbers, damage type, extra effects, magnitude marks,
-cost and card metadata remain owned by the saved payload. Already-current cards
-are not changed again. Queued committed turn effects are not reinterpreted.
-
-Unidentifiable older flat-damage forms, multiple resource selectors, damage pools,
-or unmatched/custom wording remain unchanged and unversioned; the normalizer
-returns an explicit ambiguous result for diagnosis rather than guessing. Do not
-claim those payloads migrated. Fresh catalog cards already carry revision 1.
-
-Elusive Transmutation now appends a 50% next-attack Dodge probability. Identifiable
-saved Elusive cards normalize only that appended top-level effect and its wording,
-including saved previews and battle piles; native guaranteed Dodge is unchanged.
-The pending percentage is a separate integer combat flag and survives current-format
-save/resume. An already-armed guaranteed Boolean has no source provenance and is
-still a valid current native Dodge state, so restore preserves it for one eligible
-attack. Card normalization changes future Elusive plays to 50%; it does not restart
-the battle, reset Health or piles, advance progression, or draw RNG. The attack
-resolver consumes both existing preparations before Dodge rewards can arm another.
+[`normalizeSavedCardDefinition`](../../../../../src/lib/game-data/cards/normalize-saved-definition.ts)
+runs during hydration for saved cards, including restored battle piles. It updates
+identifiable Shield Bash and Elusive rules and their matching wording without
+replacing other valid modifications or reinterpreting queued committed effects.
+Leave an ambiguous rule unchanged; do not guess or claim it migrated.
+An already-armed guaranteed Dodge remains valid independently of the Elusive card
+normalization. Restore must preserve battle state and RNG without replaying actions.
+The [normalization](../../../../../tests/lib/game-data/normalize-saved-definition.test.ts),
+[Shield Bash resume](../../../../../tests/features/alchemy/shared/stores/persistence/shield-bash-definition-resume.test.ts),
+and [Elusive resume](../../../../../tests/features/alchemy/shared/stores/persistence/elusive-resume.test.ts)
+tests cover these cases.
 
 ### Schema change contract
 
@@ -137,44 +125,28 @@ conversions are not aliases for current fields.
 
 #### Current-data recovery
 
-Battle difficulty modifiers are validated individually during load. Keep valid
-entries and drop malformed ones so the next enemy turn can resolve safely.
-Profile and run XP retain only current keyword IDs; unknown entries cannot
-contribute Talent points or starting Health.
-Unsafe numeric XP entries are dropped independently so valid sibling progress
-survives. Save timestamps use the same safe-integer policy for raw candidate
-ordering and parsed freshness. Crafting currencies must remain safely spendable.
-Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
-identity repair and catalog hydration restore them. Invalid optional card metadata is repaired without discarding the card; a damaged
-Consume flag falls back to the catalog or Mixed Potion rule, and valid keyword
-tags survive damaged siblings.
-Scheduled battle pulses retain valid child effects and source metadata independently,
-while keeping the card effect schema's one-to-ten-turn duration limit. Labyrinth
-battles recover encounter benefits from the active run when the battle snapshot
-loses its mode or benefits.
-Saved enemies regain their current native Traits from the catalog and retain
-only current combat encounter Traits. Reward benefits stay in their separate
-field; unsupported saved Traits cannot enter combat.
+Repair fields independently where possible: keep valid sibling entries, choices,
+combat state and RNG; do not discard a usable card for damaged optional metadata.
+Keep numeric progress safely usable. Refresh catalog-owned identity and native enemy
+Traits without admitting unsupported encounter Traits. The schema and
+[active-run normalization](../../../../../src/lib/validation/normalize-active-run-data.ts)
+own individual defaults and repairs; [battle recovery tests](../../../../../tests/lib/validation/battle-recovery-gameplay.test.ts)
+exercise their gameplay consequences.
 
-[Activity and committed playback](../../../../../Docs/RUN_STATE.md#committed-battle-playback)
-own the single tagged activity and commit-before-animation model.
 Only the selected candidate may request abandonment of a nonterminal snapshot
-marked as an enemy turn;
-the current engine cannot commit a resumable intermediate enemy phase.
-Restore uses current abandonment settlement atomically, then queues the terminal
-snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
-committed battles remain resumable. Unusable selected activity structure drops
-only the run; permanent progress and future-save protection remain intact.
-A damaged Mystery offer retains its tag with null data so restore can exit that
-visit through the existing repair operation.
-An unfinished Campfire with no usable Potion offer rebuilds its standard offers
-once using the saved events stream. A resumed Labyrinth map clears stale pending
-room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
-the battle and profile; a valid zero balance remains authoritative.
-Malformed entries in saved Boons, destination lists, encounter Traits and reward
-choice IDs are dropped individually, preserving valid siblings and their order.
-Trinket shop repair also remaps purchased slot keys when a malformed offering is
-removed, so sold items remain sold after restoration.
+marked as an enemy turn; the current engine cannot resume an intermediate enemy
+phase. Restore settles abandonment atomically and queues the terminal snapshot;
+stale bootstrap results cannot abandon an initialized run. Terminal committed battles remain resumable. Unusable
+selected activity structure drops only the run, preserving permanent progress and
+future-save protection. Invalid battle Gold falls back to purse Gold in both places;
+valid zero remains authoritative. Recovery must not replay actions or grants.
+
+Repair missing offers only where the selected activity needs them, using its saved
+RNG stream; retain spent services and completed choices. Remap surviving shop and
+Transmutation indices when damaged cards are removed so purchases stay spent and
+selections cannot point to another card. [Activity repair](../../../../../tests/lib/validation/normalize-repair.test.ts)
+and [run restore](../../../../../src/features/alchemy/shared/stores/persistence/run-restore.ts)
+own the specific cases.
 
 ### Load order
 
@@ -191,148 +163,72 @@ Serialized reward/destination payloads remain owned by their codecs.
 
 ### Implementation rules
 
-- Card IDs absent from the live catalog are silently stripped on load in `normalize-active-run-data.ts`. Record deliberate removals in `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts` so fixtures stay explicit. The guard test in `save-migration-guard.test.ts` checks `discoveredCardIds` for catalog or tombstone membership; deck, shop, battle, mystery, and corruption piles do not require tombstones. Filtering can leave an empty deck; the battle engine handles empty piles through Emergency Wish.
-- Card validation and hydration treat saved effects and descriptions as one content unit. `BattleCardSchema` returns an empty effect list if any effect fails validation, including nested effects; missing or malformed lists likewise become empty. `hydrateCard` preserves both saved lists only when both are usable, without comparing their lengths against the current catalog. Otherwise it restores both from the library and clears saved `corrupted` and `baseTitle`. Valid saved cost, UID, and explicit Consume overrides survive; title, art, and catalog metadata refresh from the library. The empty-list recovery signal survives normalization and JSON round trips without extra saved fields.
-- Saved `description` models follow [card-description authoring](../../../../../Docs/CONTENT_AUTHORING.md#card-descriptions). Validation checks structure against actual effect kinds, numeric fields, nested paths, shared-value agreement and magnitude identity. Valid bindings regenerate stale/missing text caches. Invalid bindings are discarded with a diagnostic while valid effects/text retain the existing recovery policy. Records without bindings still load as complete effects/text units; subsequent mutations derive bindings from effects rather than saved prose. Custom wording, Mixed Potion boundaries and Corruption/Distill marks survive. Clone and hydrate deep-copy references/paths; catalog metadata cannot overwrite a saved model. Derived localization messages and character offsets are never saved.
-
-- The same card validator covers active-run card locations and saved battle deck, hand, pending hand cards, discard, exhausted, Wish options, and Wish queue, in the committed battle activity. Battle card hydration occurs when `restoreActiveBattle` restores the session; other card locations hydrate through `toActiveRunData`. Complete valid saved modifications survive even when their effect count differs from current content. Incomplete content recovery may reset card modifications, but requires no schema bump because the persisted shape and valid values retain their meanings.
-- Card arrays keep valid entries when a sibling card is malformed, with a developer-facing repair warning for each dropped position. Missing or non-array run decks still invalidate the run. Shop and Alchemist purchase keys follow surviving cards to their new slots. A Wish prompt emptied by malformed or removed cards advances to the next nonempty queued choice, or closes when none remains, so resumed combat stays playable.
-- Battle normalization repairs invalid Mana to zero and enforces the current minimum of one Mana Crystal. Valid unspent Mana and overflow above the crystal count survive resume.
-- The `SaveLoadStatus` shape has five variants: `ok`, `unavailable`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. These are internal diagnostics; none blocks play or opens a save-problem screen. The `ok` variant may carry developer-facing `warnings` (repair notes such as dropped card content); these never gate loads and are not shown to players.
+- Strip card IDs absent from the live catalog. Record deliberate removals in
+  `TOMBSTONED_CARD_IDS` for the discovery guard; filtering may leave an empty deck,
+  which combat handles through Emergency Wish.
+- Treat saved effects and descriptions as one unit. Preserve complete valid
+  modifications, even when they differ from the catalog. If either is unusable,
+  restore both from the library and clear `corrupted` and `baseTitle`; preserve
+  valid cost, UID and explicit Consume overrides. Catalog-owned title, art and
+  metadata refresh. [Card hydration](../../../../../src/lib/game-data/cards/hydrate-card.ts)
+  and the [card schema](../../../../../src/lib/validation/save-schemas/battle-card-schemas.ts)
+  own exact validation and recovery.
+- Preserve valid structured description bindings, custom wording, Mixed Potion
+  boundaries and Corruption/Distill marks. Invalid bindings are discarded with a
+  diagnostic, not used to replace valid mechanics. Localization messages and
+  character offsets are derived, not saved; see [card descriptions](../../../../../Docs/CONTENT_AUTHORING.md#card-descriptions).
+- Apply the same card rules to run locations and battle piles. Retain valid array
+  entries when siblings are malformed, repair purchase indices, and advance past
+  empty Wish choices. A missing or non-array run deck still invalidates the run.
+- Repair battle state field by field; keep valid Mana, including zero and overflow.
+  Load statuses and repair warnings are internal diagnostics and do not open a
+  recovery-choice screen.
 
 ### Current field recovery
 
-Preserve the valid fields and cross-field relationships below; missing-field
-recovery may intentionally differ from new-career initialization.
+Recovery defaults may differ from fresh-run defaults. The schemas and tests own
+individual fields; preserve these cross-field invariants when changing them:
 
-#### Progression gate fields
-
-Choose the intended new-player default. Safe additive fields retain that default and valid saved values; transformations of supported progress require versioned evidence and gameplay assertions. Current authoring validation remains strict and separate from load-tolerant recovery.
-
-#### Content changes without a save bump
-
-Catalog tuning and compatible defaults do not require a schema bump. Derived
-Talent and Homestead manifests rebuild from purchased IDs; Unique affixes resolve
-from the current catalog. Preserve valid modified card effects, descriptions,
-explicit Consume overrides, identities and pile membership together. Incomplete
-card content follows [current-data repair](#implementation-rules).
-
-Retired mechanics and undeclared manifest/flag keys are discarded under the
-[supported baseline](#supported-baseline), without historical aliases or parallel
-combat rules. Battle defaults repair fields individually. Native enemy identity
-and Traits refresh from the live catalog. A saved battle requires a known enemy
-and at least one card-pile array, even when empty; otherwise drop combat and report
-repair rather than fabricating a fight. The run remains playable.
-
-Current combat flags retain their declared boolean or finite nonnegative numeric
-values and lifetimes from [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts).
-Preserve spent per-turn allowances and until-consumed readiness; never infer them
-from current statuses or replay grants. Missing fields use their declared defaults.
-
-Reaction progress is saved separately from turn flags. Preserve earned amounts,
-spent CC opportunities, unmatched Wildfire ticks and Consecration marks. Missing
-progress starts empty; invalid scalars repair independently. Clear CC rewards
-outside active control and Consecration without Bleed; never reconstruct them from
-current buildup. Phase-local Bloodboil/Venomflash facts add no saved counters.
-`pendingCardBleedLeechHealing` defaults to zero and cannot exceed total queued Leech;
-it retains card attribution for Clean Slate, independently of Deep Siphon's eligibility.
-
-Summon hydration removes hidden Consume only when no explicit Consume description
-exists; an explicitly added keyword remains a valid card modification. New battles
-use current constructors. Gameplay meanings remain with
-[Game rules](../../../../../Docs/GAME_RULES.md),
-[Talent rules](../../../../../Docs/TALENT_RULES.md), and
-[Armory](../../../../../Docs/ARMORY.md).
-
-#### Run recap tracking
-
-`runHistory`, `runHistoryPartial`, and nullable `runGoldEarned` track recaps.
-New runs start with empty complete
-history and zero earned Gold. Older runs default to empty partial history and unknown
-Gold (`null`): subsequent visits are recorded with an omitted-history marker, while
-Gold remains unknown until a fresh run. Never infer missing earnings from the purse.
-Damaged room entries are dropped individually and mark the recap partial; a missing
-or invalid history also marks it partial even if its saved flag claimed otherwise.
-History and earnings round-trip without recording visits or replaying earnings on
-load. [Recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership) governs
-the transient ending snapshot.
-
-#### Four-tier Homestead
-
-Building, farm, and research level bounds come from the current four-tier catalog;
-existing levels retain their values and level four survives reload. Companion
-Bonds keep three tiers. New numeric Homestead combat fields default to zero in
-the talent manifest and rebind from purchased levels during run restoration.
-Preserve resolved starting Thorns, pending modified Wish materials, and RNG;
-never replay opening grants or apply find bonuses again while rebinding.
-[Homestead rules](../../../../../Docs/TALENT_RULES.md#talent-manifests-and-progression)
-own effects and discounts; find bonuses modify eligible rewards at their source.
-
-Reset Homestead persists zeroed node/bond levels and the refunded material
-stockpile in one command. Refunds use current catalog tier costs; hydration only
-recomputes effects and never refunds again. Discovery remains independent from
-bonds. Purchase feedback is presentation-only and never serialized; no refund
-ledger is needed.
+- **Progression:** Rebuild derived Talent and Homestead manifests from purchased IDs and resolve
+  Unique affixes from the current catalog. Keep valid purchased progress, combat flags,
+  pending effects, RNG and resolved grants; never reapply starting grants or
+  Homestead refunds during hydration. Preserve the starter Homestead grant receipt
+  so a load or reset cannot award it twice. Missing or malformed receipts recover
+  from existing Homestead purchases. [Save schema](../../../../../src/lib/validation/save-schemas/save-data.ts)
+  and [schema tests](../../../../../tests/lib/validation/save-data-schema.test.ts)
+  own its missing-field recovery.
+- **Combat:** Preserve spent per-turn allowances, until-consumed readiness and
+  reaction progress; do not infer them from current statuses. Preserve attributed
+  pending Bleed Leech and valid Returning Flight discounts; repair invalid
+  cross-field relationships and drop invalid or ambiguous card references without
+  discarding valid siblings. A battle without a known enemy or any card-pile array
+  cannot be fabricated; drop combat and report repair while keeping the run playable.
+  [Battle normalization](../../../../../src/lib/validation/normalize-persisted-battle-state.ts)
+  and [gameplay recovery tests](../../../../../tests/lib/validation/battle-recovery-gameplay.test.ts)
+  own the individual rules.
+- **Recap:** Missing or damaged run history remains partial; missing earned Gold
+  is unknown (`null`), not zero or inferred from the purse. Do not replay visits
+  or earnings on load. [Recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership)
+  governs the ending snapshot.
 
 #### Alchemy visits and modified cards
 
-Missing Mystery visits recover within their mode: Campaign restores its destination
-offer; Labyrinth releases the pending room and returns to the map without clearing
-that room. Missing or empty Wildcard starter offers use the normal guaranteed
-repeatable damage/defense recipe and rewards RNG, then persist the repaired choices.
-A completed draft clears stale offers so it can continue. A Labyrinth without a
-map is recoverable only while the Wildcard draft is still the saved activity;
-later activities require the map and otherwise abandon the active run.
+Campfire and Transmutation are tagged `activeRun.activity` branches. Persist
+fixed offers, original/result cards, selections and completion together; resume
+without rerolling initialized offers or repeating grants. Alchemist Brew, Mix and
+Distill usage is independent and survives reload. An unused Brew service with no
+surviving offers may regenerate from the saved shops stream; a spent service does
+not draw RNG. Recovery must preserve modified effects, descriptions and marks
+together, and remap Transmutation source indices after deck repair; clear a
+selection whose source was lost. Prismatic Crucible may select any compatible
+keyword, including beyond the normal three offers. Completed Transmutation follows the [interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation).
+[Active-run normalization](../../../../../src/lib/validation/normalize-active-run-data.ts)
+and [repair tests](../../../../../tests/lib/validation/normalize-repair.test.ts) own
+individual offer and selection cases.
 
-Campfire and Transmutation are branches of `activeRun.activity`, each carrying
-its `AlchemyVisit` data. They are not separate optional top-level visit records.
-Save fixed offers, original/result cards, and completion together. Uninitialized
-visits receive offers on entry; initialized visits survive resume without
-rerolling or repeated grants. Campfire Rest/Brew and Alchemist Mix/Distill limits
-survive reload; eligible Potions may be brewed again at later visits under the
-[brewing rules](../../../../../Docs/GAME_RULES.md#brewing-and-transmutation).
-
-`AlchemyVisit.transmutation` additionally saves each keyword choice's exact
-alterations, including source snapshots/indices, selected source keywords, and
-result cards, plus the current source/keyword/preview selection. Prismatic
-Crucible selections may reference any compatible keyword beyond the normal
-three offers; validation bounds indices by the registered Transmutation keywords.
-This widens accepted selections without changing the saved shape. When damaged
-deck cards are removed, repair remaps surviving source indices and clears a
-selection whose source was lost. Hydration restores every source/result card.
-Completed Transmutation follows the saved-result and missing-result
-[interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation). Retired
-replacement-card offers repair to an uninitialized selection, not a parallel
-workflow.
-
-Modified cards retain effects, descriptions, explicit Consume overrides,
-`transmuted`, `baseTitle`, and added tags together. Optional `lifesteal` on random
-damage and cleanse-to-damage preserves Transmutation's Leech addition; omission
-does not grant Leech. Structured description magnitudes retain `distilled` marks
-through hydration and mixing so upgraded values remain green. Incompatible changes follow the [supported baseline](#supported-baseline).
-
-#### Independent Alchemist services
-
-Alchemist visits retain `brewOffers` plus independent `brewUsed`, `mixUsed`, and
-`distillUsed` flags. New visits roll three fixed Brew offers from the shops RNG;
-refreshes preserve them and all spent flags. Hydration preserves current saved
-offers and flags. An unused Brew service with no surviving offers regenerates
-its shelf once from the saved shops RNG, including Strong Spirits in Labyrinth.
-Spent Brew services remain spent and do not draw RNG.
-
-#### Starter Homestead grant
-
-`starterHomesteadGrantResolved` is an additive permanent run-profile boolean.
-New careers start false. Missing or malformed values recover as true when any
-valid Homestead tier or Companion Bond is purchased, otherwise false. Valid
-saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
-resolves the receipt atomically with any material top-up. A successful Homestead
-purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
-it.
-
-#### Localized descriptions
-
-The renderer derives localized messages from literal parts, effects and magnitude bindings when they are displayed or extracted. Template IDs and keyword/magnitude slots are not persisted; saved cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud. See [Localization](../../../../../Docs/LOCALIZATION.md).
+Localized description messages and character offsets are derived rather than saved;
+the device-local language preference is outside the progress envelope and Steam
+Cloud. See [Localization](../../../../../Docs/LOCALIZATION.md).
 
 ## Storage transport
 
@@ -370,12 +266,6 @@ Shutdown closes write admission and drains accepted operations before quitting.
 Owner stamping is included in the payload size limit before either disk or Cloud
 accepts a write. Demo initialization receipt writes also serialize so concurrent
 initialization and Clear Save requests cannot race their shared temporary file.
-
-Returning Flight saves store all outstanding card discounts in
-`uniqueGear.returningFlightUids`. Discounts follow queued cards across turns and
-are consumed independently on play; discarded cards lose unused discounts at the
-next turn boundary. Missing references default to an empty list, and hydration
-drops duplicate, missing, or ambiguous card references.
 
 ### Future schema saves
 
