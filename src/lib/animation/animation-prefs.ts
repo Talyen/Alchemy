@@ -20,7 +20,7 @@ export function prefersReducedMotion(): boolean {
     reducedMotionWindow = window;
     reducedMotionMatchMedia = window.matchMedia;
   }
-  return reducedMotionQuery.matches;
+  return reducedMotionQuery?.matches ?? false;
 }
 
 export function shouldReduceMotion(): boolean {

@@ -1,5 +1,6 @@
 import {
   STARTUP_BAR_INCOMPLETE_CAP,
+  STARTUP_BAR_REVEAL_THRESHOLD,
   STARTUP_BAR_TAU_MS,
   STARTUP_BAR_TRICKLE_PER_SEC,
   STARTUP_LOAD_BOOTSTRAP_WEIGHT,
@@ -51,8 +52,6 @@ function advanceStartupBar(display: number, dtSeconds: number, target: number, c
   next = Math.max(display, next);
   return Math.min(1, next);
 }
-
-import { STARTUP_BAR_REVEAL_THRESHOLD } from "@/lib/game-constants";
 
 export interface StartupLoadState {
   readonly imageLoaded: number;
