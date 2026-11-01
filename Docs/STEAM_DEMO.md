@@ -13,7 +13,7 @@ completion credit is granted. Edition locks appear only as bold red
 
 Candidate readiness checks and the offline playtest launcher:
 [demo checklist](./STEAM_DEMO_CHECKLIST.md).
-Player-facing copy awaiting approval: [copy review](./Plans/SteamDemo.md#pending-copy-approvals).
+Player-facing copy awaiting approval: [copy review](./STEAM_DEMO_CHECKLIST.md#pending-copy-approvals).
 Shipping procedures: [release](./RELEASE.md) and [release setup](./RELEASE_SETUP.md).
 
 ## Marketing presentation
@@ -113,14 +113,11 @@ overlay activation returns void and can silently do nothing.
 
 Native callback and availability support are built from the pinned source and
 minimal patches described in the [native build recipe](../scripts/steamworks/README.md).
-Desktop development and packaging qualify both native exports. Packaged Windows
-Steam acceptance remains in the [blocked release plan](./Plans/SteamDemo.md#outstanding-work).
-
+Desktop development and packaging qualify both native exports.
 [Physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
 owns packaged Windows/controller/Deck evidence and public claim limits. Valve's
 [overlay contract](https://partner.steamgames.com/doc/features/overlay#communication-from-the-overlay-to-your-game)
-explains native activation and delayed availability. The [release plan](./Plans/SteamDemo.md)
-tracks unresolved prerequisites.
+explains native activation and delayed availability. The [demo checklist](./STEAM_DEMO_CHECKLIST.md#outstanding-release-prerequisites) tracks unresolved prerequisites.
 
 Every release builds both editions, retains independent verified artifacts and
 uploads to separate App IDs/depots. Public Steam promotion remains manual, with

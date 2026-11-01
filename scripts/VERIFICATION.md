@@ -29,7 +29,7 @@ single repo-relative spelling, also used by route matching) and `runGit` (the si
 stale-cache overrides); `git-safety-guard.mjs` is the deliberate exception
 because it must exec the real binary past its own shim. Release writes keep
 logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
-`resolveRoutePlan` returns both coverage commands and build/static/localization classification. `check-plan.mjs` composes the actual completion steps from that result; plan display and execution consume the same step definitions. Git path selection remains separate; the obsolete standalone classification wrapper is removed.
+`resolveRoutePlan` returns both coverage commands and build/static/localization classification. `check-plan.mjs` composes the actual completion steps from that result; plan display and execution consume the same step definitions. Git path selection remains separate.
 
 Full-repository and dependency-related selections use one worker to bound JSDOM and subprocess memory on shared hosts. Coverage and test deadlines are unchanged by that scheduling choice.
 

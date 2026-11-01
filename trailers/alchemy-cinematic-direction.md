@@ -15,39 +15,13 @@ for its current capture inventory and resolved timeline. Retain the entire sourc
 bundle, including unused takes; editing the shot list must not overwrite a master
 or earlier export.
 
-## Research translated into direction
+## Editorial direction
 
-- **Games:** Steam recommends showing recognizable gameplay immediately, keeping
-  the HUD useful, and making the product understandable without sound. Accordingly,
-  the opening retains both combatants, health and hand; there is no opening logo
-  or lore card. [Steamworks: Trailers](https://partner.steamgames.com/doc/store/trailer).
-- **Film:** Vary tension, give the viewer an intelligible premise, and build toward
-  a payoff which the trailer teases rather than resolves. The relative quiet of
-  a Campfire and Homestead gives the later boss montage more force. Use hard cuts
-  on clear actions, with only two short dissolves at changes of mood.
-  [Adobe: Making a movie trailer](https://www.adobe.com/creativecloud/video/discover/make-a-video-trailer.html).
-- **TV promos and film campaigns:** Becci Jones describes beginning with the brief,
-  selecting material and music, then shaping the trailer collaboratively. The
-  subject and its unique appeal must carry the edit. Here the brief becomes a
-  reusable shot library and a reviewable paper cut before production; the cut
-  remains easy to reorder after feedback.
-  [Cavendish interview with The Editpool's Becci Jones](https://www.cavendishmusic.com/interview-meet-trailer-editor-becci-jones-editpool/).
-- **Game trailer craft:** Derek Lieu argues for clear accents and alternating peaks
-  and valleys, and emphasizes that transitions connect story sections through
-  sound and music. Each feature shot therefore has one subject, with combat
-  punctuation between sections. Retain real card, purchase and impact sounds
-  against a continuous music bed; avoid a different visual effect at every cut.
-  [Rising action](https://www.derek-lieu.com/blog/2018/9/16/the-trailer-line-of-rising-action),
-  [Transitions](https://www.derek-lieu.com/blog/2018/2/24/good-transitions-make-great-trailers).
-- **Iteration:** Treat this as assembly → rough cut → fine cut → finishing. The
-  first render is a directed prototype, not a promise of finished advertising.
-  After viewing it, refine the exact music accents, readability, and best takes.
-  [Derek Lieu's editing workflow](https://www.derek-lieu.com/blog/2022/10/24/basic-game-trailer-editing-workflow).
-
-These are our creative applications of those sources, not universal timing rules.
-Three-second shots suit this first cut; unfamiliar mechanics may need longer
-holds after review. A soundtrack phrase is not automatically a drum beat: do not
-claim beat-perfect editing before listening to the rendered mix.
+Show recognizable gameplay immediately, retain enough HUD context to understand
+it without sound, and build toward a payoff. Give each feature shot one clear
+subject, alternate tension with quieter moments, and use native sound to connect
+sections. Review readability and musical accents in the rendered cut; do not
+assume that a fixed shot length or soundtrack phrase fits every moment.
 
 ## Picture and sound rules
 

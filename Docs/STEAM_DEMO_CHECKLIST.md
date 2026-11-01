@@ -12,6 +12,31 @@ recheck it before release. [Release](./RELEASE.md) and
 not authorize publishing. Local execution follows
 [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
+## Outstanding release prerequisites
+
+Steam ID verification and store setup are pending. Configure the demo and full
+App IDs, depots, shared Cloud and AI disclosure, then complete the physical
+Steam acceptance, minimum-spec validation, unfamiliar-player and listening
+feedback, copy review, Steamworks review and candidate sign-off below. Publish
+recommended controller layouts and record their configuration IDs with the
+candidate evidence. Do not claim controller, Deck or carryover support before
+the applicable checks pass.
+
+## Pending copy approvals
+
+| Location                                                      | Exact current copy                                                                     |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Packaged application name                                     | `Alchemy Demo`                                                                         |
+| Full-game startup after successful demo progress import       | `Your earned demo progress has been imported. Start a new adventure in the full game.` |
+| Import notice action                                          | `Dismiss`                                                                              |
+| Pending local save, either edition                            | `Saving…`                                                                              |
+| Failed local primary and recovery save writes, either edition | `Couldn’t save`                                                                        |
+| Failed-save action                                            | `Retry`                                                                                |
+
+Sources: [application identity](../game-edition.mjs), [import notice](../src/App.tsx)
+and [save-write notice](../src/app/save-write-notice.tsx). Menu, recap, marketing
+and lock revisions remain approved under the demo contract.
+
 ## 1. Approved demo scope
 
 [Steam demo](./STEAM_DEMO.md) owns content limits, languages, edition identity,
@@ -57,7 +82,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 - [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
 - [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 - [ ] Before promising persistent player progress, freeze the supported save baseline. For each candidate, verify upgrade from supported distributed saves and recovery from a damaged primary; retain source saves and record the versions used.
-- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep [native-binding qualification](./Plans/SteamDemo.md#outstanding-work) open until verified.
+- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep [native-binding qualification](#outstanding-release-prerequisites) open until verified.
 
 ## 5. Readability, feedback, and Options
 
@@ -96,7 +121,7 @@ Use [audio](./AUDIO.md) and [performance](./PERFORMANCE.md).
 
 - [ ] Act 1 ends with Victory and then The Journey Continues; Main Menu exits normally. Defeat/abandonment show Journey's End.
 - [ ] Wishlist controls open exactly one usable full-game destination under the [wishlist contract](./STEAM_DEMO.md#input-and-release-evidence); Quit has no promotional side effect.
-- [ ] Review completion copy, full-game locks and the [pending copy approvals](./Plans/SteamDemo.md#pending-copy-approvals).
+- [ ] Review completion copy, full-game locks and the [pending copy approvals](#pending-copy-approvals).
 - [ ] Set the release date and event deadlines; prepare a gameplay-led trailer and announcement with checked links and the actual endpoint.
 - [ ] If outreach is approved, prepare the build, keys, concise pitch and known limitations. Sending outreach requires its own authorization.
 - [ ] Assign feedback/crash monitoring and hotfix/rollback ownership; retain a known-good build under the release procedure.
@@ -165,4 +190,4 @@ each step; do not overwrite a real player's profile to perform these checks.
 Deck evidence includes Proton startup/performance, physical Steam Input/overlay,
 1280×800 readability and suspend/resume. Keep those checks open when hardware is
 unavailable. Renderer geometry and virtual-display results do not establish a
-controller/Deck rating or close the [release blockers](./Plans/SteamDemo.md#outstanding-work).
+controller/Deck rating or close the [release prerequisites](#outstanding-release-prerequisites).
