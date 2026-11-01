@@ -532,8 +532,10 @@ for (const locale of acceptanceLocales) {
               exact: true,
             });
             await currency.click();
-            await fresh.getByTestId("armory-inventory-item").first().click();
-            await expect(fresh.getByTestId("armory-crafting-result")).toBeVisible();
+            const craftedItem = fresh.getByTestId("armory-inventory-item").first();
+            await craftedItem.click();
+            await craftedItem.hover();
+            await expect(fresh.getByTestId("crafting-affix-chip")).toBeVisible();
             await expect.poll(async () => (await readSavedGame(fresh)).craftingCurrencies?.["sprig-of-growth"]).toBe(1);
             const before = await readSavedGame(fresh);
             expect(

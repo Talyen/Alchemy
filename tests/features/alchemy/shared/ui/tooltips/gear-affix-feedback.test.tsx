@@ -35,6 +35,30 @@ describe("Crafted affix inspection feedback", () => {
     vi.unstubAllGlobals();
   });
 
+  it("labels only current added and modified affixes, and clears when the baseline is removed", () => {
+    const result: GearInstance = {
+      ...before,
+      affixes: [
+        { id: "flat-poison", value: 2 },
+        { id: "flat-burn", value: 1 },
+      ],
+    };
+    const view = (changes?: Record<string, "new" | "modified">) => (
+      <GearTooltipContent
+        definition={gearDefinitions[result.definitionId]!}
+        instance={result}
+        craftingChanges={changes}
+      />
+    );
+    const { rerender } = render(view({ "flat-poison": "modified", "flat-burn": "new" }));
+    expect(row("flat-poison")?.querySelector('[data-testid="crafting-affix-chip"]')?.textContent).toBe("Modified");
+    expect(row("flat-burn")?.querySelector('[data-testid="crafting-affix-chip"]')?.textContent).toBe("New");
+    rerender(view({}));
+    expect(document.querySelector('[data-testid="crafting-affix-chip"]')).toBeNull();
+    rerender(view());
+    expect(document.querySelector('[data-testid="crafting-affix-chip"]')).toBeNull();
+  });
+
   it("masks fully shaped incoming lettering without an inner panel, preserving keyword color and row identity", () => {
     const { rerender } = render(tooltip(before));
     const existing = row("flat-poison");

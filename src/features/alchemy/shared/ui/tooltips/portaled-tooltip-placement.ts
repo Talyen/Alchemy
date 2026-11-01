@@ -47,10 +47,20 @@ export function usePortaledTooltipPlacement(
   visible = active,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
+  // A reused ref can point at a new inventory target after commit. Rebind before
+  // paint rather than carrying that target's observers or hover reservation over.
+  // oxlint-disable-next-line react/exhaustive-deps -- inspect ref identity after every commit; the equality guard prevents an update loop
+  useLayoutEffect(() => {
+    const current = triggerRef.current;
+    if (current !== triggerElement) setTriggerElement(current);
+  });
   const hoverReservation = useRef({
     width: 0,
     visible: false,
     placement: preferredFloatingPlacement(placement),
+    trigger: null as HTMLElement | null,
+    horizontalOffset: null as number | null,
   });
   const [position, setPosition] = useState<{
     placement: Placement;
@@ -58,14 +68,20 @@ export function usePortaledTooltipPlacement(
   }>({ placement: "top", tooltipStyle: undefined });
 
   useLayoutEffect(() => {
-    const trigger = triggerRef.current;
+    const trigger = triggerElement;
     const tooltipEl = tooltipRef.current;
     if (!active || !trigger || !tooltipEl) {
       if (tooltipEl) {
         tooltipEl.style.width = "";
         tooltipEl.style.minWidth = "";
       }
-      hoverReservation.current = { width: 0, visible: false, placement: preferredFloatingPlacement(placement) };
+      hoverReservation.current = {
+        width: 0,
+        visible: false,
+        placement: preferredFloatingPlacement(placement),
+        trigger: null,
+        horizontalOffset: null,
+      };
       setPosition((previous) => ({ ...previous, tooltipStyle: undefined }));
       return;
     }
@@ -73,11 +89,13 @@ export function usePortaledTooltipPlacement(
     const reservation = hoverReservation.current;
     const entering = visible && !reservation.visible;
     reservation.visible = visible;
-    if (entering || !preservePlacementOnResize) {
+    if (entering || reservation.trigger !== trigger || !preservePlacementOnResize) {
       reservation.width = 0;
       reservation.placement = preferredFloatingPlacement(placement);
+      reservation.horizontalOffset = null;
       tooltipEl.style.minWidth = "";
     }
+    reservation.trigger = trigger;
 
     let cancelled = false;
     let measurement = 0;
@@ -128,6 +146,12 @@ export function usePortaledTooltipPlacement(
           allowFlip &&
             flip({
               boundary: stage,
+              // A reserved vertical panel can be shifted horizontally without
+              // abandoning its side solely because wider content reaches an edge.
+              crossAxis:
+                preservePlacementOnResize && (preferredPlacement === "top" || preferredPlacement === "bottom")
+                  ? false
+                  : undefined,
               fallbackPlacements:
                 preferredPlacement === "top"
                   ? ["bottom", "left", "right"]
@@ -147,6 +171,25 @@ export function usePortaledTooltipPlacement(
           if (cancelled || currentMeasurement !== measurement) return;
           // A shrinking crafted affix should not move an otherwise fitting panel
           // back across its trigger. Flip still handles viewport constraints.
+          const vertical = finalPlacement.startsWith("top") || finalPlacement.startsWith("bottom");
+          const triggerBounds = trigger.getBoundingClientRect();
+          const triggerCenter = triggerBounds.left + triggerBounds.width / 2;
+          if (preservePlacementOnResize && vertical) {
+            if (reservation.horizontalOffset === null || retainedPlacement !== finalPlacement)
+              reservation.horizontalOffset = x - triggerCenter;
+            // Width growth must expand away from the existing left edge, rather
+            // than recentering visible affix text. Follow moving artwork, but let
+            // viewport constraints override the reservation without retaining a
+            // temporary clamp for the rest of the hover.
+            x = clamp(
+              triggerCenter + reservation.horizontalOffset,
+              bounds.left + horizontalInset,
+              Math.max(
+                bounds.left + horizontalInset,
+                bounds.right - horizontalInset - tooltipEl.getBoundingClientRect().width,
+              ),
+            );
+          } else reservation.horizontalOffset = null;
           retainedPlacement = finalPlacement;
           reservation.placement = finalPlacement;
           const left = `${x}px`;
@@ -212,6 +255,7 @@ export function usePortaledTooltipPlacement(
   }, [
     active,
     triggerRef,
+    triggerElement,
     padding,
     placement,
     maxWidthFraction,

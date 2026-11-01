@@ -1,6 +1,7 @@
 import { rollBattleChance } from "./chance-roll";
 import {
   applyBleedDamageDraw,
+  applyBurnDamageDraw,
   applyElementalDamageManaRestore,
   applyHitHealth,
   reportEnemyHitDamage,
@@ -142,6 +143,7 @@ function resolveCardHit(
   let nextState = hit.state;
   nextState = applyIronGuardReward(nextState, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage, combatTexts);
+  if (effect.damageType === "burn") nextState = applyBurnDamageDraw(nextState, facts.healthDamage, combatTexts);
 
   if (isPlayerDefeated(nextState)) {
     // Bloodrush can invoke an Emergency Wish whose retaliation is fatal.

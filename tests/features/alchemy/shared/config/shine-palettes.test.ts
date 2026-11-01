@@ -46,11 +46,14 @@ describe("Trinket text shine", () => {
 
   it("uses paired title colors without changing the artwork palette", () => {
     expect(getTrinketTextShineColors("meteorite")).toEqual(["#fb923c", "color-mix(in srgb, #fb923c 55%, transparent)"]);
+    expect(getTrinketTextShineColors("tattered-pages")).toEqual([
+      "#fb923c",
+      "color-mix(in srgb, #fb923c 55%, transparent)",
+    ]);
     expect(getTrinketShineColors("meteorite")).toEqual([...keywordDefinitions.burn.shineColors]);
   });
 
   it("preserves the Boon fallback for titles without keywords", () => {
-    expect(getTrinketTextShineColors("tattered-pages")).toEqual([...SHINE_PALETTES.boon]);
     expect(getTrinketTextShineColors("missing-trinket")).toEqual([...SHINE_PALETTES.boon]);
   });
 });

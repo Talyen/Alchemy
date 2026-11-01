@@ -9,12 +9,14 @@ import type { PortaledTooltipPlacement } from "./portaled-tooltip-placement";
 export function GearDetailPopup({
   definition,
   instance,
+  craftingChanges,
   notice,
   padding,
   ...tooltipProps
 }: {
   definition: GearDefinition | undefined;
   instance: GearInstance;
+  craftingChanges?: Record<string, "new" | "modified"> | undefined;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   padding?: number | undefined;
@@ -30,7 +32,7 @@ export function GearDetailPopup({
       className="rounded-shell-tooltip"
       plasmaColorPair={getPlasmaColorPairForGear(instance)}
     >
-      <GearTooltipContent definition={definition} instance={instance} />
+      <GearTooltipContent definition={definition} instance={instance} craftingChanges={craftingChanges} />
       {notice ? <p className="mt-3 text-sm text-warning">{notice}</p> : null}
     </PortaledTooltip>
   );

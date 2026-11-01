@@ -400,3 +400,20 @@ without changing command success; exposure metrics remain advisory.
 ## Script declarations
 
 Keep TypeScript declarations beside the JavaScript module (the .d.mts extension beside .mjs), following the module's actual exports. Tests import those modules normally. Shared interface types belong to their implementation owner and are imported by other declarations; do not recreate wildcard ambient declarations in tests. Update the adjacent declaration when changing a script's public interface, and run source/test type checks.
+
+## Temporary dependency compatibility patches
+
+`npm ci` runs `patch-dependency-compat.mjs` after installation. The lockfile pins
+minimatch 11.0.3 and glob 14.0.3 to address GHSA-g3hv-75wg-m249 and
+GHSA-3g3m-2fjr-6pw4. Some Electron packaging and release dependencies still
+consume older minimatch APIs. The script adapts their installed copies to the
+patched API, checks both the exact package version and expected source text,
+and fails installation if either changes. It is safe to run again on an already
+patched install. Do not use `--ignore-scripts` for normal development or CI.
+
+`tests/scripts/dependency-compat.test.ts` exercises the old and new ASAR paths,
+legacy glob callback and synchronous traversal, file filtering, cleanup and
+release ignore rules. When updating these dependencies, remove each adaptation
+only after its parent uses a compatible maintained API; update the guards and
+rerun these tests, the dependency audit, release dry run, build and desktop
+packaging checks. Windows packaging and the complete CI workflow remain required.

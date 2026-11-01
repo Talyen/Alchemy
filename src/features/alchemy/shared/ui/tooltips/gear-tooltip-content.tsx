@@ -22,9 +22,11 @@ import type { CSSProperties } from "react";
 export function GearTooltipContent({
   definition,
   instance,
+  craftingChanges,
 }: {
   definition: GearDefinition;
   instance?: GearInstance | undefined;
+  craftingChanges?: Record<string, "new" | "modified"> | undefined;
 }) {
   const i18n = useGameTranslation();
   const rarity = instance ? (gearInstanceRarity(instance) ?? definition.rarity) : definition.rarity;
@@ -47,6 +49,7 @@ export function GearTooltipContent({
         <GearAffixLines
           key={instance.instanceId}
           entries={affixEntries}
+          craftingChanges={craftingChanges}
           rarity={rarity}
           fallback={entries.filter((entry) => entry.affixId === undefined).map((entry) => entry.text)}
         />
@@ -67,10 +70,12 @@ function GearAffixLines({
   entries,
   rarity,
   fallback,
+  craftingChanges,
 }: {
   entries: GearAffixTooltipEntry[];
   rarity: GearRarity;
   fallback: string[];
+  craftingChanges?: Record<string, "new" | "modified"> | undefined;
 }) {
   const i18n = useGameTranslation();
   const rows = useGearAffixFeedback(entries);
@@ -104,6 +109,16 @@ function GearAffixLines({
           <ShineText colors={colors} fallbackClassName="text-inherit">
             {i18n.displayText(entry.name)}
           </ShineText>
+          {!previous && craftingChanges?.[entry.affixId] ? (
+            <span
+              data-testid="crafting-affix-chip"
+              className="ml-2 inline-block rounded border border-emerald-300/50 bg-emerald-300/10 px-1.5 py-0.5 align-middle text-xs font-semibold text-emerald-100"
+            >
+              {craftingChanges[entry.affixId] === "modified"
+                ? i18n.text("ui.gear-affix.modified", "Modified")
+                : i18n.text("ui.gear-affix.new", "New")}
+            </span>
+          ) : null}
         </TooltipSubheader>
         <p className={cn(tooltipBodyLineClass, "gear-affix-ink-line gear-affix-ink-description mt-0 pl-3")}>
           {i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}

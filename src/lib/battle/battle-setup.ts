@@ -55,7 +55,7 @@ export function drawOpeningHand(state: BattleState, combatTexts: CombatTextEvent
       state.deck,
       state.discard,
       state.hand,
-      CARDS_PER_TURN + state.trinketEffects.extraDrawPerBattle,
+      CARDS_PER_TURN,
       state.nextCardUid,
       getBattleRng(state),
       state.pendingHandCards,
@@ -150,8 +150,7 @@ export function createBattleStartState(
   const openingForge = battleTalents.startForge + battleGearEffects.startForge;
   const openingArmor =
     battleTalents.startArmor + battleGearEffects.startArmor + (battleTalents.manaShellActive ? mana : 0);
-  const openingBlock =
-    battleTalents.startBlock + startBlock + battleGearEffects.startBlock + (battleTalents.manaBulwarkActive ? mana : 0);
+  const openingBlock = startBlock + battleGearEffects.startBlock + (battleTalents.manaBulwarkActive ? mana : 0);
   const baseState = defaultBattleState();
   const state: BattleState = {
     ...baseState,

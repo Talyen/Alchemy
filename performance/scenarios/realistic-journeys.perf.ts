@@ -416,13 +416,11 @@ async function craftingRoute(
     `craft:${crafting.currencyId}:${crafting.instanceId}`,
     async () => {
       await target.click();
-      await expect(page.getByTestId("armory-crafting-result")).toBeVisible();
       await expect(currency).toHaveText(String(before - 1));
     },
     recordAction,
   );
   await delay(TRANSACTION_RESULT_OBSERVATION_MS);
-  await page.getByRole("button", { name: "Dismiss result", exact: true }).click();
   await phase("salvage");
   await page.getByTestId("armory-salvage-toggle").click();
   await target.click();

@@ -8,32 +8,24 @@ describe("Armory feedback", () => {
   afterEach(cleanup);
   it("holds a stable message while open and removes it after dismissal", async () => {
     const onDismiss = vi.fn();
-    const { rerender } = render(
-      <ArmoryFeedback notice="Crafting complete." result={null} after={undefined} onDismiss={onDismiss} />,
-    );
-    expect(screen.getByRole("status").textContent).toBe("Crafting complete.");
-    rerender(<ArmoryFeedback notice="Item salvaged." result={null} after={undefined} onDismiss={onDismiss} />);
+    const { rerender } = render(<ArmoryFeedback notice="Item equipped." onDismiss={onDismiss} />);
+    expect(screen.getByRole("status").textContent).toBe("Item equipped.");
+    rerender(<ArmoryFeedback notice="Item salvaged." onDismiss={onDismiss} />);
     expect(screen.getByRole("status").textContent).toBe("Item salvaged.");
-    rerender(<ArmoryFeedback notice="" result={null} after={undefined} onDismiss={onDismiss} />);
+    rerender(<ArmoryFeedback notice="" onDismiss={onDismiss} />);
     await waitFor(() => expect(screen.queryByText("Item salvaged.")).toBeNull());
   });
 
   it("retains the combat-locked alert and its color throughout dismissal", () => {
     const onDismiss = vi.fn();
     const { rerender } = render(
-      <ArmoryFeedback
-        notice="Equipment cannot be changed during Combat."
-        result={null}
-        after={undefined}
-        onDismiss={onDismiss}
-        tone="error"
-      />,
+      <ArmoryFeedback notice="Equipment cannot be changed during Combat." onDismiss={onDismiss} tone="error" />,
     );
     expect(screen.getByRole("alert").textContent).toBe("Equipment cannot be changed during Combat.");
     const alert = screen.getByRole("alert");
     const color = alert.className;
     const frame = alert.parentElement!.className;
-    rerender(<ArmoryFeedback notice="" result={null} after={undefined} onDismiss={onDismiss} />);
+    rerender(<ArmoryFeedback notice="" onDismiss={onDismiss} />);
     expect(screen.getByRole("alert")).toBe(alert);
     expect(alert.className).toBe(color);
     expect(alert.parentElement!.className.replace("screen-fade-out", "screen-fade-in")).toBe(frame);
@@ -43,8 +35,6 @@ describe("Armory feedback", () => {
     render(
       <ArmoryFeedback
         notice="Unique items cannot be modified with crafting materials."
-        result={null}
-        after={undefined}
         onDismiss={vi.fn()}
         tone="warning"
       />,
