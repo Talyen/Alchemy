@@ -151,15 +151,6 @@ export function ArtPanel(props: ArtPanelProps) {
               <ActorArtFrame
                 {...props}
                 idleClips={idleClips}
-                mirrorArt={
-                  side === "enemy" &&
-                  (currentEnemy?.id === "mimic" ||
-                    currentEnemy?.id === "necromancer" ||
-                    currentEnemy?.id === "yeti" ||
-                    currentEnemy?.id === "stone-titan" ||
-                    currentEnemy?.id === "earth-elemental" ||
-                    currentEnemy?.id === "stone-golem")
-                }
                 onInspect={
                   onInspect
                     ? (trigger) => {
@@ -197,7 +188,6 @@ function ActorArtFrame({
   title,
   art,
   idleClips,
-  mirrorArt,
   shimmerId,
   shimmerActive,
   shimmerToken,
@@ -213,7 +203,7 @@ function ActorArtFrame({
   turnUrgentHide = false,
   turnShineColors,
   ccKeyword = null,
-}: ArtPanelProps & { idleClips?: readonly BossIdleClip[] | undefined; mirrorArt: boolean }) {
+}: ArtPanelProps & { idleClips?: readonly BossIdleClip[] | undefined }) {
   const i18n = useGameTranslation();
   const imageClassName = cn(
     idleClips?.length
@@ -222,7 +212,6 @@ function ActorArtFrame({
         ? landscapeArtImageClass
         : cardArtImageClass,
     battlePortraitHeightClass,
-    mirrorArt && "-scale-x-100",
   );
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
   const recoilRef = useRef<HTMLDivElement>(null);
