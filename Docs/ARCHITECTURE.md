@@ -112,7 +112,7 @@ keeping `run-setup` and `run-loop` independent under Oxlint.
 | Mode, hero and difficulty routing                | `run-setup/run/content-system-navigation.ts`                               |
 | Current-run resume                               | `run-setup/run/run-resume-navigation.ts`                                   |
 | New-run initialization and Campaign launch       | `run-setup/run/new-run-initialization.ts`                                  |
-| Run-start snapshots                              | `shared/stores/commands/run-start-command.ts`                              |
+| Run-start snapshots                              | `run-setup/run/run-start-command.ts`                                       |
 | Wildcard starter draft                           | `shared/run-flow/starter-draft.ts`                                         |
 | Wildwood post-entry progression                  | `run-loop/run/wildwood-gauntlet-flow.ts`                                   |
 | Pure destination eligibility and weighted offers | `shared/run-flow/resolve-available-destinations.ts`, `destination-flow.ts` |
