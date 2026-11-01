@@ -56,7 +56,7 @@ export function GearTooltipContent({
       ) : (
         <TooltipBody>
           {entries.map((entry) => (
-            <p key={entry.key} className={tooltipBodyLineClass}>
+            <p key={entry.key} className={cn(tooltipBodyLineClass, "whitespace-pre-line")}>
               {i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}
             </p>
           ))}
@@ -83,7 +83,7 @@ function GearAffixLines({
     return (
       <TooltipBody>
         {fallback.map((text, index) => (
-          <p key={index} className={tooltipBodyLineClass}>
+          <p key={index} className={cn(tooltipBodyLineClass, "whitespace-pre-line")}>
             {i18n.displayText(i18n.read(() => renderColoredKeywords(text)))}
           </p>
         ))}
@@ -120,7 +120,12 @@ function GearAffixLines({
             </span>
           ) : null}
         </TooltipSubheader>
-        <p className={cn(tooltipBodyLineClass, "gear-affix-ink-line gear-affix-ink-description mt-0 pl-3")}>
+        <p
+          className={cn(
+            tooltipBodyLineClass,
+            "gear-affix-ink-line gear-affix-ink-description mt-0 pl-3 whitespace-pre-line",
+          )}
+        >
           {i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}
         </p>
       </div>

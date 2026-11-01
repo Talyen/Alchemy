@@ -25,15 +25,15 @@ const ASTRAL_ASHKEEPER_ROLL = { ...rollRange(1, 1, 1, 2), astral: { min: 1, max:
 export const gearAffixRows = [
   offensiveUnique(
     ["the-unclosing-wound", "The Unclosing Wound", "bleed", "physical"],
-    ["bleedDecaysByHalf", "Enemy Bleed halves each turn instead of expiring."],
+    ["bleedDecaysByHalf", "Enemy Bleed halves each turn instead of expiring"],
   ),
   offensiveUnique(
     ["kingbreaker", "Kingbreaker", "stun", "physical"],
-    ["armorIncreasesStun", "Enemy Armor increases Stun damage instead of reducing it."],
+    ["armorIncreasesStun", "Enemy Armor increases Stun damage instead of reducing it"],
   ),
   offensiveUnique(
     ["everkeen", "Everkeen", "forge", "physical"],
-    ["forgeReadiesPhysicalRepeat", "Gaining Forge makes the next Physical card strike twice."],
+    ["forgeReadiesPhysicalRepeat", "Gaining Forge makes the next Physical card strike twice"],
   ),
   offensiveUnique(
     ["red-harvest", "Red Harvest", "physical", "bleed"],
@@ -41,7 +41,7 @@ export const gearAffixRows = [
   ),
   offensiveUnique(
     ["oathkeeper", "Oathkeeper", "forge", "holy"],
-    ["oathkeeperHolyAndBlock", "Holy damage is increased by 50% of Forge. Damaging Holy attacks grant 1 Block."],
+    ["oathkeeperHolyAndBlock", "Holy damage is increased by 50% of Forge\nDamaging Holy attacks grant 1 Block"],
   ),
   offensiveUnique(
     ["the-patient-edge", "The Patient Edge", "forge", "physical"],
@@ -49,11 +49,11 @@ export const gearAffixRows = [
   ),
   offensiveUnique(
     ["vipers-courtesy", "Viper’s Courtesy", "dodge", "poison"],
-    ["dodgeReadiesVenomousHit", "After Dodging, the next Physical hit adds half its damage as Poison and Bleed."],
+    ["dodgeReadiesVenomousHit", "After Dodging, the next Physical hit adds half its damage as Poison and Bleed"],
   ),
   offensiveUnique(
     ["the-lingering-bell", "The Lingering Bell", "stun", "holy"],
-    ["retainStunBuildup", "Stunning an enemy preserves a quarter of its Stun buildup."],
+    ["retainStunBuildup", "Stunning an enemy preserves a quarter of its Stun buildup"],
   ),
   offensiveUnique(
     ["huntsmasters-call", "Huntsmaster’s Call", "archery", "companion"],
@@ -61,30 +61,30 @@ export const gearAffixRows = [
   ),
   offensiveUnique(
     ["wrenflight", "Wrenflight", "archery", "dodge"],
-    ["archeryDodgeAndDraw", "Archery grants 10% Dodge until next turn. Dodging draws an Archery card."],
+    ["archeryDodgeAndDraw", "Archery grants 10% Dodge until next turn\nDodging draws an Archery card"],
   ),
   offensiveUnique(
     ["the-returning-gale", "The Returning Gale", "archery", "nature"],
-    ["archeryEchoNextTurn", "Archery cards repeat their damage at half strength next turn."],
+    ["archeryEchoNextTurn", "Archery cards repeat their damage at half strength next turn"],
   ),
   offensiveUnique(
     ["the-final-spark", "The Final Spark", "mana", "burn"],
-    ["lastManaElementalRepeat", "Spend the last Mana to repeat a Burn or Freeze card’s damage. Once per turn."],
+    ["lastManaElementalRepeat", "Once per turn, spend the last Mana to repeat a Burn or Freeze card’s damage"],
   ),
   defensiveUnique(
     ["laughing-guard", "Laughing Guard", "block", "dodge"],
     [
       "dodgeSpendsPreservedBlock",
-      "Keep Block between turns. Dodging spends half the Block to deal that much Physical damage.",
+      "Keep Block between turns\nDodging spends half the Block to deal that much Physical damage",
     ],
   ),
   defensiveUnique(
     ["the-knights-answer", "The Knight’s Answer", "block", "physical"],
-    ["blockReadiesFreePhysical", "Blocking an attack makes the next Physical card free."],
+    ["blockReadiesFreePhysical", "Blocking an attack makes the next Physical card free"],
   ),
   offensiveUnique(
     ["the-returning-flight", "The Returning Flight", "archery", "dodge"],
-    ["recoverLastArcheryCard", "Each turn, recover the last Archery card played. It costs 1 less Mana."],
+    ["recoverLastArcheryCard", "Each turn, recover the last Archery card played\nIt costs 1 less Mana"],
   ),
   offensiveUnique(
     ["threefold-grace", "Threefold Grace", "burn", "freeze"],
@@ -92,23 +92,23 @@ export const gearAffixRows = [
   ),
   offensiveUnique(
     ["bloodember-pendant", "Bloodember Pendant", "burn", "bleed"],
-    ["sharedBurnBleedBonuses", "Burn and Bleed share their damage bonuses."],
+    ["sharedBurnBleedBonuses", "Burn and Bleed share their damage bonuses"],
   ),
   offensiveUnique(
     ["winters-credit", "Winter’s Credit", "freeze", "mana"],
-    ["blockPaysFreezeMana", "Spend 3 Block per missing Mana for Freeze cards. Block depletion rewards do not trigger."],
+    ["blockPaysFreezeMana", "Spend 3 Block per missing Mana for Freeze cards\nBlock depletion rewards do not trigger"],
   ),
   offensiveUnique(
     ["serpents-eye", "Serpent’s Eye", "poison", "archery"],
-    ["poisonedAttacksPierce", "Attacks against Poisoned enemies ignore Armor and cannot be Dodged."],
+    ["poisonedAttacksPierce", "Attacks against Poisoned enemies ignore Armor and cannot be Dodged"],
   ),
   defensiveUnique(
     ["wildhearts-favor", "Wildheart’s Favor", "dodge", "nature"],
-    ["dodgeReadiesNatureCrit", "Dodging makes the next Nature card free and guarantees its damage Critically Hits."],
+    ["dodgeReadiesNatureCrit", "Dodging makes the next Nature card free and guarantees its damage Critically Hits"],
   ),
   offensiveUnique(
     ["the-golden-crucible", "The Golden Crucible", "gold", "forge"],
-    ["goldGrantsForgeAndHoly", "When you gain Gold in combat, gain 1 Forge. Holy damage is increased by 50% of Forge."],
+    ["goldGrantsForgeAndHoly", "When you gain Gold in combat, gain 1 Forge\nHoly damage is increased by 50% of Forge"],
   ),
   flatDamageAffix("flat-physical", "Ironbound", "physical", "flatPhysicalDamage"),
   flatDamageAffix("flat-stun", "Concussive", "stun", "flatStunDamage"),
@@ -430,14 +430,14 @@ export const gearAffixRows = [
     ["bloodfire", "Bloodfire", "burn", "bleed"],
     [
       "burnBleedMirrorAndLeech",
-      "Burn has a 20% chance to inflict Bleed, and vice versa. Both gain Leech against enemies already Burning and Bleeding",
+      "Burn has a 20% chance to inflict Bleed, and vice versa\nBoth gain Leech against enemies already Burning and Bleeding",
     ],
   ),
   offensiveUnique(
     ["rimeheart", "Rimeheart", "freeze", "block"],
     [
       "freezeGrantsBlockAndMana",
-      "While you have no Block, Freeze damage grants equal Block. Freezing an enemy while you have no Mana restores Mana equal to half the Block",
+      "While you have no Block, Freeze damage grants equal Block\nFreezing an enemy while you have no Mana restores Mana equal to half the Block",
     ],
   ),
   offensiveUnique(

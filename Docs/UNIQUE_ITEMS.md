@@ -13,7 +13,7 @@ cannot modify Uniques; salvage uses the normal crafting and Homestead definition
 
 Generation, inventory normalization, tooltips, and battle manifests use the same canonical affixes. Tooltip templates replace every occurrence of an affix value, including Saintfall's damage and healing. Existing owned items receive the corrected standard rolls without changing identity, ownership, or Collection discovery. A saved battle retains its captured manifest until normal live meta rebinding or a new battle.
 
-Unique signature descriptions may use sentence punctuation for readability; standard affixes retain the existing period-free typography rule. The concise-description policy and its covered signatures are enforced by the [catalog tests](../tests/lib/gear/unique-catalog.test.ts) and the [typography validator](../src/lib/content-validation/validators-typography.ts) (unique-rarity gear descriptions allow periods; unique-only affix templates skip the period check); this reference does not maintain a second wording table.
+All affix descriptions are period-free. Unique signatures may use line breaks to separate distinct effects within the same affix; the full description remains one localized message. The [typography validator](../src/lib/content-validation/validators-typography.ts) checks all affix templates; this reference does not maintain a second wording table.
 
 ## Combat semantics
 
