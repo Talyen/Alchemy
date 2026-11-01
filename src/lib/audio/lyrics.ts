@@ -44,16 +44,26 @@ export interface LyricFrame {
   active: number;
 }
 
-/** Derive from media time on every sample, including backwards seeks and loop restarts. */
-export function getLyricFrame(lines: ReadonlyArray<readonly LyricWord[]>, time: number): LyricFrame | null {
-  const line = lines.findIndex((words) => {
-    const first = words[0];
-    const last = words[words.length - 1];
-    return first && last && time >= first.start && time < last.end;
-  });
+/** Lines and words are nonempty, ordered and nonoverlapping. Media time may seek or loop. */
+export function getLyricFrame(
+  lines: ReadonlyArray<readonly LyricWord[]>,
+  time: number,
+  previous: LyricFrame | null = null,
+): LyricFrame | null {
+  if (Number.isNaN(time)) return null;
+  // Locate the last phrase that has started without rescanning the entire song
+  // on every animation frame, including during instrumental gaps.
+  let low = 0;
+  let high = lines.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (lines[middle]![0]!.start <= time) low = middle + 1;
+    else high = middle;
+  }
+  const line = low - 1;
   if (line < 0) return null;
-  const words = lines[line];
-  if (!words) return null;
+  const words = lines[line]!;
+  if (time >= words[words.length - 1]!.end) return null;
   let visible = 0;
   let active = -1;
   for (let index = 0; index < words.length; index++) {
@@ -61,5 +71,7 @@ export function getLyricFrame(lines: ReadonlyArray<readonly LyricWord[]>, time: 
     if (word.start <= time) visible++;
     if (active < 0 && time >= word.start && time < word.end) active = index;
   }
-  return { line, visible, active };
+  return previous?.line === line && previous.visible === visible && previous.active === active
+    ? previous
+    : { line, visible, active };
 }
