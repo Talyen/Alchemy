@@ -153,7 +153,10 @@ export function ArtPanel(props: ArtPanelProps) {
                 idleClips={idleClips}
                 mirrorArt={
                   side === "enemy" &&
-                  (currentEnemy?.id === "stone-titan" ||
+                  (currentEnemy?.id === "mimic" ||
+                    currentEnemy?.id === "necromancer" ||
+                    currentEnemy?.id === "yeti" ||
+                    currentEnemy?.id === "stone-titan" ||
                     currentEnemy?.id === "earth-elemental" ||
                     currentEnemy?.id === "stone-golem")
                 }
