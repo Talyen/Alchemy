@@ -33,7 +33,8 @@ describe("enemy attack damage", () => {
         deathsDoorUsed: prevention !== "deaths-door",
         playerHealth: 2,
         playerMaxHealth: 30,
-        mana: prevention === "aetherward" ? 4 : 3,
+        mana: prevention === "aetherward" ? 8 : 3,
+        maxMana: prevention === "aetherward" ? 8 : 3,
         playerStatuses: { block: prevention === "block" ? 4 : 0, armor: prevention === "armor" ? 4 : 0 },
         gearEffects: {
           damageReductionPerMana: prevention === "aetherward" ? 1 : 0,

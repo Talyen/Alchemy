@@ -399,7 +399,8 @@ describe("enemy card effects", () => {
 describe("ability trait boundaries", () => {
   it.each(["bandit", "banshee"])("Aetherward preserves landed-hit reactions for %s", (enemy) => {
     const initial = enemyState(enemy, {
-      mana: 4,
+      mana: 8,
+      maxMana: 8,
       enemyHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ thorns: 3, armor: 4 }),
       difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }],
