@@ -68,7 +68,6 @@ function applyPoisonStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   preHitHealth: number,
-  allowPoisonBleedConversion = true,
   onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   let nextState = addEnemyStatus(state, "poison", actualDamage, { combatTexts });
@@ -77,7 +76,6 @@ function applyPoisonStatusRider(
     nextState,
     Math.min(actualDamage, preHitHealth),
     combatTexts,
-    allowPoisonBleedConversion,
     onPoisonBleedConversion,
   );
   return nextState;
@@ -88,7 +86,6 @@ export function applyPoisonTalentRiders(
   state: BattleState,
   damage: number,
   combatTexts: CombatTextEvent[],
-  allowPoisonBleedConversion = true,
   onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   let nextState = state;
@@ -101,11 +98,7 @@ export function applyPoisonTalentRiders(
       if (rollBattleChance(chance, nextState))
         nextState = applyScaledLeechHealing(nextState, computeLeechHeal(damage), combatTexts, { afflicted: true });
     }
-    if (
-      allowPoisonBleedConversion &&
-      onPoisonBleedConversion &&
-      rollBattleChance(nextState.talentEffects.poisonBleedDamageChance, nextState)
-    ) {
+    if (onPoisonBleedConversion && rollBattleChance(nextState.talentEffects.poisonBleedDamageChance, nextState)) {
       nextState = onPoisonBleedConversion(nextState, damage, combatTexts);
     }
   }
@@ -274,7 +267,6 @@ export function applyDamageStatuses(
   options: {
     cardLeech?: boolean;
     eligibility?: BattleState;
-    allowPoisonBleedConversion?: boolean;
     onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
     critical?: boolean;
     forgeBeforeHit?: number;
@@ -285,14 +277,7 @@ export function applyDamageStatuses(
     case "burn":
       return applyBurnStatusRider(state, actualDamage, combatTexts);
     case "poison":
-      return applyPoisonStatusRider(
-        state,
-        actualDamage,
-        combatTexts,
-        preHitHealth,
-        options.allowPoisonBleedConversion ?? true,
-        options.onPoisonBleedConversion,
-      );
+      return applyPoisonStatusRider(state, actualDamage, combatTexts, preHitHealth, options.onPoisonBleedConversion);
     case "bleed":
       return applyBleedStatusRider(
         state,

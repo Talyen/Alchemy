@@ -93,11 +93,6 @@ export function applyScaledLeechHealing(
   return applyLeechHealing(state, scaleLeechBase(state, rawAmount), combatTexts, options);
 }
 
-/** Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders. */
-function applyThunderstoneLeech(state: BattleState, damage: number, texts: CombatTextEvent[]): BattleState {
-  return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
-}
-
 /** Amount already includes Leech scaling; all riders use this restoration's own facts. */
 function resolveLeechResourceRewards(
   state: BattleState,
@@ -225,11 +220,12 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
         // the shared threshold and kill epilogue still closes this packet.
         riders: (damagedState, finalDamage, texts) => {
           const healthDamage = Math.max(0, previousHealth - damagedState.enemyHealth);
+          // Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders.
           const leeched =
             healthDamage > 0 &&
             state.enemyStatuses.poison > 0 &&
             rollBattleChance(state.gearEffects.natureLeechVsPoisoned, damagedState)
-              ? applyThunderstoneLeech(damagedState, healthDamage, texts)
+              ? applyScaledLeechHealing(damagedState, computeLeechHeal(healthDamage), texts)
               : damagedState;
           let rewarded = applyNatureManaRefund(leeched, finalDamage, texts);
           rewarded = applyLuckyCloverGold(rewarded, healthDamage, texts);

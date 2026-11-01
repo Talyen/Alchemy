@@ -22,10 +22,8 @@ export function resolveTypedEnemyHit(
   eligibility = state,
   options: {
     critical?: boolean;
-    allowPoisonBleedConversion?: boolean;
     onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
     onPoisonDamage?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
-    eligibility?: BattleState;
   } = {},
 ): { state: BattleState; facts: HitFacts } {
   const { state: damaged, facts } = applyHitHealth(state, resolvedDamage, eligibility, options.critical ?? false);
@@ -41,7 +39,7 @@ export function resolveTypedEnemyHit(
   // Buildup can trigger another hit. Resolve it before thresholds and once-only kill rewards.
   next = applyDamageStatuses(next, effect, resolvedDamage, combatTexts, facts.previousHealth, {
     ...options,
-    eligibility: options.eligibility ?? eligibility,
+    eligibility,
   });
   if (effect.damageType === "poison" && options.onPoisonDamage) {
     next = options.onPoisonDamage(next, resolvedDamage, combatTexts);
