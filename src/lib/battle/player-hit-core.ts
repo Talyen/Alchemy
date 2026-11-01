@@ -51,12 +51,11 @@ type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 export type FollowUpHitRequest =
   | Readonly<{
       source: "player-follow-up";
-      damageType: "nature";
+      damageType: DamageType;
       amount: number;
       /** Health lost to this packet before threshold healing or other reactions. */
-      onDamageDealt: (amount: number) => void;
+      onDamageDealt?: (amount: number) => void;
     }>
-  | Readonly<{ source: "player-follow-up"; damageType: DamageType; amount: number }>
   | Readonly<{ source: "talent-fixed" | "talent-derived"; damageType: DamageType; amount: number }>;
 
 export type CardHitRequest = Readonly<{
@@ -78,16 +77,23 @@ export type HitRequest =
   | Readonly<{ source: "reflected-holy"; blockLost: number }>
   | Readonly<{ source: "attack-purge" }>;
 
+function applyChanceDamageDraw(
+  state: BattleState,
+  chance: number,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (healthDamage <= 0 || !rollBattleChance(chance, state)) return state;
+  const drawn = applyDrawResult(state, drawFromState(state, 1), combatTexts);
+  return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
+}
+
 export function applyBleedDamageDraw(
   state: BattleState,
   healthDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (healthDamage <= 0 || !rollBattleChance(state.talentEffects.drawOnBleedDamageChance, state)) {
-    return state;
-  }
-  const drawn = applyDrawResult(state, drawFromState(state, 1), combatTexts);
-  return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
+  return applyChanceDamageDraw(state, state.talentEffects.drawOnBleedDamageChance, healthDamage, combatTexts);
 }
 
 /** One roll per Burn packet that actually removes enemy Health. */
@@ -96,9 +102,7 @@ export function applyBurnDamageDraw(
   healthDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (healthDamage <= 0 || !rollBattleChance(state.trinketEffects.tatteredPagesBurnDrawChance, state)) return state;
-  const drawn = applyDrawResult(state, drawFromState(state, 1), combatTexts);
-  return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
+  return applyChanceDamageDraw(state, state.trinketEffects.tatteredPagesBurnDrawChance, healthDamage, combatTexts);
 }
 
 export function applyElementalDamageManaRestore(

@@ -20,7 +20,7 @@ import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { emitDamageText } from "./combat-text-events";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";
+import { resolvePoisonBleedFollowUp, tryPoisonStunProc } from "./follow-up-hit-resolution";
 import { payPendingBleedLeech } from "./stun-leech-resolution";
 import { dealEnemyDotTick, projectEnemyDotDamage } from "./dot-resolve";
 import { processContagion } from "./enemy-healing";
@@ -75,14 +75,7 @@ export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent
     );
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState, hit) => {
-    const afterRiders = applyPoisonTalentRiders(
-      nextState,
-      hit.healthDamage,
-      combatTexts,
-      true,
-      (current, damage, texts) =>
-        resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
-    );
+    const afterRiders = applyPoisonTalentRiders(nextState, hit.healthDamage, combatTexts, resolvePoisonBleedFollowUp);
     return tryPoisonStunProc(afterRiders, finalDamage, combatTexts);
   });
 }
