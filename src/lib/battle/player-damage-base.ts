@@ -79,11 +79,11 @@ function computeBaseRawAmount(
     amount = effect.amount + forgeBonus;
   }
   if (card?.tags?.includes("archery")) {
+    if (amount > 0) amount += state.talentEffects.archeryDamageBonus;
     amount += state.talentEffects.flatArrowDamage + state.gearEffects.flatArrowDamage;
     if (readCombatFlag(state, "archerySecondCardActive")) {
       amount += state.talentEffects.archerySecondCardDamage;
     }
-    if (state.playerStatuses.block === 0) amount += state.talentEffects.archeryDamageWithoutBlock;
   }
   return amount;
 }

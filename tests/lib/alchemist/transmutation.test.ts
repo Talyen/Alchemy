@@ -158,7 +158,7 @@ it("infuses Archery damage without changing Exorcism's Health cost", () => {
   const state = makeState({ playerHealth: 20, playerStatuses: defaultPlayerStatusValues({ burn: 4 }) });
   const before = applyCardEffects(state, source, []);
   const after = applyCardEffects(
-    { ...state, talentEffects: { ...state.talentEffects, archeryDamageWithoutBlock: 3 } },
+    { ...state, talentEffects: { ...state.talentEffects, archeryDamageBonus: 3 } },
     result,
     [],
   );

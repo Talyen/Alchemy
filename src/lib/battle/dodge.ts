@@ -32,6 +32,7 @@ function getPlayerDodgeChance(
     state.gearEffects.dodgeChance +
     state.talentEffects.dodgeChance +
     state.dodgeChanceFromDamage;
+  if (state.playerStatuses.block === 0) chance += state.talentEffects.dodgeChanceWithoutBlock;
   if (hasEncounterBenefit(state, "elusive")) chance += LABYRINTH_MODIFIER_CONFIG.playerDodgeBonusPercent;
   if (state.gearEffects.archeryDodgeAndDraw > 0 && state.uniqueGear.wrenflightActive)
     chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChancePercent;

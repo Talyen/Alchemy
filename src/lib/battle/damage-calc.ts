@@ -19,7 +19,7 @@ import {
 } from "./status-helpers";
 import type { BattleState } from "./types";
 import { hasEncounterBenefit } from "./encounter-trait-state";
-import { applySunderingArmorRemoval } from "./enemy-mitigation-state";
+import { applySunderingArmorRemoval, reduceEnemyArmor } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
 function applyCrit(
@@ -145,12 +145,11 @@ function resolveDamageAfterMitigation(
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
   let nextState = applySunderingArmorRemoval(stateAfterBlock, effect.damageType);
-  // Ignoring Armor changes this hit's mitigation; only Sundering removes stacks.
+  if (damageAfterBlock > 0 && card?.tags?.includes("archery"))
+    nextState = reduceEnemyArmor(nextState, state.talentEffects.archeryArmorRemoval);
+  // Ignored Armor remains in place for subsequent attacks.
   const ignoredArmor =
-    state.gearEffects.armorPiercing +
-    (card?.tags?.includes("archery")
-      ? state.gearEffects.archeryArmorPiercing + state.talentEffects.archeryArmorPiercing
-      : 0);
+    state.gearEffects.armorPiercing + (card?.tags?.includes("archery") ? state.gearEffects.archeryArmorPiercing : 0);
   const effectiveArmor =
     isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor
       ? Math.max(0, nextState.enemyMitigation.armor - ignoredArmor)

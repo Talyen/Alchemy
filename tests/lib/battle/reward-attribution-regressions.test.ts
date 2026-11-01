@@ -46,12 +46,12 @@ describe("reward attribution regressions", () => {
     expect(result.gold).toBe(1);
   });
 
-  it("Piercing bypasses Armor without destroying it on a fully blocked hit", () => {
+  it("Piercing removes Armor only when an Archery hit passes Block", () => {
     const state = patchBattleState({
       rng: () => 0.99,
       enemyMitigation: { armor: 6, block: 20 },
       gearEffects: { armorPiercing: 2, archeryArmorPiercing: 1 },
-      talentEffects: { archeryArmorPiercing: 1 },
+      talentEffects: { archeryArmorRemoval: 1, archeryDamageBonus: 1 },
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 10 };
     const card = makeTestCard({ tags: ["archery"], effects: [effect] });
@@ -63,8 +63,8 @@ describe("reward attribution regressions", () => {
       effect,
       card,
     );
-    expect(unblocked.modifiedDamage).toBe(8);
-    expect(unblocked.nextState.enemyMitigation.armor).toBe(6);
+    expect(unblocked.modifiedDamage).toBe(9);
+    expect(unblocked.nextState.enemyMitigation.armor).toBe(5);
   });
 
   it("Overflow does not award Block from kill rewards triggered by a Potion's healing", () => {

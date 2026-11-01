@@ -71,11 +71,13 @@ export const talentRows = [
     "Archery deals double damage against enemies at full Health",
     { archeryDoubledVsHighHealth: true },
   ),
-  archery("archery-piercing-shot", "Piercing Shot")("Aperture", "Archery cards ignore 1 Armor", {
-    archeryArmorPiercing: add(1),
-  }),
-  archery("archery-quickdraw", "Skirmisher")("Zap", "Archery deals 1 additional damage while you have no Block", {
-    archeryDamageWithoutBlock: 1,
+  archery("archery-piercing-shot", "Piercing Shot")(
+    "Aperture",
+    "Archery damage removes 1 Armor and deals 1 additional damage",
+    { archeryArmorRemoval: add(1), archeryDamageBonus: add(1) },
+  ),
+  archery("archery-quickdraw", "Skirmisher")("Zap", "While you have no Block, gain 15% Dodge chance", {
+    dodgeChanceWithoutBlock: 15,
   }),
   archery("archery-kill-shot", "Kill Shot")(
     "Crosshair",
