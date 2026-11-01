@@ -94,8 +94,8 @@ so a second portrait never shows around the video. Neither video nor its static
 fallback uses cover/crop scaling. Their extra width retains the same base
 frame height as the hero's 3:4 portrait and other enemies' 4:3
 portraits. Hero and enemy frames keep that height through turn changes and hover;
-the shining border indicates the active turn. Earth Elemental and Stone Titan battle artwork is
-mirrored toward the hero, including available idle playback and the defeat image. Collections, Destination,
+the shining border indicates the active turn. Enemy portraits and boss idle clips are
+oriented in their source assets to face the hero without runtime mirroring. Collections, Destination,
 Labyrinth, inspection and bosses without clips retain their static artwork.
 
 ## Battle feedback

@@ -68,7 +68,7 @@ The preview's **Boss song** selector opens the imported snapshot directly.
 
 ## Export another boss
 
-Use distinct evidence directories for Forge Golem, Frostwarden and Iron Bear:
+Use distinct evidence directories for Forge Golem, Frostwarden, Iron Bear, Seraph and Stone Titan:
 
 ```sh
 npm run lyrics:tool -- phrase-align.py --audio 'public/Music/The Forge Golem.mp3' --lyrics scripts/lyrics-trial/forge-golem.txt --output-dir reports/boss-lyrics/forge-golem --snapshot reports/boss-lyrics/forge-golem/candidate.json
