@@ -40,7 +40,7 @@ describe("gear affixes", () => {
     expect(rollAffixValue(affix, "astral", () => 0)).toBe(1);
     expect(rollAffixValue(affix, "astral", () => 0.999)).toBe(1);
 
-    const oldRoll = [{ id: "armor-on-consume", value: 2 }];
+    const oldRoll = [{ id: "armor-on-consume" as const, value: 2 }];
     expect(normalizeAffixRolls(oldRoll, "astral")).toEqual([{ id: "armor-on-consume", value: 1 }]);
     expect(effectsForAffixRolls(oldRoll, "astral").armorOnConsume).toBe(1);
     expect(getGearAffixTooltipEntries(oldRoll, "astral")[0]?.value).toBe(1);
