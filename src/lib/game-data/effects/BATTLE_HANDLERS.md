@@ -86,7 +86,7 @@ owns the typed utility-effect table shared by live handlers and damage inspectio
 Health, Mana, Mana Crystals, Gold, player statuses, cleansing, Armor removal,
 Companion summoning/buffs, and armed action flags. It owns amount calculations,
 Potion potency, conditional eligibility, resource limits, and effect feedback.
-`effect-handlers/utility-handlers.ts` supplies live reactions and seeded status
+`battle/effect-handlers/utility-handlers.ts` supplies live reactions and seeded status
 choices. Reaction scoring uses the same table with explicit nominal healing, suppressed reward callbacks, and pre-enumerated status choices; it retains probability-weighted correlated alternatives without drawing live RNG. `damage.ts` owns attack flag preparation for both combat and reaction scoring. Inspection calls the production action resolver with an isolated finite
 choice source; it does not assemble another utility or attack recipe.
 

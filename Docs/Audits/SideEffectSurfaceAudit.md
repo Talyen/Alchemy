@@ -42,6 +42,7 @@ connected repair under one primary finding per the [shared contract](README.md#p
 | Effectful module initialization                                          | Does the entrypoint require it, or should an explicit lifecycle own it?                                                                                                        |
 
 Use existing diagnostics for banned calls: `alchemy/no-lib-fetch`,
-`alchemy/no-unowned-web-storage` and `alchemy/no-render-math-random`. An allowed
+`alchemy/no-unowned-web-storage` and `alchemy/restricted-syntax` (including
+unseeded `Math.random`). An allowed
 folder does not prove seam quality; confirm lost errors, partial mutation,
 uncontrolled lifetime or hidden coupling through consumers.
