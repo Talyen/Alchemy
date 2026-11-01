@@ -1,4 +1,6 @@
-import { takeRandomItem } from "@/lib/rng";
+import { GEAR_HERO_AFFINITY_AFFIX_WEIGHT } from "@/lib/game-constants";
+import type { KeywordId } from "@/lib/game-data";
+import { pickWeighted, takeRandomItem } from "@/lib/rng";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import type { GearDefinition } from "./definitions";
@@ -36,7 +38,12 @@ export function buildEligibleAffixPool(
   return createEligibleAffixPool(definition, excludedIds);
 }
 
-export function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {
+export function rollAffixes(
+  definition: GearDefinition,
+  count: number,
+  rng: () => number,
+  heroKeywords: readonly KeywordId[] = [],
+): GearAffixRoll[] {
   if (count === 0) return [];
   const remaining = createEligibleAffixPool(definition);
   const effectiveCount = Math.min(count, remaining.length);
@@ -44,8 +51,15 @@ export function rollAffixes(definition: GearDefinition, count: number, rng: () =
   const rarity = definition.rarity;
 
   for (let pick = 0; pick < effectiveCount; pick += 1) {
-    const chosen = takeRandomItem(remaining, rng);
+    const chosen = heroKeywords.length
+      ? pickWeighted(
+          remaining,
+          (affix) => (affixMatchesAffinity(affix, heroKeywords) ? GEAR_HERO_AFFINITY_AFFIX_WEIGHT : 1),
+          rng,
+        )
+      : takeRandomItem(remaining, rng);
     if (!chosen) break;
+    if (heroKeywords.length) remaining.splice(remaining.indexOf(chosen), 1);
     selected.push({ id: chosen.id, value: rollAffixValue(chosen, rarity, rng) });
   }
 

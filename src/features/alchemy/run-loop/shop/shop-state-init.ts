@@ -24,6 +24,7 @@ import {
   selectRewardCards,
   trinketLibrary,
   type BattleCard,
+  type KeywordId,
   type TrinketEntry,
 } from "@/lib/game-data";
 import {
@@ -99,6 +100,7 @@ export function resampleEquipmentShopOfferings(
   modifiers: readonly EncounterRewardTraitId[] = [],
   currentItems: readonly GearInstance[] = [],
   createId: () => string = createInstanceId,
+  heroKeywords: readonly KeywordId[] = [],
 ): GearInstance[] {
   const baseItems: string[] = [];
   if (modifiers.includes("bowyer")) baseItems.push("shortbow", "longbow", "recurve-bow");
@@ -111,7 +113,16 @@ export function resampleEquipmentShopOfferings(
   const novelBases = currentBases.size ? baseItems.filter((id) => !currentBases.has(id)) : baseItems;
   const sample = (count: number, baseItemIds: readonly string[]) => {
     if (modifiers.includes("masterwork")) {
-      return generateGearRewardChoicesForRarity(count, "astral", rng, ownedUniqueIds, baseItemIds, true, createId);
+      return generateGearRewardChoicesForRarity(
+        count,
+        "astral",
+        rng,
+        ownedUniqueIds,
+        baseItemIds,
+        true,
+        createId,
+        heroKeywords,
+      );
     }
     return generateLootGearChoices(
       count,
@@ -126,6 +137,7 @@ export function resampleEquipmentShopOfferings(
       baseItemIds,
       true,
       createId,
+      heroKeywords,
     );
   };
   const novel = sample(Math.min(EQUIPMENT_SHOP_OFFERED, novelBases.length), novelBases);
@@ -179,6 +191,7 @@ export function createInitialEquipmentShopState(
   ownedUniqueIds?: ReadonlySet<string>,
   modifiers: readonly EncounterRewardTraitId[] = [],
   createId: () => string = createInstanceId,
+  heroKeywords: readonly KeywordId[] = [],
 ): EquipmentShopState {
   return {
     ...emptyEquipmentShopState(),
@@ -190,6 +203,7 @@ export function createInitialEquipmentShopState(
       modifiers,
       [],
       createId,
+      heroKeywords,
     ),
   };
 }

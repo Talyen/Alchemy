@@ -17,6 +17,48 @@ import { createSeededRng } from "@/lib/rng";
 const weights = resolveLootWeights({ source: "equipment", progress: { depth: 24, highestCompletedDifficulty: null } });
 
 describe("gear generation", () => {
+  it("passes hero affinities through ordinary and forced gear generation without extra draws", () => {
+    const generators = [
+      (rng: () => number, keywords: readonly ["burn"] | readonly []) =>
+        generateGearInstanceForBaseItem("ruby-ring", rng, "astral", () => "item", keywords),
+      (rng: () => number, keywords: readonly ["burn"] | readonly []) =>
+        generateGearRewardChoicesForRarity(
+          1,
+          "astral",
+          rng,
+          new Set(),
+          ["ruby-ring"],
+          false,
+          () => "item",
+          keywords,
+        )[0],
+      (rng: () => number, keywords: readonly ["burn"] | readonly []) =>
+        generateLootGearChoices(
+          1,
+          rng,
+          { ...weights, basic: 0, astral: 1, unique: 0 },
+          new Set(),
+          ["ruby-ring"],
+          false,
+          () => "item",
+          keywords,
+        )[0],
+    ];
+    for (const generate of generators) {
+      let changed = false;
+      for (let seed = 1; seed <= 20; seed++) {
+        const plainRng = createSeededRng(seed);
+        const heroRng = createSeededRng(seed);
+        const plain = generate(plainRng, []);
+        const hero = generate(heroRng, ["burn"]);
+        expect(hero?.definitionId).toBe(plain?.definitionId);
+        if (JSON.stringify(hero?.affixes) !== JSON.stringify(plain?.affixes)) changed = true;
+        expect(heroRng()).toBe(plainRng());
+      }
+      expect(changed).toBe(true);
+    }
+  });
+
   it("creates independently owned rolls and canonical empty Unique instances", () => {
     const rolls = [{ id: "flat-physical" as const, value: 1 }];
     const ordinary = createGearInstance(gearDefinitions["dagger-basic"]!, rolls, () => "ordinary");

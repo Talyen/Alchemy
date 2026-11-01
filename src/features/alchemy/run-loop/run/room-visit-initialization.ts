@@ -1,3 +1,4 @@
+import { characters } from "@/lib/game-data";
 import {
   setAlchemyVisit,
   clearMysteryVisitState,
@@ -65,6 +66,7 @@ export function initializeShopVisit(draft: RunTransaction, kind: ShopActivity): 
           getOwnedUniqueDefinitionIds(snapshotTransactionValue(draft.gear.inventories)),
           modifiers,
           createDraftInstanceIdSource(draft),
+          characters[draft.run.activeRun.characterId].keywords,
         ),
       );
       break;

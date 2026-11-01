@@ -1,3 +1,4 @@
+import { characters } from "@/lib/game-data";
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/commands/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
@@ -43,6 +44,7 @@ export function createEquipmentShopCommands(gameSession: GameSession) {
           modifiers,
           state.gear,
           createDraftInstanceIdSource(draft),
+          characters[draft.run.activeRun.characterId].keywords,
         ),
       }),
     },

@@ -25,3 +25,4 @@ export const GEAR_AFFIX_COUNT = {
 } as const;
 
 export const GEAR_AFFIX_COUNT_MIN_WEIGHT = 0.8;
+export const GEAR_HERO_AFFINITY_AFFIX_WEIGHT = 1.5;
