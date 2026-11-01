@@ -90,22 +90,18 @@ export function dispatchGameplayCommand<T>(
     if (outcome.kind === "accepted") {
       const published = next === base ? base : { ...next, revision: base.revision + 1 };
       const progress = runtime.progressCompletion;
-      const persistedChange =
-        (progress.hasRetryDriver || progress.read().kind !== "idle") && !gameplayPersistedInputsEqual(base, published);
-      const prepareProgress = () => {
-        const progress = runtime.progressCompletion;
-        if (options?.restore) {
-          const pending = progress.hasRetryDriver || progress.read().kind !== "idle";
-          progress.replace(pending ? published.revision : undefined, base);
-        } else if (persistedChange) {
-          progress.mark(published.revision, false, base);
-        }
-      };
-      const prepareObservers = () => {
-        if (hydrateSettings) hydrateSettings(prepareProgress);
-        else prepareProgress();
-      };
-      if (published !== base || options?.restore) runtime.gameplay.commit(published, prepareObservers);
+      if (options?.restore) {
+        runtime.gameplay.commit(published, () => {
+          const prepareProgress = () => progress.replace(progress.isTracking ? published.revision : undefined, base);
+          if (hydrateSettings) hydrateSettings(prepareProgress);
+          else prepareProgress();
+        });
+      } else if (published !== base) {
+        const persistedChange = progress.isTracking && !gameplayPersistedInputsEqual(base, published);
+        runtime.gameplay.commit(published, () => {
+          if (persistedChange) progress.mark(published.revision, false, base);
+        });
+      }
     }
   } finally {
     runtime.inCommand = false;

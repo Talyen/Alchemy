@@ -1,39 +1,46 @@
-import type { GameSession } from "./game-session-types";
+import type { UISound } from "@/lib/audio";
+import type { GameSession, SessionFeedback } from "./game-session-types";
 import { sessionRuntime } from "./session-runtime";
 import { assertSessionOwnership, bindSessionCapabilities } from "./session-capability-graph";
 export { assertSessionOwnership, bindSessionCapabilities } from "./session-capability-graph";
 
-export function sessionFeedback(gameSession: GameSession) {
+const SAVE_GATED_UI_SOUNDS: ReadonlySet<UISound> = new Set([
+  "shopBuy",
+  "shopRefresh",
+  "shopRemove",
+  "campfireRest",
+  "alchemistMix",
+  "talentUnlock",
+  "campBrew",
+  "craft",
+  "bond",
+  "salvage",
+  "newRun",
+  "draftComplete",
+]);
+
+const sessionFeedbacks = new WeakMap<GameSession, SessionFeedback>();
+
+export function sessionFeedback(gameSession: GameSession): SessionFeedback {
   const runtime = sessionRuntime(gameSession);
-  const completion = runtime.progressCompletion;
-  return bindSessionCapabilities(gameSession, {
-    ...runtime.feedback,
-    playUISound: (...args: Parameters<typeof runtime.feedback.playUISound>) => {
-      if (
-        [
-          "shopBuy",
-          "shopRefresh",
-          "shopRemove",
-          "campfireRest",
-          "alchemistMix",
-          "talentUnlock",
-          "campBrew",
-          "craft",
-          "bond",
-          "salvage",
-          "newRun",
-          "draftComplete",
-        ].includes(args[0])
-      )
-        completion.afterSaved(() => runtime.feedback.playUISound(...args));
-      else runtime.feedback.playUISound(...args);
-    },
-    playGoldGain: () => completion.afterSaved(() => runtime.feedback.playGoldGain()),
-    playGoldSpend: () => completion.afterSaved(() => runtime.feedback.playGoldSpend()),
-    playVictory: () => completion.afterSaved(() => runtime.feedback.playVictory()),
-    playRunVictory: () => completion.afterSaved(() => runtime.feedback.playRunVictory()),
-    playDefeat: () => completion.afterSaved(() => runtime.feedback.playDefeat()),
-  });
+  let feedback = sessionFeedbacks.get(gameSession);
+  if (!feedback) {
+    const completion = runtime.progressCompletion;
+    feedback = bindSessionCapabilities(gameSession, {
+      ...runtime.feedback,
+      playUISound: (...args: Parameters<typeof runtime.feedback.playUISound>) => {
+        if (SAVE_GATED_UI_SOUNDS.has(args[0])) completion.afterSaved(() => runtime.feedback.playUISound(...args));
+        else runtime.feedback.playUISound(...args);
+      },
+      playGoldGain: () => completion.afterSaved(() => runtime.feedback.playGoldGain()),
+      playGoldSpend: () => completion.afterSaved(() => runtime.feedback.playGoldSpend()),
+      playVictory: () => completion.afterSaved(() => runtime.feedback.playVictory()),
+      playRunVictory: () => completion.afterSaved(() => runtime.feedback.playRunVictory()),
+      playDefeat: () => completion.afterSaved(() => runtime.feedback.playDefeat()),
+    });
+    sessionFeedbacks.set(gameSession, feedback);
+  }
+  return feedback;
 }
 
 export function sessionClock(gameSession: GameSession) {
@@ -67,9 +74,7 @@ export function guardProgressAction<Args extends unknown[], Result>(
 }
 
 export function afterProgressSaved(gameSession: GameSession, run: () => void) {
-  const completion = sessionRuntime(gameSession).progressCompletion;
-  if (completion.hasRetryDriver || completion.read().kind !== "idle") completion.afterSaved(run);
-  else run();
+  sessionRuntime(gameSession).progressCompletion.afterSaved(run);
 }
 
 /** Persistence receives runtime metadata, never a writable gameplay state. */
@@ -83,5 +88,6 @@ export function readSessionRevision(gameSession: GameSession): number {
 
 export function markSessionProgress(gameSession: GameSession, force = false) {
   const runtime = sessionRuntime(gameSession);
-  runtime.progressCompletion.mark(runtime.gameplay.reads.getState().revision, force, runtime.gameplay.reads.getState());
+  const state = runtime.gameplay.reads.getState();
+  runtime.progressCompletion.mark(state.revision, force, state);
 }

@@ -94,7 +94,7 @@ the starting point rather than adding one test per field.
 
 ### Defaults and resume normalization
 
-`createDefaultSaveData()` in `storage/defaults.ts` clones a frozen schema-derived
+`createDefaultSaveData()` in `shared/storage/defaults.ts` clones a frozen schema-derived
 singleton for each caller. The save contract test protects cross-load isolation.
 Update the affected defaults and fixtures together:
 
@@ -112,7 +112,7 @@ Repair runs in two stages:
    Gold override, autoplay derivation and orphan-loadout pruning. Valid finite,
    nonnegative combat Gold overrides purse Gold without a repair warning.
 2. **Codec hydration:** `hydrateGameplayPersistenceFields` in
-   `persistence/persistence-hydration.ts` prunes unknown Companions, recomputes
+   `shared/stores/persistence/persistence-hydration.ts` prunes unknown Companions, recomputes
    Homestead effects and unions Unique ownership. Complete-save restore composes
    this operation in its existing transaction; `hydrateAlchemyPersistenceFields`
    is the separate fields-only wrapper.

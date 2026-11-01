@@ -133,9 +133,9 @@ Pure engine tests can continue to use the execution shape directly.
 Start with [brewing and Transmutation rules](./GAME_RULES.md#brewing-and-transmutation)
 and [visit interaction](./UI_BROWSING.md#campfire-and-transmutation).
 
-1. Initialize offers in `run/room-visit-initialization.ts` inside room entry using
+1. Initialize offers in `run-loop/run/room-visit-initialization.ts` inside room entry using
    the saved events stream. Rendering, Back and resume never regenerate a visit.
-2. Change actions in `navigation/alchemy-commands.ts`. Validate activity,
+2. Change actions in `run-loop/navigation/alchemy-commands.ts`. Validate activity,
    completion, eligibility and selected source/offer snapshots before writing;
    payment, deck replacement, discovery and visit use share one synchronous command.
 3. Update the [visit codec](../src/features/alchemy/shared/storage/MIGRATIONS.md#alchemy-visits-and-modified-cards)

@@ -88,7 +88,7 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
   starting deck, including after a Wildcard starter draft. Core columns are 0–3;
   side rooms use columns -1 and 4. `currentNodeId` records the last completed room.
 - Add modifiers in `content-systems/labyrinth/trait-catalog.ts`;
-  `labyrinth/modifiers.ts` owns node eligibility, incompatible pairs, and exclusion
+  `content-systems/labyrinth/modifiers.ts` owns node eligibility, incompatible pairs, and exclusion
   of superseded modifiers from new rolls. Preserve existing saved IDs. Write
   descriptions of at most ten words, omit periods, use one theme, and never call
   a theme a “keyword” (enforced by `src/lib/content-validation/validators-typography.ts`; run `npm run content:audit`).
@@ -106,9 +106,9 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
 
 Start with [battle controllers](./BATTLE_CONTROLLERS.md#battle-path).
 
-1. Change selection in `battle/playable-hand.ts` or the shared
+1. Change selection in `run-loop/battle/playable-hand.ts` or the shared
    `src/lib/battle/autoplay-policy.ts`; change scheduling in
-   `battle/autoplay-driver.ts`. Live scoring changes gameplay and simulation.
+   `run-loop/battle/autoplay-driver.ts`. Live scoring changes gameplay and simulation.
 2. Keep gameplay commits in command owners and presentation work in the route's
    playback lifetime. Preserve [automation, draw and settlement rules](./BATTLE_CONTROLLERS.md#playback-and-automation-rules).
 3. For visual changes, use [battle feedback](./UI_BATTLE.md#battle-feedback) and
