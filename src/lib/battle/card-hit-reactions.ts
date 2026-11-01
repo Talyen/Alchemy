@@ -9,6 +9,7 @@ import {
   applyLifestealAndPlayerHitTriggers,
   applyTalentHitConversions,
   resolveFollowUpHit,
+  resolvePoisonBleedFollowUp,
   tryPoisonStunProc,
 } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -75,8 +76,7 @@ export function applyCardHitReactions(
     critical: facts.critical,
     forgeBeforeHit: eligibility.playerStatuses.forge,
     forgeTriggers: request.forgeTriggers,
-    onPoisonBleedConversion: (current, damage, texts) =>
-      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
+    onPoisonBleedConversion: resolvePoisonBleedFollowUp,
   });
   if (isPlayerDefeated(nextState)) return nextState;
   if (effect.detonateAllBurn) {

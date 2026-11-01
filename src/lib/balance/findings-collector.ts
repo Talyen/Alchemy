@@ -43,6 +43,8 @@ function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
   return findings;
 }
 
+const TALENT_KEYWORD_BY_ID = new Map(talentPool.map((talent) => [talent.id, talent.keywordId]));
+
 export function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
   return [
     ...collectEncounterFindings(model),
@@ -53,9 +55,7 @@ export function collectBalanceFindings(model: BalanceReportModel): BalanceFindin
     ...collectPairedFindings(model.talents, "talent"),
     ...getTalentTreeKeywordIds().flatMap((keyword) =>
       collectPairedFindings(
-        model.talentTreeMembers.filter(
-          (row) => talentPool.find((talent) => talent.id === row.id)?.keywordId === keyword,
-        ),
+        model.talentTreeMembers.filter((row) => TALENT_KEYWORD_BY_ID.get(row.id) === keyword),
         "talent",
         `${titleFor("keyword", keyword)} full tree`,
       ),

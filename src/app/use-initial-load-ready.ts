@@ -7,6 +7,10 @@ import { preloadImagesInBatches } from "@/lib/preload/image";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { markStartupReady } from "@/lib/performance/startup-marks";
 
+const essentialArtSet = new Set(essentialGameArt);
+const deferredGearArt = allGameArt.filter((src) => !essentialArtSet.has(src));
+const essentialArtCount = essentialGameArt.reduce((count, src) => count + Number(Boolean(src)), 0);
+
 export function useInitialLoadReady({
   minDurationMs = INITIAL_LOAD_MIN_DURATION_MS,
   bootstrapReady = false,
@@ -30,11 +34,8 @@ export function useInitialLoadReady({
     const loadLifetime = new AbortController();
 
     function preloadDeferredGearArt() {
-      if (cancelled) return;
-      const essential = new Set(essentialGameArt);
-      const deferred = allGameArt.filter((src) => !essential.has(src));
-      if (deferred.length === 0) return;
-      void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE, undefined, loadLifetime.signal).catch(
+      if (cancelled || deferredGearArt.length === 0) return;
+      void preloadImagesInBatches(deferredGearArt, IMAGE_PRELOAD_BATCH_SIZE, undefined, loadLifetime.signal).catch(
         (error: unknown) => {
           logError("Deferred art preload failed", "other", { error: String(error) });
         },
@@ -72,10 +73,7 @@ export function useInitialLoadReady({
       };
     }
 
-    let loadState = createStartupLoadState(
-      essentialGameArt.reduce((count, src) => count + Number(Boolean(src)), 0),
-      initialBootstrapReadyRef.current,
-    );
+    let loadState = createStartupLoadState(essentialArtCount, initialBootstrapReadyRef.current);
     let rafId = 0;
     let published = -1;
 
@@ -133,7 +131,7 @@ export function useInitialLoadReady({
 }
 
 function waitForFonts(signal: AbortSignal) {
-  if (!("fonts" in document)) return Promise.resolve();
+  if (typeof document === "undefined" || !("fonts" in document)) return Promise.resolve();
   if (signal.aborted) return Promise.resolve();
   return new Promise<void>((resolve) => {
     let settled = false;

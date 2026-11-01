@@ -16,6 +16,7 @@ import type { PairedDelta, RateCell } from "./report-rankings";
 import { talentsInTreeOrder } from "./talent-preset";
 
 const percent = formatPercent;
+const TALENT_KEYWORD_BY_ID = new Map(talentPool.map((talent) => [talent.id, talent.keywordId]));
 
 function rateCells(cell: RateCell, enemyType?: ReportEnemyType): string {
   const winTarget = enemyType ? `<div class="meta">Target ${formatWinRateBand(enemyType)}</div>` : "";
@@ -160,7 +161,7 @@ ${getTalentTreeKeywordIds()
     pairedSection(
       `${titleFor("keyword", keyword)} (${talentsInTreeOrder(keyword).length} talents)`,
       "",
-      model.talentTreeMembers.filter((row) => talentPool.find((talent) => talent.id === row.id)?.keywordId === keyword),
+      model.talentTreeMembers.filter((row) => TALENT_KEYWORD_BY_ID.get(row.id) === keyword),
       "talent",
     ),
   )

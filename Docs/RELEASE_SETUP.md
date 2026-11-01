@@ -53,11 +53,13 @@ When Steam ID verification permits page setup, complete the Content Survey with
 [confirmed provenance](../THIRD_PARTY_NOTICES.md). Use concise, accurate wording,
 for example:
 
-> AI tools were used during development to create the game's artwork, music,
-> sound effects, writing and localization. All AI content is pre-generated;
-> the game does not generate AI content during gameplay.
+> AI tools were used during development to assist with coding and to create
+> artwork, music, in-game descriptions, and localization. The game does not
+> generate AI content during gameplay.
 
-Include AI-assisted localization in the survey when used. Valve's
+Sound effects are not AI-generated, per the owner's later clarification; their
+sources and rights still require the provenance review. Include AI-assisted
+localization in the survey when used. Valve's
 [Content Survey](https://partner.steamgames.com/doc/gettingstarted/contentsurvey)
 requires disclosure of shipped player-consumed AI content and adequate rights;
 it does not require a public per-asset rights inventory. Keep the survey current
@@ -161,6 +163,10 @@ interaction primitives or changing Escape ordering. Published mapping changes
 also require [physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence).
 
 ## Steam listing baseline (Windows)
+
+The selected [Steam store-page assets and publishing notes](../steam/store-page/README.md)
+include capsules, gameplay screenshots, artwork masters and the unapproved
+store-copy proposal. Complete the reviews recorded there before submission.
 
 These are the current player-facing store assumptions, not values derived from
 Electron configuration. Revalidate them on representative minimum-spec

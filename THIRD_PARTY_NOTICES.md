@@ -4,13 +4,14 @@ Alchemy’s original code and content use the license described in
 [LICENSE.md](./LICENSE.md). Third-party software and content retain their own
 licenses; nothing in the Alchemy license overrides those terms.
 
-On October 23, 2026, Ryan McIntire confirmed that all original game content,
-artwork, music and sound assets were created by him using AI tools, that the
-applicable tools/accounts permitted commercial use at creation, and that no
-third-party samples or source material were used. All AI content is prepared
-during development; the game does not generate AI content during play. This
-owner confirmation supersedes the earlier unresolved audio provenance notes.
-Third-party fonts and software retain the notices below.
+On October 23, 2026, Ryan McIntire confirmed that original game artwork and
+music were created by him using AI tools, that the applicable tools/accounts
+permitted commercial use at creation, and that no third-party samples or source
+material were used for those assets. He later clarified that sound effects are
+not AI-generated. Their actual sources and distribution terms require review;
+the earlier AI-audio provenance assertion must not be relied on for sound
+effects. AI content is prepared during development; the game does not generate
+AI content during play. Third-party fonts and software retain the notices below.
 
 ## Software dependencies
 
@@ -35,15 +36,15 @@ Every third-party art, audio, music, or font source must be recorded before a
 public release. Keep one row per source pack or licensor and link the local
 license or receipt when redistribution terms are not public.
 
-| Asset group                                          | Source / licensor                                                                | License or permission                                      | Attribution required                         | Local evidence                                                                                       |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Original Alchemy code, documentation, and visual art | Ryan McIntire                                                                    | CC BY-NC 4.0                                               | Yes                                          | [LICENSE.md](./LICENSE.md); Owner confirmation above; artwork created using AI                       |
-| Inter font (`public/fonts/Inter.woff2`)              | [The Inter Project Authors](https://github.com/rsms/inter/tree/66647c0bb)        | SIL Open Font License 1.1                                  | Preserve license notice                      | [Local license copy](./public/licenses/inter-ofl.txt)                                                |
-| Noto Sans SC (`public/fonts/noto-sans-sc.ttf`)       | [Noto Sans SC authors](https://github.com/google/fonts/tree/main/ofl/notosanssc) | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-sc-ofl.txt)                                         |
-| Noto Sans (`public/fonts/noto-sans.ttf`)             | [Noto Sans authors](https://github.com/google/fonts/tree/main/ofl/notosans)      | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-ofl.txt)                                            |
-| Noto Sans JP (`public/fonts/noto-sans-jp.ttf`)       | Adobe; see local copyright notice                                                | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-jp-ofl.txt)                                         |
-| Registered and curated game sound effects            | Sources listed by the [sound asset registry](./scripts/assets/sound-assets.mjs)  | Owner-created using AI; commercial use confirmed           | No third-party source attribution identified | [Approved source ledger](./Docs/design/audio-review/approved-choices.json); Owner confirmation above |
-| Registered game music                                | [Track links below](#music-source-links)                                         | Commercial-use entitlement at creation confirmed           | No third-party source attribution identified | Owner confirmation above; source registry and embedded metadata where present                        |
+| Asset group                                          | Source / licensor                                                                        | License or permission                                      | Attribution required                         | Local evidence                                                                                        |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Original Alchemy code, documentation, and visual art | Ryan McIntire                                                                            | CC BY-NC 4.0                                               | Yes                                          | [LICENSE.md](./LICENSE.md); Owner confirmation above; artwork created using AI                        |
+| Inter font (`public/fonts/Inter.woff2`)              | [The Inter Project Authors](https://github.com/rsms/inter/tree/66647c0bb)                | SIL Open Font License 1.1                                  | Preserve license notice                      | [Local license copy](./public/licenses/inter-ofl.txt)                                                 |
+| Noto Sans SC (`public/fonts/noto-sans-sc.ttf`)       | [Noto Sans SC authors](https://github.com/google/fonts/tree/main/ofl/notosanssc)         | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-sc-ofl.txt)                                          |
+| Noto Sans (`public/fonts/noto-sans.ttf`)             | [Noto Sans authors](https://github.com/google/fonts/tree/main/ofl/notosans)              | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-ofl.txt)                                             |
+| Noto Sans JP (`public/fonts/noto-sans-jp.ttf`)       | Adobe; see local copyright notice                                                        | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-jp-ofl.txt)                                          |
+| Registered and curated game sound effects            | [Sound asset registry](./scripts/assets/sound-assets.mjs); source identification pending | Not AI-generated; distribution terms pending review        | Pending source and license review            | [Approved source ledger](./Docs/design/audio-review/approved-choices.json); owner clarification above |
+| Registered game music                                | [Track links below](#music-source-links)                                                 | Commercial-use entitlement at creation confirmed           | No third-party source attribution identified | Owner confirmation above; source registry and embedded metadata where present                         |
 
 Files whose provenance is not represented above are not cleared for public
 distribution merely because they exist in `assets/sources/`, `public/`,
@@ -57,8 +58,8 @@ The Inter WOFF2 name table identifies version 4.001 and project commit
 The [sound asset registry](./scripts/assets/sound-assets.mjs) and
 [approved cue mappings](./Docs/design/audio-review/approved-choices.json) retain
 source paths, hashes and excerpt boundaries for processing and listening review.
-Those technical records do not imply third-party ownership; the owner confirmation
-above establishes the supplied source and commercial-use history.
+Those technical records do not themselves establish ownership or commercial-use
+permission. Review each source and its terms before public distribution.
 
 ### Music source links
 
@@ -101,5 +102,5 @@ Before promoting a public build:
 5. Reconfirm commercial-use terms if new tools, account tiers or third-party
    source material are introduced; disclose shipped AI content in Steamworks.
 
-The owner confirmation resolves the previously recorded audio-rights uncertainty.
-New third-party sources still require their own permission and notices.
+The sound-effect source and rights review remains open. New third-party sources
+also require their own permission and notices.

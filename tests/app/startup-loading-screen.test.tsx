@@ -128,4 +128,10 @@ describe("applyInitialAnimationPreference", () => {
     applyInitialAnimationPreference();
     expect(document.documentElement.classList.contains(ANIMATION_CLASS)).toBe(false);
   });
+
+  it("removes the class if the flag is cleared after being previously set", () => {
+    document.documentElement.classList.add(ANIMATION_CLASS);
+    applyInitialAnimationPreference();
+    expect(document.documentElement.classList.contains(ANIMATION_CLASS)).toBe(false);
+  });
 });
