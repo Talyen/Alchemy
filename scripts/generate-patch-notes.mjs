@@ -1,6 +1,5 @@
 // Generates player-facing patch notes from git history since the previous v* tag.
-// Day-to-day CHANGELOG.md is not the source; conventional types, paths, and
-// User-Facing trailers decide what players see.
+// Conventional types, paths, and User-Facing trailers decide what players see.
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertValidSemver, getCommitsSinceTag, resolvePatchNoteRange } from "./lib/release/git-release.mjs";

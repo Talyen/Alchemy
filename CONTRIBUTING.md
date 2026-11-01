@@ -198,10 +198,10 @@ owns tool configuration, dependency security, platform targets and CI mechanics.
 Follow [failure-first triage](./scripts/VERIFICATION.md#failure-first-triage): start with the compact
 failure digest, form a hypothesis, and inspect only the relevant logs or traces.
 
-## Changelog and patch notes
+## Patch notes
 
-Update changelogs at release only. Use Conventional Commits and `User-Facing: yes`
-or `User-Facing: no` trailers under [release policy](./Docs/RELEASE.md#changelog-release-time-only).
+Use Conventional Commits and `User-Facing: yes` or `User-Facing: no` trailers
+under [release policy](./Docs/RELEASE.md#patch-notes-and-commit-messages).
 
 ### Connected interaction progress tests
 

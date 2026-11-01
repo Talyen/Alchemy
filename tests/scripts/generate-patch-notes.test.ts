@@ -6,14 +6,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { generatePatchNotesMarkdown, parseGeneratePatchNotesArgs } from "../../scripts/generate-patch-notes.mjs";
 import { parseReleaseArgs } from "../../scripts/lib/release/release-runner.mjs";
 import {
-  buildChangelogUnreleased,
   buildPatchNotesMarkdown,
-  extractChangelogSection,
   extractPlayerFacingLines,
   isUserFacing,
-  parseChangelogCommits,
-  promoteUnreleasedSection,
-  replaceChangelogUnreleased,
 } from "../../scripts/lib/release/patch-notes-core.mjs";
 
 describe("generate-patch-notes", () => {
@@ -34,24 +29,8 @@ describe("generate-patch-notes", () => {
   it("handles inherited object property names as unknown commit types", () => {
     const commits = [{ subject: "constructor: improve the game", body: "User-Facing: yes" }];
     expect(buildPatchNotesMarkdown("1.2.3", commits)).toContain("improve the game");
-    expect(buildChangelogUnreleased(commits)).toContain("_No changes yet._");
   });
 
-  it("finds the actual unreleased heading when its text also occurs in prose", () => {
-    const source =
-      "# Changelog\n\nThe marker `## [Unreleased]` names the next section.\n\n## [Unreleased]\n\n- fix: preserve saves\n\n## [0.1.0] (2026-01-01)\n\nOld release.\n";
-    const replaced = replaceChangelogUnreleased(source, "## [Unreleased]\n\nnew\n");
-    expect(replaced).toContain("The marker `## [Unreleased]` names the next section.");
-    expect(extractChangelogSection(replaced, "## [Unreleased]")).toBe("new");
-    const promoted = promoteUnreleasedSection(source, "0.2.0", "2026-10-27");
-    expect(promoted).toContain("The marker `## [Unreleased]` names the next section.");
-    expect(extractChangelogSection(promoted, "## [0.2.0]")).toContain("fix: preserve saves");
-    expect(extractChangelogSection(promoted, "## [0.1.0]")).toContain("Old release.");
-    const indented = source.replace("\n## [Unreleased]\n", "\n  ## [Unreleased] (draft)\n");
-    const repaired = replaceChangelogUnreleased(indented, "## [Unreleased]\n\nnew\n");
-    expect(repaired).not.toContain("(draft)");
-    expect(extractChangelogSection(repaired, "## [Unreleased]")).toBe("new");
-  });
   it("rejects misspelled options instead of writing during an intended preview", () => {
     expect(() => parseGeneratePatchNotesArgs(["--dryrun"], {})).toThrow("Unknown patch-note option");
     expect(parseGeneratePatchNotesArgs(["--dry-run"], {})).toMatchObject({ dryRun: true });
@@ -104,99 +83,6 @@ describe("generate-patch-notes", () => {
       body: "",
     });
     expect(lines).toEqual(["**save:** repair corrupt deck"]);
-  });
-
-  it("builds grouped unreleased changelog sections and omits non-conventional history noise", () => {
-    const markdown = buildChangelogUnreleased([
-      { subject: "feat(ui): add armory", body: "Replace placeholder gear with affix rolls." },
-      { subject: "fix(ci): repair Electron download", body: "" },
-      { subject: "Abstract encounter traits across Labyrinth and Wildwood", body: "" },
-      { subject: "wip: temporary checkpoint", body: "" },
-    ]);
-    expect(markdown).toContain("## [Unreleased]");
-    expect(markdown).toContain("### Features");
-    expect(markdown).toContain("- feat(ui): add armory");
-    expect(markdown).toContain("Replace placeholder gear with affix rolls.");
-    expect(markdown).toContain("### Bug Fixes");
-    expect(markdown).not.toContain("### Other");
-    expect(markdown).not.toContain("Abstract encounter traits");
-    expect(markdown).not.toContain("temporary checkpoint");
-  });
-
-  it("caps verbose changelog bodies while retaining their leading context", () => {
-    const markdown = buildChangelogUnreleased([
-      {
-        subject: "feat(ui): add armory",
-        body: Array.from({ length: 10 }, (_, index) => `Detail line ${index + 1}`).join("\n"),
-      },
-    ]);
-    expect(markdown).toContain("Detail line 1");
-    expect(markdown).toContain("Detail line 6");
-    expect(markdown).not.toContain("Detail line 7");
-    expect(markdown).toContain("\n  …");
-  });
-
-  it("preserves indented body lines without absorbing section headings or trailing prose", () => {
-    const commits = [
-      { subject: "feat(ui): add armory", body: "First detail.\n\n- Nested body bullet." },
-      { subject: "fix(save): repair deck", body: "" },
-    ];
-    const source = buildChangelogUnreleased(commits);
-    expect(parseChangelogCommits(extractChangelogSection(source, "## [Unreleased]")!)).toEqual(commits);
-    expect(parseChangelogCommits("intro\n  orphan\n- fix: recover\n  detail\nprose\n  orphan\n- feat: next")).toEqual([
-      { subject: "fix: recover", body: "detail" },
-      { subject: "feat: next", body: "" },
-    ]);
-  });
-
-  it("promotes unreleased changelog content into a versioned section", () => {
-    const source = [
-      "# Changelog",
-      "",
-      "All notable changes to Alchemy are documented here.",
-      "",
-      "## [Unreleased]",
-      "",
-      "### Features",
-      "",
-      "- feat(ui): add armory",
-      "",
-      "## [0.1.0] (2026-06-11)",
-      "",
-      "### Features",
-      "",
-      "- Initial release",
-    ].join("\n");
-
-    const promoted = promoteUnreleasedSection(source, "0.2.0", "2026-06-17");
-    expect(promoted).toContain("## [0.2.0] (2026-06-17)");
-    expect(promoted).toContain("- feat(ui): add armory");
-    expect(promoted).toContain("## [Unreleased]");
-    expect(promoted).toContain("_No changes yet._");
-    expect(extractChangelogSection(promoted, "## [0.1.0]")).toContain("- Initial release");
-    expect(promoteUnreleasedSection(promoted, "v0.2.0", "2026-06-18")).toBe(promoted);
-    const conflicting = promoted.replace("_No changes yet._", "- fix: a new change");
-    expect(() => promoteUnreleasedSection(conflicting, "0.2.0", "2026-06-18")).toThrow("already contains");
-  });
-
-  it("replaces only the unreleased block", () => {
-    const source = [
-      "# Changelog",
-      "",
-      "Header text.",
-      "",
-      "## [Unreleased]",
-      "",
-      "old",
-      "",
-      "## [0.1.0] (2026-06-11)",
-      "",
-      "versioned",
-    ].join("\n");
-    const next = replaceChangelogUnreleased(source, "## [Unreleased]\n\nnew\n");
-    expect(next).toContain("## [Unreleased]\n\nnew");
-    expect(next).toContain("## [0.1.0] (2026-06-11)");
-    expect(next).not.toContain("old");
   });
 
   it("drops infra-only feat commits from player notes", () => {

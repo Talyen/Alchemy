@@ -113,13 +113,11 @@ inferred path contracts; use a Markdown link when a reference must remain valid.
 Document reachability and skill-index completeness are advisory and never fail
 the gate. Documentation contract checks share one
 per-file fact walk (explicit links and script names) plus one
-Markdown helper (`lib/agent/markdown-sections.mjs`) and one exemption owner per scope
-(`isHistoryOnlyDoc` / `isReachabilityExempt` in
-`check-documentation-contract.mjs`).
+Markdown helper (`lib/agent/markdown-sections.mjs`) and one reachability exemption owner
+(`isReachabilityExempt` in `check-documentation-contract.mjs`).
 Explicit links can protect E2E paths as well as other source references. Keep current workflow rules and unresolved issues rather than instruction histories.
-Repository-relative matching uses forward slashes on every platform. Release
-notes retain historical command-name exemptions; explicit links in maintained
-documents remain checked.
+Repository-relative matching uses forward slashes on every platform. Generated
+release notes are excluded; explicit links in maintained documents remain checked.
 
 ## Build and test selection
 
