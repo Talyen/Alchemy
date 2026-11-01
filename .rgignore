@@ -7,5 +7,4 @@ public/Music/
 *.generated.*
 src/lib/game-data/gear-art.generated.ts
 .asset-hashes.json
-CHANGELOG.md
 package-lock.json

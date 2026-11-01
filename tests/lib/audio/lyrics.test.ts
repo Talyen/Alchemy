@@ -83,3 +83,37 @@ it("returns no lyrics for non-boss and unknown music keys", () => {
     expect(getMusicLyrics(key)).toBeUndefined();
   }
 });
+
+it("matches phrase and word boundaries across seeks and loops for every boss song", () => {
+  for (const key of Object.values(MUSIC_KEYS)) {
+    const lines = getMusicLyrics(key);
+    if (!lines) continue;
+    const reference = (time: number) => {
+      const line = lines.findIndex((words) => time >= words[0]!.start && time < words[words.length - 1]!.end);
+      if (line < 0) return null;
+      const words = lines[line]!;
+      return {
+        line,
+        visible: words.filter((word) => word.start <= time).length,
+        active: words.findIndex((word) => time >= word.start && time < word.end),
+      };
+    };
+    const times = lines.flatMap((words) =>
+      words.flatMap((word) => [word.start - 0.000001, word.start, word.end - 0.000001, word.end]),
+    );
+    let previous = null;
+    for (const time of [NaN, -1, ...times, ...times.reverse(), Infinity]) {
+      const frame = getLyricFrame(lines, time, previous);
+      expect(frame).toEqual(reference(time));
+      if (
+        frame &&
+        previous &&
+        frame.line === previous.line &&
+        frame.visible === previous.visible &&
+        frame.active === previous.active
+      )
+        expect(frame).toBe(previous);
+      previous = frame;
+    }
+  }
+});

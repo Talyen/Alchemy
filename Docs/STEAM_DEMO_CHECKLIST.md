@@ -4,104 +4,83 @@ Use this checklist for each release candidate under the
 [approved scope](./STEAM_DEMO.md). Readiness requires evidence for the candidate being promoted. Earlier local passes
 do not certify later gameplay, layouts, packages, or Steam configuration.
 
-Adapted from Marnix Wyns' [Steam Demo Checklist](https://app.notion.com/p/marnixwyns/Steam-Demo-Checklist-38fc5591ef1a803ca510f20ff3d9b1f7),
-read on September 29, 2026. Steam configuration follows
+Adapted from Marnix Wyns' [Steam Demo Checklist](https://app.notion.com/p/marnixwyns/Steam-Demo-Checklist-38fc5591ef1a803ca510f20ff3d9b1f7).
+Steam configuration follows
 [Valve's demo guidance](https://partner.steamgames.com/doc/store/application/demos);
 recheck it before release. [Release](./RELEASE.md) and
 [release setup](./RELEASE_SETUP.md) own shipping procedures. This checklist does
 not authorize publishing. Local execution follows
 [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 
+## Outstanding release prerequisites
+
+Steam ID verification and store setup are pending. Configure the demo and full
+App IDs, depots, shared Cloud and AI disclosure, then complete the physical
+Steam acceptance, minimum-spec validation, unfamiliar-player and listening
+feedback, copy review, Steamworks review and candidate sign-off below. Publish
+recommended controller layouts and record their configuration IDs with the
+candidate evidence. Do not claim controller, Deck or carryover support before
+the applicable checks pass.
+
+## Pending copy approvals
+
+| Location                                                      | Exact current copy                                                                     |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Packaged application name                                     | `Alchemy Demo`                                                                         |
+| Full-game startup after successful demo progress import       | `Your earned demo progress has been imported. Start a new adventure in the full game.` |
+| Import notice action                                          | `Dismiss`                                                                              |
+| Pending local save, either edition                            | `Saving…`                                                                              |
+| Failed local primary and recovery save writes, either edition | `Couldn’t save`                                                                        |
+| Failed-save action                                            | `Retry`                                                                                |
+
+Sources: [application identity](../game-edition.mjs), [import notice](../src/App.tsx)
+and [save-write notice](../src/app/save-write-notice.tsx). Menu, recap, marketing
+and lock revisions remain approved under the demo contract.
+
 ## 1. Approved demo scope
 
-[Steam demo](./STEAM_DEMO.md) owns content limits, languages, edition identity,
-marketing, progress transfer and continued availability. Check against that contract;
-approved decisions are not completed readiness checks.
+[Steam demo](./STEAM_DEMO.md) owns scope, locks, progress transfer and marketing.
+The base game's Steam Discussions is the feedback channel; configure support
+contact information in Steamworks. A separate demo store page, in-game support
+links, a new tutorial and itch.io remain outside the approved implementation.
 
-In-game feedback/support links, a new tutorial, itch.io and a separate
-demo store page are outside the approved implementation. Use the base game's Steam
-Discussions for feedback and configure customer-support contact information in
-Steamworks. Demo user reviews require the deferred separate demo store page.
+## 2. Player journey
 
-## 2. First launch and onboarding
-
-- [ ] An isolated offline production demo opens Play/Continue, Options, Quit and Wishlist on Steam, with developer-only actions hidden.
-- [ ] A fresh profile reaches a real starter hand within the three-minute technical budget, without a progression detour. Measure human reading time separately.
-- [ ] Card descriptions, Mana/Health, Block, enemy Traits/Abilities, deck/pile inspection and End Turn remain usable.
-- [ ] Victory proceeds through rewards and destinations; endings retain earned progress and return to the correct menu/unlock flow.
-- [ ] Tab/F7, Enter/Space, Escape, arrows and pointer/scroll input work through essential navigation and Options.
-- [ ] **HUMAN:** Observe an unfamiliar player's first run and retry using the [playtest procedure](#human-playtest). Record comprehension, useful progression, perceived difficulty and time to meaningful play.
-
-## 3. Battles, runs, and progression
-
-Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
-[run workflows](./RUN_WORKFLOWS.md) as behavior owners. Existing
+Use [game rules](./GAME_RULES.md), [demo scope](./STEAM_DEMO.md),
 [headless careers](./SIMULATION.md#headless-careers) and
-[browser journeys](../tests/e2e/README.md) provide complementary evidence.
+[browser journeys](../tests/e2e/README.md) for the expected behavior and evidence.
 
-- [ ] Exercise real Knight/Rogue/Ranger starters and genuinely earned unlocks without hangs or routes into Act 2. Label fixture grants separately from earned progress.
-- [ ] Validate descriptions/effects through content validation, affected battle suites and representative seeded runs; report sampling limits.
-- [ ] Exercise real card transfer/reflow, inspection, consecutive plays, Wishes, End Turn and playback gates with normal animation timing.
-- [ ] Exercise combat, shops, Mystery, Corruption, Campfires and Transmutation, including purchase/reward controls and special-visit restoration/departure.
-- [ ] Victory, defeat and abandonment grant progression/unlocks once and show the correct recap. Demo victory grants no full-Campaign difficulty credit.
-- [ ] Earn and spend Talent XP, Materials and Gear; exercise crafting and Companion Bonds, then begin another run with the resulting progress.
-- [ ] Verify full-game locks and command/resume boundaries, including rejection of an Act 2 active run.
-- [ ] Sample the three approved heroes with explicit policies and seeds. Automated strategy results do not establish human win rates or perceived difficulty.
+- [ ] Start an isolated offline production demo with no developer controls. A fresh profile reaches a real starter hand within the three-minute technical budget; measure human reading separately.
+- [ ] Exercise each approved hero and genuinely earned unlock, combat input and feedback, shops, Mystery, Corruption, Campfires and Transmutation, including resume and departure. Label fixture grants and sampled seeds separately from earned progress and human results.
+- [ ] Exercise rewards, victory, defeat, abandonment, progression, purchases, crafting and Companion Bonds through another run. Verify the correct recap and demo ending, full-game locks and rejection of out-of-scope active runs under the demo contract.
+- [ ] Exercise keyboard, pointer and scrolling across navigation, inspection, Options and dialogs; verify pause and focus recovery. Follow [interaction](./UI_INTERACTION.md) and [motion](./UI_MOTION.md).
+- [ ] **HUMAN:** Observe an unfamiliar player's first run and retry under [human playtest](#human-playtest); record comprehension, difficulty, progression and time to meaningful play.
 
-## 4. Save, interruption, and quit
+## 3. Save, interruption and quit
 
-- [ ] Resume current-format battles, pending/claimed rewards, destinations and special visits on an unseeded page or relaunched isolated app. Acknowledged progress, purchases and choices survive.
-- [ ] Verify progression/Options persistence, primary/recovery acknowledgement and failed writes. Both-slot failure shows Couldn’t save; Retry saves the original outcome once. Cloud-only failure does not imply local progress loss.
-- [ ] Verify menu, Options/Back, keyboard focus recovery and cancellation of automatic playback while the menu is open.
-- [ ] Quit opens no store/browser destination. Verify that native shutdown drains admitted file writes under the [write acknowledgement contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement); distinguish those writes from unfinished renderer work and already acknowledged progress.
-- [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
-- [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-- [ ] Before promising persistent player progress, freeze the supported save baseline. For each candidate, verify upgrade from supported distributed saves and recovery from a damaged primary; retain source saves and record the versions used.
-- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep [native-binding qualification](./Plans/SteamDemo.md#outstanding-work) open until verified.
+- [ ] Resume battles, rewards, destinations and special visits on an unseeded page or relaunched isolated app. Verify progression, Options, purchases and choices survive, including offline startup and local saves.
+- [ ] Test failed primary/recovery writes and Retry: the original outcome saves once. Verify future-save protection, damaged-primary recovery and source-preserving demo import under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+- [ ] Before promising persistent progress, freeze the supported save baseline; verify each candidate upgrades supported distributed saves. Retain source saves and record their versions.
+- [ ] Verify native shutdown drains admitted writes; distinguish them from unfinished renderer work and acknowledged progress. Quit must not open a store or browser destination.
+- [ ] **EXTERNAL:** Verify overlay, controller and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence).
 
-## 5. Readability, feedback, and Options
+## 4. Presentation, audio and performance
 
-Follow [UI](./UI.md), [interaction](./UI_INTERACTION.md), and [motion](./UI_MOTION.md).
-Use the current [display sizing](./UI.md#display-sizing) bounds, not historical test requests.
+- [ ] Inspect battle, inspection and tooltips at 1280×720 and 1280×800 with Game Size 80/100/120 and Tooltip Size 90/125. Inspect menu and Options at size extremes in Electron, record actual native bounds, and validate native display modes on the target platform. Follow [display sizing](./UI.md#display-sizing).
+- [ ] Check hover, focus, disabled and modal behavior, reduced motion, consecutive keyboard plays, persisted sizing and volume/mute, and background/foreground audio recovery. Temporary comparison tools must be absent.
+- [ ] Match store-language claims to qualified catalogs and rendered evidence; bundle marketing artwork for each shipped language.
+- [ ] Verify packaged music and affected audio behavior under [audio](./AUDIO.md). **HUMAN:** Listen at defaults and record device, settings, comfort and overlap.
+- [ ] Profile cold startup, dense combat and repeated lifecycles in native Electron under [performance](./PERFORMANCE.md). **EXTERNAL:** Validate minimum-spec Windows and actual Deck performance and suspend/resume; workstation results do not establish a Deck rating.
 
-- [ ] Inspect battle/hand, enemy/deck inspection and tooltips at 1280×720 and 1280×800, Game Size 80/100/120 and Tooltip Size 90/125. Seven-card hands and End Turn remain usable.
-- [ ] Inspect the production menu/footer and Options in isolated Electron at size extremes. Record actual native bounds when the host work area limits the requested size.
-- [ ] Verify hover/focus/press/disabled feedback, modal containment/dismissal and controls. Temporary comparison tools remain absent from production.
-- [ ] Reduced-motion inspection and consecutive keyboard plays settle and remain usable under the existing accessibility stance.
-- [ ] Verify native display modes on the target platform; browser geometry alone does not establish native behavior.
-- [ ] Volume/mute and interface sizing controls apply and persist, including background/foreground audio recovery.
-- [ ] Store-language claims match qualified catalogs and rendered evidence for the demo; marketing artwork is bundled for every shipped language.
+## 5. Steam packaging and launch
 
-## 6. Audio and performance
+- [ ] Configure distinct demo/full App IDs, depots, shared Cloud, AI disclosure and recommended Steam Input layouts. Validate renderer, package and upload targets; record actual layout IDs with candidate evidence.
+- [ ] Complete Steamworks build/store review; verify the base game page is visible and wishlistable. Test install, launch, update and uninstall of the exact candidate through Steam on a non-developer account without dev services or credentials.
+- [ ] **EXTERNAL:** Install and launch the unsigned candidate through Steam on clean Windows 11 with Smart App Control enabled; record the build, setting and result. Validate physical input and Cloud under [physical acceptance](#physical-steam-acceptance-evidence).
+- [ ] Ensure store text and media match approved content, languages, platforms, controller behavior and system requirements. Review [pending copy](#pending-copy-approvals), [notices and provenance](./RELEASE_SETUP.md#player-notices-and-asset-provenance), and any approved separate demo page requirements.
+- [ ] Verify the [wishlist contract](./STEAM_DEMO.md#input-and-release-evidence), prepare launch communication and checked links, and assign feedback, crash monitoring, hotfix and rollback ownership. Sending outreach requires separate authorization.
 
-Use [audio](./AUDIO.md) and [performance](./PERFORMANCE.md).
-
-- [ ] Verify authored music bytes in the package and affected music/SFX selection, fade, preload, cooldown, failure and volume behavior.
-- [ ] **HUMAN:** Listen on speakers or headphones at defaults. Record device/settings, comfort, intelligibility and distracting overlap before changing the mix.
-- [ ] Profile cold startup, dense combat and repeated gameplay/screen lifecycles in native Electron. Record environment, repetitions and advisory results; investigate growth without treating a finite soak as proof against all leaks.
-- [ ] **EXTERNAL:** Validate advertised minimum-spec Windows assumptions and real Deck performance/suspend-resume. Workstation profiling does not establish a Deck rating.
-
-## 7. Steam packaging and store presence
-
-- [ ] Configure distinct demo/full App IDs and depots. Verify renderer, package and upload targets agree; wishlist actions target the full game.
-- [ ] Complete Steamworks build/store review and confirm the base game's page is visible and wishlistable before launch.
-- [ ] Test install, launch, update and uninstall through Steam using the exact candidate and a non-developer account. Require no dev server, missing assets, debug UI or developer credentials.
-- [ ] **EXTERNAL:** On a clean Windows 11 machine with Smart App Control enabled, install and launch the unsigned candidate through Steam; record the setting, build and result. Investigate any block before promotion.
-- [ ] Publish recommended Steam Input layouts and validate delivery and a complete physical-controller journey. Record real configuration IDs in release setup.
-- [ ] Store text/media accurately state the approved content, languages, platforms, controller behavior and system requirements. Do not claim native gamepad support or a Deck rating without evidence.
-- [ ] If a separate demo store page is later approved, supply its required trailer, screenshots, capsule/library assets and content survey under Valve's current rules.
-- [ ] Complete [notice and provenance review](./RELEASE_SETUP.md#player-notices-and-asset-provenance), including privacy disclosure and first-public-release license review.
-
-## 8. Ending and launch communication
-
-- [ ] Act 1 ends with Victory and then The Journey Continues; Main Menu exits normally. Defeat/abandonment show Journey's End.
-- [ ] Wishlist controls open exactly one usable full-game destination under the [wishlist contract](./STEAM_DEMO.md#input-and-release-evidence); Quit has no promotional side effect.
-- [ ] Review completion copy, full-game locks and the [pending copy approvals](./Plans/SteamDemo.md#pending-copy-approvals).
-- [ ] Set the release date and event deadlines; prepare a gameplay-led trailer and announcement with checked links and the actual endpoint.
-- [ ] If outreach is approved, prepare the build, keys, concise pitch and known limitations. Sending outreach requires its own authorization.
-- [ ] Assign feedback/crash monitoring and hotfix/rollback ownership; retain a known-good build under the release procedure.
-
-## 9. Candidate evidence and release sign-off
+## 6. Candidate evidence and release sign-off
 
 Keep completed results with the candidate's release artifacts and handoff, not as
 another completed task report in this repository. Record version/commit, Steam
@@ -165,4 +144,4 @@ each step; do not overwrite a real player's profile to perform these checks.
 Deck evidence includes Proton startup/performance, physical Steam Input/overlay,
 1280×800 readability and suspend/resume. Keep those checks open when hardware is
 unavailable. Renderer geometry and virtual-display results do not establish a
-controller/Deck rating or close the [release blockers](./Plans/SteamDemo.md#outstanding-work).
+controller/Deck rating or close the [release prerequisites](#outstanding-release-prerequisites).

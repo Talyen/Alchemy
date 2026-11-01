@@ -454,7 +454,7 @@ Save the complete resolved Mystery offer after Boon substitution and Labyrinth m
 
 Mystery choice commands accept only a choice object from the current resolved visit. Retained callbacks from an earlier visit, even one with the same event, cannot apply effects to the new visit. Resolve effects from the stored offer so the displayed choice and awarded outcome stay together. Choice and card-pick callbacks return whether the command was accepted; rejected actions keep the screen open, show a concise error, and suppress success feedback.
 
-`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker and `mysteryPendingRemoval` are retired.
+`removeCard` removes a random deck card immediately with no picker.
 
 Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 
@@ -485,7 +485,7 @@ already-generated next floors are reused. Prior floors cannot be entered.
 Resume preserves geography, completion, and pending encounters. Invalid location
 references fall back to the floor's completed entrance. Discovery is derived,
 not separately saved. Map-version recovery follows the
-[save migration history](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
+[save compatibility contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
 ### Labyrinth room modifiers
 

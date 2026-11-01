@@ -1,4 +1,4 @@
-// Shared git helpers for release, changelog sync, and patch notes.
+// Shared git helpers for release and patch notes.
 import { execFileSync } from "node:child_process";
 
 const FIELD_SEPARATOR = "\x1f";

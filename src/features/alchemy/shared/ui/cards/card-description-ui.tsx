@@ -90,7 +90,7 @@ export function DescriptionLines({
       for (const entry of rendered!.magnitudes) if (entry.lineIndex === lineIndex) marks.set(entry.id, entry.magnitude);
     }
     return (
-      <div key={`${idPrefix}-${lineIndex}`} className={tooltipBodyLineClass}>
+      <div key={`${idPrefix}-${lineIndex}`} className={cn(tooltipBodyLineClass, "whitespace-pre-line")}>
         {i18n.read(() => renderMessage(message, undefined, marks))}
         {newLineIndices?.has(lineIndex) ? (
           <TooltipChip className="ml-1.5 align-middle">{i18n.text("card.new", "NEW")}</TooltipChip>

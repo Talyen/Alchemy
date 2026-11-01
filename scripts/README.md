@@ -62,12 +62,10 @@ interpretation. Discovery metadata must reference canonical prose rather than
 copying it, and it does not own verification selection. The search fallback skips deleted
 tracked files and files removed during a search, while other read errors fail.
 
-## Release / changelog (three stages, shared `lib/release/patch-notes-core.mjs` + `lib/release/git-release.mjs`)
+## Release and patch notes
 
 | Output or operation                                          | Implementation owner                                                                    |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| Developer Unreleased history                                 | `sync-changelog.mjs`                                                                    |
-| Versioned changelog section                                  | `release-changelog.mjs`                                                                 |
 | Player notes from commits and trailers                       | `generate-patch-notes.mjs`                                                              |
 | Release orchestration (`release`, `release:hotfix --hotfix`) | `release.mjs` → `lib/release/release-runner.mjs`                                        |
 | Build version stamping                                       | `sync-version-metadata.mjs` (sequenced by `release-runner.mjs` post-bump)               |
@@ -76,7 +74,7 @@ tracked files and files removed during a search, while other read errors fail.
 | Steam upload                                                 | `steam-upload.mjs`                                                                      |
 | Verified build                                               | `build-verified.mjs`                                                                    |
 
-[RELEASE](../Docs/RELEASE.md#changelog-release-time-only) owns timing, note policy,
+[RELEASE](../Docs/RELEASE.md#patch-notes-and-commit-messages) owns timing, note policy,
 and the release decision flow.
 
 Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `electron-path.mjs`

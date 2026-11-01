@@ -181,7 +181,7 @@ describe("CLI launch paths", () => {
 });
 
 describe("CLI validation before side effects", () => {
-  it.each(["dist-desktop.mjs", "steam-upload.mjs", "release-changelog.mjs", "sync-steam-appid.mjs"])(
+  it.each(["dist-desktop.mjs", "steam-upload.mjs", "sync-steam-appid.mjs"])(
     "%s help needs no package or release credentials",
     (script) => {
       const result = probe(

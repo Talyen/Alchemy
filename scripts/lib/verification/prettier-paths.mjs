@@ -15,7 +15,7 @@ const PRETTIER_PATH_RE = new RegExp(`(?:^|/)(?:\\.prettierrc)$|\\.(?:${EXTENSION
 // (dist/, reports/, Raw Assets/, ...). Keep the entries below in sync with
 // .prettierignore or filterPrettierPaths will format what `prettier --check`
 // ignores (or vice versa). See prettier-paths.test.ts parity assertion.
-export const PRETTIER_NEVER_FORMAT_RE = /(?:^|\/)(?:package-lock\.json|CHANGELOG\.md)$|\.generated\.ts$/;
+export const PRETTIER_NEVER_FORMAT_RE = /(?:^|\/)package-lock\.json$|\.generated\.ts$/;
 
 /**
  * @param {readonly string[]} paths

@@ -2,10 +2,6 @@
 
 One-time shipping setup for Alchemy plus recurring gates before public promotion: crash reporting, provenance, signing, secrets, and listing baseline. Active release flow stays in [RELEASE.md](./RELEASE.md). Coding rules: [AGENTS.md](../AGENTS.md).
 
-As of October 23, 2026, no Steam store page exists: Steam ID verification is
-pending. App IDs, depots, page creation and survey submission are future setup
-steps, not missing information on a published listing.
-
 Account and credential setup is one-time; revisit it when configuration or credentials change. Before public promotion, follow the [notice and provenance review](#player-notices-and-asset-provenance), [Steam Input revalidation conditions](#steam-input-default-mapping-controller-playable), and [listing baseline](#steam-listing-baseline-windows). Keep configuration aligned with the release workflow.
 
 ## Desktop crash reporting (one-time setup)
@@ -145,7 +141,7 @@ controller types, publish their default assignments, and record actual configura
 IDs with the candidate's acceptance evidence. Follow
 [Valve's developer setup](https://partner.steamgames.com/doc/features/steam_controller/getting_started_for_devs).
 Pending publication and physical validation remain in the
-[blocked release plan](./Plans/SteamDemo.md#outstanding-work).
+[demo checklist](./STEAM_DEMO_CHECKLIST.md#outstanding-release-prerequisites).
 
 [Physical acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
 owns device/service qualification and public support claims. Valve's

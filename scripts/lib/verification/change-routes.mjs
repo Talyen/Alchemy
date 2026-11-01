@@ -134,7 +134,7 @@ const ROUTES = Object.freeze([
     "scripts/assets/core-assets.mjs",
     // Release/desktop sync helpers share the sync-* prefix but reproduce no
     // committed asset output; they stay on the tooling route.
-    ["scripts/sync-changelog.mjs", "scripts/sync-steam-appid.mjs"],
+    ["scripts/sync-steam-appid.mjs"],
   ),
   route(
     "desktop",

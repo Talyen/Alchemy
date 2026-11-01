@@ -22,6 +22,16 @@ import {
 import { UNIQUE_GEAR_COMBAT } from "@/lib/game-constants";
 
 describe("unique item catalog", () => {
+  it("keeps signature effects period-free and separated within one affix", () => {
+    for (const unique of uniqueItemList) {
+      expect(unique.description).not.toMatch(/[.;]/);
+    }
+    const instance = generateUniqueGearInstance(uniqueItemList.find((item) => item.id === "oathkeeper")!);
+    expect(getGearInstanceTooltipEntries(instance)[0]?.text).toBe(
+      "Holy damage is increased by 50% of Forge\nDamaging Holy attacks grant 1 Block",
+    );
+  });
+
   it("prevents crafting currencies from modifying unique items", () => {
     const unique = uniqueItemList[0];
     const instance = generateUniqueGearInstance(unique);

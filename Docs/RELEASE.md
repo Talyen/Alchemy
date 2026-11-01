@@ -12,7 +12,6 @@ Build and installer selection: [COMMANDS.md § Build commands decision tree](./C
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `npm run verify:release-version` | `release.yml` — before web build and again before packaging, tag must match `package.json`                   |
 | `npm run sync:steam-appid`       | `dist:desktop` — writes `steam_appid.txt` for the selected edition before packaging                          |
-| `npm run sync:changelog`         | Optional: rebuild `CHANGELOG.md` ## [Unreleased] from git (also runs automatically as release `prerelease`)  |
 | `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`. `--dry-run` prints to stdout |
 | `npm run steam:upload:dry-run`   | Validates Steam VDF templates and the selected edition's unpacked contentroot without credentials            |
 | `npm run release`                | Full gate, prints player-note draft, release commit/tag, pushes `main` + tag, then watches release CI        |
@@ -37,21 +36,12 @@ Publishing jobs share one Steam concurrency group across release tags, with
 `queue: max` and `cancel-in-progress: false`, so uploads cannot overlap or interrupt
 an active delivery. Build and test jobs can still run independently across tags.
 
-## Changelog (release-time only)
+## Patch notes and commit messages
 
 Commit with [Conventional Commits](https://www.conventionalcommits.org/).
 Player-facing types are `feat`, `fix`, `balance`, and `perf`; optional
 `User-Facing: yes` or `User-Facing: no` trailers override type and path inference.
 Infra-only commits stay out of player notes even when typed `feat`.
-
-`CHANGELOG.md` is generated developer history. The release command's
-`.versionrc.json` hooks populate Unreleased from recognized commits since the
-latest `v*` tag (`sync-changelog.mjs`, prerelease), then promote it to a dated
-version section (`release-changelog.mjs`, postbump). Never edit, trim, or
-reorganize it by hand. If it becomes hard to consume, improve the generator's
-filtering/grouping with tests or cut a release. Repeating promotion for an existing
-version leaves it unchanged when Unreleased is empty; new unreleased content
-against that version is a conflict and is preserved for review.
 
 Player notes come directly from git through `generate-patch-notes.mjs`, using
 types, changed paths, and trailers. `npm run generate:patch-notes` writes

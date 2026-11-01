@@ -61,7 +61,7 @@ function SungLyrics({ musicKey, lines }: { musicKey: string; lines: NonNullable<
       const playback = readMusicPlayback();
       const next =
         !document.hidden && playback?.key === musicKey && playback.audible
-          ? getLyricFrame(lines, playback.currentTime)
+          ? getLyricFrame(lines, playback.currentTime, previous)
           : null;
       // Poll only this leaf; React and the rest of battle stay idle between word changes.
       if (next?.line !== previous?.line || next?.visible !== previous?.visible || next?.active !== previous?.active) {

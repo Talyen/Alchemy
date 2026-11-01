@@ -22,8 +22,7 @@ commands. Forced player skips count toward `maxTurns` and never grant an extra
 Companion action. The optional simulator budget limits resolved frames, including
 forced skips; live commands omit that limit. Combat uses the seeded `world` stream; card and Wish decisions
 use a separate policy RNG. Replaying the same decisions from the same battle
-inputs therefore preserves combat outcomes and RNG counters. Existing report
-baselines may change when rerun with these lifecycle and RNG corrections.
+inputs therefore preserves combat outcomes and RNG counters.
 
 ```sh
 npm run balance:sim
@@ -67,9 +66,8 @@ it writes the complete report in `reports/balance-batches/report/`. Set
 invocation. A group is indivisible, so this is not a time guarantee. Set
 `ALCHEMY_BALANCE_CHECKPOINT` to use a different directory. Checkpoints bind the
 source, edition and report options; changed inputs require a fresh directory.
-Interrupted groups are recomputed; completed groups remain usable. Existing
-`balance:sim` and `balance:sim:full` behavior is unchanged. Heavy local runs still
-require the admission and authorization described in Contributing.
+Interrupted groups are recomputed; completed groups remain usable. Heavy local
+runs still require the admission and authorization described in Contributing.
 Only one process may use a checkpoint at a time. A process killed without cleanup
 can leave `.lock`; inspect the recorded PID and remove it only after confirming its
 owner is no longer active. Never remove a live or ambiguous lock.
@@ -111,7 +109,7 @@ A CI workflow
 can only run commits available to the host; dispatch and publication follow the
 repository's separate authorization rules.
 
-Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `findings-collector.ts` attaches report identity separately from metric rules and shares one sampled-median evaluator between enemy-type and class equity; candidate order remains explicit in `collectBalanceFindings`. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
+Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator.
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
 
@@ -134,13 +132,9 @@ targeted mechanics tests, and investigate inactive triggers or saturated win
 rates before interpreting near-zero results as weak talents. Turn deltas include
 defeats and timeouts. Full-tree and per-talent results are not additive.
 
-Report measurements share `RateCell` in `simulator-types.ts` and an
-extraction/aggregation record in `rate-statistics.ts`. Batch summaries and report
-aggregation use that record: counts always sum; rates and averages weight by
-battles or sampled enemy types. Adding a measurement to the contract and record
-updates projections and weighting automatically.
-Overgrowth and Regeneration count only successful Health restoration. Glacial
-Surge is a flat damage modifier and has no scheduled growth activations.
+Report counts sum across batches; rates and averages weight by battles or sampled
+enemy types. Overgrowth and Regeneration count only successful Health restoration.
+Glacial Surge is a flat damage modifier and has no scheduled growth activations.
 
 Paired sweeps describe reference fights and variants in `report-sweeps.ts`.
 `report-sweep-runner.ts` manages batch configuration, matched-fight checks, reference
@@ -340,9 +334,7 @@ Battle deck profiles include the draw pile, hand, queued hand cards, discard and
 exhausted cards at the sampled moment, including cards created during combat.
 Hero-keyword share excludes samples from heroes without fixed keywords, such as
 Wildcard; dominant-keyword share still includes their decks. Existing recorded
-snapshots retain the measurement produced by their original source revision.
-`progress-telemetry.ts` owns the shared cohort grouping, battle counts, first
-milestone observations and room mortality used by both reports. The detailed
+snapshots retain the measurement produced by their original source revision. The detailed
 report retains every room and unrounded milestone means; the agent summary bounds
 large room tables and rounds its means and rates.
 Observed-card

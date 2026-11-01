@@ -44,8 +44,8 @@ function checkTextTypography(
 }
 
 // Style policy: description lines stay period-free for inline display; titles
-// and narrative may use periods. Exceptions: unique-rarity gear descriptions
-// (flavor text) and unique-only affix templates (checked separately below).
+// and narrative may use periods. Unique-rarity gear descriptions are derived
+// from affixes and are validated through their canonical templates below.
 export function validateTypography(collector: Collector): void {
   const check = (group: ContentValidationArea, id: string, label: string, text: string, allowPeriod = false): void =>
     checkTextTypography(collector, group, id, label, text, allowPeriod);
@@ -109,11 +109,6 @@ export function validateTypography(collector: Collector): void {
     check("encounter-traits", id, "Encounter trait enemy description", trait.enemyTrait.description);
   }
   for (const affix of gearAffixList) {
-    // Unique-only affix templates render with flavor punctuation and skip the
-    // em-dash check entirely; only shared pool templates must stay
-    // period-free for inline display.
-    if (!affix.uniqueOnly) {
-      checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
-    }
+    checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
   }
 }
