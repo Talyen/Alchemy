@@ -39,13 +39,15 @@ function focusScope(scope: DialogFocusScope, retainFocus = true) {
     retained && scope.panel.contains(retained) && isFocusAvailable(retained) ? retained : initialControl(scope.panel);
   control.focus({ preventScroll: true });
   // Layout may reach the panel one frame before its prepared controls.
-  if (
-    control === scope.panel &&
-    [...scope.panel.querySelectorAll<HTMLElement>("[data-dialog-cancel], [data-dialog-initial-focus]")].some(
-      (candidate) => !candidate.matches(":disabled") && !candidate.closest('[hidden], [inert], [aria-hidden="true"]'),
-    )
-  )
-    scheduleReconcile();
+  if (control === scope.panel) {
+    const candidates = scope.panel.querySelectorAll<HTMLElement>("[data-dialog-cancel], [data-dialog-initial-focus]");
+    for (const candidate of candidates) {
+      if (!candidate.matches(":disabled") && !candidate.closest('[hidden], [inert], [aria-hidden="true"]')) {
+        scheduleReconcile();
+        break;
+      }
+    }
+  }
 }
 
 function reconcile() {

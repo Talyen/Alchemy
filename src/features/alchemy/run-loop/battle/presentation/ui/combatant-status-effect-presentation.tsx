@@ -33,13 +33,18 @@ export function CombatantStatusEffectPresentation({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    let lastTransform = wobbleNode?.style.transform ?? "";
     const stop = startCombatantStatusEffectLoop({
       canvas,
       kind: activeKeyword,
       onFrame: ({ wobbleDegrees }) => {
         const node = wobbleRef.current;
         if (!node) return;
-        node.style.transform = wobbleDegrees !== 0 ? `rotate(${wobbleDegrees}deg)` : "";
+        const nextTransform = wobbleDegrees !== 0 ? `rotate(${wobbleDegrees}deg)` : "";
+        if (nextTransform !== lastTransform) {
+          node.style.transform = nextTransform;
+          lastTransform = nextTransform;
+        }
       },
     });
 
