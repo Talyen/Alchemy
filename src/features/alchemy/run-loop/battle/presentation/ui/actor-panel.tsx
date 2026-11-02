@@ -248,6 +248,7 @@ function ActorArtFrame({
       recoilAnim.play();
     } else {
       node.classList.remove("portrait-recoil-active");
+      void node.offsetWidth;
       node.classList.add("portrait-recoil-active");
     }
   }, [pulse, isDead, maxHealth]);
@@ -352,7 +353,6 @@ function ActorHealthHeader({
   maxHealth,
   healthToken,
 }: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth"> & { healthToken: number }) {
-  useGameTranslation();
   return (
     <div className="flex items-baseline justify-between gap-3">
       <p className={cn("font-sans", sectionTitleClass)}>{title}</p>
@@ -378,7 +378,6 @@ function ActorStatusRow({
   deathsDoorGraceTurnsRemaining = null,
   side,
 }: Pick<ArtPanelProps, "deathsDoorGraceTurnsRemaining" | "title" | "statuses" | "side" | "deathsDoorActive">) {
-  useGameTranslation();
   return (
     <div
       className="mt-2.5 flex min-h-9 items-center gap-1"

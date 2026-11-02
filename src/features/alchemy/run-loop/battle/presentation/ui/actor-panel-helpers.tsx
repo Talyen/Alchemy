@@ -77,7 +77,7 @@ export function ArtTurnActiveBorder({
       data-active={active ? "true" : "false"}
       borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
       duration={ACTOR_PANEL_CONFIG.turnActiveShineDurationSeconds}
-      shineColor={[...palette]}
+      shineColor={palette}
       className={cn(
         "z-[5] rounded-shell-hero transition-opacity",
         urgentHide ? "duration-150" : "duration-500",
@@ -92,7 +92,7 @@ export function ArtDeathDoorBorder() {
     <ShineBorder
       borderWidth={ACTOR_PANEL_CONFIG.deathDoorArtBorderWidth}
       duration={ACTOR_PANEL_CONFIG.deathDoorShineDurationSeconds}
-      shineColor={[...SHINE_PALETTES.deathsDoorArt]}
+      shineColor={SHINE_PALETTES.deathsDoorArt}
       className="z-10 rounded-shell-hero"
     />
   );
@@ -103,7 +103,7 @@ export function StatsDeathDoorBorder() {
     <ShineBorder
       borderWidth={ACTOR_PANEL_CONFIG.deathDoorStatsBorderWidth}
       duration={ACTOR_PANEL_CONFIG.deathDoorShineDurationSeconds}
-      shineColor={[...SHINE_PALETTES.deathsDoorStats]}
+      shineColor={SHINE_PALETTES.deathsDoorStats}
       className="rounded-shell-inner"
     />
   );

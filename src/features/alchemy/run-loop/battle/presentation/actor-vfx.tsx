@@ -26,15 +26,24 @@ export function ShakingArtPanel({ presentation, side, shimmerId, ...props }: Sha
       dodgeToken: side === "player" ? s.playerDodgeToken : s.enemyDodgeToken,
     })),
   );
-  const shimmer = useUiStore(
-    useShallow((s) => ({
-      shimmerActive: s.shimmerState?.cardId === shimmerId,
-      shimmerToken: s.shimmerState?.cardId === shimmerId ? s.shimmerState.token : undefined,
-      onHoverShimmer: s.maybeTriggerShimmer,
-    })),
+  const shimmerActive = useUiStore((s) => s.shimmerState?.cardId === shimmerId);
+  const shimmerToken = useUiStore((s) => (s.shimmerState?.cardId === shimmerId ? s.shimmerState.token : undefined));
+  const onHoverShimmer = useUiStore((s) => s.maybeTriggerShimmer);
+
+  return (
+    <ArtPanel
+      {...props}
+      side={side}
+      shimmerId={shimmerId}
+      {...feedback}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
+      onHoverShimmer={onHoverShimmer}
+    />
   );
-  return <ArtPanel {...props} side={side} shimmerId={shimmerId} {...feedback} {...shimmer} />;
 }
+
+export const BattleArtPanel = ShakingArtPanel;
 
 export function ShakingCompanionPanel({
   presentation,
@@ -45,9 +54,11 @@ export function ShakingCompanionPanel({
   inactive?: boolean;
 }) {
   const shaking = useStore(presentation, (s) => s.companionShaking);
-  const cue = useStore(presentation, (s) => s.companionActionCue);
+  const cue = useStore(presentation, (s) =>
+    !inactive && s.companionActionCue?.companionId === props.companion.id ? s.companionActionCue : null,
+  );
   return (
-    <CompanionActionMotion cue={!inactive && cue?.companionId === props.companion.id ? cue : null}>
+    <CompanionActionMotion cue={cue}>
       <CompanionPanel {...props} shaking={shaking} />
     </CompanionActionMotion>
   );
