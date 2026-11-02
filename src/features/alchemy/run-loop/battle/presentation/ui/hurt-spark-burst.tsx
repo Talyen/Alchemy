@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 
-import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { animateHurtSparks, createHurtSparks } from "@/lib/animation/hurt-sparks";
 import { HURT_SPARK_COUNT, HURT_SPARK_DURATION_MS } from "@/lib/game-constants";
 
@@ -10,11 +10,10 @@ const HURT_SPARK_BURST_CONFIG = {
 
 export function HurtSparkBurst({ flashToken, colors }: { flashToken: number; colors: readonly string[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const reducedMotion = useReducedMotionPreference();
 
   useLayoutEffect(() => {
-    if (flashToken <= 0) return;
-
-    if (shouldReduceMotion()) return;
+    if (flashToken <= 0 || reducedMotion) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -43,12 +42,10 @@ export function HurtSparkBurst({ flashToken, colors }: { flashToken: number; col
       width: w,
       height: h,
     });
-    const stop = animateHurtSparks(ctx, particles, cw, ch, HURT_SPARK_DURATION_MS, () => {});
+    return animateHurtSparks(ctx, particles, cw, ch, HURT_SPARK_DURATION_MS, () => {});
+  }, [colors, flashToken, reducedMotion]);
 
-    return () => {
-      stop();
-    };
-  }, [colors, flashToken]);
+  if (reducedMotion) return null;
 
   return (
     <canvas ref={canvasRef} className="pointer-events-none absolute -top-[50%] -left-[50%] z-30 h-[200%] w-[200%]" />

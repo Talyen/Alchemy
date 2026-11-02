@@ -67,6 +67,17 @@ describe("ArtPanel hover motion", () => {
     expect(container.querySelector("video")).toBeNull();
   });
 
+  it.each([
+    { id: "earth-elemental", side: "enemy" },
+    { id: "stone-titan", side: "enemy" },
+    { id: "goblin", side: "enemy" },
+    { id: "earth-elemental", side: "player" },
+  ] as const)("orients $id artwork on the $side side without mirroring its UI", ({ id, side }) => {
+    render(<ArtPanel {...baseProps} side={side} title={enemy.title} currentEnemy={{ ...enemy, id }} />);
+    const image = screen.getByRole("img", { name: enemy.title });
+    expect(image.classList.contains("-scale-x-100")).toBe(false);
+    expect(screen.getByTestId(`battle-${side}-art-panel`).classList.contains("-scale-x-100")).toBe(false);
+  });
   it("shows the remaining Death's Door protection and its survival rules", async () => {
     const { rerender } = render(<ArtPanel {...baseProps} deathsDoorActive deathsDoorGraceTurnsRemaining={3} />);
     fireEvent.focus(screen.getByRole("button", { name: "Death's Door: 3 protected turns remaining" }));

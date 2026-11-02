@@ -311,7 +311,7 @@ function ActorArtFrame({
             />
           )}
           {artOverlay}
-          <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
+          <PortraitImpactVfx pulse={pulse} isDead={isDead} />
         </Surface>
       </CombatantStatusEffectPresentation>
     </div>
