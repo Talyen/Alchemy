@@ -14,18 +14,29 @@ import { parseHexRgbBytes, type RgbTuple } from "./plasma-colors";
 
 export type CombatantStatusEffectKind = "stun" | "freeze";
 
-// These inputs depend only on the authored particle counts, not frame time or canvas size.
+// Precalculated noise inputs depending only on authored particle counts.
 const STAR_NOISE = Array.from({ length: COMBATANT_STATUS_STAR_COUNT }, (_, index) => animationNoise(index, 17));
 const FLAKE_NOISE = Array.from({ length: COMBATANT_STATUS_FLAKE_COUNT }, (_, index) => ({
   along: animationNoise(index, 41),
   insetNoise: animationNoise(index, 47),
   delay: (index / COMBATANT_STATUS_FLAKE_COUNT) * 0.72,
 }));
+
+// Precalculated unit directions with alternating point radii for 4-spike stars.
 const STAR_DIRECTIONS = Array.from({ length: 8 }, (_, index) => {
   const angle = (index * Math.PI) / 4 - Math.PI / 2;
+  const radiusRatio = index % 2 === 0 ? 1 : 0.38;
+  return {
+    cos: Math.cos(angle) * radiusRatio,
+    sin: Math.sin(angle) * radiusRatio,
+  };
+});
+
+// Precalculated unit directions for the 6 symmetrical snowflake arms (60 deg increments).
+const SNOWFLAKE_DIRECTIONS = Array.from({ length: 6 }, (_, index) => {
+  const angle = (index * Math.PI) / 3;
   return { cos: Math.cos(angle), sin: Math.sin(angle) };
 });
-const FRAME_DIRECTIONS = new Float64Array(12);
 
 export interface CombatantStatusPalette {
   primary: string;
@@ -36,12 +47,17 @@ export interface CombatantStatusPalette {
   glowRgb: RgbTuple;
 }
 
+const PALETTE_CACHE = new Map<ActiveCcKeyword, CombatantStatusPalette>();
+
 export function combatantStatusPalette(keyword: ActiveCcKeyword): CombatantStatusPalette {
+  const cached = PALETTE_CACHE.get(keyword);
+  if (cached) return cached;
+
   const shine = keywordDefinitions[keyword].shineColors;
   const primary = shine[0] ?? "#fcd34d";
   const secondary = shine[1] ?? "#d97706";
   const glow = shine[2] ?? shine[0] ?? "#fcd34d";
-  return {
+  const palette: CombatantStatusPalette = {
     primary,
     secondary,
     glow,
@@ -49,6 +65,8 @@ export function combatantStatusPalette(keyword: ActiveCcKeyword): CombatantStatu
     secondaryRgb: parseHexRgbBytes(secondary),
     glowRgb: parseHexRgbBytes(glow),
   };
+  PALETTE_CACHE.set(keyword, palette);
+  return palette;
 }
 
 export function combatantStatusProgress(elapsedMs: number): number {
@@ -72,28 +90,23 @@ function drawStar(
   y: number,
   size: number,
   rotation: number,
-  primary: RgbTuple,
-  secondary: RgbTuple,
   opacity: number,
 ): void {
-  const spikes = 4;
   const cos = Math.cos(rotation);
   const sin = Math.sin(rotation);
   ctx.beginPath();
-  for (let i = 0; i < spikes * 2; i++) {
+  for (let i = 0; i < 8; i++) {
     const direction = STAR_DIRECTIONS[i];
     if (!direction) continue;
-    const radius = i % 2 === 0 ? size : size * 0.38;
-    const px = x + (direction.cos * cos - direction.sin * sin) * radius;
-    const py = y + (direction.sin * cos + direction.cos * sin) * radius;
+    const px = x + (direction.cos * cos - direction.sin * sin) * size;
+    const py = y + (direction.sin * cos + direction.cos * sin) * size;
     if (i === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
   }
   ctx.closePath();
-  ctx.fillStyle = withAlpha(primary, opacity);
+  ctx.globalAlpha = opacity;
   ctx.fill();
-  ctx.strokeStyle = withAlpha(secondary, opacity * 0.7);
-  ctx.lineWidth = 0.6;
+  ctx.globalAlpha = opacity * 0.7;
   ctx.stroke();
 }
 
@@ -103,49 +116,52 @@ function drawSnowflake(
   centerY: number,
   radius: number,
   rotation: number,
-  primary: RgbTuple,
-  secondary: RgbTuple,
   opacity: number,
-  directions: Float64Array,
 ): void {
-  const petals = 6;
+  const rotCos = Math.cos(rotation);
+  const rotSin = Math.sin(rotation);
+  const side = radius * 0.28;
+
+  // Pass 1: Draw diamond-shaped petals.
   ctx.beginPath();
-  for (let petal = 0; petal < petals; petal++) {
-    const angle = (petal / petals) * Math.PI * 2 + rotation;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    directions[petal * 2] = cos;
-    directions[petal * 2 + 1] = sin;
+  for (let petal = 0; petal < 6; petal++) {
+    const dir = SNOWFLAKE_DIRECTIONS[petal];
+    if (!dir) continue;
+    const cos = dir.cos * rotCos - dir.sin * rotSin;
+    const sin = dir.sin * rotCos + dir.cos * rotSin;
     const tipX = centerX + cos * radius;
     const tipY = centerY + sin * radius;
-    const side = radius * 0.28;
-    const perpX = -sin;
-    const perpY = cos;
+    const perpX = -sin * side;
+    const perpY = cos * side;
 
     ctx.moveTo(centerX, centerY);
-    ctx.lineTo(tipX + perpX * side, tipY + perpY * side);
+    ctx.lineTo(tipX + perpX, tipY + perpY);
     ctx.lineTo(tipX, tipY);
-    ctx.lineTo(tipX - perpX * side, tipY - perpY * side);
+    ctx.lineTo(tipX - perpX, tipY - perpY);
     ctx.closePath();
   }
-  ctx.fillStyle = withAlpha(primary, opacity * 0.7);
+  ctx.globalAlpha = opacity * 0.7;
   ctx.fill();
-  ctx.strokeStyle = withAlpha(secondary, opacity);
-  ctx.lineWidth = 0.65;
+  ctx.globalAlpha = opacity;
   ctx.stroke();
 
-  ctx.beginPath();
-  for (let petal = 0; petal < petals; petal++) {
-    const cos = directions[petal * 2] ?? 0;
-    const sin = directions[petal * 2 + 1] ?? 0;
-    const midX = centerX + cos * radius * 0.55;
-    const midY = centerY + sin * radius * 0.55;
-    const arm = radius * 0.22;
-    const perpX = -sin;
-    const perpY = cos;
+  // Pass 2: Draw the mid-arm cross branches.
+  const arm = radius * 0.22;
+  const midDist = radius * 0.55;
 
-    ctx.moveTo(midX + perpX * arm, midY + perpY * arm);
-    ctx.lineTo(midX - perpX * arm, midY - perpY * arm);
+  ctx.beginPath();
+  for (let petal = 0; petal < 6; petal++) {
+    const dir = SNOWFLAKE_DIRECTIONS[petal];
+    if (!dir) continue;
+    const cos = dir.cos * rotCos - dir.sin * rotSin;
+    const sin = dir.sin * rotCos + dir.cos * rotSin;
+    const midX = centerX + cos * midDist;
+    const midY = centerY + sin * midDist;
+    const armX = -sin * arm;
+    const armY = cos * arm;
+
+    ctx.moveTo(midX + armX, midY + armY);
+    ctx.lineTo(midX - armX, midY - armY);
   }
   ctx.stroke();
 }
@@ -166,6 +182,10 @@ function drawSwirlingStars(
   const centerY = height * 0.28;
   const angleBase = progress * Math.PI * 2;
 
+  ctx.fillStyle = palette.primary;
+  ctx.strokeStyle = palette.secondary;
+  ctx.lineWidth = 0.6;
+
   for (let index = 0; index < COMBATANT_STATUS_STAR_COUNT; index++) {
     const noise = STAR_NOISE[index] ?? 0;
     const angle = angleBase + (index / COMBATANT_STATUS_STAR_COUNT) * Math.PI * 2 + noise * 0.35;
@@ -175,8 +195,9 @@ function drawSwirlingStars(
     const starSize = (4 + noise * 5) * 1.5;
     const wobble = Math.sin(progress * Math.PI * 8 + noise * Math.PI * 2) * 0.3;
     const twinkle = 0.45 + 0.55 * Math.abs(Math.sin(progress * Math.PI * 4 + noise * Math.PI * 2));
-    drawStar(ctx, x, y, starSize, wobble, palette.primaryRgb, palette.secondaryRgb, twinkle * appear);
+    drawStar(ctx, x, y, starSize, wobble, twinkle * appear);
   }
+  ctx.globalAlpha = 1;
 }
 
 function drawIceCrystals(
@@ -188,8 +209,7 @@ function drawIceCrystals(
 ): void {
   const encroach = clamp01(progress / COMBATANT_FREEZE_ENCROACH_PROGRESS);
   const minDim = Math.min(width, height);
-  const crackDensity = 0.7;
-  const clearRadius = minDim * 0.55 * (1 - encroach * (0.55 + crackDensity * 0.3));
+  const clearRadius = minDim * 0.55 * (1 - encroach * 0.76);
   const edgeRadius = minDim * 0.78;
   const pulse = encroach >= 1 ? 0.88 + 0.12 * (0.5 + 0.5 * Math.sin(progress * Math.PI * 2)) : 1;
   const veilOpacity = encroach * COMBATANT_STATUS_FROST_OPACITY * pulse;
@@ -209,9 +229,10 @@ function drawIceCrystals(
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  // Reuse each petal's exact direction for both drawing passes. Double precision
-  // keeps coordinates unchanged; one frame-local buffer serves every crystal.
-  const directions = FRAME_DIRECTIONS;
+  ctx.fillStyle = palette.primary;
+  ctx.strokeStyle = palette.secondary;
+  ctx.lineWidth = 0.65;
+
   for (let index = 0; index < COMBATANT_STATUS_FLAKE_COUNT; index++) {
     const flake = FLAKE_NOISE[index];
     if (!flake) continue;
@@ -220,7 +241,7 @@ function drawIceCrystals(
     const flakeAppear = clamp01((encroach - delay) / 0.28);
     if (flakeAppear <= 0.02) continue;
 
-    const inset = 4 + insetNoise * (6 + crackDensity * 10);
+    const inset = 4 + insetNoise * 13;
     let centerX: number;
     let centerY: number;
     switch (edge) {
@@ -244,20 +265,11 @@ function drawIceCrystals(
 
     const twinkle = 0.55 + 0.45 * Math.abs(Math.sin(progress * Math.PI * 2.4 + insetNoise * Math.PI * 2));
     const breathe = 0.88 + 0.12 * twinkle;
-    const flakeRadius = minDim * (0.01 + crackDensity * 0.018) * (0.7 + insetNoise * 0.5) * flakeAppear * breathe;
+    const flakeRadius = minDim * 0.0226 * (0.7 + insetNoise * 0.5) * flakeAppear * breathe;
     const opacity = (0.3 + 0.55 * flakeAppear * COMBATANT_STATUS_FROST_OPACITY) * twinkle;
-    drawSnowflake(
-      ctx,
-      centerX,
-      centerY,
-      flakeRadius,
-      along * Math.PI + insetNoise + progress * 0.15,
-      palette.primaryRgb,
-      palette.secondaryRgb,
-      opacity,
-      directions,
-    );
+    drawSnowflake(ctx, centerX, centerY, flakeRadius, along * Math.PI + insetNoise + progress * 0.15, opacity);
   }
+  ctx.globalAlpha = 1;
 }
 
 export function drawCombatantStatusEffect(
@@ -284,6 +296,8 @@ export function drawCombatantStatusEffectStatic(
   palette: CombatantStatusPalette,
 ): void {
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = withAlpha(palette.primaryRgb, kind === "stun" ? 0.12 : 0.18);
+  ctx.fillStyle = palette.primary;
+  ctx.globalAlpha = kind === "stun" ? 0.12 : 0.18;
   ctx.fillRect(0, 0, width, height);
+  ctx.globalAlpha = 1;
 }
