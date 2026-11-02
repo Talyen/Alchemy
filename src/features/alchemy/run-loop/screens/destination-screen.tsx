@@ -48,11 +48,11 @@ export function DestinationScreen({
     [bossOnly, rewardState.selectedBossId],
   );
 
-  const bossForShine = useMemo(() => boss ?? (bossOnly ? getBossEnemy() : null), [boss, bossOnly]);
-  const bossTextShineColors = bossForShine ? getBossTextShineColors(bossForShine) : [];
+  const bossEnemy = bossOnly ? (boss ?? getBossEnemy()) : null;
+  const bossTextShineColors = bossEnemy ? getBossTextShineColors(bossEnemy) : [];
 
-  const title = bossOnly ? (
-    <ShineText colors={bossTextShineColors}>{i18n.displayText(bossForShine?.title ?? getBossEnemy().title)}</ShineText>
+  const title = bossEnemy ? (
+    <ShineText colors={bossTextShineColors}>{i18n.displayText(bossEnemy.title)}</ShineText>
   ) : (
     "Choose Destination"
   );

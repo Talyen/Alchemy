@@ -22,13 +22,16 @@ export function DestinationRoomProgress({
   const i18n = useGameTranslation();
   const id = useId();
   const reduceMotion = useReducedMotionPreference();
-  const [view, setView] = useState({ act: currentAct, expanded: false });
-  const expanded = view.act === currentAct && view.expanded;
+  const [expandedAct, setExpandedAct] = useState<number | null>(null);
+  const expanded = expandedAct === currentAct;
   const actCount = GAME_EDITION_POLICY.campaignActs;
   const expandedNodeCount = DESTINATIONS_PER_ACT + actCount - 1;
   const actIndex = Math.min(Math.max(currentAct - 1, 0), actCount - 1);
   const actLabel = ["I", "II", "III"][actIndex] ?? String(currentAct);
   const currentRoom = Math.min(destinationIndexInAct, DESTINATIONS_PER_ACT - 1);
+  const actCenterOffset = (actCount - 1) / 2;
+  const nodeCenterOffset = (expandedNodeCount - 1) / 2;
+  const roomCollapsedX = `calc(${actIndex - actCenterOffset} * var(--progress-step))`;
 
   return (
     <div
@@ -52,10 +55,10 @@ export function DestinationRoomProgress({
           {Array.from({ length: actCount }, (_, index) => {
             const current = index === actIndex;
             const label = ["I", "II", "III"][index] ?? String(index + 1);
-            const collapsedX = `calc(${index - (actCount - 1) / 2} * var(--progress-step))`;
+            const collapsedX = `calc(${index - actCenterOffset} * var(--progress-step))`;
             const expandedX = current
               ? collapsedX
-              : `calc(${index + (index > actIndex ? DESTINATIONS_PER_ACT - 1 : 0) - (expandedNodeCount - 1) / 2} * var(--progress-step))`;
+              : `calc(${index + (index > actIndex ? DESTINATIONS_PER_ACT - 1 : 0) - nodeCenterOffset} * var(--progress-step))`;
 
             return (
               <li
@@ -81,12 +84,11 @@ export function DestinationRoomProgress({
                   <button
                     type="button"
                     className="destination-progress-act-trigger"
-                    style={{ outline: "none" }}
                     aria-controls={`${id}-rooms`}
                     aria-expanded={expanded}
                     aria-label={i18n.text("ui.room-progress.show-rooms", "Act {{act}}: Show rooms", { act: label })}
                     onClick={() => {
-                      setView({ act: currentAct, expanded: true });
+                      setExpandedAct(currentAct);
                       playUISound("mapNode");
                     }}
                   />
@@ -110,7 +112,7 @@ export function DestinationRoomProgress({
             const meta = !current && destination ? destinationMeta[destination] : undefined;
             const Icon = current ? Star : meta?.icon;
             const room = index + 1;
-            const expandedX = `calc(${actIndex + index - (expandedNodeCount - 1) / 2} * var(--progress-step))`;
+            const expandedX = `calc(${actIndex + index - nodeCenterOffset} * var(--progress-step))`;
             const label = current
               ? i18n.text("ui.room-progress.current", "Room {{room}}: You are here", { room })
               : completed
@@ -129,7 +131,7 @@ export function DestinationRoomProgress({
                 className="destination-progress-position destination-progress-room"
                 style={
                   {
-                    "--progress-collapsed-x": `calc(${actIndex - (actCount - 1) / 2} * var(--progress-step))`,
+                    "--progress-collapsed-x": roomCollapsedX,
                     "--progress-expanded-x": expandedX,
                     "--progress-node-delay": `${Math.abs(index - currentRoom) * 10}ms`,
                   } as CSSProperties
@@ -156,8 +158,6 @@ export function DestinationRoomProgress({
         <button
           type="button"
           className="destination-progress-toggle"
-          // Focus belongs to one circular node, rather than this expanding hit area.
-          style={{ outline: "none" }}
           aria-controls={`${id}-rooms`}
           aria-expanded={expanded}
           aria-label={
@@ -166,7 +166,7 @@ export function DestinationRoomProgress({
               : i18n.text("ui.room-progress.show-rooms", "Act {{act}}: Show rooms", { act: actLabel })
           }
           onClick={() => {
-            setView({ act: currentAct, expanded: !expanded });
+            setExpandedAct((prev) => (prev === currentAct ? null : currentAct));
             playUISound("mapNode");
           }}
         />
