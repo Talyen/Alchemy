@@ -248,6 +248,7 @@ function ActorArtFrame({
       recoilAnim.play();
     } else {
       node.classList.remove("portrait-recoil-active");
+      void node.offsetWidth;
       node.classList.add("portrait-recoil-active");
     }
   }, [pulse, isDead, maxHealth]);
@@ -310,7 +311,7 @@ function ActorArtFrame({
             />
           )}
           {artOverlay}
-          <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
+          <PortraitImpactVfx pulse={pulse} isDead={isDead} />
         </Surface>
       </CombatantStatusEffectPresentation>
     </div>

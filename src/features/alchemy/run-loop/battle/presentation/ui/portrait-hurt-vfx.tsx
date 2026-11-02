@@ -1,18 +1,20 @@
 import { HurtSparkBurst } from "./hurt-spark-burst";
 import type { CombatImpactCue } from "../../../../shared/types";
 
-export function PortraitImpactVfx({
-  pulse,
-  showHealthFlash,
-}: {
+export interface PortraitImpactVfxProps {
   pulse: CombatImpactCue | null;
-  showHealthFlash: boolean;
-}) {
+  isDead?: boolean;
+  showHealthFlash?: boolean;
+}
+
+export function PortraitImpactVfx({ pulse, isDead = false, showHealthFlash }: PortraitImpactVfxProps) {
   if (pulse === null) return null;
+
+  const displayFlash = showHealthFlash ?? (!isDead && pulse.healthLost);
 
   return (
     <>
-      {showHealthFlash ? (
+      {displayFlash ? (
         <div
           key={pulse.sequence}
           data-testid="portrait-health-loss-flash"
