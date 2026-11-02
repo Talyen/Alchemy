@@ -91,7 +91,6 @@ export function ModalOverlayShell({
   mount = true,
   children,
 }: ModalOverlayShellProps) {
-  useGameTranslation();
   const root = useModalRoot();
   const { mounted } = useFadePresence(open);
   const interactive = open && mount && mounted;

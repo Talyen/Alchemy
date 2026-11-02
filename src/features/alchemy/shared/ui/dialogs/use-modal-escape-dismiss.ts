@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
+import { useLatestRef } from "../use-latest-ref";
 
 interface ModalEscapeDismissOptions {
   active: boolean;
@@ -14,12 +15,8 @@ export function useModalEscapeDismiss({
   priority = ESCAPE_PRIORITY.MODAL,
   onEscape,
 }: ModalEscapeDismissOptions) {
-  const onEscapeRef = useRef(onEscape);
+  const onEscapeRef = useLatestRef(onEscape);
   const escapeId = useId();
-
-  useEffect(() => {
-    onEscapeRef.current = onEscape;
-  }, [onEscape]);
 
   useEffect(() => {
     if (!active) return;
@@ -28,13 +25,15 @@ export function useModalEscapeDismiss({
       priority,
       onEscape: () => onEscapeRef.current(),
     });
-  }, [active, id, escapeId, priority]);
+  }, [active, id, escapeId, priority, onEscapeRef]);
 }
+
+const noop = () => {};
 
 export function useCaptureEscapeCancel(onCancel: (() => void) | undefined) {
   useModalEscapeDismiss({
     active: onCancel !== undefined,
     id: "capture-escape-cancel",
-    onEscape: onCancel ?? (() => {}),
+    onEscape: onCancel ?? noop,
   });
 }

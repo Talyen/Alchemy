@@ -7,6 +7,8 @@ export function enableFocusNavigation(): void {
   document.documentElement.dataset.focusNavigation = "true";
 }
 
+const NAVIGATION_KEYS = new Set(["Tab", "F7", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+
 export function trackFocusInput(): () => void {
   const cancel = () => {
     document.documentElement.dataset.focusNavigation = "false";
@@ -21,7 +23,7 @@ export function trackFocusInput(): () => void {
       cancel();
       // A dismissal must not turn pointer-retained focus into keyboard inspection.
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    } else if (["Tab", "F7", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+    } else if (NAVIGATION_KEYS.has(event.key)) {
       const target = event.target;
       const editing =
         target instanceof HTMLElement &&
