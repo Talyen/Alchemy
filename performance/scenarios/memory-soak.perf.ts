@@ -9,7 +9,7 @@ import { RewardPage } from "../../tests/pages/reward-page";
 import { injectExactSave } from "../../tests/e2e/save-injection";
 import { DESTINATIONS } from "../../src/lib/routing/destinations";
 import { waitForBattleReady } from "../battle-setup";
-import { waitForCombatDecision } from "../combat-decision";
+import { playCombatCard, resolveWishPanels, waitForCombatDecision } from "../combat-decision";
 import { assertJourneyCase } from "../journey-types";
 import type { ScenarioRunResult } from "../report";
 import { installRuntimeResourceProbe, requireSettledResources } from "../runtime-resources";
@@ -81,15 +81,10 @@ async function progress(page: Page) {
     await page.keyboard.press("Escape");
     const settleCombat = () =>
       waitForCombatDecision(page, battle, async () => {
-        const wish = page.locator(".wish-overlay-panel");
-        for (let choice = 0; choice < 8 && (await wish.isVisible()); choice++) {
-          await wish
-            .getByRole("button", { name: /^Choose / })
-            .first()
-            .click();
+        await resolveWishPanels(page, async (buttons) => {
+          await buttons.first().click();
           await settleSave(page);
-        }
-        await expect(wish).toHaveCount(0);
+        });
       });
     for (let count = 0; count < 3; count++) {
       // Saving can settle before the played card finishes damage or victory.
@@ -98,7 +93,7 @@ async function progress(page: Page) {
       if (await battle.isBattleOver()) break;
       const card = battle.hand.filter({ visible: true }).first();
       if (!(await card.isEnabled().catch(() => false))) break;
-      await card.click();
+      await playCombatCard(page, card);
       await settleSave(page);
     }
     await settleCombat();

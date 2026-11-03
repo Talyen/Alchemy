@@ -456,7 +456,9 @@ for (const reducedMotion of [false, true]) {
       expect(review.maximumNames).toBeLessThanOrEqual(4);
       expect(review.frames).toBeGreaterThan(10);
       expect(review.lastSeen).toBeGreaterThan(1300);
-      expect(review.lastSeen).toBeLessThan(2000);
+      // Four announcements can launch up to 640 ms apart from the first, then
+      // remain visible for 1600 ms. Keep a small allowance for frame delivery.
+      expect(review.lastSeen).toBeLessThan(2400);
       expect(review.overflow, review.overflowDetails).toBe(false);
       expect(review.numericSizingChanged, "ordinary feedback retains its base size").toBe(false);
       expect(

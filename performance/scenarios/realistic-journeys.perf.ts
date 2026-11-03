@@ -14,7 +14,7 @@ import { injectExactSave } from "../../tests/e2e/save-injection";
 import { resumeInjectedRun } from "../../tests/e2e/navigation";
 import { waitForBattleReady } from "../battle-setup";
 import { createCombatChoices } from "../combat-choices";
-import { waitForCombatDecision } from "../combat-decision";
+import { playCombatCard, resolveWishPanels, waitForCombatDecision } from "../combat-decision";
 import { delay } from "../delay";
 import { expect, test, type ScenarioId } from "../fixtures";
 import { assertJourneyCase, type JourneyCase, type SegmentRequirement } from "../journey-types";
@@ -58,17 +58,13 @@ async function resolveWishChoices(
   recordAction: RecordAction,
   choices: ReturnType<typeof createCombatChoices>,
 ): Promise<void> {
-  const panel = page.locator(".wish-overlay-panel");
-  for (let index = 0; index < 8 && (await panel.isVisible().catch(() => false)); index++) {
-    const buttons = panel.getByRole("button", { name: /^Choose / });
+  await resolveWishPanels(page, async (buttons) => {
     const names = await buttons.evaluateAll((elements) =>
       elements.map((element, index) => `wish:${element.getAttribute("aria-label") ?? index}`),
     );
     const selected = choices.choose(names);
     await record(names[selected]!, () => buttons.nth(selected).click(), recordAction);
-    await delay(350);
-  }
-  if (await panel.isVisible().catch(() => false)) throw new Error("Wish choices did not settle");
+  });
 }
 
 async function playRealCombat(
@@ -105,19 +101,8 @@ async function playRealCombat(
       const preferred = choices.find((candidate) => /Block|Heal|Companion|Shield/.test(candidate.label)) ?? choices[0]!;
       const choice = choices[decisions.choose(names, `play:${preferred.label}`)]!;
       const card = playable.nth(choice.index);
-      if (cardIndex === 0) await card.hover();
       const mana = await battle.mana();
-      const key = await card.locator("xpath=ancestor::*[@data-hand-slot]").getAttribute("data-hand-slot");
-      if (!key) throw new Error("Combat card lacks its hand identity");
-      await record(
-        `play:${choice.label}`,
-        async () => {
-          await card.click();
-          // Rejected/unaffordable clicks must not count as exercised cards.
-          await expect(page.locator(`[data-hand-slot=${JSON.stringify(key)}]`)).toHaveCount(0);
-        },
-        recordAction,
-      );
+      await record(`play:${choice.label}`, () => playCombatCard(page, card), recordAction);
       if (journeyCase.scenario === "campaign-early" && actions === 0) {
         // This reachable starter checkpoint replaces the separate generated-case UI smoke.
         await expect.poll(() => battle.mana()).toBeLessThan(mana);

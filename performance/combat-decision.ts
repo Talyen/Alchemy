@@ -1,5 +1,39 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import type { BattlePage } from "../tests/pages/battle-page";
+
+export async function playCombatCard(page: Page, card: Locator): Promise<void> {
+  await expect(card).toBeEnabled();
+  await expect.poll(() => card.evaluate((node) => !node.closest("[inert]"))).toBe(true);
+  const slot = card.locator("xpath=ancestor::*[@data-hand-slot]");
+  const key = await slot.getAttribute("data-hand-slot");
+  const bounds = await slot.boundingBox();
+  if (!key || !bounds) throw new Error("Combat card lacks its hand slot");
+  // Artwork overlaps in a full hand. Real pointer input targets the untransformed
+  // slot, which the hand's pointer owner maps to the intended card.
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await expect(slot).toHaveAttribute("data-hovered", "true");
+  await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  // A rejected click or a neighbouring card must never count as a played card.
+  await expect(page.locator(`[data-hand-slot=${JSON.stringify(key)}]`)).toHaveCount(0);
+}
+
+export async function resolveWishPanels(page: Page, choose: (buttons: Locator) => Promise<void>): Promise<void> {
+  const panel = page.locator(".wish-overlay-panel");
+  for (let choice = 0; choice < 8 && (await panel.isVisible()); choice++) {
+    const current = await panel.elementHandle();
+    if (!current) throw new Error("Wish panel disappeared before its choice");
+    try {
+      await expect.poll(() => current.evaluate((node) => !node.closest("[inert]"))).toBe(true);
+      await choose(panel.getByRole("button", { name: /^Choose / }));
+      // Each offer has its own panel. Wait for that exact offer to leave before
+      // counting another choice; save completion can precede its exit animation.
+      await current.waitForElementState("hidden", { timeout: 5_000 });
+    } finally {
+      await current.dispose();
+    }
+  }
+  await expect(panel).toHaveCount(0);
+}
 
 export async function waitForCombatDecision(
   page: Page,
