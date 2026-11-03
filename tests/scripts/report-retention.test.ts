@@ -66,10 +66,10 @@ it("respects exact age/size boundaries and preserves unknown destinations and sy
 
 it("expires only marked historical runs after the retention period, preserving references and legacy evidence", async () => {
   const root = fixture();
-  const expired = run(root, "expired", "passed", 31 * day, { retention: "expiring-v1" });
+  const expired = run(root, "expired", "passed", 2 * day, { retention: "expiring-v1" });
   const legacy = run(root, "legacy", "passed", 100 * day);
   const referenced = run(root, "referenced", "passed", 40 * day, { retention: "expiring-v1" });
-  const failure = run(root, "failure", "failed", 89 * day, { retention: "expiring-v1" });
+  const failure = run(root, "failure", "failed", 2 * day, { retention: "expiring-v1" });
   const pinned = run(root, "pinned", "passed", 60 * day, { retention: "expiring-v1" });
   fs.writeFileSync(path.join(pinned, ".retention-keep"), "keep");
   run(root, "latest", "passed", 0, {
@@ -83,6 +83,58 @@ it("expires only marked historical runs after the retention period, preserving r
   await pruneTransientArtifacts({ rootDir: root, now });
   expect(fs.existsSync(expired)).toBe(false);
   for (const directory of [legacy, referenced, failure, pinned]) expect(fs.existsSync(directory)).toBe(true);
+});
+
+it("bounds marked failure records by size after one day while retaining latest results", () => {
+  const root = fixture();
+  run(root, "old-failure", "failed", 2 * day, { retention: "expiring-v1" });
+  run(root, "recent-failure", "failed", day / 2, { retention: "expiring-v1" });
+  run(root, "latest-failure", "failed", 0, { retention: "expiring-v1" });
+  expect(reportRetentionPlan(root, { now }).expiringCandidates).toEqual([]);
+  expect(reportRetentionPlan(root, { now, budget: 1 }).expiringCandidates.map((item) => item.path)).toEqual([
+    "reports/runs/old-failure",
+  ]);
+});
+
+it("retires obsolete reference chains while keeping baselines needed by recent results", () => {
+  const root = fixture();
+  run(root, "old-baseline", "passed", 10 * day, { retention: "expiring-v1" });
+  run(root, "old-consumer", "passed", 9 * day, {
+    retention: "expiring-v1",
+    artifacts: [{ path: "reports/runs/old-baseline/output.log" }],
+  });
+  run(root, "recent-baseline", "passed", 8 * day, { retention: "expiring-v1" });
+  run(root, "recent-consumer", "passed", day / 2, {
+    retention: "expiring-v1",
+    artifacts: [{ path: "reports/runs/recent-baseline/output.log" }],
+  });
+  run(root, "latest", "passed", 0, { retention: "expiring-v1" });
+  expect(reportRetentionPlan(root, { now }).expiringCandidates.map((item) => item.path)).toEqual([
+    "reports/runs/old-baseline",
+    "reports/runs/old-consumer",
+  ]);
+});
+
+it("preserves locks, source, saves, artwork, footage and release output even in marked runs", async () => {
+  const root = fixture();
+  const retained = [
+    "transport.lock",
+    "source/card.ts",
+    "saves/player.json",
+    "art/original.png",
+    "movie.mp4",
+    "release.ipa",
+  ].map((file, index) => {
+    const directory = run(root, `protected-${index}`, "passed", 10 * day, { retention: "expiring-v1" });
+    const target = path.join(directory, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, "caller-owned");
+    fs.utimesSync(target, new Date(now - 10 * day), new Date(now - 10 * day));
+    return directory;
+  });
+  run(root, "latest", "passed", 0, { retention: "expiring-v1" });
+  expect((await pruneTransientArtifacts({ rootDir: root, now, dryRun: true })).removed).toEqual([]);
+  expect(retained.every((directory) => fs.existsSync(directory))).toBe(true);
 });
 
 it("fails closed when the current run pointer is unreadable", async () => {
