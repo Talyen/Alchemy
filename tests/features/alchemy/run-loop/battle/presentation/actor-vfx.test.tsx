@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
-import { createStore } from "zustand";
-import {
-  BattleArtPanel,
-  ShakingArtPanel,
-  ShakingCompanionPanel,
-} from "@/features/alchemy/run-loop/battle/presentation/actor-vfx";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { createStore, type StoreApi } from "zustand";
+import { ShakingArtPanel, ShakingCompanionPanel } from "@/features/alchemy/run-loop/battle/presentation/actor-vfx";
 import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 
@@ -46,18 +42,14 @@ function createMockPresentationStore(initial: Partial<ReturnType<BattlePresentat
     companionShaking: false,
     companionActionCue: null,
     ...initial,
-  })) as BattlePresentationStore;
+  })) as StoreApi<ReturnType<BattlePresentationStore["getState"]>>;
 }
 
 describe("actor-vfx presentation connectors", () => {
   afterEach(cleanup);
-  it("BattleArtPanel is exported as an alias of ShakingArtPanel", () => {
-    expect(BattleArtPanel).toBe(ShakingArtPanel);
-  });
-
   it("extracts side-specific feedback and shimmer state for player", () => {
     useUiStore.setState({
-      shimmerState: { cardId: "hero-portrait", token: 42 },
+      shimmerState: { cardId: "hero-portrait", token: 42, triggeredAt: 0 },
     });
 
     const store = createMockPresentationStore({
@@ -91,7 +83,7 @@ describe("actor-vfx presentation connectors", () => {
 
   it("extracts side-specific feedback and shimmer state for enemy", () => {
     useUiStore.setState({
-      shimmerState: { cardId: "other-card", token: 99 },
+      shimmerState: { cardId: "other-card", token: 99, triggeredAt: 0 },
     });
 
     const store = createMockPresentationStore({
@@ -137,7 +129,7 @@ describe("actor-vfx presentation connectors", () => {
       companionShaking: true,
       companionActionCue: {
         sequence: 1,
-        companionId: "owl", // Different companion
+        companionId: "library-owl", // Different companion
         kind: "cast",
       },
     });
@@ -152,12 +144,14 @@ describe("actor-vfx presentation connectors", () => {
     expect(screen.getByTestId("companion-action-motion").getAttribute("data-companion-action")).toBeNull();
 
     // Now update store to target this companion
-    store.setState({
-      companionActionCue: {
-        sequence: 2,
-        companionId: "wolf",
-        kind: "attack",
-      },
+    act(() => {
+      store.setState({
+        companionActionCue: {
+          sequence: 2,
+          companionId: "wolf",
+          kind: "attack",
+        },
+      });
     });
 
     rerender(

@@ -43,8 +43,6 @@ export function ShakingArtPanel({ presentation, side, shimmerId, ...props }: Sha
   );
 }
 
-export const BattleArtPanel = ShakingArtPanel;
-
 export function ShakingCompanionPanel({
   presentation,
   inactive = false,

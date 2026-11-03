@@ -133,8 +133,8 @@ function isHealthThresholdReward(value: unknown): value is { threshold: number; 
   );
 }
 
-function hasFormerForgedBulwark(value: unknown): boolean {
-  return isRecord(value) && value.forgeOnBlockDepleted === 1;
+function hasFormerTalentEffect(value: unknown, key: string): boolean {
+  return isRecord(value) && value[key] === 1;
 }
 
 function normalizeTalentEffects(
@@ -154,13 +154,18 @@ function normalizeTalentEffects(
   }
   // Existing active battles record the old Forged Bulwark effect rather than
   // unlocked talent IDs. Carry its ownership into the new effect on resume.
-  if (saved && !Object.hasOwn(saved, "blockOnForgeGain") && hasFormerForgedBulwark(saved)) merged.blockOnForgeGain = 1;
+  if (saved && !Object.hasOwn(saved, "blockOnForgeGain") && hasFormerTalentEffect(saved, "forgeOnBlockDepleted"))
+    merged.blockOnForgeGain = 1;
   // Older active battles store the former Archery effects instead of talent IDs.
-  if (isRecord(saved) && !Object.hasOwn(saved, "archeryArmorRemoval") && saved.archeryArmorPiercing === 1) {
+  if (saved && !Object.hasOwn(saved, "archeryArmorRemoval") && hasFormerTalentEffect(saved, "archeryArmorPiercing")) {
     merged.archeryArmorRemoval = 1;
     merged.archeryDamageBonus = 1;
   }
-  if (isRecord(saved) && !Object.hasOwn(saved, "dodgeChanceWithoutBlock") && saved.archeryDamageWithoutBlock === 1)
+  if (
+    saved &&
+    !Object.hasOwn(saved, "dodgeChanceWithoutBlock") &&
+    hasFormerTalentEffect(saved, "archeryDamageWithoutBlock")
+  )
     merged.dodgeChanceWithoutBlock = 15;
   merged.cardHealMultipliers = normalizeMagnitudeDictionary(merged.cardHealMultipliers);
   merged.companionBondLevels = normalizeNonNegativeRecord(defaults.companionBondLevels, merged.companionBondLevels);

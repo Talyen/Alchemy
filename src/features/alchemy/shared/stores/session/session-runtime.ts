@@ -128,7 +128,8 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
     })().then(complete, fail);
     return disposal;
   }
-  const session = Object.freeze({ dispose, [Symbol.asyncDispose]: dispose }) as GameSession;
+  // Only this constructor brands the opaque handle; its runtime lives in the WeakMap.
+  const session = Object.freeze({ dispose, [Symbol.asyncDispose]: dispose }) as unknown as GameSession;
   runtimes.set(session, runtime);
   return session;
 }
