@@ -2,7 +2,8 @@ import type { BattleState, EnemyMitigation } from "./types";
 import { BATTLE_CONFIG, MIN_ARMOR_AMOUNT } from "../game-constants";
 import { hasEnemyTrait } from "./encounter-trait-state";
 export function addEnemyMitigation(state: BattleState, field: keyof EnemyMitigation, delta: number): BattleState {
-  if (delta <= 0) return state;
+  // Signed deltas also pay costs, including Shield Bash's Block payment.
+  if (delta === 0) return state;
   return {
     ...state,
     enemyMitigation: {

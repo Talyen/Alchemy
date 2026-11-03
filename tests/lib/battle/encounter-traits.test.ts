@@ -615,7 +615,7 @@ it("encounter trait health threshold shares the original crossing between Second
   }
 });
 
-it("safely ignores non-positive mitigation and unneeded threshold processing", () => {
+it("skips zero mitigation changes, non-positive grants and unneeded threshold processing", () => {
   const state = makeTestBattleState({
     enemyHealth: 9,
     enemyMaxHealth: 20,
@@ -632,9 +632,8 @@ it("safely ignores non-positive mitigation and unneeded threshold processing", (
   });
   expect(processEncounterTraitHealthThreshold(10, triggeredState, [])).toBe(triggeredState);
 
-  // Non-positive mitigation addition returns unchanged state reference
+  // Zero mitigation changes return the unchanged state reference.
   expect(addEnemyMitigation(state, "block", 0)).toBe(state);
-  expect(addEnemyMitigation(state, "block", -5)).toBe(state);
 
   // Combat text mitigation with non-positive amount or defeated enemy does nothing
   const texts: CombatTextEvent[] = [];
