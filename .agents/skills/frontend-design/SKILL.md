@@ -22,4 +22,4 @@ For changed interactions or requested mockups, describe the player flow: entry, 
 
 Use the existing primitives and compare the candidate in matched game states. Capture the original before editing; use the [managed preview workflow](../../../CONTRIBUTING.md#agent-preview-ownership) and [reproducible scenarios](../../../Docs/UI_VISUAL_REVIEW.md#reproducible-scenarios) where they fit. For artwork, follow the [asset workflow](../../../Docs/WORKFLOWS-ASSETS.md#art-style-and-generation-prompts) and inspect its actual destination size and crop. Exercise affected interactions and localized layouts.
 
-Use [localization](../localization/SKILL.md) after finalizing changed text. [CONTRIBUTING](../../../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and execution permissions.
+Use [localization](../localization/SKILL.md) after finalizing changed text. [CONTRIBUTING](../../../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and resource coordination.

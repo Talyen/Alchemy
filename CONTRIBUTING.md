@@ -8,19 +8,19 @@ Git authorization and local integration. Read known owners directly; use
 
 Use four entry points for ordinary work:
 
-| Need                                                            | Command                                        |
-| --------------------------------------------------------------- | ---------------------------------------------- |
-| Lightweight checks for the isolated task                        | `npm run check`                                |
-| Lightweight checks for selected paths                           | `npm run check -- <paths>`                     |
-| Full repository validation (CI; local only by explicit request) | `npm run check:all`                            |
-| Focused unit diagnosis                                          | `npm run test:unit -- <one-or-two-test-files>` |
+| Need                                     | Command                                        |
+| ---------------------------------------- | ---------------------------------------------- |
+| Lightweight checks for the isolated task | `npm run check`                                |
+| Lightweight checks for selected paths    | `npm run check -- <paths>`                     |
+| Full repository validation (CI or local) | `npm run check:all`                            |
+| Focused unit diagnosis                   | `npm run test:unit -- <one-or-two-test-files>` |
 
-| Change                                        | Additional work                                                                             |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Code or documentation                         | Use the task gate; run a focused unit when it answers a concrete question.                  |
-| Player-facing text                            | After wording settles, prepare, translate and review the localization packet.               |
-| Visible UI                                    | Compare matched rendered states and exercise affected interactions; translate changed text. |
-| Explicitly requested heavy local verification | Follow the authorization and host-lane rules below before running it.                       |
+| Change                   | Additional work                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| Code or documentation    | Use the task gate; run a focused unit when it answers a concrete question.                  |
+| Player-facing text       | After wording settles, prepare, translate and review the localization packet.               |
+| Visible UI               | Compare matched rendered states and exercise affected interactions; translate changed text. |
+| Heavy local verification | Follow the host-lane rules below before running it.                                         |
 
 `check` selects the isolated task, including uncommitted work. In a mixed or
 unrecorded checkout, name task-owned paths, including deletions and both sides of
@@ -29,23 +29,15 @@ its scope, outcomes and deferred CI work. See [selection and gate details](./scr
 
 The task gate runs applicable localization and documentation contracts and
 selected-file formatting and lint. Units, compilation, broad static checks, builds,
-bundle budgets and automated browser/Electron acceptance belong to CI. Large
+bundle budgets and automated browser/Electron acceptance are deferred to CI by default. Large
 format/lint batches are deferred as reported by the gate. A passing local gate
 is not CI or platform acceptance.
 
-Task work authorizes lightweight checks, one focused reproduction using one or two
-explicit unit test files with one worker, and development previews for required
-visual review. Focused tests have a 30-second limit on the shared Mac; retry a
+Choose checks suited to the task, including focused reproductions, browser and Electron tests, and development previews for required visual review. Focused tests have a 30-second limit on the shared Mac; retry a
 timeout and investigate before widening scope or changing that limit. Use focused
 units to answer a concrete question, not to split a broad suite into smaller runs.
 
-Broad units, compilation, builds, automated browser/Electron suites, coverage,
-mutation, simulation sweeps and profiling require an explicit request for local
-execution. Set `ALCHEMY_ALLOW_HEAVY_LOCAL=1` only for an authorized heavy command;
-do not bypass managed runners with raw CLI, watch mode or `CI=true`. Essential
-authorized builds, heavier tests and rendered inspection use the shared host lane
-in `/Users/ryanmcintire/Developer/.coordination/README.md` before integration.
-The lane does not authorize heavy work or publication.
+Local verification, including broad units, compilation, builds, browser and Electron suites, coverage, mutation, simulation sweeps and profiling, does not require a separate permission request. Use managed runners rather than raw CLI, watch mode or `CI=true` to bypass resource coordination. Builds, heavier tests and rendered inspection on the shared Mac use the host lane in `/Users/ryanmcintire/Developer/.coordination/README.md` before integration. Publication and disruptive desktop actions retain their existing authorization requirements.
 
 Run the task gate before handoff. Protected integration verifies the combined result
 outside the lock and revalidates the pinned commits under the lock; if main changes,

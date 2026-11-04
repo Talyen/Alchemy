@@ -25,10 +25,13 @@ export class UsageError extends Error {
  * Entries with custom usage/exit-code flows (path selection, plan metadata)
  * stay hand-rolled on `isMainModule` instead of bending these two shapes.
  *
+ * `preflight` validates arguments synchronously before artifact coordination;
+ * its return value is passed to the entry function.
+ * @template T
  * @param {string} importMetaUrl `import.meta.url` of the calling module
- * @param {() => unknown} fn entry function
+ * @param {(input: T) => unknown} fn entry function
  */
-export function defineScript(importMetaUrl, fn, { artifacts = false } = {}) {
+export function defineScript(importMetaUrl, fn, { artifacts = false, preflight } = {}) {
   if (!isMainModule(importMetaUrl)) return;
   const report = (error) => {
     console.error(error instanceof Error ? error.message : error);
@@ -38,10 +41,11 @@ export function defineScript(importMetaUrl, fn, { artifacts = false } = {}) {
     if (typeof res === "number") process.exitCode = res;
   };
   try {
+    const input = preflight?.();
     const rootDir = path.resolve(import.meta.dirname, "../..");
     const result = artifacts
-      ? registerArtifactSession(rootDir, () => pruneExpiredArtifacts({ rootDir })).then(fn)
-      : fn();
+      ? registerArtifactSession(rootDir, () => pruneExpiredArtifacts({ rootDir })).then(() => fn(input))
+      : fn(input);
     if (result && typeof result.then === "function") {
       result.then(handleResult, report);
     } else {

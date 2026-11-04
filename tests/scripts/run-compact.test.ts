@@ -4,11 +4,13 @@ import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { runCommand } from "../../scripts/lib/run-command.mjs";
 import { completionCounts, runCompact } from "../../scripts/run-compact.mjs";
+import { acquireTestResources, testResourceStatus } from "../../scripts/lib/verification/local-test-lane.mjs";
 import { unitSelection } from "../../scripts/lib/verification/unit-selection.mjs";
-import {
-  assertHeavyLocalAllowed,
-  assertLocalTestAllowed,
-} from "../../scripts/lib/verification/local-execution-policy.mjs";
+
+vi.mock("../../scripts/lib/verification/local-test-lane.mjs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../scripts/lib/verification/local-test-lane.mjs")>();
+  return { ...actual, acquireTestResources: vi.fn(actual.acquireTestResources) };
+});
 
 beforeEach(() => vi.stubEnv("ALCHEMY_OUTPUT_CAPTURED", undefined));
 afterEach(() => {
@@ -115,49 +117,28 @@ it("rejects a missing path in a mixed unit selection before starting a process o
   expect(unitSelection(["run", "real.test.ts"], root)).toEqual({ selectors: ["real.test.ts"], focused: false });
 });
 
-it("rejects heavy local tests before creating reports or reserving resources, even with CI=true", async () => {
+it("runs local broad and browser commands through managed scheduling without an opt-in", async () => {
   vi.stubEnv("GITHUB_ACTIONS", undefined);
-  vi.stubEnv("CI", "true");
   vi.stubEnv("ALCHEMY_ALLOW_HEAVY_LOCAL", undefined);
-  const root = createTemporaryDirectory("compact-ci-policy-");
-
-  for (const args of [
-    ["vitest", "run"],
-    ["vitest", "related", "src/App.tsx"],
-    ["playwright", "test"],
-    [process.execPath, "scripts/run-unit-batch.mjs", "{}"],
-  ])
-    await expect(runCompact(args, root)).rejects.toThrow("belongs to CI");
-  expect(fs.existsSync(path.join(root, "reports"))).toBe(false);
-});
-
-it("allows bounded unit diagnosis, hosted CI, explicit local overrides and test collection", () => {
-  const local = { CI: "true" };
-  for (const args of [["run"], ["run", "tests"], ["run", "--coverage"], ["related", "src/App.tsx"]])
-    expect(() => assertLocalTestAllowed("vitest", args, local)).toThrow("belongs to CI");
-  expect(() => assertLocalTestAllowed("npx", ["playwright", "test"], local)).toThrow("belongs to CI");
-  expect(() => assertHeavyLocalAllowed("Full check", local)).toThrow("belongs to CI");
-  for (const env of [{ GITHUB_ACTIONS: "true" }, { ALCHEMY_ALLOW_HEAVY_LOCAL: "1" }]) {
-    expect(() => assertLocalTestAllowed("vitest", ["run"], env)).not.toThrow();
-    expect(() => assertLocalTestAllowed("playwright", ["test"], env)).not.toThrow();
-    expect(() => assertLocalTestAllowed(process.execPath, ["scripts/run-unit-batch.mjs", "{}"], env)).not.toThrow();
-    expect(() => assertHeavyLocalAllowed("Full check", env)).not.toThrow();
+  const root = createTemporaryDirectory("compact-local-policy-");
+  const directory = path.join(root, "lanes");
+  const actual = await vi.importActual<typeof import("../../scripts/lib/verification/local-test-lane.mjs")>(
+    "../../scripts/lib/verification/local-test-lane.mjs",
+  );
+  const kinds: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    vi.mocked(acquireTestResources).mockImplementationOnce(async (command, args, cwd) => {
+      const lane = await actual.acquireTestResources(command, args, cwd, { directory, broadPort: 0, focusedPort: 0 });
+      kinds.push(lane.kind);
+      return lane;
+    });
   }
-  expect(() => assertLocalTestAllowed("vitest", ["run", "tests/a.test.ts", "tests/b.test.ts"], local)).not.toThrow();
-  expect(() => assertLocalTestAllowed("playwright", ["test", "--list"], local)).not.toThrow();
-});
-
-it("allows only the managed single-scenario preview without granting broad browser execution", () => {
-  const capture = ["test", "--config=playwright.scenario.config.ts", "--project=chromium"];
-  const env = { ALCHEMY_VISUAL_SCENARIO_FILE: "/task/reports/visual-review/scenario.json" };
-  expect(() => assertLocalTestAllowed("playwright", capture, {})).toThrow("belongs to CI");
-  for (const args of [capture, [...capture, "--headed"]])
-    expect(() => assertLocalTestAllowed("playwright", args, env)).not.toThrow();
-  for (const args of [
-    ["test"],
-    ["test", "--config=playwright.config.ts", "--project=chromium"],
-    [...capture, "--workers=4"],
-    [...capture, "--repeat-each=10"],
-  ])
-    expect(() => assertLocalTestAllowed("playwright", args, env)).toThrow("belongs to CI");
+  for (const name of ["vitest", "playwright"]) {
+    const binary = path.join(root, name);
+    fs.writeFileSync(binary, "#!/usr/bin/env node\nprocess.exit(0);\n", { mode: 0o755 });
+    const args = name === "vitest" ? ["run"] : ["test"];
+    expect(await runCompact([binary, ...args], root)).toBe(0);
+  }
+  expect(kinds).toEqual(["broad", "broad"]);
+  expect(testResourceStatus(directory)).toEqual([]);
 });

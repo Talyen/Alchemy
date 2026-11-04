@@ -49,11 +49,7 @@ sizes rather than shipping a speculative size reduction.
 
 ## Quick start
 
-Profiling and its renderer builds belong in CI unless the user explicitly requests
-local execution under [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
-On the shared Mac, wrap an authorized measurement in the bounded host lane
-specified there; run it before protected integration. The commands below select
-workloads, not execution permission. `--help` and comparison of existing reports
+Profiling and its renderer builds may run locally under [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change). On the shared Mac, wrap measurements in the bounded host lane specified there and run them before protected integration. `--help` and comparison of existing reports
 do not launch a measurement.
 
 ```bash
@@ -388,7 +384,7 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 
 Metric and comparison coverage lives in `tests/performance/` and runs in the
 full unit suite. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
-owns check selection and local execution permissions.
+owns check selection and local resource coordination.
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).
 

@@ -10,7 +10,7 @@ Choose the runner for the question:
 
 Both combat runners use production gameplay. Their automated policies do not
 establish human difficulty or rendered UI correctness. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
-owns execution permissions and verification requirements; commands below describe
+owns resource coordination and verification requirements; commands below describe
 runner options.
 
 ## Balance simulation
@@ -67,16 +67,16 @@ invocation. A group is indivisible, so this is not a time guarantee. Set
 `ALCHEMY_BALANCE_CHECKPOINT` to use a different directory. Checkpoints bind the
 source, edition and report options; changed inputs require a fresh directory.
 Interrupted groups are recomputed; completed groups remain usable. Heavy local
-runs still require the admission and authorization described in Contributing.
+runs still require the resource admission described in Contributing.
 Only one process may use a checkpoint at a time. A process killed without cleanup
 can leave `.lock`; inspect the recorded PID and remove it only after confirming its
 owner is no longer active. Never remove a live or ambiguous lock.
 
-For an explicitly authorized local full sweep, a single supervisor can acquire
+For a local full sweep, a single supervisor can acquire
 successive fair host-lane leases until the report is complete:
 
 ```sh
-ALCHEMY_ALLOW_HEAVY_LOCAL=1 ALCHEMY_BALANCE_MODE=full \
+ALCHEMY_BALANCE_MODE=full \
   ALCHEMY_BALANCE_FINDINGS_CAP=500 npm run balance:sim:supervise
 ```
 
@@ -149,7 +149,7 @@ summary findings cap (default: 100).
 `balance:sim` and `balance:sim:full` generate reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance
 implementation is protected by the focused unit suite and this report check;
-[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution permissions.
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution and resource coordination.
 
 ## Headless careers
 

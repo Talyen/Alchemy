@@ -21,7 +21,6 @@ import { runCommandAsync } from "./lib/run-command.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
 import { resolveCheckPlan } from "./lib/verification/check-plan.mjs";
 import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
-import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -200,7 +199,6 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     const { main: verify } = await import("./verify-changed.mjs");
     return verify([...verifyArgs, "--plan"]);
   }
-  if (full && !options.runner) assertHeavyLocalAllowed("Full completion gate");
   const before = digestFn();
   const mainHead = raw?.flags.has("task") ? gitOutput(["rev-parse", "main"]).trim() : null;
   const cache =

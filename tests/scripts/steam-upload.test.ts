@@ -4,6 +4,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 const asar = createRequire(import.meta.url)("@electron/asar");
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { createServer } from "node:net";
 import {
   cpSync,
   existsSync,
@@ -120,11 +122,31 @@ describe("steam-upload script", () => {
     "rejects %s before writing VDFs or launching SteamCMD",
     (argument) => {
       const result = runNode(["scripts/steam-upload.mjs", argument], { cwd: fixtureRoot });
-      expect(result.status).toBe(2);
+      expect(result.status, result.stderr).toBe(2);
       expect(result.stderr).toMatch(/Unknown option|Unexpected Steam upload arguments|does not take a value/u);
       expect(existsSync(join(fixtureRoot, "steam/build"))).toBe(false);
     },
   );
+
+  it("rejects invalid arguments even when artifact coordination is busy", async () => {
+    const key = createHash("sha256").update(fixtureRoot).digest("hex").slice(0, 24);
+    const port = 20_000 + (Number.parseInt(key.slice(0, 8), 16) % 20_000);
+    const server = createServer();
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen({ host: "127.0.0.1", port, exclusive: true }, resolve);
+    });
+    try {
+      const result = runNode(["scripts/steam-upload.mjs", "--dry-rnu"], { cwd: fixtureRoot });
+      expect(result.status, result.stderr).toBe(2);
+      expect(result.stderr).toContain("Unknown option: --dry-rnu");
+      expect(existsSync(join(fixtureRoot, "steam/build"))).toBe(false);
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+  });
 
   it.each(["full", "demo"] as const)(
     "honors the release dry-run allowance for %s when upload credentials are missing",
