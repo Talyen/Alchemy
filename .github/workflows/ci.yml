@@ -23,7 +23,7 @@ jobs:
       desktop_renderer: ${{ steps.filter.outputs.desktop_renderer }}
       assets: ${{ steps.filter.outputs.assets }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -188,7 +188,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           sparse-checkout: |
@@ -211,7 +211,7 @@ jobs:
 
       - name: Retain static failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: static-diagnostics
           path: |
@@ -223,7 +223,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           sparse-checkout: |
@@ -239,7 +239,7 @@ jobs:
         if: always()
         run: node scripts/ci-summarize.mjs --vitest
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: vitest-timings
@@ -268,9 +268,9 @@ jobs:
     steps:
       - name: Record test job setup start
         run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: dist/
@@ -287,7 +287,7 @@ jobs:
         run: node scripts/ci-summarize.mjs --playwright reports/playwright-localization-results.json
       - name: Upload localization results
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: playwright-localization-results
           path: reports/playwright-localization-results.json
@@ -295,7 +295,7 @@ jobs:
           if-no-files-found: ignore
       - name: Upload localization diagnostics
         if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: playwright-localization-diagnostics
           path: |
@@ -316,7 +316,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop_renderer == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -330,7 +330,7 @@ jobs:
       - name: Check desktop bundle budget
         run: npm run check:bundle
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dist-desktop
           path: dist/
@@ -339,7 +339,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: build-diagnostics-ci-ship-gate
           path: |
@@ -354,7 +354,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.assets == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: ./.github/actions/setup
       - name: Assert repository sources and committed outputs match preparation
@@ -371,7 +371,7 @@ jobs:
       (needs.ship-gate.result == 'success' || needs.ship-gate.result == 'skipped')
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -400,7 +400,7 @@ jobs:
       - name: Reuse desktop renderer bundle
         id: renderer-download
         if: needs.ship-gate.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist-desktop
           path: dist/
@@ -420,7 +420,7 @@ jobs:
         run: npm run smoke:desktop
 
       - name: Upload desktop artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: release-desktop-win
           compression-level: 0
@@ -428,7 +428,7 @@ jobs:
           retention-days: 3
 
       - name: Retain package size measurements
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: package-storage-ci
           path: reports/storage/
@@ -437,7 +437,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: build-diagnostics-ci-desktop-build
           path: |
@@ -462,9 +462,9 @@ jobs:
     # Match the committed Darwin baselines; Linux/Windows text rasterization differs.
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: dist/
@@ -474,7 +474,7 @@ jobs:
       - run: npm run test:visual
       - name: Retain visual differences
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: player-screen-visual-diffs
           path: |
