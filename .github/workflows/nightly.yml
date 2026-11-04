@@ -70,7 +70,7 @@ jobs:
             workload: crafting-journey
             extreme: large-deck
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -78,7 +78,7 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: dist/
@@ -127,7 +127,7 @@ jobs:
 
       - name: Upload replay and diagnostics
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: performance-discovery-${{ steps.seed.outputs.value }}
           path: |
@@ -149,7 +149,7 @@ jobs:
     name: Knip entry exports
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -164,7 +164,7 @@ jobs:
     name: Unit coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -178,7 +178,7 @@ jobs:
         env:
           ALCHEMY_INTERACTION_TIER: nightly
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()
         with:
           name: coverage-report
@@ -190,7 +190,7 @@ jobs:
 
       - name: Retain interaction seed manifests
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: interaction-seeds-nightly
           path: reports/runs/**/interaction/*-seeds.json
@@ -203,7 +203,7 @@ jobs:
     outputs:
       targets: ${{ steps.scope.outputs.targets }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -220,7 +220,7 @@ jobs:
       matrix:
         target: ${{ fromJSON(needs.mutation-scope.outputs.targets) }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             /*
@@ -234,7 +234,7 @@ jobs:
           MUTATION_TARGET: ${{ matrix.target }}
         run: npm run test:mutation -- --mutate "$MUTATION_TARGET"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: mutation-report-${{ strategy.job-index }}
