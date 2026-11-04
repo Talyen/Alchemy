@@ -4,7 +4,13 @@ import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { runCommand } from "../../scripts/lib/run-command.mjs";
 import { completionCounts, runCompact } from "../../scripts/run-compact.mjs";
+import { acquireTestResources, testResourceStatus } from "../../scripts/lib/verification/local-test-lane.mjs";
 import { unitSelection } from "../../scripts/lib/verification/unit-selection.mjs";
+
+vi.mock("../../scripts/lib/verification/local-test-lane.mjs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../scripts/lib/verification/local-test-lane.mjs")>();
+  return { ...actual, acquireTestResources: vi.fn(actual.acquireTestResources) };
+});
 
 beforeEach(() => vi.stubEnv("ALCHEMY_OUTPUT_CAPTURED", undefined));
 afterEach(() => {
@@ -115,10 +121,24 @@ it("runs local broad and browser commands through managed scheduling without an 
   vi.stubEnv("GITHUB_ACTIONS", undefined);
   vi.stubEnv("ALCHEMY_ALLOW_HEAVY_LOCAL", undefined);
   const root = createTemporaryDirectory("compact-local-policy-");
+  const directory = path.join(root, "lanes");
+  const actual = await vi.importActual<typeof import("../../scripts/lib/verification/local-test-lane.mjs")>(
+    "../../scripts/lib/verification/local-test-lane.mjs",
+  );
+  const kinds: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    vi.mocked(acquireTestResources).mockImplementationOnce(async (command, args, cwd) => {
+      const lane = await actual.acquireTestResources(command, args, cwd, { directory, broadPort: 0, focusedPort: 0 });
+      kinds.push(lane.kind);
+      return lane;
+    });
+  }
   for (const name of ["vitest", "playwright"]) {
     const binary = path.join(root, name);
     fs.writeFileSync(binary, "#!/usr/bin/env node\nprocess.exit(0);\n", { mode: 0o755 });
     const args = name === "vitest" ? ["run"] : ["test"];
     expect(await runCompact([binary, ...args], root)).toBe(0);
   }
+  expect(kinds).toEqual(["broad", "broad"]);
+  expect(testResourceStatus(directory)).toEqual([]);
 });

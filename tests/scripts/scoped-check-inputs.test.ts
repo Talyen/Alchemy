@@ -39,9 +39,10 @@ it("accepts unrelated edits and identical content while guarding owned membershi
   expect(digest()).not.toBe(before);
   fs.renameSync(path.join(root, "owned/moved.ts"), path.join(root, "owned/a.ts"));
   expect(digest()).toBe(before);
-  fs.chmodSync(path.join(root, "owned/a.ts"), 0o755);
+  const originalMode = fs.statSync(path.join(root, "owned/a.ts")).mode & 0o777;
+  fs.chmodSync(path.join(root, "owned/a.ts"), originalMode ^ 0o100);
   expect(digest()).not.toBe(before);
-  fs.chmodSync(path.join(root, "owned/a.ts"), 0o644);
+  fs.chmodSync(path.join(root, "owned/a.ts"), originalMode);
   expect(digest()).toBe(before);
   fs.writeFileSync(path.join(root, "harness.ts"), "changed harness");
   expect(digest()).not.toBe(before);
