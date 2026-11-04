@@ -13,9 +13,13 @@ import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 import { protectPackageAttempts } from "./lib/build-retention.mjs";
 
-function main(argv = process.argv.slice(2)) {
+function parseArgs(argv = process.argv.slice(2)) {
   const { flags, rest } = parseKnownFlags(argv, { "dry-run": {}, help: { short: "h" } });
   if (rest.length) throw new UsageError(`Unexpected Steam upload arguments: ${rest.join(", ")}`);
+  return flags;
+}
+
+function main(flags) {
   if (flags.has("help")) {
     console.log(
       "Usage: node scripts/steam-upload.mjs [--dry-run]\nValidate the selected package and write Steam VDFs. --dry-run (or STEAM_UPLOAD_DRY_RUN=1) prevents uploading, including when credentials are configured.",
@@ -128,6 +132,7 @@ function main(argv = process.argv.slice(2)) {
   return result.status ?? 1;
 }
 
-defineScript(import.meta.url, () => main(), {
+defineScript(import.meta.url, main, {
+  preflight: parseArgs,
   artifacts: !process.argv.includes("--help") && !process.argv.includes("-h"),
 });
