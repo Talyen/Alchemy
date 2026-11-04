@@ -137,7 +137,7 @@ it("Burn bonuses against Bleeding enemies apply to card damage and ticks", () =>
   });
   expect(computeCardDamageToEnemy(state, effect, makeTestCard({ effects: [effect] })).modifiedDamage).toBe(15);
   const texts: CombatTextEvent[] = [];
-  expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(73);
+  expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(82); // Burn 15 and Bleed 3.
   expect(texts).toContainEqual(
     expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true }),
   );

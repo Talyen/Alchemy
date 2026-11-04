@@ -173,9 +173,9 @@ describe("thematic card effects", () => {
   });
 
   it.each([
-    [0, 96, 2],
+    [0, 98, 2],
     [0.99, 98, 0],
-  ])("Cinderbloom ignites Poison only when the selected hit Burns (roll %s)", (roll, health, burn) => {
+  ])("Cinderbloom leaves immature Poison intact for either selected hit (roll %s)", (roll, health, burn) => {
     const result = play("cinderbloom", {
       rng: sequenceRng([roll, 0.99]),
       enemyStatuses: { poison: 1 },
@@ -183,6 +183,7 @@ describe("thematic card effects", () => {
     });
     expect(result.enemyHealth).toBe(health);
     expect(result.enemyStatuses.burn).toBe(burn);
+    expect(result.enemyStatuses.poison).toBe(1);
   });
 
   it("Roll the Dice draws each die result, respects hand capacity, and Consumes once", () => {

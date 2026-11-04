@@ -61,20 +61,25 @@ describe("player benefit regressions", () => {
     },
   );
 
-  it("Paralytic Venom can stop the upcoming enemy action when a Poison tick Stuns", () => {
+  it.each([
+    { poison: 4, stun: 50, health: 92, skips: 0, consumed: false },
+    { poison: 40, stun: 0, health: 0, skips: 1, consumed: true },
+  ])("Paralytic Venom stops the upcoming action with $poison Poison", ({ poison, stun, health, skips, consumed }) => {
     const state = patchBattleState({
       rng: () => 0.99,
       enemyHealth: 100,
       enemyMaxHealth: 100,
-      enemyStatuses: { poison: 40 },
+      enemyStatuses: { poison, stun },
       talentEffects: { poisonStunChance: 100 },
     });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAbility).toBe(false);
     expect(result.state.lastEnemyAbilityId).toBe(state.lastEnemyAbilityId);
     expect(result.state.playerHealth).toBe(state.playerHealth);
-    expect(result.state.enemyHealth).toBe(20);
-    expect(result.state.enemyCC.stunSkipTurns).toBe(0);
+    expect(result.state.enemyHealth).toBe(health);
+    expect(result.state.enemyCC.stunSkipTurns).toBe(skips);
+    expect(result.state.reactions.weakenNextAttack).toBe(consumed);
+    if (consumed) expect(result.state.enemyStatuses.poison).toBe(0);
   });
 
   it("Last Resort cleanses the harmful status inflicted by the triggering attack", () => {

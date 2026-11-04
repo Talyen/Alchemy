@@ -719,7 +719,8 @@ describe("battle damage inspection", () => {
       rng: () => 0.99,
       enemyHealth: 2,
       enemyMaxHealth: 100,
-      enemyStatuses: { burn: 1, freeze: 1 },
+      enemyStatuses: { burn: 10, freeze: 1 },
+      reactions: { naturalBurnDamage: 10 },
     });
     const frostfireOutcomes = inspectBattleCardOutcomes(ray, frostfireState);
     expect(["0", "1"].map((key) => inspectedDamage(frostfireOutcomes.get(key)))).toEqual([1, 0]);

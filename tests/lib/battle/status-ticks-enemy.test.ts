@@ -60,13 +60,12 @@ describe("tickEnemyStatuses", () => {
       enemyStatuses: { burn: 10, poison: 5, bleed: 8 },
       pendingBleedLeechHealing: 2,
     });
-    expect(next.enemyHealth).toBe(18); // Burn 10, Poison 5, Bleed 8, Bloodboil 9.
+    expect(next.enemyHealth).toBe(27); // Burn 10, Poison 5, Bleed 8.
     expect(next.enemyStatuses).toMatchObject({ burn: 5, poison: 4, bleed: 0 });
     expect(texts.filter((text) => text.target === "enemy" && text.kind === "damage").map((text) => text.stat)).toEqual([
       "burn",
       "poison",
       "bleed",
-      "burn",
     ]);
   });
 
