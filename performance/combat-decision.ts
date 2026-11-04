@@ -19,7 +19,16 @@ export async function playCombatCard(page: Page, card: Locator): Promise<void> {
 
 export async function resolveWishPanels(page: Page, choose: (buttons: Locator) => Promise<void>): Promise<void> {
   const panel = page.locator(".wish-overlay-panel");
-  for (let choice = 0; choice < 8 && (await panel.isVisible()); choice++) {
+  for (let choice = 0; choice < 8; choice++) {
+    // The next offer can be mounted but hidden while the previous one exits.
+    const state: { value: "visible" | "absent" | "transition" } = { value: "transition" };
+    await expect
+      .poll(async () => {
+        state.value = (await panel.isVisible()) ? "visible" : (await panel.count()) === 0 ? "absent" : "transition";
+        return state.value;
+      })
+      .not.toBe("transition");
+    if (state.value === "absent") return;
     const current = await panel.elementHandle();
     if (!current) throw new Error("Wish panel disappeared before its choice");
     try {
