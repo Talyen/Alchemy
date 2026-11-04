@@ -235,15 +235,12 @@ describe("alchemy visit transactions and resume", () => {
   });
   it("preserves spent reaction opportunities in a current battle save", () => {
     mutateGameplayForTest((draft) =>
-      initializeActiveBattle(
-        draft,
-        patchBattleState({ reactions: { wildfireDamage: 3, wildfirePendingTickDamage: 2 } }),
-      ),
+      initializeActiveBattle(draft, patchBattleState({ reactions: { naturalBurnDamage: 3, naturalPoisonDamage: 2 } })),
     );
     reload();
     expect(readBattle(defaultGameSession).battleState.reactions).toMatchObject({
-      wildfireDamage: 3,
-      wildfirePendingTickDamage: 2,
+      naturalBurnDamage: 3,
+      naturalPoisonDamage: 2,
     });
   });
   it("free brewing modifiers apply to Strengthen without spending Gold", () => {

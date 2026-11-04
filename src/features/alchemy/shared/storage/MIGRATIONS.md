@@ -417,3 +417,12 @@ disabled Cloud leaves its cache untouched and clears only the local profile.
   Browser deletion removes both local storage keys only.
 
 Dev builds also accept `?wipeLocalSave=1` (exact value) to clear local candidates via the `localWipe` path. The backend is configured (Steam/cloud state) before the wipe runs, so a desktop dev wipe honors cloud sync instead of leaving a stale Cloud mirror eligible for reload. Device display preferences survive either deletion path.
+
+### Reaction finishers
+
+Current-format battle hydration normalizes reaction fields through the battle
+owner. Missing natural tick preparation and reaction debuffs default to zero;
+old Thunderclap preparation becomes Rupture preparation, and old Wildfire earned
+and unmatched Burn tick credit becomes natural Burn preparation. Existing spent
+Freeze opportunities remain spent. Bloodboil and delayed Consecration marks no
+longer resolve. No run, card, talent, equipment, or encounter identifier changes.

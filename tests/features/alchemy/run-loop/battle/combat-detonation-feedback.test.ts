@@ -89,14 +89,21 @@ describe("detonation combat feedback", () => {
       { ...direct, companionActionId: 1 },
       { ...direct, companionActionId: 2 },
       { ...direct, periodic: true },
-      { ...direct, reactionId: "bloodboil", feedback: "secondary" },
-      { target: "enemy", kind: "notice", stat: "burn", text: "Bloodboil", signal: "reaction", reactionId: "bloodboil" },
+      { ...direct, reactionId: "venomflash", feedback: "secondary" },
+      {
+        target: "enemy",
+        kind: "notice",
+        stat: "burn",
+        text: "Venomflash",
+        signal: "reaction",
+        reactionId: "venomflash",
+      },
     ];
     const result = prepare(events);
     expect(
       result.bursts.flatMap((burst) => burst.entries).map((entry) => entry.kind === "damage" && entry.amount),
     ).toEqual([8, 46, 8, 8, 8]);
-    expect(result.reactions[0]!.entries).toMatchObject([{ amount: 8, reactionId: "bloodboil" }]);
+    expect(result.reactions[0]!.entries).toMatchObject([{ amount: 8, reactionId: "venomflash" }]);
   });
 
   it("does not merge separate detonation actions inside the rapid-feedback window", () => {

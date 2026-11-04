@@ -55,17 +55,22 @@ export function filterLiveCards<T extends Pick<BattleCard, "id" | "cost" | "effe
 function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
   const reactions = createElementalReactionState();
   if (!isRecord(saved)) return reactions;
-  const record = saved;
   for (const key of Object.keys(reactions) as Array<keyof typeof reactions>) {
-    const value = Object.hasOwn(record, key) ? record[key] : undefined;
-    if (key === "consecrated") {
-      reactions.consecrated = value === true;
-      continue;
-    }
-    const amount = typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
-    if (key === "wildfirePendingTickDamage" || key === "wildfireLastTickTurn")
-      reactions[key] = amount !== null && amount > 0 ? amount : null;
-    else reactions[key] = amount ?? 0;
+    const value = Object.hasOwn(saved, key) ? saved[key] : undefined;
+    if (key === "weakenNextAttack") reactions[key] = value === true;
+    else reactions[key] = typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+  }
+  // Current-format battles retain already-earned preparation when moving to the new roster.
+  const legacyMagnitude = (key: string): number => {
+    const value = Object.hasOwn(saved, key) ? saved[key] : undefined;
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+  };
+  if (!Object.hasOwn(saved, "ruptureDamage")) reactions.ruptureDamage = legacyMagnitude("thunderclapDamage");
+  if (!Object.hasOwn(saved, "naturalBurnDamage")) {
+    reactions.naturalBurnDamage = Math.min(
+      Number.MAX_SAFE_INTEGER,
+      legacyMagnitude("wildfireDamage") * 2 + legacyMagnitude("wildfirePendingTickDamage"),
+    );
   }
   return reactions;
 }
@@ -424,7 +429,6 @@ export function normalizePersistedBattleState(saved: DecodedPersistedBattle): Ba
         : null,
   };
   merged.reactions = expireCcReactions(merged).reactions;
-  if (merged.enemyStatuses.bleed <= 0) merged.reactions.consecrated = false;
   // Glacial Surge is now a native flat bonus; saved growth must not stack with it.
   if (currentEnemy.traits.some((trait) => trait.id === "glacial-shell")) merged.enemyStatuses.freezeBonus = 0;
   const companion = merged.activeCompanion;

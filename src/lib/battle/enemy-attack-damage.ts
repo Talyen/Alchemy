@@ -1,3 +1,5 @@
+import { resolveReactionAction } from "./action-context";
+import { applyElementalReactionDamage } from "./elemental-reactions";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, processContagion } from "./enemy-healing";
@@ -176,14 +178,20 @@ function resolvePendingEmberwakeDamage(state: BattleState, combatTexts: CombatTe
   );
 }
 
-export function resolvePendingBattleReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+function drainPendingBattleReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   while (
+    nextState.reactions.pendingToxicShock > 0 ||
     nextState.flags.pendingCinderSkinReaction ||
     nextState.flags.pendingEmberwakeDamage ||
     nextState.flags.pendingDeathgripBlock ||
     nextState.flags.pendingDisruptingPurge
   ) {
+    if (nextState.reactions.pendingToxicShock > 0) {
+      const damage = nextState.reactions.pendingToxicShock;
+      nextState = { ...nextState, reactions: { ...nextState.reactions, pendingToxicShock: 0 } };
+      nextState = applyElementalReactionDamage(nextState, { id: "toxicShock", damage }, combatTexts);
+    }
     if (nextState.flags.pendingDeathgripBlock) {
       nextState = { ...nextState, flags: { ...nextState.flags, pendingDeathgripBlock: false } };
       if (!isPlayerDefeated(nextState))
@@ -222,4 +230,9 @@ export function processEnemyDamageEffect(
   options: EnemyDamageOptions = {},
 ): BattleState {
   return resolveEnemyDamageEffect(state, effect, combatTexts, options).state;
+}
+
+export function resolvePendingBattleReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  return resolveReactionAction(state, (current) => ({ state: drainPendingBattleReactions(current, combatTexts) }))
+    .state;
 }

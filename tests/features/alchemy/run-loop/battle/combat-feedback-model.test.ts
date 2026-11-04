@@ -206,19 +206,26 @@ it("keeps direct and reaction damage distinct while retaining packet facts for i
   expect(events).toEqual(original);
 });
 
-it("keeps natural Burn in its own fan flight and pairs only the bonus with Bloodboil", () => {
+it("keeps natural Burn in its own fan flight and pairs only the bonus with Venomflash", () => {
   const prepared = prepareCombatFeedback(
     [
       { target: "enemy", kind: "damage", stat: "burn", amount: 8, periodic: true },
-      { target: "enemy", kind: "damage", stat: "burn", amount: 6, additive: false, reactionId: "bloodboil" },
-      { target: "enemy", kind: "notice", stat: "burn", text: "Bloodboil", signal: "reaction", reactionId: "bloodboil" },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 6, additive: false, reactionId: "venomflash" },
+      {
+        target: "enemy",
+        kind: "notice",
+        stat: "burn",
+        text: "Venomflash",
+        signal: "reaction",
+        reactionId: "venomflash",
+      },
     ],
     1,
     0,
     1100,
   );
   expect(prepared.bursts[0]!.entries).toMatchObject([{ amount: 8, displayText: "-8", periodic: true }]);
-  expect(prepared.reactions[0]!.entries).toMatchObject([{ amount: 6, displayText: "-6", reactionId: "bloodboil" }]);
+  expect(prepared.reactions[0]!.entries).toMatchObject([{ amount: 6, displayText: "-6", reactionId: "venomflash" }]);
   expect(prepared.impacts.enemyImpactCue).toMatchObject({ amount: 8, periodic: true });
 });
 

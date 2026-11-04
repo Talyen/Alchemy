@@ -8,8 +8,15 @@ export const CRIT_MULTIPLIER = 2;
 export const BLEED_STATUS_MULTIPLIER = 1;
 export const STUN_THRESHOLD_FRACTION = 0.5;
 export const FREEZE_THRESHOLD_FRACTION = 0.5;
-export const ELEMENTAL_REACTION_DAMAGE_PERCENT = 50;
-export const ELEMENTAL_REACTION_MIN_DAMAGE = 2;
+export const ELEMENTAL_REACTION_DAMAGE_PERCENT = 25;
+export const ELEMENTAL_REACTION_MIN_DAMAGE = 1;
+export const REACTION_CONFIG = {
+  setupHealthFraction: 0.1,
+  ruptureHealingMultiplier: 0.5,
+  ruptureTurns: 2,
+  toxicShockAttackMultiplier: 0.5,
+  consecrationBlockFraction: 0.25,
+} as const;
 // Shared floor for crowd-control trigger thresholds: reduction effects can
 // never push a threshold below 10% of max health, so buildup alone cannot
 // trigger a skip for free.

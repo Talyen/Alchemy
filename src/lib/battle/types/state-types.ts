@@ -198,6 +198,8 @@ export interface CompanionActionCue {
 
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
+  /** Shared by a complete card action and its nested automatic effects. Never saved. */
+  reactionSpent?: boolean;
   rng: Rng;
   /** Fresh deck draws, not created cards or later overflow delivery. Never persisted. */
   onCardsDrawn?: (uids: readonly number[]) => void;

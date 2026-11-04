@@ -1,3 +1,4 @@
+import { resolveReactionAction } from "../action-context";
 import { resolveBattleSequence } from "../battle-sequence";
 import { applyPotionMultiplier, cardPotionMultiplier } from "../amount-helpers";
 import { mergeCombatText, emitNoticeText } from "../combat-text-events";
@@ -202,7 +203,7 @@ function ineffectiveEffectFeedback(effect: BattleCardEffect): CombatTextEvent | 
   }
 }
 
-export function applyCardEffects(
+function resolveCardEffects(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
@@ -275,4 +276,14 @@ export function applyCardEffects(
     mergeCombatText(combatTexts, { ...event, feedback: main ? "primary" : "secondary" });
   }
   return result;
+}
+
+export function applyCardEffects(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  context?: CardEffectResolutionContext,
+): BattleState {
+  return resolveReactionAction(state, (current) => ({ state: resolveCardEffects(current, card, combatTexts, context) }))
+    .state;
 }

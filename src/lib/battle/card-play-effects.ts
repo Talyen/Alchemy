@@ -1,5 +1,5 @@
 import { rollBattleChance } from "./chance-roll";
-import { readCombatFlag, writeCombatFlag } from "./action-context";
+import { readCombatFlag, writeCombatFlag, resolveReactionAction } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -41,7 +41,7 @@ interface CardEffectChainOptions {
 // Shared core for playing a card's effects: talent pre-triggers, pending
 // reactions, the effect dispatch itself, potion use, and talent rewards.
 // Payment, Unique Gear damage-only repeats, and card destination stay with callers.
-export function resolveCardEffectChain(
+function resolveCardEffectChainCore(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
@@ -188,4 +188,13 @@ function applyNatureCardPlayGearRewards(
     nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnNatureCard, combatTexts);
   }
   return nextState;
+}
+
+export function resolveCardEffectChain(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  options: CardEffectChainOptions = {},
+): ReturnType<typeof resolveCardEffectChainCore> {
+  return resolveReactionAction(state, (current) => resolveCardEffectChainCore(current, card, combatTexts, options));
 }

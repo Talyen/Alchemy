@@ -1,3 +1,4 @@
+import { REACTION_CONFIG } from "../game-constants";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { DamageType, EnemyAbilityDamageEffect } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
@@ -39,6 +40,8 @@ export interface EnemyAbilityContext {
   attackReduction: number;
   readonly brawlerPenalty: boolean;
   brawlerPenaltySpent: boolean;
+  toxicShockPenalty: boolean;
+  toxicShockPenaltySpent: boolean;
   vampireBonus: boolean;
   soulHarvest: "purge" | "leech" | null;
   landed: boolean;
@@ -52,6 +55,8 @@ export function createEnemyAbilityContext(state: BattleState, damaging: boolean)
       : 0,
     brawlerPenalty: damaging && state.flags.enemyBrawlerDamagePenalty,
     brawlerPenaltySpent: false,
+    toxicShockPenalty: state.reactions.weakenNextAttack,
+    toxicShockPenaltySpent: false,
     vampireBonus: false,
     soulHarvest: null,
     landed: false,
@@ -162,6 +167,10 @@ export function applyAbilityDamage(
     context.brawlerPenaltySpent = true;
     state = setFlag(state, "enemyBrawlerDamagePenalty", false);
   }
+  if (context.toxicShockPenalty && !context.toxicShockPenaltySpent) {
+    context.toxicShockPenaltySpent = true;
+    state = { ...state, reactions: { ...state.reactions, weakenNextAttack: false } };
+  }
   const condemn = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR && hasEnemyTrait(state, "inquisitor");
   // Purge is an additional trait reward; it cannot revoke the ability's own Leech.
   if (context.soulHarvest === "leech") effect = { ...effect, lifesteal: true };
@@ -169,11 +178,10 @@ export function applyAbilityDamage(
   if (effect.damageTypePool) {
     effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
   }
-  const { damage, amountMultiplier, flatBonus, banditBonus, activatedTraits } = prepareEnemyAbilityDamage(
-    state,
-    effect,
-    context.brawlerPenalty,
-  );
+  const prepared = prepareEnemyAbilityDamage(state, effect, context.brawlerPenalty);
+  const { damage, flatBonus, banditBonus, activatedTraits } = prepared;
+  const amountMultiplier =
+    prepared.amountMultiplier * (context.toxicShockPenalty ? REACTION_CONFIG.toxicShockAttackMultiplier : 1);
   if (effect.spendBlock && effect.equalToBlock) {
     const block = state.enemyMitigation.block;
     const spent = Math.min(block, Math.max(0, scalePercent(block, effect.equalToBlockPercent ?? 100)));

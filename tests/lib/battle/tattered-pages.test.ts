@@ -109,7 +109,7 @@ describe("Tattered Pages", () => {
       rolls++;
       return 0;
     });
-    const result = applyElementalReactionDamage(start, { id: "bloodboil", damage: 5 }, []);
+    const result = applyElementalReactionDamage(start, { id: "venomflash", damage: 5 }, []);
     expect(result.hand).toHaveLength(0);
     expect(rolls).toBe(0);
   });

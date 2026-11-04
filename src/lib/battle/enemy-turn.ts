@@ -102,6 +102,11 @@ function resolveEnemyPostTickResolution(
     }
   }
   nextState = processEnemyRegeneration(resolveDeathsDoorGraceExpiry(nextState, texts), texts);
+  if (nextState.reactions.healingReductionTurns > 0)
+    nextState = {
+      ...nextState,
+      reactions: { ...nextState.reactions, healingReductionTurns: nextState.reactions.healingReductionTurns - 1 },
+    };
   return afterAbilityState ? { state: nextState, skipped, afterAbilityState } : { state: nextState, skipped };
 }
 

@@ -576,75 +576,71 @@ Transmute commits the exact saved preview once. Cards keep their identity and ar
 
 ## Universal reactions
 
-Shatter, Frostfire, Thunderclap, Wildfire, Consecration, Bloodboil, and Venomflash
-reward earned preparation. Direct
-card hits (including eligible automatic plays) and Companion attacks can release
-payoffs. Secondary Gear/talent hits, retaliation, delayed pulses, secondary
-repeats, and extra status ticks cannot initiate attack reactions, but successful crowd control from
-any source can prepare a payoff. Reaction damage never removes Burn, shortens
-crowd control, or spends another reaction's opportunity.
+The active roster is Shatter, Frostfire, Rupture, Toxic Shock, Consecration, and
+Venomflash. Bloodboil is shelved; Thunderclap and Wildfire are retired in favor of
+the shared Trinket roster. Direct card hits, eligible automatic plays and Companion
+attacks initiate attack finishers. Secondary hits, retaliation, delayed pulses,
+repeats and extra ticks do not. Fresh successful Stun from any source can release
+Toxic Shock. One complete card action, including nested effects and multiple hits,
+can release at most one reaction. Execution-only action claims are never saved.
 
-Successful enemy Freeze prepares independent Shatter and Frostfire bonuses;
-successful Stun prepares Thunderclap. Each bonus is 50% of the actual Health
-damage dealt by the packet causing that CC, rounded once, with a minimum of 2.
-Non-damaging CC prepares the minimum of 2. The amount is fixed when CC begins, so a
-small finishing hit or Companion receives the full reward. Each opportunity
-expires when its CC ends. Haste, duration extensions, additional buildup, and
-player-turn resets cannot replenish it; only a fresh successful CC can.
+DoT finishers require accumulated actual natural tick Health damage and current
+potency of their preparation keyword to each reach 10% of maximum enemy Health,
+rounded, minimum one. Normal scheduled ticks count even on control-skipped turns;
+extra ticks, detonations and Haste do not. Preparation accumulates across phases
+and status gaps. This is initial tuning toward occasional large reactions, not a
+hard limit of one or two per battle.
 
-- **Shatter:** a positive Physical attack against a Frozen enemy destroys all
-  Block and Armor before mitigation, then releases its stored Physical bonus.
-  Dodge and zero-power attacks preserve readiness. Shatter does not guarantee a
-  Critical; the underlying attack uses its ordinary Critical rules.
-- **Frostfire:** an eligible Freeze hit that successfully Freezes an already
-  Burning enemy releases its stored Burn bonus. Alternatively, a Burn hit dealing
-  Health damage to an already Frozen enemy releases it. These routes share one
-  opportunity per Freeze. Bonus damage adds no Burn stacks.
-- **Thunderclap:** Nature damage against an enemy already Stunned before that hit
-  releases its stored Nature bonus, once per Stun. The finishing hit must deal
-  positive Health damage.
-- **Wildfire:** two positive natural enemy-turn Burn ticks prepare bonus Burn
-  damage equal to 50% of their combined actual Health damage, rounded once, minimum 2. Ticks
-  of 8 and 4 prepare 6; ticks of 4 and 2 prepare 3. Only normal enemy-turn ticks
-  count, including CC-skipped enemy turns; Haste, extra ticks, direct hits, and
-  detonations do not. A Nature hit dealing positive Health damage releases all
-  completed pairs without consuming Burn. Additional pairs accumulate while
-  waiting; unmatched ticks carry forward, including across gaps between fires
-  and after Burn reaches zero. Preparation resets between battles.
+Successful Freeze prepares separate Shatter and Frostfire bonuses; Stun prepares
+Rupture. The bonus is 25% of actual Health damage from the triggering packet,
+rounded, minimum one. Non-damaging control prepares one. Control ending expires
+unused opportunities; extensions and turn resets do not refresh them. All finishers
+preserve existing Freeze/Stun duration.
 
-- **Consecration:** an eligible Holy hit dealing positive Health damage to an
-  already Bleeding enemy consecrates its next natural Bleed tick. The tick releases
-  Holy damage equal to 50% of its actual Health damage, rounded, minimum 2. More
-  Holy hits do not stack marks. Capture and consume the mark when the tick begins;
-  clearing or detonating Bleed cancels it. Preserved Bleed can be consecrated again
-  for a later tick. Current-format resume preserves the mark without replaying it.
-- **Bloodboil:** when Burn and Bleed both deal positive natural tick damage in the
-  same enemy phase, release Burn damage equal to 50% of their combined actual
-  Health damage, rounded once, minimum 2. A final Burn stack counts even if it
-  expires before Bleed resolves. Separate phases, extra ticks, and detonations
-  cannot combine. CC-skipped natural phases count. Bloodboil and Consecration
-  resolve after the Bleed tick and its riders, Consecration first.
-- **Venomflash:** an eligible Burn hit dealing positive Health damage newly ignites
-  an already Poisoned enemy: Burn was zero before that packet and the packet adds
-  Burn. Release Burn damage equal to 50% of the pre-hit Poison stacks, rounded,
-  minimum 2. Existing fires cannot trigger it; extinguishing and igniting again
-  can. Ordered effects in one card can establish Poison before ignition. Poison
-  and Burn stacks remain intact from the bonus itself. Combustion's fresh
-  ignition still qualifies when its own detonation consumes the new Burn.
+- **Shatter:** a positive, undodged Physical attack against a Frozen enemy strips
+  all Block before mitigation and pays the stored Physical bonus. Armor remains.
+- **Frostfire:** a Freeze attack successfully Freezing an enemy with prepared Burn
+  detonates all remaining Burn, adds the stored Burn bonus, and strips all Armor.
+  Burn against an already Frozen enemy no longer triggers it. Trinket's equivalent
+  unique benefit adds one frozen action skip because that game has no Armor pool.
+- **Rupture:** a Bleed attack dealing Health damage against an already Stunned enemy
+  with prepared Bleed detonates all remaining Bleed, adds the stored Bleed bonus,
+  and reduces enemy healing by 50% for two enemy turns. Decrement the timer after
+  enemy regeneration, including skipped turns; Haste does not shorten it.
+- **Toxic Shock:** fresh successful Stun against prepared Poison detonates all
+  remaining Poison and adds the Stun packet's control bonus as Poison damage. The
+  enemy's next actual attack deals 50% less damage across all its hits. Chance
+  branches resolving utility and control-skipped turns preserve that debuff.
+- **Consecration:** Holy Health damage against prepared Bleed immediately detonates
+  all remaining Bleed and adds Holy damage equal to 25% of accumulated natural Bleed
+  damage. Grants the Hero Block equal to 25% of total actual reaction Health damage,
+  rounded, minimum one, through normal Block rewards. The triggering Holy hit is
+  excluded. Alchemy Companions are invulnerable and have no Block pool; Trinket
+  grants the same percentage separately to each living ally.
+- **Venomflash:** Burn Health damage against prepared Poison detonates all remaining
+  Poison and Burn, adds Burn damage equal to 25% of accumulated natural Poison
+  damage, and Purges one enemy benefit through normal Purge rewards. Existing Burn
+  no longer prevents it.
 
-Bonuses bypass Block and Armor, cannot Critical, and apply no second damage
-scaling, status buildup, attack riders, or recursive reactions. Resolve them after
-normal attack follow-ups and retaliation, only while both combatants survive.
-Thunderclap resolves before Wildfire when both qualify; Venomflash follows other
-qualifying attack reactions. Standard health-threshold
-handling and once-only kill rewards still apply, including Archery attribution.
+Native remaining-tick detonation preserves its existing conditional multipliers,
+decay/tail rules and supported damage, draw, Mana, Gold and pending Bleed Leech
+rewards. Ingredients are projected together before removal so cross-status bonuses
+are retained in the payout. New effects from callbacks remain separate. Consumed
+keywords' natural preparation resets before payout. Growth/preservation chances,
+future natural-only tick rewards and continued status bonuses are not guaranteed
+by detonation; substantial setup, front-loaded damage and distinct benefits are
+intended to make the trade worthwhile rather than guarantee pure upside.
 
-Persist reaction progress in battle snapshots; reload cannot refresh spent
-opportunities or replay earned damage. Already-earned stored bonuses retain their
-amounts across resume. Resolved reactions reuse existing battle audio. Direct
-damage displays separately from each reaction's name and typed bonus; the
-[battle feedback contract](./UI_BATTLE.md#battle-feedback) owns grouping, motion
-and lifetimes. Repeated packets with the same reaction origin can total for display;
-direct damage and different reactions remain distinct, preserving separate engine packets. Add no readiness UI, explanations,
-tutorials, or card-description/keyword previews; see the
-[authoring contract](./CONTENT_AUTHORING.md#add-a-new-card).
+The additional bonus bypasses Block/Armor, cannot Critical and adds no buildup,
+attack riders or recursive reactions. Existing native detonation rules still apply
+to its cash-out. Resolve attack finishers after normal follow-ups and retaliation,
+while both combatants survive. All payoff damage shares one typed reaction origin
+for presentation; direct damage remains separate. Actual Health loss, not overkill
+or unrelated riders, funds Consecration's Block. Kill rewards remain once-only.
+
+Snapshots preserve natural preparation, spent control opportunities, pending Toxic
+Shock and its next-attack debuff, and Rupture duration. Hydration accepts the previous
+reaction shape: Thunderclap preparation maps to Rupture; earned Wildfire damage
+and unmatched Burn tick credit map to natural Burn preparation without replaying a
+payoff or refreshing spent Freeze opportunities. Retired delayed Consecration marks
+are discarded. No readiness UI or added instructional copy is introduced.

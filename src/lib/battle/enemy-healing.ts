@@ -1,3 +1,4 @@
+import { REACTION_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
 import { clampHealth } from "./health-state";
 import { halveRounded } from "./amount-helpers";
@@ -14,6 +15,7 @@ export function applyEnemyHealingWithCombatText(
   options?: { skipFightPacing?: boolean },
 ): BattleState {
   if (amount <= 0 || state.enemyHealth <= 0) return state;
+  if (state.reactions.healingReductionTurns > 0) amount = Math.round(amount * REACTION_CONFIG.ruptureHealingMultiplier);
   if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) amount = halveRounded(amount);
   if (state.enemyStatuses.bleed > 0 && state.talentEffects.bleedHalvesEnemyHealing) amount = halveRounded(amount);
   const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "enemy");
