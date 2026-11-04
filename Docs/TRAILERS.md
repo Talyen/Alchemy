@@ -274,5 +274,4 @@ microtrailer from six moments in the first listed video.
 
 Use the same tools and recipes on another machine for production; no Mac-only
 capture API is required. Provisioning a cloud account, dispatching CI, uploading
-or publishing assets is a separate operation. Broad repository checks remain
-CI-owned under [Contributing](../CONTRIBUTING.md).
+or publishing assets is a separate operation. Broad repository checks follow the resource policy under [Contributing](../CONTRIBUTING.md).

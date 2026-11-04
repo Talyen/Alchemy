@@ -13,7 +13,6 @@ import { runCommand } from "./lib/run-command.mjs";
 import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
 import { selectContext } from "./lib/agent/agent-context.mjs";
 import { batchUnitCommands } from "./lib/verification/unit-batch.mjs";
-import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -136,7 +135,6 @@ export function main(argv = process.argv.slice(2)) {
       "Scope: route-selected checks only. Use check for task completion; check:all includes every unit suite, full static validation and builds.",
     );
     if (flags.has("plan")) return 0;
-    if (flags.has("full") || flags.has("unit")) assertHeavyLocalAllowed("Route-selected test verification");
 
     // The ordinary outer check caches this deterministic aggregate and guards
     // its inputs once. Full verification includes artifact-producing commands,

@@ -17,7 +17,7 @@ it("retries a timed out lease, completes, and releases its own supervisor lock",
       cwd: process.cwd(),
       env: {
         ...process.env,
-        ALCHEMY_ALLOW_HEAVY_LOCAL: "1",
+        ALCHEMY_ALLOW_HEAVY_LOCAL: "",
         ALCHEMY_HEAVY_LANE: fakeLane,
         ALCHEMY_BALANCE_CHECKPOINT: root,
       },

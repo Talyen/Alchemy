@@ -66,12 +66,7 @@ with compilation deferred to CI. Formatting/lint batches above 50 files or
 containing a file above 256,000 bytes are deferred to CI and reported.
 
 `check:all` selects the repository inventory and replaces overlapping unit commands
-with one complete unit run. Full gates and managed broad unit/browser runs reject
-local execution unless `ALCHEMY_ALLOW_HEAVY_LOCAL=1` is set for an explicitly
-requested local run. `local-execution-policy.mjs` recognizes hosted GitHub Actions
-via `GITHUB_ACTIONS=true`; `CI=true` alone is insufficient because local browser
-aliases also set it. One or two explicit unit files remain available with one
-worker. Policy checks precede lane acquisition and command execution.
+with one complete unit run. Full gates and managed broad unit/browser runs may run locally without a separate permission request. Managed runners retain their resource lanes and focused unit selections use one worker.
 Integration invokes the lightweight gate on the pinned combined result;
 eligible commands follow [receipt rules](#verification-receipt-rules).
 
@@ -136,7 +131,7 @@ an occupied port fails before any HTTP validation. They require an application s
 
 ## Failure-first triage
 
-[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and local execution permissions. Use CI reports for complete validation.
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and local resource coordination. Use CI reports for complete validation.
 
 Verification and audit commands keep full artifacts on disk but print a bounded digest. Start with the digest when the cause is unclear; open the most relevant artifact directly when you have a specific hypothesis. Battle warnings use the `[Enemy Turn]` prefix.
 
@@ -361,7 +356,7 @@ boundaries as well as runtime imports.
 
 | Command                           | Role                                                                                                                                         |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (CI or explicitly requested local execution; no boundary subset double-run)     |
+| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (CI or local execution; no boundary subset double-run)                          |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
 | `npm run assets:check`            | Read-only repository asset source freshness check                                                                                            |

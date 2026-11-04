@@ -11,9 +11,7 @@ Chromium provides inexpensive renderer coverage. WebKit is not part of this gate
 The default task gate defers interaction units to CI. A single-family reproduction
 or replay uses one explicit unit file and one worker; keep it within the focused
 budget in [Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change).
-All-family and nightly sweeps require CI or an explicitly requested heavy local run
-under that policy. The commands below select cases; they do not grant execution
-permission.
+All-family and nightly sweeps may run locally while following that policy’s resource coordination.
 
 - `npm run test:interactions`: 16 fixed seeds per family, up to 40 actions each.
 - `npm run test:interactions -- --tier nightly --day 2026-10-09`: 128 seeds per
@@ -85,7 +83,7 @@ Do not globally filter runtime errors. Injected storage failures must match the
 specific expected errors before recovery; unexpected errors fail the journey.
 
 Local unit discovery does not prove Electron acceptance, packaged Steam behavior,
-native Windows focus or hosted CI. Local execution follows the task authorization and resource policy in CONTRIBUTING. Test
+native Windows focus or hosted CI. Local execution follows the resource policy in CONTRIBUTING. Test
 collection proves selection only. Validate actual journeys in their configured
 CI tier before treating a release as qualified.
 

@@ -5,8 +5,6 @@ import { dirname, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 const root = resolve(import.meta.dirname, "..");
-if (process.env.ALCHEMY_ALLOW_HEAVY_LOCAL !== "1")
-  throw new Error("An explicitly authorized local sweep requires ALCHEMY_ALLOW_HEAVY_LOCAL=1");
 if (
   process.env.ALCHEMY_BALANCE_SHARD_COUNT ||
   process.env.ALCHEMY_BALANCE_SHARD_INDEX ||

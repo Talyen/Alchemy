@@ -83,17 +83,13 @@ remains the tool for manual review across viewport sizes.
 
 ### Local execution policy
 
-[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns local execution permissions and the task gate. Use [visual review](../../Docs/UI_VISUAL_REVIEW.md) for affected player-facing flows; prefer development mode for current-source UI checks.
+[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns local resource coordination and the task gate. Use [visual review](../../Docs/UI_VISUAL_REVIEW.md) for affected player-facing flows; prefer development mode for current-source UI checks.
 [Browser and Electron commands](#browser-and-electron-commands) own invocation,
 ports, build edition and concurrency details for focused local execution.
 
 ### Browser and Electron commands
 
-These automated suites are CI-owned, including a single browser spec. For an
-explicitly requested local run, set `ALCHEMY_ALLOW_HEAVY_LOCAL=1` on that command
-and use the shared Mac host lane under
-[Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change). Development mode
-changes the source being served; it does not bypass this requirement. Ordinary
+These automated suites may run locally without a separate permission request. Use the shared Mac host lane under [Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change). Development mode changes the source being served; it does not bypass resource coordination. Ordinary
 interactive visual review uses the [managed preview](../../CONTRIBUTING.md#agent-preview-ownership).
 
 Install browser-test Chromium once before the first run:
