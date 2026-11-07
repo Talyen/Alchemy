@@ -33,11 +33,24 @@ type CatalogItem = {
 
 export type CollectionTileItem = CatalogItem & { discovered: boolean };
 
+const titleCollators = new Map<string, Intl.Collator>();
+
+function titleCollatorFor(language: string): Intl.Collator {
+  const locale = language === "en-XA" ? "en" : language;
+  let collator = titleCollators.get(locale);
+  if (!collator) {
+    collator = new Intl.Collator(locale);
+    titleCollators.set(locale, collator);
+  }
+  return collator;
+}
+
 function sortByTitle<T extends { title: string }>(entries: readonly T[]): T[] {
-  if (localization.language === "en") return [...entries].sort((a, b) => a.title.localeCompare(b.title, "en"));
+  const collator = titleCollatorFor(localization.language);
+  if (localization.language === "en") return [...entries].sort((a, b) => collator.compare(a.title, b.title));
   return entries
     .map((entry) => ({ entry, title: displayText(entry.title) }))
-    .sort((a, b) => a.title.localeCompare(b.title, localization.language))
+    .sort((a, b) => collator.compare(a.title, b.title))
     .map(({ entry }) => entry);
 }
 
@@ -98,7 +111,7 @@ const catalogs: Record<CollectionTab, { items: CatalogItem[]; pageSize: number; 
     pageSize: TRINKET_PAGE_SIZE,
     hiddenDescription: "Find this unique to reveal its effect.",
     items: [...uniqueItemList]
-      .sort((a, b) => a.displayName.localeCompare(b.displayName))
+      .sort((a, b) => titleCollatorFor("en").compare(a.displayName, b.displayName))
       .map((entry) => ({
         id: entry.id,
         title: entry.displayName,

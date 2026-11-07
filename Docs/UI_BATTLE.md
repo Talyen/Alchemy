@@ -165,12 +165,12 @@ Direct typed damage retains its independent fan flights, including actions that
 trigger reactions. Each reaction has a separate central portrait-anchored pair:
 the localized name beside its actual typed bonus. Damage packets carry their exact
 reaction ID through display aggregation: prerequisite keywords never imply extra
-damage types. Shatter's Block and Armor losses remain separate defense feedback.
-The name and bonus number use the same keyword text shine, with a dark shadow and
-no inherited stroke through transparent glyphs. The ordinary type icon preserves
-the payoff's damage type. Shatter uses Freeze/Physical, Frostfire Freeze/Burn,
-Thunderclap Stun/Nature, Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil
-Burn/Bleed, and Venomflash Poison/Burn.
+damage types. Shatter's Block loss and Frostfire's Armor loss remain separate
+defense feedback. The name and bonus number use the same keyword text shine, with
+a dark shadow and no inherited stroke through transparent glyphs. The ordinary
+type icon preserves the payoff's damage type. Shatter uses Freeze/Physical,
+Frostfire Freeze/Burn, Rupture Stun/Bleed, Toxic Shock Stun/Poison, Consecration
+Bleed/Holy, and Venomflash Poison/Burn.
 
 Each complete pair pops, settles, rises up to 24 scaled pixels, then holds and
 fades together over 1600 ms. Each localized name and its bonus fit the portrait
