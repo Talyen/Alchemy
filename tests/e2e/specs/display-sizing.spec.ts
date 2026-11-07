@@ -24,7 +24,7 @@ const VIEWPORTS = [
   { width: 3840, height: 2160 },
 ];
 
-async function setSlider(slider: import("@playwright/test").Locator, value: number) {
+async function setSlider(slider: Locator, value: number) {
   await slider.fill(String(value));
   await slider.dispatchEvent("input");
   await slider.dispatchEvent("change");

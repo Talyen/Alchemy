@@ -66,6 +66,7 @@ export class BattlePage {
 
   async playCardNamed(name: string) {
     const card = this.page.getByRole("button", { name: `Play ${name}` }).first();
+    await expect(card).toBeVisible({ timeout: 5000 });
     await expect.poll(() => card.evaluate((element) => !element.closest("[inert]"))).toBe(true);
     await card.click();
   }

@@ -1,7 +1,6 @@
 import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
 import { BattlePage } from "../../pages/battle-page";
-import { expect } from "@playwright/test";
 import { bodyGear, gearItemLocator, openArmory, selectArmorySlot } from "../armory";
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import {
@@ -14,7 +13,7 @@ import {
   withSavedGame,
 } from "../../browser-helpers";
 import { savedActivityFixture } from "../../fixtures/run-activity";
-import { test } from "../../fixtures/e2e";
+import { expect, test } from "../../fixtures/e2e";
 import { critical } from "../../playwright-tags";
 
 const affixedSword = {

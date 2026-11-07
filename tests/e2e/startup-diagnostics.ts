@@ -45,8 +45,12 @@ export function collectStartupDiagnostics(
   let omittedRequests = 0;
   const relevant = (request: Request) => ["document", "script"].includes(request.resourceType());
   const location = (request: Request) => {
-    const url = new URL(request.url());
-    return `${url.origin}${url.pathname}`.slice(0, 400);
+    try {
+      const url = new URL(request.url());
+      return `${url.origin}${url.pathname}`.slice(0, 400);
+    } catch {
+      return request.url().slice(0, 400);
+    }
   };
   const started = (request: Request) => {
     if (!relevant(request)) return;

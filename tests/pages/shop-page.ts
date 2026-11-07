@@ -30,7 +30,9 @@ export class ShopPage {
   async gold(): Promise<number> {
     const label = await this.goldText.getAttribute("aria-label");
     if (!label) throw new Error("Gold display has no accessible amount");
-    return Number(label.replace(/^Gold:\s*/, ""));
+    const match = label.replaceAll(",", "").match(/-?\d+/);
+    if (!match) throw new Error(`Could not parse gold amount from label: "${label}"`);
+    return Number(match[0]);
   }
 
   async buyCard(index = 0) {

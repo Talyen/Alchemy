@@ -35,8 +35,16 @@ export class MenuPage {
   }
 
   async expectMainMenu(timeout = 5000) {
-    await expect(this.page.getByRole("img", { name: "Alchemy logo", exact: true })).toBeVisible({ timeout });
-    await expect(this.page.getByRole("button", { name: /^(Play|Continue)$/ })).toBeVisible({ timeout });
+    await expect(
+      this.page.getByRole("img", {
+        name: /^(Alchemy logo|Alchemy-Logo|Alchemy标志|Логотип Alchemy|Logotipo de Alchemy|Logo de Alchemy|Alchemyのロゴ|Logo d'Alchemy)$/i,
+      }),
+    ).toBeVisible({ timeout });
+    await expect(
+      this.page.getByRole("button", {
+        name: /^(Play|Continue|Spielen|Fortsetzen|开始|继续|Играть|Продолжить|Jugar|Continuar|Jogar|プレイ|再開|Jouer|Continuer)$/i,
+      }),
+    ).toBeVisible({ timeout });
   }
 
   async expectMainMenuAfterColdStart(timeout = 15_000) {

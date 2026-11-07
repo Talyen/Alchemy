@@ -1,7 +1,6 @@
 import { controllerInput } from "../controller-input";
 import { waitForLayoutSettled } from "../layout-assertions";
-import { expect } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
+import { expect, test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
 import { readSavedGame, withSavedGame } from "../save-injection";
 import { critical } from "../../playwright-tags";
