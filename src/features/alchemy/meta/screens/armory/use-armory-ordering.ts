@@ -5,11 +5,11 @@ import type { ArmorySlot, GearInstance } from "@/lib/gear";
 import { getPagination } from "../../../shared/ui/pagination";
 import {
   ARMORY_PAGE_SIZE,
-  compareOrderRows,
   gearOrderRow,
   placeTransfer,
   placeUnequip,
   reconcileOrder,
+  sortOrderRows,
   trinketOrderRow,
   type ArmoryOrderRow,
   type ArmorySortOption,
@@ -32,6 +32,15 @@ interface StoredCategory {
   filters: ArmoryInventoryFilters;
 }
 
+function samePoolIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  if (a === b) return true;
+  if (a.size !== b.size) return false;
+  for (const id of a) {
+    if (!b.has(id)) return false;
+  }
+  return true;
+}
+
 function reconcileCategory(
   entry: StoredCategory | undefined,
   pool: readonly ArmoryOrderRow[],
@@ -40,7 +49,7 @@ function reconcileCategory(
   // Reconcile only on membership change: a confirmed transfer updates the
   // working order before refreshed props arrive, and the old pool must not
   // undo it. Same render-phase adjustment pattern as usePagination.
-  if (entry && entry.poolIds.size === poolSet.size && [...entry.poolIds].every((id) => poolSet.has(id))) return entry;
+  if (entry && samePoolIds(entry.poolIds, poolSet)) return entry;
   const order = reconcileOrder(entry?.order ?? NO_IDS, pool);
   return {
     order,
@@ -164,9 +173,7 @@ export function useArmoryOrdering({
   const onSort = (option: ArmorySortOption) => {
     setPlaceholderIndex(null);
     const sorted = new Set(
-      [...pool]
-        .sort((a, b) => i18n.read(() => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option)))
-        .map((row) => row.id),
+      i18n.read(() => sortOrderRows(pool, isTrinket && option === "rarity" ? "name" : option)).map((row) => row.id),
     );
     commitOrder([...sorted], 0);
   };

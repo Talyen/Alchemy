@@ -44,17 +44,18 @@ export function buildAlchemySaveDataFromStores(gameSession: GameSession): Unstam
   const token = runtime.progressCompletion.token(state.revision);
   try {
     const activeRun = isActiveRunActivity(state.session.activity)
-      ? encodeRunResumeSnapshot({ run: state.run.activeRun, session: state.session })
+      ? structuredClone(encodeRunResumeSnapshot({ run: state.run.activeRun, session: state.session }))
       : null;
-    // Own every nested value: a save must not retain live state or draft views.
-    const save = structuredClone({
+    // Own every nested value: encodePersistenceFields detaches its slices and
+    // activeRun is cloned above, so a save never retains live state or draft views.
+    const save: UnstampedSaveData = {
       steamAccountId: null,
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
       contentVersion: CURRENT_CONTENT_VERSION,
       ...encodePersistenceFields(gameSession),
       activeRun,
-    });
+    };
     return runtime.saveSnapshots.capture(save, state.revision);
   } catch (error) {
     runtime.progressCompletion.complete(token, "failed");
