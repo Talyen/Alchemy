@@ -17,7 +17,7 @@ jobs:
       artifact-id: ${{ steps.package-upload.outputs.artifact-id }}
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -74,7 +74,7 @@ jobs:
           ALCHEMY_EDITION: ${{ inputs.edition }}
       - name: Retain verified release package
         id: package-upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: release-package${{ inputs.edition == 'demo' && '-demo' || '' }}-${{ github.ref_name }}-${{ github.run_attempt }}
           path: |
@@ -86,7 +86,7 @@ jobs:
           if-no-files-found: error
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: build-diagnostics-release-package${{ inputs.edition == 'demo' && '-demo' || '' }}
           path: |
