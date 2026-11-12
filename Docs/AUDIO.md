@@ -101,6 +101,7 @@ attempt revokes late failures. Failed track setup releases its partial media
 element. Invalidation releases the source without seeking a discarded track;
 reset revokes playback before releasing every cached source.
 
+- A fresh Forge Golem track starts at 28.5 seconds and fades in ahead of the first lyric. The playback clock stays on the original media timeline, so lyrics and cached resumes retain their existing positions.
 - Starting a battle invalidates the upcoming enemy's battle music cache, even while the previous screen remains visible. It preserves menu playback until navigation selects the battle track. Invalidating the currently playing key forgets it entirely, so the next play builds a fresh track.
 - Invalidating either the playing track or the pending destination cancels the transition. Invalidating the playing track stops playback; invalidating only the destination restores the outgoing track to full gain. Unrelated cache invalidation leaves playback and its fade alone. A later explicit play can build the invalidated track afresh.
 - If the destination track cannot initialize after a fade-out, restore the outgoing track's configured volume. The failed destination remains uncached and can be retried on the next request.

@@ -186,11 +186,13 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
 
   function playMusicImmediate(key: string): void {
     if (!Object.hasOwn(MUSIC_CATALOG, key)) return;
+    const shouldFade = MUSIC_CATALOG[key]?.fadeInOnStart && !musicTracks.has(key);
     const track = resolveTrack(key);
     if (!track) return;
     bossPreviewKey = null;
     cancelTransition();
-    activateTrack(track, 1);
+    if (shouldFade) fadeIn(track);
+    else activateTrack(track, 1);
   }
 
   function playMusic(key: string): void {
