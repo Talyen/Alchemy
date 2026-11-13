@@ -66,8 +66,11 @@ export function BrewPotionPanel({
   const confirming = useRef(false);
   const priceId = useId();
   const recipeBrew = kind === "new" && variant === "alchemist";
+  // The Alchemist can show two rows of art, a header, cost, and actions together.
   const preparationWidthClass =
-    variant === "alchemist" ? collectionTileWidthClass : "w-[calc(12*var(--content-rem,1rem))]";
+    variant === "alchemist"
+      ? cn(collectionTileWidthClass, "max-w-[calc((100cqh_-_25*var(--content-rem,1rem))*0.375)]")
+      : "w-[calc(12*var(--content-rem,1rem))]";
   const [error, setError] = useState<"deck" | "potion" | "brew" | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [selectionDeck, setSelectionDeck] = useState(deck);

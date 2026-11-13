@@ -19,7 +19,7 @@ export function KeywordProgressGrid({
   className?: string;
 }) {
   const [animate, setAnimate] = useState(false);
-  const { onContainer, onMeasure, columns } = useAdaptiveGrid(224, 5, 5, 12);
+  const { onContainer, onMeasure, columns } = useAdaptiveGrid(256, 5, 5, 12);
   const rowCount = Math.max(1, Math.ceil(entries.length / columns));
   const smallerRowSize = Math.floor(entries.length / rowCount);
   const largerRowCount = entries.length % rowCount;
@@ -36,8 +36,8 @@ export function KeywordProgressGrid({
   return (
     <div
       ref={onContainer}
-      className={cn("mx-auto grid w-full max-w-[calc(73*var(--content-rem,1rem))] justify-center gap-3", className)}
-      style={{ gridTemplateColumns: `repeat(${largestRowSize * 2}, calc(6.625 * var(--content-rem, 1rem)))` }}
+      className={cn("mx-auto grid w-full max-w-[calc(83*var(--content-rem,1rem))] justify-center gap-3", className)}
+      style={{ gridTemplateColumns: `repeat(${largestRowSize * 2}, calc(7.625 * var(--content-rem, 1rem)))` }}
     >
       {entries.map(({ kw, totalXP }, index) => {
         const inLargerRow = index < largerRowEntries;
@@ -51,7 +51,7 @@ export function KeywordProgressGrid({
           <div
             key={kw}
             ref={index === 0 ? onMeasure : undefined}
-            className="w-56"
+            className="w-64"
             style={{
               gridRow: rowIndex + 1,
               gridColumn: `${largestRowSize - rowSize + columnIndex * 2 + 1} / span 2`,

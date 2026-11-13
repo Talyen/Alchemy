@@ -29,11 +29,15 @@ export function KeywordProgressCard({
   return (
     <div className={cn("rounded-shell-compact border border-border/70 text-left surface-muted", large ? "p-4" : "p-3")}>
       <div className="flex items-center justify-between gap-2">
-        <div className={cn("flex items-center font-semibold", large ? "gap-2 text-lg" : "gap-1.5 text-base")}>
-          {Icon ? <Icon className={def?.colorClass} /> : null}
-          <span className={def?.colorClass}>{i18n.displayText(def?.label ?? kw)}</span>
+        <div className={cn("flex min-w-0 items-center font-semibold", large ? "gap-2 text-lg" : "gap-1.5 text-base")}>
+          {Icon ? <Icon className={cn("shrink-0", def?.colorClass)} /> : null}
+          <span className={cn("min-w-0 [overflow-wrap:anywhere]", def?.colorClass)}>
+            {i18n.displayText(def?.label ?? kw)}
+          </span>
         </div>
-        <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>
+        <span
+          className={cn(large ? "text-lg" : "text-base", "shrink-0 font-semibold whitespace-nowrap", def?.colorClass)}
+        >
           <GameMessage
             id="ui.keyword-progress-card.s1"
             defaultValue="Lv <part0/>"

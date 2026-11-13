@@ -20,6 +20,12 @@ import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
+// Keep two rows of artwork clear of the heading and Continue at large game sizes.
+const DRAFTED_CARD_WIDTH_CLASS = cn(
+  collectionTileWidthClass,
+  "max-w-[calc((100cqh_-_20*var(--content-rem,1rem))*0.375)]",
+);
+
 function DraftedCardItem({
   card,
   interactionKey,
@@ -52,7 +58,7 @@ function DraftedCardItem({
       shimmerToken={shimmerToken}
       scaleOnHover={false}
       shineColor={getCardInspectionShineColors(card)}
-      className={collectionTileWidthClass}
+      className={DRAFTED_CARD_WIDTH_CLASS}
       wrapperClassName="relative flex justify-center"
     />
   );
