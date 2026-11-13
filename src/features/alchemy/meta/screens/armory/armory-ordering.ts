@@ -56,20 +56,6 @@ function collatorFor(language: string): Intl.Collator {
   return collator;
 }
 
-export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: ArmorySortOption): number {
-  const rankCompare = a.rank - b.rank;
-  if (sort === "rarity" && rankCompare !== 0) return rankCompare;
-  const collator = collatorFor(localization.language);
-  if (sort === "base-type") {
-    const baseCompare = collator.compare(displayText(a.baseType), displayText(b.baseType));
-    if (baseCompare !== 0) return baseCompare;
-  }
-  const titleCompare = collator.compare(displayText(a.title), displayText(b.title));
-  if (titleCompare !== 0) return titleCompare;
-  if (rankCompare !== 0) return rankCompare;
-  return defaultIdCollator.compare(a.id, b.id);
-}
-
 /** Pre-resolve localized strings once per row before sorting large inventories. */
 export function sortOrderRows<T extends ArmoryOrderRow>(rows: readonly T[], sort: ArmorySortOption): T[] {
   if (rows.length <= 1) return [...rows];
