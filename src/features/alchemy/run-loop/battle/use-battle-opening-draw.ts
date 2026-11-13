@@ -9,7 +9,10 @@ import type { createBattleTransferDeps } from "./battle-transfers";
 export interface BattleOpeningDrawContext {
   battle: Pick<BattleControllerContext["battle"], "read">;
   playback: Pick<BattleControllerContext["playback"], "id" | "completeAction" | "scheduleAutoEndTurn">;
-  getPresentation: () => Pick<BattlePresentationPort, "openingDrawPending" | "setOpeningDrawPending">;
+  getPresentation: () => Pick<
+    BattlePresentationPort,
+    "openingDrawPending" | "setOpeningDrawPending" | "waitForCompanionActions"
+  >;
 }
 
 export async function playBattleOpeningDraw(
@@ -30,6 +33,7 @@ export async function playBattleOpeningDraw(
     deps: transferDeps.getDrawSequenceDeps(sessionNum),
     errorContext: "draw opening hand",
   });
+  await presentation.waitForCompanionActions();
   if (sessionNum === ctx.playback.id) {
     ctx.playback.completeAction(sessionNum);
     ctx.playback.scheduleAutoEndTurn(ctx.battle.read().battleState);

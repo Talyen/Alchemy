@@ -13,7 +13,7 @@ import { readSfxPlays, resetSfxPlays, trackSfxPlays } from "../../pages/audio-ha
 import { critical } from "../../playwright-tags";
 
 test("rapid End Turn advances once, plays SFX, and survives resume", critical, async ({ page }) => {
-  test.setTimeout(45_000);
+  test.setTimeout(process.env.CI ? 0 : 45_000);
   await seedRandom(page, 42);
   await trackSfxPlays(page, "sword-attack-1.");
   const deck = Array.from({ length: 6 }, () =>

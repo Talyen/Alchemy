@@ -93,10 +93,14 @@ function resolveNatureRestorationRewards(
     next = addPlayerStatusWithCombatText(next, "thorns", damage, texts);
   if (rollBattleChance(state.talentEffects.healOnNatureDamageChance, state))
     next = applyHealingWithCombatText(next, damage, texts);
-  const guaranteed =
-    !alreadyLeeches && state.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0;
   const chance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
-  if (guaranteed || (chance > 0 && rollBattleChance(chance, next)))
-    next = applyLeechHitHealing(next, guaranteed ? healthDamage : damage, texts);
+  if (chance > 0 && rollBattleChance(chance, next)) next = applyLeechHitHealing(next, damage, texts);
+  else if (
+    !alreadyLeeches &&
+    healthDamage > 0 &&
+    eligibility.enemyStatuses.poison > 0 &&
+    rollBattleChance(state.gearEffects.natureLeechVsPoisoned, next)
+  )
+    next = applyLeechHitHealing(next, healthDamage, texts);
   return next;
 }

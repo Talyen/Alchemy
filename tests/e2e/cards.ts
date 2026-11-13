@@ -33,7 +33,7 @@ const ANVIL_CARD = makeTestCard({
   effects: [{ kind: "player-status", status: "forge", amount: 1 }],
 });
 
-export function makeStatusCard(damageType: string, amount: number, overrides: Record<string, unknown> = {}) {
+export function makeStatusCard(damageType: DamageType, amount: number, overrides: Record<string, unknown> = {}) {
   return {
     ...makeTestCard({
       id: "slash",
@@ -41,7 +41,7 @@ export function makeStatusCard(damageType: string, amount: number, overrides: Re
       descriptionLines: [`Deal ${amount} ${damageType} damage`],
       art: "placeholder",
       cost: 0,
-      effects: [{ kind: "damage", damageType: damageType as DamageType, amount }],
+      effects: [{ kind: "damage", damageType, amount }],
     }),
     ...overrides,
   };

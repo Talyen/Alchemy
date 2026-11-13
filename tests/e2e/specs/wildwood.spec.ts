@@ -1,6 +1,5 @@
 import { savedActivityData, savedActivityFixture } from "../../fixtures/run-activity";
-import { expect } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
+import { expect, test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
 import { critical, slow } from "../../playwright-tags";
 import {

@@ -19,18 +19,26 @@ import {
 } from "./status-helpers";
 import type { BattleState } from "./types";
 import { hasEncounterBenefit } from "./encounter-trait-state";
-import { applySunderingArmorRemoval } from "./enemy-mitigation-state";
+import { applySunderingArmorRemoval, reduceEnemyArmor } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
-function applyCrit(damage: number, state: BattleState, guaranteed = false, rollCritical = true) {
+function applyCrit(
+  damage: number,
+  state: BattleState,
+  damageType: DamageType,
+  guaranteed = false,
+  rollCritical = true,
+) {
   const chance =
     GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
   const critical =
     guaranteed ||
     readCombatFlag(state, "nextHitCrit") ||
     (rollCritical && rollPercent(chance, getBattleRng(state), "critical"));
+  const bonusPercent = damageType === "physical" ? state.talentEffects.homesteadPhysicalCritDamagePercent : 0;
+  const criticalMultiplier = CRIT_MULTIPLIER * (1 + bonusPercent / PERCENT_DENOMINATOR);
   return {
-    damage: critical && damage > 0 ? damage * CRIT_MULTIPLIER : damage,
+    damage: critical && damage > 0 ? damage * criticalMultiplier : damage,
     critical: critical && damage > 0,
   };
 }
@@ -137,12 +145,11 @@ function resolveDamageAfterMitigation(
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
   let nextState = applySunderingArmorRemoval(stateAfterBlock, effect.damageType);
-  // Ignoring Armor changes this hit's mitigation; only Sundering removes stacks.
+  if (damageAfterBlock > 0 && card?.tags?.includes("archery"))
+    nextState = reduceEnemyArmor(nextState, state.talentEffects.archeryArmorRemoval);
+  // Ignored Armor remains in place for subsequent attacks.
   const ignoredArmor =
-    state.gearEffects.armorPiercing +
-    (card?.tags?.includes("archery")
-      ? state.gearEffects.archeryArmorPiercing + state.talentEffects.archeryArmorPiercing
-      : 0);
+    state.gearEffects.armorPiercing + (card?.tags?.includes("archery") ? state.gearEffects.archeryArmorPiercing : 0);
   const effectiveArmor =
     isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor
       ? Math.max(0, nextState.enemyMitigation.armor - ignoredArmor)
@@ -204,12 +211,15 @@ export function computeCardDamageToEnemy(
   const criticalResult = applyCrit(
     power.damage,
     stateAfterFirst,
+    effect.damageType,
     context?.guaranteedCrit === true || physicalCritReady || hawkEyeCritReady,
     criticalMode === "random",
   );
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const finalDamage = Math.round(
-    criticalResult.damage + (kingbreaker ? state.enemyMitigation.armor * (context?.damageMultiplier ?? 1) : 0),
+    criticalResult.damage +
+      (kingbreaker ? state.enemyMitigation.armor * (context?.damageMultiplier ?? 1) : 0) +
+      (context?.enemyHitFlatBonus ?? 0),
   );
 
   const result = resolveDamageAfterMitigation(

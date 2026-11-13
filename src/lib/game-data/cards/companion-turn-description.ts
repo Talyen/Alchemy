@@ -4,13 +4,22 @@ import type { CompanionDefinition, BattleCardEffect } from "../types";
 
 function companionAction(effect: BattleCardEffect): string | null {
   switch (effect.kind) {
-    case "damage": {
-      const amount = effect.amount;
+    case "damage":
+    case "random-damage": {
+      const amount =
+        effect.kind === "damage" || effect.minAmount === effect.maxAmount
+          ? effect.kind === "damage"
+            ? effect.amount
+            : effect.minAmount
+          : `${effect.minAmount}–${effect.maxAmount}`;
       const types = effect.damageTypePool?.length
         ? effect.damageTypePool.map(capitalizeWord)
-        : [capitalizeWord(effect.damageType)];
+        : effect.kind === "damage"
+          ? [capitalizeWord(effect.damageType)]
+          : [];
       const last = types.pop();
       const damageLabel = types.length > 0 ? `${types.join(", ")} or ${last}` : last;
+      if (!damageLabel) return null;
       return `Deals ${amount} ${damageLabel} damage`;
     }
     case "heal":
@@ -47,7 +56,6 @@ function companionAction(effect: BattleCardEffect): string | null {
     case "remove-enemy-armor":
     case "multiply-enemy-status":
     case "cleanse-player-status-to-damage":
-    case "random-damage":
     case "repeat-over-turns":
     case "next-hit-crit":
     case "next-hit-leech":
@@ -66,18 +74,22 @@ export function getCompanionDescriptionLines(
 ): string[] {
   const modifiers = typeof damageBonus === "number" ? { damageBonus, damageMultiplier: 1 } : damageBonus;
   const effects = getModifiedCompanionEffects(companion, bondLevel, modifiers);
-  const lines = effects.map(companionAction);
+  const firstAction = effects[0] ? companionAction(effects[0]) : null;
   const bonus = effects[1];
   const overflow = effects.some((effect) => effect.kind === "restore-mana" && effect.allowOverflow)
     ? ", allowing overflow"
     : "";
-  if (bonus?.kind === "chance" && bonus.failureEffects.length === 0 && lines[0]) {
+  if (bonus?.kind === "chance" && bonus.failureEffects.length === 0 && firstAction) {
     const action = companion.id === "mana-moth" ? "grant" : "draw";
     return [
-      `${lines[0]} each turn, with a ${Math.round(bonus.probability * 100)}% chance to ${action} 1 more${overflow}`,
+      `${firstAction} each turn, with a ${Math.round(bonus.probability * 100)}% chance to ${action} 1 more${overflow}`,
     ];
   }
-  const actions = lines.filter((line): line is string => line != null);
+  const actions: string[] = [];
+  for (let index = 0; index < effects.length; index++) {
+    const action = index === 0 ? firstAction : companionAction(effects[index]!);
+    if (action != null) actions.push(action);
+  }
   if (actions.length === 0) return ["Acts at the start of each turn"];
   return [
     `${actions.map((action, index) => (index === 0 ? action : action.charAt(0).toLowerCase() + action.slice(1))).join(" and ")} each turn${overflow}`,

@@ -2,29 +2,34 @@ import {
   ELEMENTAL_REACTION_DAMAGE_PERCENT,
   ELEMENTAL_REACTION_MIN_DAMAGE,
   PERCENT_DENOMINATOR,
+  REACTION_CONFIG,
 } from "../game-constants";
 import type { BattleSnapshot, BattleState } from "./types";
 
 /** Earned damage, independent of turn flags and the size of the finishing hit. */
 export interface ElementalReactionState {
+  naturalBurnDamage: number;
+  naturalPoisonDamage: number;
+  naturalBleedDamage: number;
+  ruptureDamage: number;
+  pendingToxicShock: number;
+  healingReductionTurns: number;
+  weakenNextAttack: boolean;
   shatterDamage: number;
   frostfireDamage: number;
-  thunderclapDamage: number;
-  wildfirePendingTickDamage: number | null;
-  wildfireLastTickTurn: number | null;
-  wildfireDamage: number;
-  consecrated: boolean;
 }
 
 export function createElementalReactionState(): ElementalReactionState {
   return {
+    naturalBurnDamage: 0,
+    naturalPoisonDamage: 0,
+    naturalBleedDamage: 0,
+    ruptureDamage: 0,
+    pendingToxicShock: 0,
+    healingReductionTurns: 0,
+    weakenNextAttack: false,
     shatterDamage: 0,
     frostfireDamage: 0,
-    thunderclapDamage: 0,
-    wildfirePendingTickDamage: null,
-    wildfireLastTickTurn: null,
-    wildfireDamage: 0,
-    consecrated: false,
   };
 }
 
@@ -49,7 +54,9 @@ export function prepareCcReactions(state: BattleState, stat: "freeze" | "stun", 
     ...state,
     reactions: {
       ...state.reactions,
-      ...(stat === "freeze" ? { shatterDamage: damage, frostfireDamage: damage } : { thunderclapDamage: damage }),
+      ...(stat === "freeze"
+        ? { shatterDamage: damage, frostfireDamage: damage }
+        : { ruptureDamage: damage, pendingToxicShock: isReactionDotPrepared(state, "poison") ? damage : 0 }),
     },
   };
 }
@@ -58,7 +65,7 @@ export function expireCcReactions<T extends BattleSnapshot>(state: T): T {
   const { reactions, enemyCC } = state;
   if (
     (enemyCC.freezeSkipTurns > 0 || (reactions.shatterDamage === 0 && reactions.frostfireDamage === 0)) &&
-    (enemyCC.stunSkipTurns > 0 || reactions.thunderclapDamage === 0)
+    (enemyCC.stunSkipTurns > 0 || reactions.ruptureDamage === 0)
   )
     return state;
   return {
@@ -66,23 +73,32 @@ export function expireCcReactions<T extends BattleSnapshot>(state: T): T {
     reactions: {
       ...reactions,
       ...(enemyCC.freezeSkipTurns <= 0 ? { shatterDamage: 0, frostfireDamage: 0 } : {}),
-      ...(enemyCC.stunSkipTurns <= 0 ? { thunderclapDamage: 0 } : {}),
+      ...(enemyCC.stunSkipTurns <= 0 ? { ruptureDamage: 0 } : {}),
     },
   };
 }
 
-/** Called only by the natural enemy-turn Burn tick, never by bonus ticks or detonations. */
-export function recordWildfireTick(state: BattleState, healthDamage: number): BattleState {
-  if (healthDamage <= 0 || state.reactions.wildfireLastTickTurn === state.turn) return state;
-  const pending = state.reactions.wildfirePendingTickDamage;
-  const damage = pending === null ? 0 : getReactionBonus(pending, healthDamage);
+export function isReactionDotPrepared(state: BattleSnapshot, status: "burn" | "poison" | "bleed"): boolean {
+  const key = REACTION_DOT_KEYS[status];
+  const threshold = Math.max(1, Math.round(state.enemyMaxHealth * REACTION_CONFIG.setupHealthFraction));
+  return state.enemyStatuses[status] >= threshold && state.reactions[key] >= threshold;
+}
+
+export const REACTION_DOT_KEYS = {
+  burn: "naturalBurnDamage",
+  poison: "naturalPoisonDamage",
+  bleed: "naturalBleedDamage",
+} as const;
+
+export function recordNaturalReactionTick(
+  state: BattleState,
+  status: keyof typeof REACTION_DOT_KEYS,
+  damage: number,
+): BattleState {
+  if (damage <= 0) return state;
+  const key = REACTION_DOT_KEYS[status];
   return {
     ...state,
-    reactions: {
-      ...state.reactions,
-      wildfirePendingTickDamage: pending === null ? healthDamage : null,
-      wildfireLastTickTurn: state.turn,
-      wildfireDamage: Math.min(Number.MAX_SAFE_INTEGER, state.reactions.wildfireDamage + damage),
-    },
+    reactions: { ...state.reactions, [key]: Math.min(Number.MAX_SAFE_INTEGER, state.reactions[key] + damage) },
   };
 }

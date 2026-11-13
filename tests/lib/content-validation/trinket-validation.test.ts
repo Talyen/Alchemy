@@ -66,9 +66,9 @@ it.each([
 });
 
 it("rejects missing, unexpected, disabled, and unregistered mechanics", () => {
-  expect(messages({ ...chimes, effects: { resonantChimeMana: 1, extraDrawPerBattle: 3 } })).toEqual([
+  expect(messages({ ...chimes, effects: { resonantChimeMana: 1, tatteredPagesBurnDrawChance: 10 } })).toEqual([
     "Missing required effect: resonantChimeCardsRequired",
-    "Unexpected effect: extraDrawPerBattle",
+    "Unexpected effect: tatteredPagesBurnDrawChance",
     expect.stringContaining("required trigger and outcome"),
   ]);
   expect(messages({ ...trinketById.meteorite!, effects: { firstBurnDoubled: false } })).toEqual([

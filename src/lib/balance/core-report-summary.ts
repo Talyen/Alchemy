@@ -14,7 +14,8 @@ export interface CoreRateRow {
 }
 
 export function sumCardPlayCounts(counts: ReadonlyArray<Readonly<Record<string, number>>>): Record<string, number> {
-  const total: Record<string, number> = {};
+  // Card IDs are dictionary keys, including names inherited by ordinary objects.
+  const total = Object.create(null) as Record<string, number>;
   for (const batch of counts) {
     for (const [id, count] of Object.entries(batch)) total[id] = (total[id] ?? 0) + count;
   }
@@ -90,9 +91,12 @@ export function summarizeCoreRates(
   const enemies = [...byEnemy].map(([id, matching]) => ({ id, rates: ratesByTier(matching) }));
   const classes = reportCharacterIds().map((id) => {
     const matching = byCharacter.get(id) ?? [];
+    const cellsByTier = reportTierRecord(
+      (): Record<ReportEnemyType, RateCell[]> => ({ normal: [], elite: [], boss: [] }),
+    );
+    for (const row of matching) cellsByTier[row.tier][row.enemyType].push(row.cell);
     const ratesByType = reportTierRecord((tier) => {
-      const byType: Record<ReportEnemyType, RateCell[]> = { normal: [], elite: [], boss: [] };
-      for (const row of matching) if (row.tier === tier) byType[row.enemyType].push(row.cell);
+      const byType = cellsByTier[tier];
       return {
         normal: combineRateCells(byType.normal),
         elite: combineRateCells(byType.elite),

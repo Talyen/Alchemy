@@ -24,7 +24,7 @@ describe("createRunStartSnapshot", () => {
   });
 
   it.each(["campaign", "labyrinth", "wildwood"] as const)(
-    "starts %s with an independent deck, its supported difficulty, and fresh progress",
+    "starts %s with an independent deck, and its supported difficulty",
     (contentSystemType) => {
       const result = createRunStartSnapshot({
         characterId: "knight",
@@ -38,14 +38,8 @@ describe("createRunStartSnapshot", () => {
         selectedDifficulty: contentSystemType === "campaign" ? "difficulty-2" : null,
         runPlayerHealth: MAX_PLAYER_HEALTH,
         runMaxHealth: MAX_PLAYER_HEALTH,
-        roomsEncountered: 0,
-        currentAct: 1,
-        destinationIndexInAct: 0,
-        completedDestinations: [],
-        runBoons: [],
-        hasActiveRun: true,
       });
-      expect(result.freshDeck).toEqual(getStartingDeck("knight"));
+      expect(result.runDeck).toEqual(getStartingDeck("knight"));
     },
   );
 
@@ -60,11 +54,10 @@ describe("createRunStartSnapshot", () => {
     });
 
     expect(result.characterId).toBe("wildcard");
-    expect(result.freshDeck).toEqual(draftedCards);
-    expect(result.freshDeck).not.toEqual(getStartingDeck("wildcard"));
+    expect(result.runDeck).toEqual(draftedCards);
+    expect(result.runDeck).not.toEqual(getStartingDeck("wildcard"));
     expect(result.contentSystemType).toBe("campaign");
     expect(result.selectedDifficulty).toBe("difficulty-1");
-    expect(result.hasActiveRun).toBe(true);
   });
 
   it("scales max health from permanent talent XP at run start", () => {
@@ -99,108 +92,32 @@ describe("createRunStartSnapshot", () => {
       talentXP: {},
     });
 
-    expect(result.freshDeck).toEqual(getStartingDeck("wildcard"));
-    expect(result.freshDeck).toEqual([]);
+    expect(result.runDeck).toEqual(getStartingDeck("wildcard"));
+    expect(result.runDeck).toEqual([]);
   });
 });
 
 describe("canReplaceRunForStart", () => {
-  it("allows fresh starts", () => {
-    expect(
-      canReplaceRunForStart({
-        isFreshStart: true,
-        activeCharacterId: null,
-        snapshotCharacterId: "knight",
-        activeContentSystemType: null,
-        snapshotContentSystemType: "campaign",
-        hasActiveBattle: false,
-        activityKind: "inactive",
-      }),
-    ).toBe(true);
-  });
-
-  it("allows a wildcard draft to re-apply its own snapshot at draft confirm or difficulty select", () => {
-    for (const activityKind of ["draft-deck", "difficulty-select"]) {
-      expect(
-        canReplaceRunForStart({
-          isFreshStart: false,
-          activeCharacterId: "wildcard",
-          snapshotCharacterId: "wildcard",
-          activeContentSystemType: "campaign",
-          snapshotContentSystemType: "campaign",
-          hasActiveBattle: false,
-          activityKind,
-        }),
-      ).toBe(true);
-    }
-  });
-
-  it("rejects replacing an unfinished non-wildcard run", () => {
-    expect(
-      canReplaceRunForStart({
-        isFreshStart: false,
-        activeCharacterId: "knight",
-        snapshotCharacterId: "knight",
-        activeContentSystemType: "campaign",
-        snapshotContentSystemType: "campaign",
-        hasActiveBattle: false,
-        activityKind: "difficulty-select",
-      }),
-    ).toBe(false);
-  });
-
-  it("rejects cross-system replacement and mid-battle replacement", () => {
-    expect(
-      canReplaceRunForStart({
-        isFreshStart: false,
-        activeCharacterId: "wildcard",
-        snapshotCharacterId: "wildcard",
-        activeContentSystemType: "campaign",
-        snapshotContentSystemType: "labyrinth",
-        hasActiveBattle: false,
-        activityKind: "draft-deck",
-      }),
-    ).toBe(false);
-    expect(
-      canReplaceRunForStart({
-        isFreshStart: false,
-        activeCharacterId: "wildcard",
-        snapshotCharacterId: "wildcard",
-        activeContentSystemType: "campaign",
-        snapshotContentSystemType: "campaign",
-        hasActiveBattle: true,
-        activityKind: "difficulty-select",
-      }),
-    ).toBe(false);
+  const wildcard = { characterId: "wildcard", contentSystemType: "campaign" } as const;
+  const knight = { characterId: "knight", contentSystemType: "campaign" } as const;
+  it.each([
+    ["fresh start", knight, "inactive", knight, true],
+    ["draft confirmation", wildcard, "draft-deck", wildcard, true],
+    ["difficulty selection", wildcard, "difficulty-select", wildcard, true],
+    ["unfinished non-Wildcard", knight, "difficulty-select", knight, false],
+    ["different mode", wildcard, "draft-deck", { ...wildcard, contentSystemType: "labyrinth" }, false],
+    ["active battle", wildcard, "battle", wildcard, false],
+  ] as const)("handles %s", (_label, current, activity, next, expected) => {
+    expect(canReplaceRunForStart(current, activity, next)).toBe(expected);
   });
 });
 
-it("isDifficultySelectContinuation proceeds only for a wildcard run waiting at difficulty select outside battle", () => {
-  expect(
-    isDifficultySelectContinuation({
-      characterId: "wildcard",
-      activityKind: "difficulty-select",
-      hasActiveBattle: false,
-    }),
-  ).toBe(true);
-  expect(
-    isDifficultySelectContinuation({ characterId: "wildcard", activityKind: "draft-deck", hasActiveBattle: false }),
-  ).toBe(false);
-  expect(
-    isDifficultySelectContinuation({
-      characterId: "knight",
-      activityKind: "difficulty-select",
-      hasActiveBattle: false,
-    }),
-  ).toBe(false);
-  expect(
-    isDifficultySelectContinuation({
-      characterId: "wildcard",
-      activityKind: "difficulty-select",
-      hasActiveBattle: true,
-    }),
-  ).toBe(false);
-  expect(
-    isDifficultySelectContinuation({ characterId: null, activityKind: "difficulty-select", hasActiveBattle: false }),
-  ).toBe(false);
+it.each([
+  ["wildcard", "difficulty-select", true],
+  ["wildcard", "draft-deck", false],
+  ["knight", "difficulty-select", false],
+  ["wildcard", "battle", false],
+  [null, "difficulty-select", false],
+] as const)("difficulty continuation for %s in %s is %s", (character, activity, expected) => {
+  expect(isDifficultySelectContinuation(character, activity)).toBe(expected);
 });

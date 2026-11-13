@@ -1,3 +1,4 @@
+import { REACTION_CONFIG } from "../game-constants";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { DamageType, EnemyAbilityDamageEffect } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
@@ -27,7 +28,7 @@ import { observeAttackPower } from "./resolution-observer";
 import { applyNativeHitFollowups } from "./enemy-ability-followups";
 import { applyBlockDepletionRewards } from "./player-rewards";
 import { setPlayerStatus } from "./status-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { damageEnemyHealth } from "./health-state";
 import { applyHitEpilogue } from "./player-rewards";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
@@ -39,6 +40,8 @@ export interface EnemyAbilityContext {
   attackReduction: number;
   readonly brawlerPenalty: boolean;
   brawlerPenaltySpent: boolean;
+  toxicShockPenalty: boolean;
+  toxicShockPenaltySpent: boolean;
   vampireBonus: boolean;
   soulHarvest: "purge" | "leech" | null;
   landed: boolean;
@@ -48,10 +51,12 @@ export function createEnemyAbilityContext(state: BattleState, damaging: boolean)
   return {
     attackReduction: damaging
       ? state.flags.enemyAttackDamageReduction +
-        (hasEnemyTrait(state, "cowardly") && state.enemyHealth < state.enemyMaxHealth / 2 ? 1 : 0)
+        (state.enemyHealth < state.enemyMaxHealth / 2 && hasEnemyTrait(state, "cowardly") ? 1 : 0)
       : 0,
     brawlerPenalty: damaging && state.flags.enemyBrawlerDamagePenalty,
     brawlerPenaltySpent: false,
+    toxicShockPenalty: state.reactions.weakenNextAttack,
+    toxicShockPenaltySpent: false,
     vampireBonus: false,
     soulHarvest: null,
     landed: false,
@@ -90,16 +95,16 @@ function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamag
   const record = (id: string) => {
     activatedTraits.push(id);
   };
-  if (trait("hellhound") && state.playerStatuses.burn > 0) {
+  if (state.playerStatuses.burn > 0 && trait("hellhound")) {
     amountMultiplier *= HELLHOUND_BURN_MULTIPLIER;
     record("hellhound");
   }
-  const flatTrait = trait("dire-wolf") && state.playerStatuses.bleed > 0 ? "dire-wolf" : null;
+  const flatTrait = state.playerStatuses.bleed > 0 && trait("dire-wolf") ? "dire-wolf" : null;
   if (flatTrait) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record(flatTrait);
   }
-  if (trait("stone-golem") && state.enemyMitigation.block > 0) {
+  if (state.enemyMitigation.block > 0 && trait("stone-golem")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("stone-golem");
   }
@@ -107,11 +112,11 @@ function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamag
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("frost-elemental");
   }
-  if (effect.damageType === "burn" && trait("pyromancer") && state.playerStatuses.burn === 0) {
+  if (effect.damageType === "burn" && state.playerStatuses.burn === 0 && trait("pyromancer")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("pyromancer");
   }
-  const banditBonus = trait("bandit") && !state.flags.enemyFirstHitDoubleUsed;
+  const banditBonus = !state.flags.enemyFirstHitDoubleUsed && trait("bandit");
   if (banditBonus) amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
   // Resources already contain room scaling, but still receive ability pressure
   // and difficulty bonuses like every other damaging ability.
@@ -134,7 +139,7 @@ function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamag
     effect.equalToBlock === true || effect.forgeBonusPercent !== undefined,
   );
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
-  if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
+  if (effect.damageType === "bleed" && state.playerStatuses.bleed > 0 && trait("blood-cultist")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("blood-cultist");
   }
@@ -147,9 +152,9 @@ export function applyAbilityDamage(
   context: EnemyAbilityContext,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  context.vampireBonus = hasEnemyTrait(state, "vampire") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
+  context.vampireBonus = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR && hasEnemyTrait(state, "vampire");
   context.soulHarvest =
-    hasEnemyTrait(state, "soul-harvest") && state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
+    state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR && hasEnemyTrait(state, "soul-harvest")
       ? rollChance(SOUL_HARVEST_PURGE_CHANCE, getBattleRng(state))
         ? "purge"
         : "leech"
@@ -162,31 +167,26 @@ export function applyAbilityDamage(
     context.brawlerPenaltySpent = true;
     state = setFlag(state, "enemyBrawlerDamagePenalty", false);
   }
-  const condemn = hasEnemyTrait(state, "inquisitor") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
+  if (context.toxicShockPenalty && !context.toxicShockPenaltySpent) {
+    context.toxicShockPenaltySpent = true;
+    state = { ...state, reactions: { ...state.reactions, weakenNextAttack: false } };
+  }
+  const condemn = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR && hasEnemyTrait(state, "inquisitor");
   // Purge is an additional trait reward; it cannot revoke the ability's own Leech.
   if (context.soulHarvest === "leech") effect = { ...effect, lifesteal: true };
   effect = resolveConditionalCardDamage(effect, state.playerCC.freezeSkipTurns > 0);
   if (effect.damageTypePool) {
     effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
   }
-  const { damage, amountMultiplier, flatBonus, banditBonus, activatedTraits } = prepareEnemyAbilityDamage(
-    state,
-    effect,
-    context.brawlerPenalty,
-  );
+  const prepared = prepareEnemyAbilityDamage(state, effect, context.brawlerPenalty);
+  const { damage, flatBonus, banditBonus, activatedTraits } = prepared;
+  const amountMultiplier =
+    prepared.amountMultiplier * (context.toxicShockPenalty ? REACTION_CONFIG.toxicShockAttackMultiplier : 1);
   if (effect.spendBlock && effect.equalToBlock) {
     const block = state.enemyMitigation.block;
     const spent = Math.min(block, Math.max(0, scalePercent(block, effect.equalToBlockPercent ?? 100)));
     state = addEnemyMitigation(state, "block", -spent);
-    if (spent > 0)
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "block",
-        amount: spent,
-        impact: false,
-        feedback: "secondary",
-      });
+    if (spent > 0) emitDamageText(combatTexts, "enemy", "block", spent, { impact: false, feedback: "secondary" });
   }
   if (state.observer)
     observeAttackPower(
@@ -213,10 +213,10 @@ export function applyAbilityDamage(
     ignoreBlock: effect.ignoreBlock === true,
     amountMultiplier,
     flatBonus,
-    ...(trait("ogre") && effect.damageType === "physical"
+    ...(effect.damageType === "physical" && trait("ogre")
       ? { physicalBlockBreakMultiplier: OGRE_BLOCK_BREAK_MULTIPLIER }
       : {}),
-    ...(trait("giant-snake") && effect.damageType === "poison"
+    ...(effect.damageType === "poison" && trait("giant-snake")
       ? { extraPoisonBlockStrip: GIANT_SNAKE_EXTRA_BLOCK_STRIP }
       : {}),
   });
@@ -242,16 +242,16 @@ export function applyAbilityDamage(
   if (result.landed && getBattleOutcome(nextState) === null && hasEnemyTrait(nextState, "self-sacrifice")) {
     const before = nextState.enemyHealth;
     nextState = damageEnemyHealth(recordEnemyAbilityActivation(nextState, "self-sacrifice"), 1).state;
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "health", amount: 1 });
+    emitDamageText(combatTexts, "enemy", "health", 1);
     nextState = applyHitEpilogue(nextState, before, before > 0, combatTexts);
   }
   return nextState;
 }
 
 function applyHitPilfer(state: BattleState, texts: CombatTextEvent[]): BattleState {
-  if (!hasEnemyTrait(state, "pilfer") || state.playerStatuses.block <= 0) return state;
+  if (state.playerStatuses.block <= 0 || !hasEnemyTrait(state, "pilfer")) return state;
   let next = setPlayerStatus(state, "block", state.playerStatuses.block - 1);
   next = recordEnemyAbilityActivation(addEnemyMitigationWithCombatText(next, "block", 1, texts), "pilfer");
-  mergeCombatText(texts, { target: "player", kind: "damage", stat: "block", amount: 1, impact: false });
+  emitDamageText(texts, "player", "block", 1, { impact: false });
   return resolvePendingBattleReactions(applyBlockDepletionRewards(state, next, texts), texts);
 }

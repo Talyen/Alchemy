@@ -16,8 +16,10 @@ const endsAt = (item: CombatTextPresentation) => item.launchAt + item.lifetimeMs
 
 function staggeredLaunch(item: QueueItem, ahead: QueueItem[], now: number) {
   const last = ahead.findLast((other) => other.presentation.lane === item.presentation.lane);
-  const deadline = Math.max(now, item.receivedAt + M.maximumQueueDelayMs);
-  return Math.min(deadline, Math.max(now, last ? last.presentation.launchAt + M.minimumLaunchGapMs : now));
+  const reaction = item.presentation.lane === "announcement";
+  const deadline = Math.max(now, item.receivedAt + (reaction ? M.maximumReactionQueueDelayMs : M.maximumQueueDelayMs));
+  const gap = reaction ? M.reactionLaunchGapMs : M.minimumLaunchGapMs;
+  return Math.min(deadline, Math.max(now, last ? last.presentation.launchAt + gap : now));
 }
 
 type Spread = NonNullable<CombatTextPresentation["spread"]>;
@@ -110,6 +112,7 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
         top: bounds.y - bounds.height / 2,
         bottom: bounds.y + bounds.height / 2,
         area: bounds.width * bounds.height,
+        fullRow: old.presentation.lane === "announcement",
       });
     }
     samples.push({ frame, previous });
@@ -134,7 +137,13 @@ function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Sprea
       for (const previous of sample.previous) {
         const width = Math.max(0, Math.min(right, previous.right) - Math.max(left, previous.left));
         const height = Math.max(0, Math.min(bottom, previous.bottom) - Math.max(top, previous.top));
-        const covered = (width * height) / Math.min(area, previous.area);
+        // Reaction labels fit the actual portrait width in the renderer. A
+        // fixed numeric-width estimate cannot safely place another flight
+        // beside that full row, especially on wide boss portraits.
+        const fullRow = item.presentation.lane === "announcement" || previous.fullRow;
+        const covered = fullRow
+          ? height / Math.min(next.height, previous.bottom - previous.top)
+          : (width * height) / Math.min(area, previous.area);
         score += covered + (covered > 0.8 ? 1000 : 0);
         if (score >= bestScore) break;
       }
@@ -231,7 +240,7 @@ export function scheduleCombatFeedback(
     waiting.sort(
       (a, b) =>
         a.receivedAt - b.receivedAt ||
-        Number(b.presentation.lane === "announcement") - Number(a.presentation.lane === "announcement"),
+        Number(a.presentation.lane === "announcement") - Number(b.presentation.lane === "announcement"),
     );
     const ahead = visible.sort((a, b) => a.presentation.launchAt - b.presentation.launchAt);
     for (const item of waiting) {

@@ -267,6 +267,11 @@ const PersistedRunActivitySchema = z.discriminatedUnion("kind", [
 
 const ActiveRunDataObjectSchema = z.object({
   ...RunProgressSchema.shape,
+  // Keep deck positions until visit references have been repaired. Invalid
+  // entries are removed by normalizeActiveRunData after indices are remapped.
+  runDeck: z
+    .array(z.unknown())
+    .transform((cards) => cards.map((card, index) => parseSavedCard(card, "runDeck", index))),
   labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   labyrinthPendingNode: LabyrinthPendingNodeSchema,
   activeLabyrinthModifiers: EncounterCombatTraitArraySchema,
@@ -285,7 +290,7 @@ export const ActiveRunDataSchema = z
     (data) =>
       data.contentSystemType !== "labyrinth" ||
       data.labyrinthMap !== null ||
-      (data.characterId === "wildcard" && data.starterDraftChoices !== null && data.activity.kind !== "battle"),
+      (data.characterId === "wildcard" && data.starterDraftChoices !== null && data.activity.kind === "draft-deck"),
     { message: "Labyrinth runs require a valid labyrinth map or an unfinished Wildcard starter draft" },
   )
   .refine((data) => data.contentSystemType !== "wildwood" || data.wildwoodDraft !== null, {

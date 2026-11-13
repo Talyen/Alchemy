@@ -40,7 +40,8 @@ export function getEnemyTraitSet(state: Pick<BattleState, "currentEnemy">): Read
   )
     return cached.lookup;
   const lookup = readonlyTraitSet(traits);
-  enemyTraitSets.set(traits, { ids: traits.map((trait) => trait.id), frozen: isDeeplyFrozenData(traits), lookup });
+  const frozen = isDeeplyFrozenData(traits);
+  enemyTraitSets.set(traits, { ids: frozen ? [] : traits.map((trait) => trait.id), frozen, lookup });
   return lookup;
 }
 

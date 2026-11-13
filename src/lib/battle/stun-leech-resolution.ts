@@ -93,11 +93,6 @@ export function applyScaledLeechHealing(
   return applyLeechHealing(state, scaleLeechBase(state, rawAmount), combatTexts, options);
 }
 
-/** Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders. */
-function applyThunderstoneLeech(state: BattleState, damage: number, texts: CombatTextEvent[]): BattleState {
-  return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
-}
-
 /** Amount already includes Leech scaling; all riders use this restoration's own facts. */
 function resolveLeechResourceRewards(
   state: BattleState,
@@ -137,8 +132,8 @@ function resolveLeechGainRewards(state: BattleState, texts: CombatTextEvent[]): 
     rollBattleChance(state.talentEffects.leechCleanseChance, state)
   )
     next = removeHarmfulPlayerStatuses(next, 1, texts);
-  for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance])
-    if (rollBattleChance(chance, state)) next = gainManaWithCombatText(next, 1, texts);
+  if (rollBattleChance(state.talentEffects.manaOnLeechChance, state)) next = gainManaWithCombatText(next, 1, texts);
+  if (rollBattleChance(state.gearEffects.manaOnLeechChance, state)) next = gainManaWithCombatText(next, 1, texts);
   return next;
 }
 
@@ -149,7 +144,6 @@ export function applyLeechHitHealing(
   cardHealing = false,
 ) {
   if (damage <= 0) return state;
-
   const healAmount = scaleLeechBase(state, computeLeechHeal(damage));
   return healAmount > 0 ? applyLeechHealing(state, healAmount, combatTexts, { cardHealing }) : state;
 }
@@ -226,9 +220,12 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
         // the shared threshold and kill epilogue still closes this packet.
         riders: (damagedState, finalDamage, texts) => {
           const healthDamage = Math.max(0, previousHealth - damagedState.enemyHealth);
+          // Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders.
           const leeched =
-            state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0
-              ? applyThunderstoneLeech(damagedState, healthDamage, texts)
+            healthDamage > 0 &&
+            state.enemyStatuses.poison > 0 &&
+            rollBattleChance(state.gearEffects.natureLeechVsPoisoned, damagedState)
+              ? applyScaledLeechHealing(damagedState, computeLeechHeal(healthDamage), texts)
               : damagedState;
           let rewarded = applyNatureManaRefund(leeched, finalDamage, texts);
           rewarded = applyLuckyCloverGold(rewarded, healthDamage, texts);

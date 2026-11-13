@@ -3,17 +3,22 @@ import { collectEncounterFindings } from "./findings-encounters";
 import { collectPairedFindings } from "./findings-paired";
 import { finding } from "./findings-shared";
 import type { BalanceFinding } from "./findings-types";
-import { REPORT_TIERS } from "./report-catalog";
+import { REPORT_TIERS, titleFor } from "./report-catalog";
 import type { BalanceReportModel } from "./report-model";
+import { getTalentTreeKeywordIds, talentPool } from "@/lib/game-data";
 
 function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
   const findings: BalanceFinding[] = [];
+  const peaks = new Map<string, string>();
+  for (const entry of model.anomalies) {
+    // Preserve the first matching peak, as in the original report lookup.
+    if (!peaks.has(entry.field)) peaks.set(entry.field, entry.peakScenario);
+  }
   for (const row of model.anomalyMetrics) {
     for (const { preset: tier } of REPORT_TIERS) {
       const value = row.values[tier];
       const threshold = ANOMALY_THRESHOLD_BY_PRESET[tier];
       if (value <= threshold) continue;
-      const peak = model.anomalies.find((entry) => entry.field === row.field);
       findings.push(
         finding(
           {
@@ -21,7 +26,7 @@ function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
             id: row.field,
             title: row.field,
             tier,
-            worstScenario: peak?.peakScenario ?? row.field,
+            worstScenario: peaks.get(row.field) ?? row.field,
           },
           {
             severity: "watch",
@@ -38,6 +43,8 @@ function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
   return findings;
 }
 
+const TALENT_KEYWORD_BY_ID = new Map(talentPool.map((talent) => [talent.id, talent.keywordId]));
+
 export function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
   return [
     ...collectEncounterFindings(model),
@@ -46,6 +53,13 @@ export function collectBalanceFindings(model: BalanceReportModel): BalanceFindin
     ...collectPairedFindings(model.cardsIsolatedElite, "card", "isolated vs Mimic"),
     ...collectPairedFindings(model.cardsInClass, "card", "in-class"),
     ...collectPairedFindings(model.talents, "talent"),
+    ...getTalentTreeKeywordIds().flatMap((keyword) =>
+      collectPairedFindings(
+        model.talentTreeMembers.filter((row) => TALENT_KEYWORD_BY_ID.get(row.id) === keyword),
+        "talent",
+        `${titleFor("keyword", keyword)} full tree`,
+      ),
+    ),
     ...collectPairedFindings(model.companions, "companion"),
     ...collectPairedFindings(model.gear, "gear"),
     ...collectPairedFindings(model.affixes, "affix"),

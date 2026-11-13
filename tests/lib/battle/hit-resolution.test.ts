@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
@@ -30,7 +31,7 @@ describe("card hit resolution", () => {
       trinketEffects: { forgeStunThreshold: 5, forgeStunAmount: 3 },
       rng: seededRng(99),
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const card = makeDamageCard("physical", 5);
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const texts: CombatTextEvent[] = [];
     const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 5 }, texts);
@@ -52,7 +53,7 @@ describe("damage riders via applyCardEffects", () => {
       discard: [],
       exhausted: [],
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const card = makeDamageCard("physical", 5);
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(39);
@@ -79,7 +80,7 @@ describe("damage riders via applyCardEffects", () => {
       discard: [],
       exhausted: [],
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const card = makeDamageCard("burn", 5);
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(2);
@@ -91,10 +92,7 @@ describe("damage riders via applyCardEffects", () => {
       enemyMaxHealth: 50,
       playerStatuses: { forge: 0 },
     });
-    const card = makeTestCard({
-      tags: ["archery"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
+    const card = makeDamageCard("physical", 5, { tags: ["archery"] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
 
@@ -114,7 +112,7 @@ describe("damage riders via applyCardEffects", () => {
       discard: [],
       exhausted: [],
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
+    const card = makeDamageCard("nature", 5);
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.playerHealth).toBeGreaterThan(10);
@@ -132,7 +130,7 @@ describe("damage riders via applyCardEffects", () => {
       discard: [],
       exhausted: [],
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] });
+    const card = makeDamageCard("holy", 10);
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.gold).toBe(15);
@@ -150,7 +148,7 @@ describe("damage riders via applyCardEffects", () => {
       discard: [],
       exhausted: [],
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const card = makeDamageCard("burn", 5);
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
@@ -167,7 +165,7 @@ describe("damage riders via applyCardEffects", () => {
       discard: [],
       exhausted: [],
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
+    const card = makeDamageCard("nature", 5);
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
@@ -181,7 +179,7 @@ it("Emberforged ignition grants Forge when Burn is absent, then waits for Burn t
     playerStatuses: {},
     gearEffects: { forgeOnBurnVsUnburnedChances: [100, 100] },
   });
-  const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
+  const card = makeDamageCard("burn", 1);
   const first = applyCardEffects(state, card, []);
   const second = applyCardEffects(first, card, []);
   expect(first.playerStatuses.forge).toBe(2);
@@ -206,11 +204,7 @@ describe("damage rider regressions", () => {
       flags: { nextPhysicalDealsBleed: true, nextHitCrit: true },
     });
     const texts = makeCombatTexts();
-    const result = dealDamage(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-      texts,
-    );
+    const result = dealDamage(state, makeDamageCard("physical", 4), texts);
     const damage = (stat: string) =>
       texts.reduce(
         (total, text) =>
@@ -246,7 +240,7 @@ describe("damage rider regressions", () => {
       enemyMitigation: { block: 9 },
       trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 1 },
     });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const card = makeDamageCard("physical", 5);
     const result = dealDamage(state, card);
     expect(result.enemyMitigation.block).toBe(0);
     expect(result.enemyHealth).toBe(state.enemyHealth);

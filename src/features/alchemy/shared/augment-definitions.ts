@@ -24,6 +24,7 @@ export const ARMED_PLAYER_CHIP_IDS = [
   "nextHolyCardFree",
   "nextNatureCardFree",
   "dodgeNextAttack",
+  "dodgeNextAttackChance",
 ] as const;
 export type ArmedFlagChipId = (typeof ARMED_PLAYER_CHIP_IDS)[number];
 export type PendingPulseChipId = `pending-${DamageType}`;
@@ -153,6 +154,12 @@ const fixedDefinitions = {
   dodgeNextAttack: {
     label: "Evasion",
     description: "Dodge the next incoming attack hit.",
+    icon: keywordIcons.dodge,
+    colorClass: keywordDefinitions.dodge.colorClass,
+  },
+  dodgeNextAttackChance: {
+    label: "Elusive",
+    description: "50% chance to Dodge the next attack.",
     icon: keywordIcons.dodge,
     colorClass: keywordDefinitions.dodge.colorClass,
   },

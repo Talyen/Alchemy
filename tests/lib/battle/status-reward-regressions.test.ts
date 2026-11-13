@@ -63,20 +63,19 @@ describe("status reward interactions", () => {
     expect(result.state.playerStatuses.thorns).toBe(1);
   });
 
-  it("Forged Bulwark still rewards depletion when Desperate Guard refills Block", () => {
+  it("Second Wind still rewards depletion when Desperate Guard refills Block", () => {
     const state = patchBattleState({
       playerHealth: 21,
       playerMaxHealth: 40,
       playerStatuses: { block: 1 },
-      talentEffects: { forgeOnBlockDepleted: 1, healthThresholdBlockOnce: { threshold: 50, amount: 6 } },
+      talentEffects: { blockDepletedHeal: 2, healthThresholdBlockOnce: { threshold: 50, amount: 6 } },
       rng: () => 0.99,
     });
     const next = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 4 }, [], {
       canDodge: false,
     }).state;
-    expect(next.playerHealth).toBe(18);
+    expect(next.playerHealth).toBe(20);
     expect(next.playerStatuses.block).toBe(6);
-    expect(next.playerStatuses.forge).toBe(1);
   });
 
   it.each(["block refill", "healing"])("Watchdog uses depletion and Health before %s rewards", (reward) => {
@@ -108,7 +107,7 @@ describe("status reward interactions", () => {
       playerStatuses: { block: 5 },
       enemyHealth: 100,
       activeCompanion: companionLibrary.wolf,
-      talentEffects: { companionAttackOnBlockDepletedBelowHalf: true, forgeOnBlockDepleted: 1 },
+      talentEffects: { companionAttackOnBlockDepletedBelowHalf: true },
       rng: () => 0.99,
     });
     const next = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 4 }, [], {

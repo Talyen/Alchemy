@@ -1,14 +1,24 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { runGit } from "../repository-paths.mjs";
 
-function runSlug(value) {
+function slug(value) {
   return String(value ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/gu, "-")
-    .replace(/^-|-$/gu, "")
-    .slice(0, 48);
+    .replace(/^-|-$/gu, "");
+}
+
+function runSlug(value) {
+  return slug(value).slice(0, 48).replace(/-$/u, "");
+}
+
+function boundedGeneratedId(value) {
+  const normalized = slug(value);
+  if (normalized.length <= 48) return normalized;
+  const digest = createHash("sha256").update(normalized).digest("hex").slice(0, 12);
+  return `${normalized.slice(0, 35).replace(/-$/u, "")}-${digest}`;
 }
 
 export function normalizeRunId(value) {
@@ -23,7 +33,9 @@ export function createRunId(label = "run", options = {}) {
     .replaceAll(/[-:]/gu, "");
   const pid = options.pid ?? process.pid;
   const suffix = options.suffix ?? randomBytes(3).toString("hex");
-  return runSlug(`${runSlug(label) || "run"}-${stamp}-${pid}-${runSlug(suffix) || "id"}`);
+  const tail = `${stamp}-${pid}-${runSlug(suffix) || "id"}`;
+  const labelBudget = Math.max(1, 47 - tail.length);
+  return boundedGeneratedId(`${(runSlug(label) || "run").slice(0, labelBudget)}-${tail}`);
 }
 
 export function ensureRunId(label = "run", env = process.env) {
@@ -32,12 +44,12 @@ export function ensureRunId(label = "run", env = process.env) {
     env.ALCHEMY_RUN_ID = supplied;
     return supplied;
   }
-  const githubRun = runSlug(env.GITHUB_RUN_ID);
-  const githubAttempt = runSlug(env.GITHUB_RUN_ATTEMPT);
-  const githubJob = runSlug(env.GITHUB_JOB);
-  const variant = runSlug(env.ALCHEMY_RUN_VARIANT);
+  const githubRun = slug(env.GITHUB_RUN_ID);
+  const githubAttempt = slug(env.GITHUB_RUN_ATTEMPT);
+  const githubJob = slug(env.GITHUB_JOB);
+  const variant = slug(env.ALCHEMY_RUN_VARIANT);
   const runId = githubRun
-    ? ["gh", githubRun, githubAttempt || "1", githubJob || "job", variant].filter(Boolean).join("-")
+    ? boundedGeneratedId(["gh", githubRun, githubAttempt || "1", githubJob || "job", variant].filter(Boolean).join("-"))
     : createRunId(label);
   env.ALCHEMY_RUN_ID = runId;
   return runId;

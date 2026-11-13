@@ -300,48 +300,48 @@
     "selectionHash": "4fc10e171a2cb76803868cabfc5e515b33680d6322129436701e28353ffcc64b"
   },
   "stone-titan-idle-1-1280.mp4": {
-    "hash": "46c70432464ce66481e954e9e194591e",
-    "outputHash": "8725ce0d67daa075b90dc0136ae11e3e",
+    "hash": "1f07886da521d4397ce7d01a77cb38c5",
+    "outputHash": "4a9dd045a0584b47341250b456f7dfd6",
     "selectionHash": "c4b5ad229e1105b305ea8cef3aedeb8eb80a64fa0aa8e8e4281f4472b267a80a"
   },
   "stone-titan-idle-1-640.mp4": {
-    "hash": "0115198492bda117a68f1ee8b9fb1f3f",
-    "outputHash": "f2a3c64b129738bbc8cd040a21299094",
+    "hash": "feafb889f800ae20fb3d6c937c22c2b4",
+    "outputHash": "b328d461f0394a2223477e6736e5180a",
     "selectionHash": "40b47781dc04b3e74c2814302ffde155ee78ea4dc22a79a5b6934e4535a443da"
   },
   "stone-titan-idle-1.mp4": {
-    "hash": "bcbd834e6aabff8fe7e45bbce38d6f08",
-    "outputHash": "a842c386cc2adc71a2f3ebdf5fc7b5f5",
+    "hash": "59bd5df6e7d39d3b441d8090cd975d31",
+    "outputHash": "23362899749822b2ebf1be119ea268f4",
     "selectionHash": "f508ea84acc90c0d6fa7d2c88eae0f1dcb51f0f95449227be0b77ba33841ebb1"
   },
   "stone-titan-idle-2-1280.mp4": {
-    "hash": "49d31164efef8e590cdc756775e24eb0",
-    "outputHash": "9b9be9ef8f6aced9592b30a8d8743db2",
+    "hash": "078611c25dbc0acc47834c48e0c83d90",
+    "outputHash": "995c93f0f08aa91752121a79d55aa7d1",
     "selectionHash": "af5086f4f7397cfd0437a1cd0598d19459193fd8e0d5e728e15e013f94ae109c"
   },
   "stone-titan-idle-2-640.mp4": {
-    "hash": "b592f42c18f9fd7fae78e2e4b8f8d00e",
-    "outputHash": "ab84f269d9b66eabf108359670372073",
+    "hash": "13e00bafb259b09889a10877ea6865cd",
+    "outputHash": "8c344fb66b930d67991dd2c01729b705",
     "selectionHash": "b845d472ed53bd47bd790789972504009424323896f4c1367d6d545f2e746efc"
   },
   "stone-titan-idle-2.mp4": {
-    "hash": "353f51cf328f449c8708bba8b4edfd52",
-    "outputHash": "fb30d6d5e9680ff4f232515170b172de",
+    "hash": "5828c8023f7c7c83d16f144e1831cf59",
+    "outputHash": "41013b9c56e10431ffc34613b751eacd",
     "selectionHash": "07d4d04e5740cb25e1dffb5df31e7b82f3d8d10aa9672ce126bdfa69998a56dc"
   },
   "stone-titan-idle-3-1280.mp4": {
-    "hash": "7ae0d4166ddfd1feb7bbcc0138f54a96",
-    "outputHash": "af7e41cc977c322ed1fbc64027f79144",
+    "hash": "a93082089f4d945eac420dc27f473dcd",
+    "outputHash": "a6f2e6850163a3d7a86af4c849b86aa6",
     "selectionHash": "fd510f2494b80ea34db6b1917849cbdcfbedf7347e921e7eb19e8e65fe030ab2"
   },
   "stone-titan-idle-3-640.mp4": {
-    "hash": "1caffcc94f4356d983efe63107b22666",
-    "outputHash": "effb120b8f3df82edf0a5ba6cea1adac",
+    "hash": "57ca19558662563ffb050decdf0692b0",
+    "outputHash": "234700cccc1c0aefaa86d91b5ed90d5f",
     "selectionHash": "ba8a0047389060c42a9b2fcac1ef447f96b401e0819fa5c726aceab0ca99c594"
   },
   "stone-titan-idle-3.mp4": {
-    "hash": "59036612b4359e35956e0fb032bf5777",
-    "outputHash": "3006b3aefa037e3d07766fd7b7909192",
+    "hash": "2a1d522b7010d42c53fdbcd85f2201c1",
+    "outputHash": "5cd0f321bb11f2529916a6634a007f3e",
     "selectionHash": "f8cd28145f8f6054d721ca352bcbfdf9ac934743349a390627abc526bb00f733"
   }
 }

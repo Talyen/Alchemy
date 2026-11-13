@@ -33,9 +33,11 @@ function buildAffinityPool(
   // Stable sorting preserves shuffled ties and the subsequent run RNG position.
   const scored = shuffledCandidates.map((card) => ({ card, score: scoreCard(card) }));
   scored.sort((a, b) => b.score - a.score);
-  const result: BattleCard[] = [];
-  for (let index = 0; index < poolSize; index++) result.push(scored[index]!.card);
-  return result;
+  // The shuffled array is private to this selection; reuse it for the ranked pool.
+  let resultLength = 0;
+  for (; resultLength < poolSize; resultLength++) shuffledCandidates[resultLength] = scored[resultLength]!.card;
+  shuffledCandidates.length = resultLength;
+  return shuffledCandidates;
 }
 
 function dampenCompanionCandidates(candidates: readonly BattleCard[], rng: () => number): BattleCard[] {
@@ -98,6 +100,7 @@ export function selectRewardCards(
     const chosenCard = pickRandom(preferredPool.length > 0 ? preferredPool : randomPool, rng);
     if (!chosenCard) break;
     selected.push(chosenCard);
+    if (selected.length >= count) break;
     removeChosenCard(affinityPool, chosenCard.id);
     removeChosenCard(randomPool, chosenCard.id);
   }
@@ -106,7 +109,7 @@ export function selectRewardCards(
   if (selected.length < count) {
     const selectedIds = new Set<string>();
     for (const card of selected) selectedIds.add(card.id);
-    for (const card of shuffle(
+    for (const card of shuffleInPlace(
       pool.filter((candidate) => !selectedIds.has(candidate.id)),
       rng,
     )) {

@@ -19,9 +19,15 @@ const RATE_METRICS = {
 
 // Object.keys loses the known keys; the exhaustive record above owns this cast.
 const metricKeys = Object.keys(RATE_METRICS) as Array<keyof RateCell>;
+const meanKeys = metricKeys.filter((key) => RATE_METRICS[key].kind === "mean");
+const countKeys = metricKeys.filter((key) => RATE_METRICS[key].kind === "count");
 
 function sumCounts(counts: Record<string, number>): number {
-  return Object.values(counts).reduce((sum, count) => sum + count, 0);
+  let total = 0;
+  for (const key in counts) {
+    if (Object.hasOwn(counts, key)) total += counts[key]!;
+  }
+  return total;
 }
 
 export function emptyRateCell(): RateCell {
@@ -32,9 +38,7 @@ export function emptyRateCell(): RateCell {
 
 function normalizeMeans(totals: RateCell, weight: number): RateCell {
   if (weight === 0) return emptyRateCell();
-  for (const key of metricKeys) {
-    if (RATE_METRICS[key].kind === "mean") totals[key] /= weight;
-  }
+  for (const key of meanKeys) totals[key] /= weight;
   return totals;
 }
 
@@ -61,9 +65,8 @@ export function combineRateCells(cells: readonly RateCell[], weighting: "battles
     if (weighting === "groups" && cell.n <= 0) continue;
     const weight = weighting === "battles" ? cell.n : 1;
     totalWeight += weight;
-    for (const key of metricKeys) {
-      totals[key] += cell[key] * (RATE_METRICS[key].kind === "mean" ? weight : 1);
-    }
+    for (const key of countKeys) totals[key] += cell[key];
+    for (const key of meanKeys) totals[key] += cell[key] * weight;
   }
   return normalizeMeans(totals, totalWeight);
 }

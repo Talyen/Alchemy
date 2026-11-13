@@ -1,5 +1,10 @@
 import { resolveSecondaryAction } from "./action-context";
-import { BRAWLER_PENALTY_MULTIPLIER, ENEMY_ABILITY_TRAIT_REWARD, VAMPIRE_BLOOD_SCENT_DAMAGE } from "../game-constants";
+import {
+  BRAWLER_PENALTY_MULTIPLIER,
+  ENEMY_ABILITY_TRAIT_REWARD,
+  VAMPIRE_BLOOD_SCENT_DAMAGE,
+  REACTION_CONFIG,
+} from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { type EnemyAbilityContext } from "./enemy-ability-damage";
 import { applyArmorReward, applyHealingWithCombatText } from "./player-rewards";
@@ -12,7 +17,7 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { setEnemyStatus, setPlayerStatus } from "./status-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText } from "./combat-text-events";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
 
 const NATIVE_STATUS_TRAITS = [
@@ -37,7 +42,9 @@ export function applyNativeHitFollowups(
       {
         canDodge: false,
         skipTraitReactions: true,
-        amountMultiplier: context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1,
+        amountMultiplier:
+          (context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1) *
+          (context.toxicShockPenalty ? REACTION_CONFIG.toxicShockAttackMultiplier : 1),
       },
     );
     nextState = result.state;
@@ -66,7 +73,7 @@ export function applyNativeHitFollowups(
         amount: ENEMY_ABILITY_TRAIT_REWARD,
       },
       combatTexts,
-      { canDodge: false },
+      { canDodge: false, amountMultiplier: context.toxicShockPenalty ? REACTION_CONFIG.toxicShockAttackMultiplier : 1 },
     ).state;
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
@@ -87,7 +94,7 @@ export function applyNativeHitFollowups(
   if (getBattleOutcome(nextState) !== null) return nextState;
   if (hasEnemyTrait(nextState, "snap-shut")) {
     nextState = recordEnemyAbilityActivation(nextState, "snap-shut");
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    emitStatusText(combatTexts, "enemy", "block", 1);
     nextState = addEnemyMitigation(nextState, "block", 1);
   }
   if (getBattleOutcome(nextState) !== null) return nextState;

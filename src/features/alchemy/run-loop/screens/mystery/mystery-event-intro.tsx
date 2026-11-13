@@ -133,8 +133,6 @@ export function MysteryEventIntro({
             onHoverStart={() => setHoveredCardId(event.id)}
             onHoverEnd={() => setHoveredCardId(null)}
             ariaLabel={i18n.displayText(featuredCard.title)}
-            shimmerActive={false}
-            shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(featuredCard)}
             className={viewCardWidthClass}
           />

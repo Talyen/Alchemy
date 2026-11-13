@@ -1,8 +1,12 @@
 export const STARTUP_READY_MARK = "alchemy:startup:ready";
 
 export function markStartupReady(): void {
+  if (typeof performance === "undefined" || typeof performance.mark !== "function") return;
   try {
-    if (performance.getEntriesByName(STARTUP_READY_MARK, "mark").length === 0) {
+    if (
+      typeof performance.getEntriesByName !== "function" ||
+      performance.getEntriesByName(STARTUP_READY_MARK, "mark").length === 0
+    ) {
       performance.mark(STARTUP_READY_MARK);
     }
   } catch {}
@@ -24,6 +28,7 @@ const BATTLE_STAGES = [
 export type BattleStageMark = (typeof BATTLE_STAGES)[number];
 
 export function clearBattleStageMarks(): void {
+  if (typeof performance === "undefined" || typeof performance.clearMarks !== "function") return;
   try {
     for (const stage of BATTLE_STAGES) performance.clearMarks(battleStageMarkName(stage));
   } catch {}
@@ -34,6 +39,7 @@ export function battleStageMarkName(stage: BattleStageMark): string {
 }
 
 export function markBattleStage(stage: BattleStageMark): void {
+  if (typeof performance === "undefined" || typeof performance.mark !== "function") return;
   try {
     performance.mark(battleStageMarkName(stage));
   } catch {}

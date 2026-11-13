@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { countUnlockedCombatTalents, resolveSimLoadout, simulateBattle, TIER_GOLD } from "@/lib/balance";
+import {
+  buildTypicalGearEffects,
+  countUnlockedCombatTalents,
+  resolveSimLoadout,
+  simulateBattle,
+  TIER_GOLD,
+} from "@/lib/balance";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { characters, createEmptyTalentEffectManifest } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
+import { createSeededRng } from "@/lib/rng";
 
 describe("resolveSimLoadout", () => {
   it("seeds gold by tier and omits homestead, gear in bare mode", () => {
@@ -36,6 +43,23 @@ describe("resolveSimLoadout", () => {
     first.gearEffects.maxHealth = 999;
     first.coreTrinketIds.push("meteorite");
     expect(resolveSimLoadout(options)).toEqual(expected);
+  });
+
+  it("applies hero affix weighting in typical gear presets without extra RNG draws", () => {
+    let affinityDifference = false;
+    for (let seed = 1; seed <= 30; seed++) {
+      // Mid Rogue ("poison", "bleed", "gold") and Warlock ("burn", "bleed", "leech")
+      // share the exact same Mid main-hand and body base item pools ("bleed" weapons
+      // and no-affinity Leather/Plate armor), so they pick the exact same base items
+      // while weighting affixes toward their own hero keywords.
+      const rogueRng = createSeededRng(seed);
+      const warlockRng = createSeededRng(seed);
+      const rogue = buildTypicalGearEffects("rogue", "mid", rogueRng);
+      const warlock = buildTypicalGearEffects("warlock", "mid", warlockRng);
+      if (JSON.stringify(rogue) !== JSON.stringify(warlock)) affinityDifference = true;
+      expect(rogueRng()).toBe(warlockRng());
+    }
+    expect(affinityDifference).toBe(true);
   });
 });
 

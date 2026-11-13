@@ -85,8 +85,6 @@ export function PurchasableCardItem({
           onClick={canPurchase ? onBuy : undefined}
           ariaDisabled={!canPurchase}
           ariaLabel={label}
-          shimmerActive={false}
-          shimmerToken={undefined}
           shineColor={canPurchase ? getCardInspectionShineColors(card) : undefined}
           className={cn(widthClass, canPurchase ? cardInteractiveGlowClass : "cursor-default grayscale")}
         >

@@ -2,7 +2,7 @@ import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPercentBonus } from "./amount-helpers";
 import { applyHitEpilogue, applyIronGuardReward } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { damageEnemyHealth } from "./health-state";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier, getEnemyDamageVulnerabilityBonus } from "./status-helpers";
@@ -37,7 +37,7 @@ function prepareScaledEnemyHit(
   const damage = Math.max(0, Math.round(pacedDamage * multiplier));
   const absorbed = Math.min(damage, state.enemyMitigation.block);
   if (absorbed > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "block", amount: absorbed });
+    emitDamageText(combatTexts, "enemy", "block", absorbed);
   }
   const blocked =
     absorbed > 0
@@ -65,11 +65,7 @@ export function dealEnemyScaledDamage(
   );
   if (finalDamage <= 0) return sundered;
   const hit = damageEnemyHealth(sundered, finalDamage);
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat,
-    amount: finalDamage,
+  emitDamageText(combatTexts, "enemy", stat, finalDamage, {
     ...(hit.healthDamage !== finalDamage ? { healthLost: hit.healthDamage } : {}),
   });
   const rewarded = decayArmorAfterDamage(

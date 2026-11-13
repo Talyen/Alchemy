@@ -2,8 +2,11 @@ import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { BossIdleArt } from "@/features/alchemy/run-loop/battle/presentation/ui/boss-idle-art";
+import { SliceDeath } from "@/features/alchemy/run-loop/battle/presentation/ui/slice-death";
+import { CombatantStatusEffectPresentation } from "@/features/alchemy/run-loop/battle/presentation/ui/combatant-status-effect-presentation";
 
-vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/slice-death", () => ({ SliceDeath: () => null }));
+vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/slice-death", () => ({ SliceDeath: vi.fn(() => null) }));
+vi.mock("@/lib/animation/combatant-status-effect-loop", () => ({ startCombatantStatusEffectLoop: () => () => {} }));
 const clips = ["a", "b"].map((id) => ({
   variants: [
     { width: 640, src: `${id}-640.mp4` },
@@ -15,6 +18,7 @@ let hidden = false;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.mocked(SliceDeath).mockClear();
   hidden = false;
   vi.spyOn(document, "hidden", "get").mockImplementation(() => hidden);
   vi.spyOn(Math, "random").mockReturnValue(0);
@@ -31,6 +35,181 @@ beforeEach(() => {
     },
   );
   vi.stubGlobal("matchMedia", () => ({ addEventListener() {}, removeEventListener() {} }));
+});
+
+function readyFrame(video: HTMLVideoElement, readiness = 2) {
+  let readyState = readiness;
+  Object.defineProperties(video, {
+    readyState: { configurable: true, get: () => readyState },
+    videoWidth: { configurable: true, value: 1920 },
+    videoHeight: { configurable: true, value: 1080 },
+  });
+  return (value: number) => {
+    readyState = value;
+  };
+}
+
+function frameContext() {
+  const context = { fillRect: vi.fn(), drawImage: vi.fn(), fillStyle: "", globalAlpha: 1 };
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+  vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockImplementation(() => {
+    throw Error("No image serialization");
+  });
+  return context;
+}
+
+const deadPortrait = (
+  <BossIdleArt clips={clips} art="portrait.webp" title="Boss" isDead imageClassName="aspect-video" />
+);
+
+it("latches the displayed frame directly for the slice, without decoding static art or serializing pixels", () => {
+  const context = frameContext();
+  const {
+    videos: [first],
+    rerender,
+  } = mount();
+  readyFrame(first!);
+  fireEvent.playing(first!);
+  first!.currentTime = 3.25;
+  rerender(deadPortrait);
+  const props = vi.mocked(SliceDeath).mock.calls.at(-1)![0];
+  expect(props.frame).toBeInstanceOf(HTMLCanvasElement);
+  expect([props.frame!.width, props.frame!.height]).toEqual([1920, 1080]);
+  expect(context.drawImage).toHaveBeenCalledExactlyOnceWith(first, 0, 0, 1920, 1080);
+  expect(first!.currentTime).toBe(3.25);
+  expect(HTMLCanvasElement.prototype.toDataURL).not.toHaveBeenCalled();
+  const draws = context.drawImage.mock.calls.length;
+  act(() => vi.advanceTimersByTime(10000));
+  expect(context.drawImage).toHaveBeenCalledTimes(draws);
+});
+
+it("composes only the displayed crossfade buffers at their current opacity", () => {
+  const context = frameContext();
+  const {
+    videos: [first, second],
+    rerender,
+  } = mount();
+  readyFrame(first!);
+  readyFrame(second!);
+  fireEvent.playing(first!);
+  act(() => vi.advanceTimersByTime(7760));
+  fireEvent.playing(second!);
+  second!.style.opacity = "0.4";
+  const alphas: number[] = [];
+  context.drawImage.mockImplementation(() => {
+    alphas.push(context.globalAlpha);
+  });
+  rerender(deadPortrait);
+  expect(context.drawImage.mock.calls.map((call) => call[0])).toEqual([first, second]);
+  expect(alphas).toEqual([1, 0.4]);
+});
+
+it("preserves the wrapper geometry and exact contain letterboxing instead of adopting static-art proportions", () => {
+  const context = frameContext();
+  const {
+    container,
+    videos: [first],
+    rerender,
+  } = mount();
+  Object.defineProperties(container.firstElementChild, {
+    clientWidth: { configurable: true, value: 600 },
+    clientHeight: { configurable: true, value: 400 },
+  });
+  readyFrame(first!);
+  fireEvent.playing(first!);
+  rerender(deadPortrait);
+  const frame = vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame!;
+  expect([frame.width, frame.height]).toEqual([1920, 1280]);
+  expect(context.drawImage).toHaveBeenCalledExactlyOnceWith(first, 0, 100, 1920, 1080);
+});
+
+it("retains a temporarily unready displayed video until its frame can be frozen, never using static art", () => {
+  const context = frameContext();
+  const {
+    videos: [first],
+    rerender,
+    getByAltText,
+  } = mount();
+  const readiness = readyFrame(first!);
+  fireEvent.playing(first!);
+  readiness(1);
+  rerender(deadPortrait);
+  expect(SliceDeath).not.toHaveBeenCalled();
+  expect(first!.isConnected).toBe(true);
+  expect(getByAltText("Boss").classList.contains("opacity-0")).toBe(true);
+  fireEvent.error(first!);
+  expect(first!.isConnected).toBe(true);
+  readiness(2);
+  fireEvent.seeked(first!);
+  expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame).toBeInstanceOf(HTMLCanvasElement);
+  expect(context.drawImage.mock.calls[0]![0]).toBe(first);
+});
+
+it("keeps the paused video on a transient draw failure and cleans pending readiness listeners on unmount", () => {
+  const context = frameContext();
+  context.drawImage.mockImplementation(() => {
+    throw new DOMException("Seeking", "InvalidStateError");
+  });
+  const {
+    videos: [first],
+    rerender,
+    unmount,
+  } = mount();
+  readyFrame(first!);
+  fireEvent.playing(first!);
+  rerender(deadPortrait);
+  expect(SliceDeath).not.toHaveBeenCalled();
+  expect(first!.isConnected).toBe(true);
+  const draws = context.drawImage.mock.calls.length;
+  unmount();
+  fireEvent.loadedData(first!);
+  expect(context.drawImage).toHaveBeenCalledTimes(draws);
+});
+
+it("uses static death only when static fallback was actually displayed before defeat", () => {
+  frameContext();
+  const { rerender } = mount();
+  rerender(deadPortrait);
+  expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0]).toMatchObject({ imageUrl: "portrait.webp" });
+  expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame).toBeUndefined();
+});
+
+it("does not use a stale video frame after playback has failed back to static art", () => {
+  const context = frameContext();
+  const {
+    videos: [first],
+    rerender,
+    getByAltText,
+  } = mount();
+  readyFrame(first!);
+  fireEvent.playing(first!);
+  fireEvent.error(first!);
+  expect(getByAltText("Boss").classList.contains("opacity-0")).toBe(false);
+  rerender(deadPortrait);
+  expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame).toBeUndefined();
+  expect(context.drawImage).not.toHaveBeenCalled();
+});
+
+it("preserves the mounted idle video when death clears a Stunned portrait wrapper", () => {
+  const context = frameContext();
+  const view = render(
+    <CombatantStatusEffectPresentation keyword="stun">
+      <BossIdleArt clips={clips} art="portrait.webp" title="Boss" isDead={false} imageClassName="aspect-video" />
+    </CombatantStatusEffectPresentation>,
+  );
+  const originalVideo = view.container.querySelector("video")!;
+  readyFrame(originalVideo);
+  fireEvent.playing(originalVideo);
+  originalVideo.currentTime = 3.25;
+  view.rerender(
+    <CombatantStatusEffectPresentation keyword="stun" defeated>
+      {deadPortrait}
+    </CombatantStatusEffectPresentation>,
+  );
+  expect(view.queryByTestId("combatant-status-effect")).toBeNull();
+  expect(vi.mocked(SliceDeath).mock.calls.at(-1)![0].frame).toBeInstanceOf(HTMLCanvasElement);
+  expect(context.drawImage.mock.calls[0]![0]).toBe(originalVideo);
+  expect(originalVideo.currentTime).toBe(3.25);
 });
 afterEach(() => {
   cleanup();

@@ -1,17 +1,8 @@
+import type { Destination } from "@/lib/routing/destinations";
+
 export type GameMode = "campaign" | "labyrinth" | "wildwood";
 
-export type DestinationName =
-  | "Normal Combat"
-  | "Elite Combat"
-  | "Boss Combat"
-  | "Card Shop"
-  | "Alchemist's Shop"
-  | "Trinket Shop"
-  | "Gear Shop"
-  | "Mystery"
-  | "Corruption"
-  | "Campfire"
-  | "Transmutation";
+export type DestinationName = Destination;
 
 export const GAME_MODE_TITLES: Record<GameMode, string> = {
   campaign: "The Campaign",

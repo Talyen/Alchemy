@@ -30,7 +30,7 @@ export class DestinationPage {
   async enterCombat(name: string) {
     await this.pick(name);
     await expect(this.page.getByTestId("battle-scene")).toBeVisible({ timeout: 10_000 });
-    await expect(this.page.getByRole("button", { name: "End Turn" })).toBeVisible({ timeout: 10_000 });
+    await expect(this.page.locator("[data-battle-end-turn]")).toBeVisible({ timeout: 10_000 });
     await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10_000 });
   }
 
@@ -39,7 +39,7 @@ export class DestinationPage {
     await expect(combat).toBeVisible({ timeout: 10_000 });
     await combat.click();
     await expect(this.page.getByTestId("battle-scene")).toBeVisible({ timeout: 10_000 });
-    await expect(this.page.getByRole("button", { name: "End Turn" })).toBeVisible({ timeout: 10_000 });
+    await expect(this.page.locator("[data-battle-end-turn]")).toBeVisible({ timeout: 10_000 });
     await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10_000 });
   }
 }

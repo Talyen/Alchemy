@@ -53,7 +53,6 @@ interface ArtPanelProps {
   onHoverShimmer: (cardId: string) => void;
   surfaceRef?: Ref<HTMLDivElement>;
   isDead?: boolean;
-  shaking?: boolean;
   cardWidthClass?: string;
   descriptionLines?: string[];
   enemyDescriptionContext?: EnemyDescriptionContext | undefined;
@@ -76,47 +75,31 @@ interface ArtPanelProps {
   plasmaColorPair?: PlasmaColorPair | null;
 }
 
-export function ArtPanel({
-  side,
-  title,
-  art,
-  health,
-  maxHealth,
-  statuses,
-  shimmerId,
-  shimmerActive,
-  shimmerToken,
-  onHoverShimmer,
-  surfaceRef,
-  isDead = false,
-  cardWidthClass,
-  descriptionLines,
-  enemyDescriptionContext,
-  currentEnemy,
-  onInspect,
-  inspectionOpen = false,
-  activeLabyrinthModifiers = [],
-  deathsDoorActive = false,
-  deathsDoorGraceTurnsRemaining = null,
-  isBoss = false,
-  impactCue = null,
-  turnActive = false,
-  turnUrgentHide = false,
-  turnShineColors,
-  artCorner,
-  artOverlay,
-  ccKeyword = null,
-  attackToken = 0,
-  castToken = 0,
-  dodgeToken = 0,
-  plasmaColorPair = null,
-}: ArtPanelProps) {
+export function ArtPanel(props: ArtPanelProps) {
+  const {
+    side,
+    title,
+    health,
+    currentEnemy,
+    isBoss = false,
+    cardWidthClass,
+    descriptionLines,
+    enemyDescriptionContext,
+    activeLabyrinthModifiers = [],
+    onInspect,
+    inspectionOpen = false,
+    isDead = false,
+    artCorner,
+    attackToken = 0,
+    castToken = 0,
+    dodgeToken = 0,
+    plasmaColorPair = null,
+  } = props;
   useGameTranslation();
   const reducedMotion = useReducedMotionPreference();
   const idleClips =
     !reducedMotion && side === "enemy" && isBoss && currentEnemy ? bossIdleClips[currentEnemy.id] : undefined;
   const healthToken = useChangeToken(health);
-  const healthPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
   const {
     triggerRef: artWrapperRef,
     visible: tooltipVisible,
@@ -166,19 +149,8 @@ export function ArtPanel({
             />
             <CombatantDodge token={dodgeToken} side={side} isDead={isDead}>
               <ActorArtFrame
-                side={side}
-                artOverlay={artOverlay}
-                title={title}
-                art={art}
+                {...props}
                 idleClips={idleClips}
-                mirrorArt={
-                  side === "enemy" && (currentEnemy?.id === "stone-titan" || currentEnemy?.id === "earth-elemental")
-                }
-                shimmerId={shimmerId}
-                shimmerActive={shimmerActive}
-                shimmerToken={shimmerToken}
-                onHoverShimmer={onHoverShimmer}
-                surfaceRef={surfaceRef}
                 onInspect={
                   onInspect
                     ? (trigger) => {
@@ -187,34 +159,25 @@ export function ArtPanel({
                       }
                     : undefined
                 }
-                isDead={isDead}
                 cardWidthClass={resolvedCardWidthClass}
-                deathsDoorActive={deathsDoorActive}
-                impactCue={impactCue}
-                maxHealth={maxHealth}
-                turnActive={turnActive}
-                turnUrgentHide={turnUrgentHide}
-                ccKeyword={ccKeyword}
-                turnShineColors={turnShineColors}
               />
             </CombatantDodge>
           </div>
+        </div>
+        <ActorStatsPanel {...props} healthToken={healthToken} cardWidthClass={resolvedCardWidthClass} />
+      </CombatantAttackLunge>
+      {artCorner ? (
+        <div
+          className={cn(
+            artWrapClass,
+            "pointer-events-none absolute top-0 [&>*]:pointer-events-auto",
+            resolvedCardWidthClass,
+          )}
+          style={{ height: "calc(var(--battle-portrait-height) + 2px)" }}
+        >
           {artCorner}
         </div>
-        <ActorStatsPanel
-          side={side}
-          title={title}
-          health={health}
-          maxHealth={maxHealth}
-          healthPercent={healthPercent}
-          healthToken={healthToken}
-          statuses={statuses}
-          isDead={isDead}
-          cardWidthClass={resolvedCardWidthClass}
-          deathsDoorActive={deathsDoorActive}
-          deathsDoorGraceTurnsRemaining={deathsDoorGraceTurnsRemaining}
-        />
-      </CombatantAttackLunge>
+      ) : null}
     </div>
   );
 }
@@ -225,45 +188,22 @@ function ActorArtFrame({
   title,
   art,
   idleClips,
-  mirrorArt,
   shimmerId,
   shimmerActive,
   shimmerToken,
   onHoverShimmer,
   surfaceRef,
   onInspect,
-  isDead,
+  isDead = false,
   cardWidthClass = battleCardWidthClass,
-  deathsDoorActive,
+  deathsDoorActive = false,
   impactCue = null,
   maxHealth,
   turnActive = false,
   turnUrgentHide = false,
   turnShineColors,
   ccKeyword = null,
-}: {
-  side: "player" | "enemy";
-  artOverlay?: ReactNode;
-  title: string;
-  art: string;
-  idleClips?: readonly BossIdleClip[] | undefined;
-  mirrorArt: boolean;
-  shimmerId: string;
-  shimmerActive: boolean;
-  shimmerToken: number | undefined;
-  onHoverShimmer: (cardId: string) => void;
-  surfaceRef: Ref<HTMLDivElement> | undefined;
-  onInspect?: ((trigger: HTMLElement) => void) | undefined;
-  isDead: boolean;
-  cardWidthClass?: string;
-  deathsDoorActive: boolean;
-  impactCue?: CombatImpactCue | null;
-  maxHealth: number;
-  turnActive?: boolean;
-  turnUrgentHide?: boolean;
-  turnShineColors?: readonly string[] | undefined;
-  ccKeyword?: ActiveCcKeyword | null;
-}) {
+}: ArtPanelProps & { idleClips?: readonly BossIdleClip[] | undefined }) {
   const i18n = useGameTranslation();
   const imageClassName = cn(
     idleClips?.length
@@ -272,7 +212,6 @@ function ActorArtFrame({
         ? landscapeArtImageClass
         : cardArtImageClass,
     battlePortraitHeightClass,
-    mirrorArt && "-scale-x-100",
   );
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
   const recoilRef = useRef<HTMLDivElement>(null);
@@ -309,6 +248,7 @@ function ActorArtFrame({
       recoilAnim.play();
     } else {
       node.classList.remove("portrait-recoil-active");
+      void node.offsetWidth;
       node.classList.add("portrait-recoil-active");
     }
   }, [pulse, isDead, maxHealth]);
@@ -322,7 +262,7 @@ function ActorArtFrame({
         if (event.target === event.currentTarget) event.currentTarget.classList.remove("portrait-recoil-active");
       }}
     >
-      <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
+      <CombatantStatusEffectPresentation keyword={ccKeyword} defeated={isDead}>
         <Surface
           surfaceRef={surfaceRef}
           onClick={onInspect && !isDead ? (event) => onInspect(event.currentTarget) : undefined}
@@ -371,33 +311,17 @@ function ActorArtFrame({
             />
           )}
           {artOverlay}
-          <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
+          <PortraitImpactVfx pulse={pulse} isDead={isDead} />
         </Surface>
       </CombatantStatusEffectPresentation>
     </div>
   );
 }
 
-function ActorStatsPanel({
-  side,
-  title,
-  health,
-  maxHealth,
-  healthPercent,
-  healthToken,
-  statuses,
-  isDead,
-  cardWidthClass = battleCardWidthClass,
-  deathsDoorActive,
-  deathsDoorGraceTurnsRemaining = null,
-}: Pick<
-  ArtPanelProps,
-  "deathsDoorGraceTurnsRemaining" | "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"
-> & {
-  deathsDoorActive: boolean | undefined;
-  healthPercent: number;
-  healthToken: number;
-}) {
+function ActorStatsPanel(props: ArtPanelProps & { healthToken: number }) {
+  const title = props.title;
+  const { health, maxHealth, isDead = false, cardWidthClass = battleCardWidthClass, deathsDoorActive = false } = props;
+  const healthPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
   const i18n = useGameTranslation();
   return (
     <div
@@ -410,19 +334,13 @@ function ActorStatsPanel({
     >
       {deathsDoorActive ? <StatsDeathDoorBorder /> : null}
       <div className={cn("relative", isDead && "opacity-0 transition-opacity duration-700")}>
-        <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
+        <ActorHealthHeader {...props} />
         <Progress
           aria-label={i18n.text("ui.actor-panel.2", "{{value0}} health", { value0: title })}
           value={healthPercent}
           className={cn("mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />
-        <ActorStatusRow
-          title={title}
-          statuses={statuses}
-          deathsDoorActive={deathsDoorActive}
-          deathsDoorGraceTurnsRemaining={deathsDoorGraceTurnsRemaining}
-          side={side}
-        />
+        <ActorStatusRow {...props} />
       </div>
     </div>
   );
@@ -435,7 +353,6 @@ function ActorHealthHeader({
   maxHealth,
   healthToken,
 }: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth"> & { healthToken: number }) {
-  useGameTranslation();
   return (
     <div className="flex items-baseline justify-between gap-3">
       <p className={cn("font-sans", sectionTitleClass)}>{title}</p>
@@ -457,13 +374,10 @@ function ActorHealthHeader({
 function ActorStatusRow({
   title,
   statuses,
-  deathsDoorActive,
+  deathsDoorActive = false,
   deathsDoorGraceTurnsRemaining = null,
   side,
-}: Pick<ArtPanelProps, "deathsDoorGraceTurnsRemaining" | "title" | "statuses" | "side"> & {
-  deathsDoorActive: boolean | undefined;
-}) {
-  useGameTranslation();
+}: Pick<ArtPanelProps, "deathsDoorGraceTurnsRemaining" | "title" | "statuses" | "side" | "deathsDoorActive">) {
   return (
     <div
       className="mt-2.5 flex min-h-9 items-center gap-1"

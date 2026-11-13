@@ -43,7 +43,7 @@ async function waitForOpeningDeal(page: import("@playwright/test").Page) {
 
 test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
   test("deals, gates inspection, and transfers a playable hand through a real turn", async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 0 : 60_000);
     await seedRandom(page, 42);
     // Observe before boot/input: protocol assertions can miss a whole transfer.
     await page.addInitScript(() => {
@@ -185,7 +185,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
   });
 
   test("accepts consecutive plays while draws and hand reflow are running", async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 0 : 60_000);
 
     await startBattleWithDeck(
       page,

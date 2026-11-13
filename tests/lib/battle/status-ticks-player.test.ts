@@ -14,9 +14,9 @@ describe("tickPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(28);
+    expect(next.playerHealth).toBe(26);
     expect(next.playerStatuses).toMatchObject({ burn: 5, armor: 2, block: 5 });
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 2, periodic: true });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4, periodic: true });
     expect(state.playerStatuses).toMatchObject({ burn: 10, armor: 3 });
   });
 
@@ -71,8 +71,9 @@ describe("tickPlayerStatuses", () => {
     const texts = makeTexts();
 
     const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(28);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: status, amount: 2, periodic: true });
+    const damage = status === "burn" ? 4 : 2;
+    expect(next.playerHealth).toBe(30 - damage);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: status, amount: damage, periodic: true });
   });
 
   it.each([

@@ -1,6 +1,6 @@
 import { expireCcReactions } from "./elemental-reaction-state";
 import { resetTurnFlags } from "./combat-flags";
-import { mergeCombatText } from "./combat-text-events";
+import { emitNoticeText, emitDamageText } from "./combat-text-events";
 import { resolveSecondaryAction } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
@@ -15,7 +15,8 @@ import { applyBlockDepletionRewards, applyCleanseHeals, addForgeToPlayer } from 
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyEmergencyWish } from "./wish";
 import { applyCardEffects } from "./effect-handlers";
-import { finalizeCcSkipTurnDecrement, isCcControlled } from "./status-cc";
+import { finalizeCcSkipTurnDecrement } from "./status-cc";
+import { isCcControlled } from "./crowd-control-policy";
 import { decayHalvedStatus } from "./status-helpers";
 import { PER_TURN_UNIQUE_GEAR_RESET } from "./unique-gear-state";
 import { getBattleRng } from "@/lib/rng";
@@ -38,9 +39,9 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
   if (removed <= 0) return state;
   const poison = state.playerStatuses.poison - removed;
   if (poison === 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "poison", signal: "cleanse", text: "" });
+    emitNoticeText(combatTexts, "player", "poison", "", { signal: "cleanse" });
   } else {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: removed, impact: false });
+    emitDamageText(combatTexts, "player", "poison", removed, { impact: false });
   }
   const reduced = { ...state, playerStatuses: { ...state.playerStatuses, poison } };
   const cleansed = resolvePendingBattleReactions(

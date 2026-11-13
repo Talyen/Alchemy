@@ -6,6 +6,7 @@ import {
   computeTalentEffects,
   getCardKeywordView,
   getOfferableCardPoolView,
+  getTalentTreeKeywordIds,
   trinketLibrary,
   type BattleCard,
 } from "@/lib/game-data";
@@ -28,7 +29,13 @@ import {
 import type { PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import { runPairedSweep, type PairedSweepGroup } from "./report-sweep-runner";
-import { buildPresetUnlockedTalents, combatTalentsInPoolOrder, withTalent, withoutTalent } from "./talent-preset";
+import {
+  buildPresetUnlockedTalents,
+  combatTalentsInPoolOrder,
+  talentsInTreeOrder,
+  withTalent,
+  withoutTalent,
+} from "./talent-preset";
 
 export { IN_CLASS_CARD_GAUNTLET };
 export { buildBalanceBatchConfig } from "./report-sweep-runner";
@@ -128,13 +135,14 @@ export function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSw
       const deckSeed = balanceScenarioSeed("card-in-class-deck", tier.preset, characterId);
       const affinity = characters[characterId].keywords;
       const baseDeck = buildClassSimDeck(characterId, tier.preset, deckSeed);
+      const baseDeckIds = new Set(baseDeck.map((card) => card.id));
       const variants = cardLibrary
         .filter(
           (card) =>
             characterId === "wildcard" || getCardKeywordView(card).length === 0 || cardMatchesAffinity(card, affinity),
         )
         .map((card) => {
-          const present = baseDeck.some((entry) => entry.id === card.id);
+          const present = baseDeckIds.has(card.id);
           return {
             id: card.id,
             deck: present ? removeCardIdFromDeck(baseDeck, card.id) : insertCardIntoDeck(baseDeck, card),
@@ -214,6 +222,83 @@ export function runTalentSweep(options: ReportRunOptions): PairedTierRow[] {
   return runPairedSweep(options, talentGroups(options));
 }
 
+const TALENT_TREE_GAUNTLET = [
+  ...BOON_GAUNTLET,
+  { enemyId: "frostwarden", depthDelta: 7 },
+  { enemyId: "blight-treant", depthDelta: 7 },
+] as const;
+
+// Full-tree sensitivity probes deliberately hold the talent-point HP budget fixed.
+// Trees without an affinity hero use a synthetic Wildcard deck with keyword cards.
+export function* talentTreeGroups(options: ReportRunOptions, measure: "tree" | "member"): Iterable<PairedSweepGroup> {
+  const pool = getOfferableCardPoolView();
+  for (const tier of REPORT_TIERS) {
+    for (const keyword of getTalentTreeKeywordIds()) {
+      const talents = combatTalentsInPoolOrder(keyword);
+      const allTalents = talentsInTreeOrder(keyword);
+      const unlocked = { [keyword]: allTalents.map((talent) => talent.id) };
+      const fullEffects = computeTalentEffects(unlocked);
+      const emptyEffects = computeTalentEffects({});
+      const heroes = reportCharacterIds().filter((id) => characters[id].keywords.includes(keyword));
+      if (heroes.length === 0) heroes.push("wildcard");
+      for (const characterId of heroes) {
+        for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
+          const deckSeed = balanceScenarioSeed("talent-tree-deck", tier.preset, keyword, characterId, deckIndex);
+          let deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
+          if (characterId === "wildcard") {
+            const keywordCards = sampleItems(
+              pool.filter((card) => getCardKeywordView(card).includes(keyword)),
+              5,
+              createRunStreamRng(deckSeed, "world"),
+            );
+            const chosen = new Set(keywordCards.map((card) => card.id));
+            deck = [...keywordCards, ...deck.filter((card) => !chosen.has(card.id))].slice(0, deck.length);
+          }
+          const variants =
+            measure === "tree"
+              ? [{ id: keyword, talentEffects: emptyEffects }]
+              : talents.map((talent) => ({
+                  id: talent.id,
+                  talentEffects: computeTalentEffects(withoutTalent(unlocked, talent)),
+                }));
+          for (const scenario of TALENT_TREE_GAUNTLET) {
+            const depth = tier.depthOffset + scenario.depthDelta;
+            const shared = {
+              characterId,
+              enemyId: scenario.enemyId,
+              depth,
+              preset: tier.preset,
+              seed: balanceScenarioSeed(
+                "talent-tree-fight",
+                tier.preset,
+                keyword,
+                characterId,
+                deckIndex,
+                scenario.enemyId,
+                depth,
+              ),
+              deck,
+              iterations: options.pairedIterations,
+            };
+            yield {
+              reference: { ...shared, talentEffects: fullEffects },
+              variants: variants.map(({ id, talentEffects }) => ({
+                id,
+                scenario: { ...shared, talentEffects },
+                referenceSide: "treatment" as const,
+              })),
+            };
+          }
+        }
+      }
+    }
+  }
+}
+
+export function runTalentTreeSweep(options: ReportRunOptions, measure: "tree" | "member"): PairedTierRow[] {
+  return runPairedSweep(options, talentTreeGroups(options, measure));
+}
+
 export function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   const summons = cardLibrary.flatMap((card) => {
     const companionId = companionIdsFromDeck([card])[0];
@@ -224,21 +309,22 @@ export function* companionGroups(options: ReportRunOptions): Iterable<PairedSwee
       const deckSeed = balanceScenarioSeed("companion-deck", tier.preset, characterId);
       const classKeywords = characters[characterId].keywords;
       const deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
-      const deckCompanions = companionIdsFromDeck(deck);
+      const deckCompanions = new Set(companionIdsFromDeck(deck));
       const specs = summons.flatMap(({ card, companionId }) => {
         if (!(companionId in companionLibrary)) return [];
         if (
           !classKeywords.includes("companion") &&
-          !deckCompanions.includes(companionId) &&
+          !deckCompanions.has(companionId) &&
           !cardMatchesAffinity(card, classKeywords)
         )
           return [];
         const baselineDeck = removeCompanionSummonFromDeck(deck, companionId);
-        const alreadyInDeck = deckCompanions.includes(companionId);
+        const alreadyInDeck = deckCompanions.has(companionId);
         return [{ companionId, baselineDeck, treatmentDeck: insertCardIntoDeck(baselineDeck, card), alreadyInDeck }];
       });
-      const absent = specs.filter((spec) => !spec.alreadyInDeck);
-      const present = specs.filter((spec) => spec.alreadyInDeck);
+      const absent: typeof specs = [];
+      const present: typeof specs = [];
+      for (const spec of specs) (spec.alreadyInDeck ? present : absent).push(spec);
       for (const scenario of BOON_GAUNTLET) {
         const depth = tier.depthOffset + scenario.depthDelta;
         const shared = {
@@ -278,6 +364,8 @@ export function* gearGroups(options: ReportRunOptions): Iterable<PairedSweepGrou
     source: SIM_GEAR_ROLL_SOURCE,
     progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
   });
+  const emptyOwnedUniques = new Set<string>();
+  const simGearId = () => "sim-gear";
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const keywords = characters[characterId].keywords;
@@ -302,7 +390,16 @@ export function* gearGroups(options: ReportRunOptions): Iterable<PairedSweepGrou
             item.affinityKeywords.some((keyword) => keywords.includes(keyword));
           if (!matches) return [];
           const rng = createRunStreamRng(seed, "rewards");
-          const instance = generateLootGearChoices(1, rng, lootWeights, new Set(), [item.id])[0];
+          const instance = generateLootGearChoices(
+            1,
+            rng,
+            lootWeights,
+            emptyOwnedUniques,
+            [item.id],
+            false,
+            simGearId,
+            keywords,
+          )[0];
           return [
             {
               id: item.id,

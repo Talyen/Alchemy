@@ -1,6 +1,36 @@
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 
+type NumericText = Extract<CombatTextEvent, { amount: number }>;
+type NumericTextDetails = Omit<NumericText, "target" | "kind" | "stat" | "amount">;
+type NoticeText = Exclude<Extract<CombatTextEvent, { kind: "notice" }>, { signal: "reaction" }>;
+
+// Producers choose the event kind; filtering and merging remain owned here.
+function numericText(kind: NumericText["kind"]) {
+  return (
+    texts: CombatTextEvent[],
+    target: NumericText["target"],
+    stat: NumericText["stat"],
+    amount: number,
+    details: NumericTextDetails = {},
+  ): void => mergeCombatText(texts, { target, kind, stat, amount, ...details });
+}
+
+export const emitDamageText = numericText("damage");
+export const emitStatusText = numericText("status");
+export const emitHealText = numericText("heal");
+export const emitMultiplyText = numericText("multiply");
+
+export function emitNoticeText(
+  texts: CombatTextEvent[],
+  target: NoticeText["target"],
+  stat: NoticeText["stat"],
+  text: string,
+  details: Omit<NoticeText, "target" | "kind" | "stat" | "text"> = {},
+): void {
+  mergeCombatText(texts, { target, kind: "notice", stat, text, ...details });
+}
+
 export function emitEnemyBuildupImmunity(
   state: BattleState,
   stat: "stun" | "freeze",
@@ -23,30 +53,35 @@ export function shouldShowCombatText(event: CombatTextEvent) {
   );
 }
 
+/** Identity only; filtering and presentation capacity are handled by the caller. */
+export function canMergeCombatText(event: CombatTextEvent, nextEvent: CombatTextEvent): boolean {
+  if (
+    event.target !== nextEvent.target ||
+    event.stat !== nextEvent.stat ||
+    event.kind !== nextEvent.kind ||
+    event.feedback !== nextEvent.feedback ||
+    event.companionActionId !== nextEvent.companionActionId
+  )
+    return false;
+  if (event.kind === "notice" && nextEvent.kind === "notice")
+    return event.text === nextEvent.text && event.signal === nextEvent.signal;
+  return (
+    event.kind !== "notice" &&
+    nextEvent.kind !== "notice" &&
+    event.reactionId === nextEvent.reactionId &&
+    event.detonation === nextEvent.detonation &&
+    event.impact === nextEvent.impact &&
+    !!event.periodic === !!nextEvent.periodic &&
+    event.additive !== false &&
+    nextEvent.additive !== false &&
+    Math.sign(event.amount) === Math.sign(nextEvent.amount)
+  );
+}
+
 export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {
   if (!shouldShowCombatText(nextEvent)) return;
 
-  const existing = combatTexts.find((event) => {
-    if (
-      event.target !== nextEvent.target ||
-      event.stat !== nextEvent.stat ||
-      event.kind !== nextEvent.kind ||
-      event.feedback !== nextEvent.feedback
-    )
-      return false;
-    if (event.kind === "notice" && nextEvent.kind === "notice")
-      return event.text === nextEvent.text && event.signal === nextEvent.signal;
-    return (
-      event.kind !== "notice" &&
-      nextEvent.kind !== "notice" &&
-      event.reactionId === nextEvent.reactionId &&
-      event.impact === nextEvent.impact &&
-      !!event.periodic === !!nextEvent.periodic &&
-      event.additive !== false &&
-      nextEvent.additive !== false &&
-      Math.sign(event.amount) === Math.sign(nextEvent.amount)
-    );
-  });
+  const existing = combatTexts.find((event) => canMergeCombatText(event, nextEvent));
   if (!existing) combatTexts.push(nextEvent);
   else if (existing.kind !== "notice" && nextEvent.kind !== "notice") {
     const previousAmount = existing.amount;

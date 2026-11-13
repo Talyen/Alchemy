@@ -200,8 +200,6 @@ export function TransmutationScreen({
                   className={viewCardWidthClass}
                   shineColor={getCardInspectionShineColors(resultCard)}
                   selected
-                  shimmerActive={false}
-                  shimmerToken={undefined}
                 />
               </div>
               <div className={controlLabelClass}>
@@ -255,8 +253,6 @@ export function TransmutationScreen({
                 className={viewCardWidthClass}
                 wrapperClassName="col-start-1 row-start-1 flex"
                 shineColor={getCardInspectionShineColors(source)}
-                shimmerActive={false}
-                shimmerToken={undefined}
               />
               <div className={cn(controlLabelClass, viewCardWidthClass, "col-start-1 row-start-2")}>
                 <CardTitle card={source} />
@@ -281,8 +277,6 @@ export function TransmutationScreen({
                     className={viewCardWidthClass}
                     wrapperClassName="col-start-3 row-start-1 flex"
                     shineColor={getCardInspectionShineColors(preview)}
-                    shimmerActive={false}
-                    shimmerToken={undefined}
                   />
                   <FadeSlot
                     swapKey={previewKey}

@@ -8,7 +8,7 @@ test(
   "stunned enemy shows Enemy Turn and draws hand without a flash",
   { tag: [critical.tag, slow.tag] },
   async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 0 : 60_000);
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeStatusCard("stun", 12)),

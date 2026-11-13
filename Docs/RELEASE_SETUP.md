@@ -2,10 +2,6 @@
 
 One-time shipping setup for Alchemy plus recurring gates before public promotion: crash reporting, provenance, signing, secrets, and listing baseline. Active release flow stays in [RELEASE.md](./RELEASE.md). Coding rules: [AGENTS.md](../AGENTS.md).
 
-As of October 23, 2026, no Steam store page exists: Steam ID verification is
-pending. App IDs, depots, page creation and survey submission are future setup
-steps, not missing information on a published listing.
-
 Account and credential setup is one-time; revisit it when configuration or credentials change. Before public promotion, follow the [notice and provenance review](#player-notices-and-asset-provenance), [Steam Input revalidation conditions](#steam-input-default-mapping-controller-playable), and [listing baseline](#steam-listing-baseline-windows). Keep configuration aligned with the release workflow.
 
 ## Desktop crash reporting (one-time setup)
@@ -57,11 +53,13 @@ When Steam ID verification permits page setup, complete the Content Survey with
 [confirmed provenance](../THIRD_PARTY_NOTICES.md). Use concise, accurate wording,
 for example:
 
-> AI tools were used during development to create the game's artwork, music,
-> sound effects, writing and localization. All AI content is pre-generated;
-> the game does not generate AI content during gameplay.
+> AI tools were used during development to assist with coding and to create
+> artwork, music, in-game descriptions, and localization. The game does not
+> generate AI content during gameplay.
 
-Include AI-assisted localization in the survey when used. Valve's
+Sound effects are not AI-generated, per the owner's later clarification; their
+sources and rights still require the provenance review. Include AI-assisted
+localization in the survey when used. Valve's
 [Content Survey](https://partner.steamgames.com/doc/gettingstarted/contentsurvey)
 requires disclosure of shipped player-consumed AI content and adequate rights;
 it does not require a public per-asset rights inventory. Keep the survey current
@@ -145,7 +143,7 @@ controller types, publish their default assignments, and record actual configura
 IDs with the candidate's acceptance evidence. Follow
 [Valve's developer setup](https://partner.steamgames.com/doc/features/steam_controller/getting_started_for_devs).
 Pending publication and physical validation remain in the
-[blocked release plan](./Plans/SteamDemo.md#outstanding-work).
+[demo checklist](./STEAM_DEMO_CHECKLIST.md#outstanding-release-prerequisites).
 
 [Physical acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
 owns device/service qualification and public support claims. Valve's
@@ -165,6 +163,10 @@ interaction primitives or changing Escape ordering. Published mapping changes
 also require [physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence).
 
 ## Steam listing baseline (Windows)
+
+The selected [Steam store-page assets and publishing notes](../steam/store-page/README.md)
+include capsules, gameplay screenshots, artwork masters and the unapproved
+store-copy proposal. Complete the reviews recorded there before submission.
 
 These are the current player-facing store assumptions, not values derived from
 Electron configuration. Revalidate them on representative minimum-spec

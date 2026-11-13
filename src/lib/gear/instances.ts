@@ -1,4 +1,5 @@
 import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT } from "@/lib/game-constants";
+import type { KeywordId } from "@/lib/game-data";
 import { pickRandom } from "@/lib/rng";
 import { createInstanceId } from "@/lib/utils";
 import { rollAffixes } from "./affix-pool";
@@ -47,9 +48,10 @@ export function createRolledGearInstance(
   definition: GearDefinition,
   rng: () => number,
   createId: () => string = createInstanceId,
+  heroKeywords: readonly KeywordId[] = [],
 ): GearInstance {
   const affixCount = rollAffixCount(definition.rarity, rng);
-  const affixes = rollAffixes(definition, affixCount, rng);
+  const affixes = rollAffixes(definition, affixCount, rng, heroKeywords);
   return {
     instanceId: createId(),
     definitionId: definition.id,
@@ -62,12 +64,13 @@ export function generateGearInstanceForBaseItem(
   rng: () => number,
   rarity: "basic" | "astral" = "basic",
   createId: () => string = createInstanceId,
+  heroKeywords: readonly KeywordId[] = [],
 ): GearInstance | null {
   if (!Object.hasOwn(gearBaseItems, baseItemId)) return null;
   const baseItem = gearBaseItems[baseItemId as GearBaseItemId];
   const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
   if (!definition) return null;
-  return createRolledGearInstance(definition, rng, createId);
+  return createRolledGearInstance(definition, rng, createId, heroKeywords);
 }
 
 export function generateDevRandomGearInstance(

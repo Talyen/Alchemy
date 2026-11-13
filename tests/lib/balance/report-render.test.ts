@@ -82,6 +82,8 @@ describe("report rendering and methodology", () => {
     cardsIsolatedElite: [{ id: "strike", deltas: mockTierRecord(mockPairedDelta()) }],
     cardsInClass: [{ id: "strike", deltas: mockTierRecord(mockPairedDelta()) }],
     talents: [{ id: "strength-1", deltas: mockTierRecord(mockPairedDelta()) }],
+    talentTrees: [],
+    talentTreeMembers: [],
     companions: [{ id: "wolf", deltas: mockTierRecord(mockPairedDelta()) }],
     gear: [{ id: "iron-sword", deltas: mockTierRecord(mockPairedDelta()) }],
     affixes: [{ id: "sharp", deltas: mockTierRecord(mockPairedDelta()) }],

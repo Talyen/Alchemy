@@ -7,7 +7,7 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { isPlayerDefeated } from "./battle-outcome";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { applyEmergencyWishForEmptyDraw } from "./wish";
 
 function drawCardPlayReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -25,15 +25,24 @@ function applyTalentDrawTriggers(
 ): BattleState {
   let nextState = state;
   const talents = state.talentEffects;
-  if (archery && eligibility.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
-    nextState = drawCardPlayReward(nextState, talents.drawOnArcheryVsStunned, combatTexts);
+  if (
+    archery &&
+    eligibility.enemyCC.stunSkipTurns > 0 &&
+    talents.drawOnArcheryVsStunned > 0 &&
+    !nextState.flags.eagleEyeUsedThisTurn
+  ) {
+    nextState = drawCardPlayReward(
+      setFlag(nextState, "eagleEyeUsedThisTurn", true),
+      talents.drawOnArcheryVsStunned,
+      combatTexts,
+    );
     if (isPlayerDefeated(nextState)) return nextState;
   }
   if (archery && rollBattleChance(state.gearEffects.archeryDrawChance, state)) {
     nextState = drawCardPlayReward(nextState, 1, combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
   }
-  if (keywords.includes("companion") && talents.drawOnCompanionCard > 0 && !nextState.flags.huntersBondUsedThisTurn) {
+  if (talents.drawOnCompanionCard > 0 && !nextState.flags.huntersBondUsedThisTurn && keywords.includes("companion")) {
     nextState = drawCardPlayReward(
       setFlag(nextState, "huntersBondUsedThisTurn", true),
       talents.drawOnCompanionCard,
@@ -46,31 +55,32 @@ function applyTalentDrawTriggers(
 function applyTalentStatusAndHitTriggers(
   state: BattleState,
   keywords: readonly string[],
+  archery: boolean,
   combatTexts: CombatTextEvent[],
   eligibility: BattleState,
 ): BattleState {
   let nextState = state;
   const talents = state.talentEffects;
-  const archeryWithoutBlock = keywords.includes("archery") && eligibility.playerStatuses.block === 0;
+  const archeryWithoutBlock = archery && eligibility.playerStatuses.block === 0;
 
   if (
-    keywords.includes("burn") &&
     talents.forgeOnBurnCard > 0 &&
+    keywords.includes("burn") &&
     (talents.forgeOnBurnCardChance <= 0 || rollBattleChance(talents.forgeOnBurnCardChance, nextState))
   ) {
     nextState = addForgeToPlayer(nextState, talents.forgeOnBurnCard, combatTexts);
   }
   if (
-    keywords.includes("block") &&
     talents.armorOnBlockCard > 0 &&
+    keywords.includes("block") &&
     rollBattleChance(talents.armorOnBlockCardChance, nextState)
   ) {
     nextState = applyArmorReward(nextState, talents.armorOnBlockCard, combatTexts);
   }
-  if (keywords.includes("leech") && talents.armorStealOnLeechCard > 0) {
+  if (talents.armorStealOnLeechCard > 0 && keywords.includes("leech")) {
     const stolen = Math.min(nextState.enemyMitigation.armor, talents.armorStealOnLeechCard);
     if (stolen > 0) {
-      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: stolen, impact: false });
+      emitDamageText(combatTexts, "enemy", "armor", stolen, { impact: false });
       nextState = applyArmorReward(reduceEnemyArmor(nextState, stolen), stolen, combatTexts);
     }
   }
@@ -96,7 +106,7 @@ export function prepareTalentCardPlay(
   const eligibility = options.eligibility ?? state;
   let nextState = applyTalentDrawTriggers(state, keywords, archery, combatTexts, eligibility);
   if (isPlayerDefeated(nextState)) return nextState;
-  nextState = applyTalentStatusAndHitTriggers(nextState, keywords, combatTexts, eligibility);
+  nextState = applyTalentStatusAndHitTriggers(nextState, keywords, archery, combatTexts, eligibility);
 
   if (options.countsAsPlayedCard) {
     const archeryCardsPlayed = state.flags.archeryCardsPlayedThisTurn;

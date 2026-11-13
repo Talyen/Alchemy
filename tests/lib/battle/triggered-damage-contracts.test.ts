@@ -11,7 +11,7 @@ describe("triggered damage contracts", () => {
   it.each([
     {
       cardId: "bash",
-      statuses: { stun: 49, poison: 1 },
+      statuses: { stun: 49, poison: 5 },
       talents: { poisonDamageBonusVsPoisoned: 1 },
       trinket: { thunderstoneDamageOnStun: 6 },
       health: 89,

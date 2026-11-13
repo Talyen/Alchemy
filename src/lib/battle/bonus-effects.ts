@@ -2,7 +2,7 @@ import { FREE_CARD_SENTINEL } from "../game-constants";
 import { writeCombatFlag } from "./action-context";
 import { isPlayerDefeated } from "./battle-outcome";
 import { stripEnemyArmor, stripEnemyBlock } from "./enemy-mitigation-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { rollBattleChance } from "./chance-roll";
 import { drawFromState, applyDrawResult } from "./draw";
 import {
@@ -53,13 +53,7 @@ export function applyCrowdControlTriggerBonuses(
   ] as const) {
     if (!enabled) continue;
     if (nextState.enemyMitigation[stat] > 0) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat,
-        amount: nextState.enemyMitigation[stat],
-        impact: false,
-      });
+      emitDamageText(combatTexts, "enemy", stat, nextState.enemyMitigation[stat], { impact: false });
     }
     nextState = strip(nextState);
   }

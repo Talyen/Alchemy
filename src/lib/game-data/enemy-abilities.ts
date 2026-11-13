@@ -82,6 +82,7 @@ function analyzeEffects(effects: readonly BattleCardEffect[]): EnemyEffectAnalys
       if (!supportsEnemyLeaf(effect)) result.unsupported ??= effect;
       result.dealsDamage ||= effect.kind === "damage";
     }
+    if (result.unsupported && result.dealsDamage) break;
   }
   if (isDeeplyFrozenData(effects)) effectAnalysis.set(effects, result);
   return result;

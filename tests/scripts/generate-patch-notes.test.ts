@@ -1,22 +1,36 @@
-import { execSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, execSync } from "node:child_process";
+import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { generatePatchNotesMarkdown, parseGeneratePatchNotesArgs } from "../../scripts/generate-patch-notes.mjs";
 import { parseReleaseArgs } from "../../scripts/lib/release/release-runner.mjs";
 import {
-  buildChangelogUnreleased,
   buildPatchNotesMarkdown,
-  extractChangelogSection,
   extractPlayerFacingLines,
   isUserFacing,
-  parseChangelogCommits,
-  promoteUnreleasedSection,
-  replaceChangelogUnreleased,
 } from "../../scripts/lib/release/patch-notes-core.mjs";
 
 describe("generate-patch-notes", () => {
+  it("omits case-insensitive and indented coauthor trailers from player notes", () => {
+    const lines = extractPlayerFacingLines({
+      subject: "fix: repair the battle",
+      body: "Players can finish the battle.\n\n  co-authored-by: Contributor <contributor@example.com>",
+    });
+    expect(lines).toEqual(["Players can finish the battle."]);
+  });
+
+  it("treats colocated TSX and JavaScript test files as infrastructure", () => {
+    for (const file of ["src/ui/widget.test.tsx", "src/ui/widget.spec.jsx", "src/lib/logic.test.mjs"])
+      expect(isUserFacing({ subject: "fix: improve coverage", body: "", files: [file] }), file).toBe(false);
+    expect(isUserFacing({ subject: "fix: improve widget", body: "", files: ["src/ui/widget.tsx"] })).toBe(true);
+  });
+
+  it("handles inherited object property names as unknown commit types", () => {
+    const commits = [{ subject: "constructor: improve the game", body: "User-Facing: yes" }];
+    expect(buildPatchNotesMarkdown("1.2.3", commits)).toContain("improve the game");
+  });
+
   it("rejects misspelled options instead of writing during an intended preview", () => {
     expect(() => parseGeneratePatchNotesArgs(["--dryrun"], {})).toThrow("Unknown patch-note option");
     expect(parseGeneratePatchNotesArgs(["--dry-run"], {})).toMatchObject({ dryRun: true });
@@ -69,99 +83,6 @@ describe("generate-patch-notes", () => {
       body: "",
     });
     expect(lines).toEqual(["**save:** repair corrupt deck"]);
-  });
-
-  it("builds grouped unreleased changelog sections and omits non-conventional history noise", () => {
-    const markdown = buildChangelogUnreleased([
-      { subject: "feat(ui): add armory", body: "Replace placeholder gear with affix rolls." },
-      { subject: "fix(ci): repair Electron download", body: "" },
-      { subject: "Abstract encounter traits across Labyrinth and Wildwood", body: "" },
-      { subject: "wip: temporary checkpoint", body: "" },
-    ]);
-    expect(markdown).toContain("## [Unreleased]");
-    expect(markdown).toContain("### Features");
-    expect(markdown).toContain("- feat(ui): add armory");
-    expect(markdown).toContain("Replace placeholder gear with affix rolls.");
-    expect(markdown).toContain("### Bug Fixes");
-    expect(markdown).not.toContain("### Other");
-    expect(markdown).not.toContain("Abstract encounter traits");
-    expect(markdown).not.toContain("temporary checkpoint");
-  });
-
-  it("caps verbose changelog bodies while retaining their leading context", () => {
-    const markdown = buildChangelogUnreleased([
-      {
-        subject: "feat(ui): add armory",
-        body: Array.from({ length: 10 }, (_, index) => `Detail line ${index + 1}`).join("\n"),
-      },
-    ]);
-    expect(markdown).toContain("Detail line 1");
-    expect(markdown).toContain("Detail line 6");
-    expect(markdown).not.toContain("Detail line 7");
-    expect(markdown).toContain("\n  …");
-  });
-
-  it("preserves indented body lines without absorbing section headings or trailing prose", () => {
-    const commits = [
-      { subject: "feat(ui): add armory", body: "First detail.\n\n- Nested body bullet." },
-      { subject: "fix(save): repair deck", body: "" },
-    ];
-    const source = buildChangelogUnreleased(commits);
-    expect(parseChangelogCommits(extractChangelogSection(source, "## [Unreleased]")!)).toEqual(commits);
-    expect(parseChangelogCommits("intro\n  orphan\n- fix: recover\n  detail\nprose\n  orphan\n- feat: next")).toEqual([
-      { subject: "fix: recover", body: "detail" },
-      { subject: "feat: next", body: "" },
-    ]);
-  });
-
-  it("promotes unreleased changelog content into a versioned section", () => {
-    const source = [
-      "# Changelog",
-      "",
-      "All notable changes to Alchemy are documented here.",
-      "",
-      "## [Unreleased]",
-      "",
-      "### Features",
-      "",
-      "- feat(ui): add armory",
-      "",
-      "## [0.1.0] (2026-06-11)",
-      "",
-      "### Features",
-      "",
-      "- Initial release",
-    ].join("\n");
-
-    const promoted = promoteUnreleasedSection(source, "0.2.0", "2026-06-17");
-    expect(promoted).toContain("## [0.2.0] (2026-06-17)");
-    expect(promoted).toContain("- feat(ui): add armory");
-    expect(promoted).toContain("## [Unreleased]");
-    expect(promoted).toContain("_No changes yet._");
-    expect(extractChangelogSection(promoted, "## [0.1.0]")).toContain("- Initial release");
-    expect(promoteUnreleasedSection(promoted, "v0.2.0", "2026-06-18")).toBe(promoted);
-    const conflicting = promoted.replace("_No changes yet._", "- fix: a new change");
-    expect(() => promoteUnreleasedSection(conflicting, "0.2.0", "2026-06-18")).toThrow("already contains");
-  });
-
-  it("replaces only the unreleased block", () => {
-    const source = [
-      "# Changelog",
-      "",
-      "Header text.",
-      "",
-      "## [Unreleased]",
-      "",
-      "old",
-      "",
-      "## [0.1.0] (2026-06-11)",
-      "",
-      "versioned",
-    ].join("\n");
-    const next = replaceChangelogUnreleased(source, "## [Unreleased]\n\nnew\n");
-    expect(next).toContain("## [Unreleased]\n\nnew");
-    expect(next).toContain("## [0.1.0] (2026-06-11)");
-    expect(next).not.toContain("old");
   });
 
   it("drops infra-only feat commits from player notes", () => {
@@ -257,6 +178,39 @@ describe("generate-patch-notes from git", () => {
     for (const dir of tempDirs.splice(0)) {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("bumps and tags a release without a changelog while preserving player notes", () => {
+    const root = mkdtempSync(join(tmpdir(), "alchemy-release-without-changelog-"));
+    tempDirs.push(root);
+    const git = (...args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+    git("init", "-q");
+    git("config", "user.email", "test@example.com");
+    git("config", "user.name", "Test");
+    copyFileSync(join(process.cwd(), ".versionrc.json"), join(root, ".versionrc.json"));
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "release-test", version: "1.0.0" }));
+    mkdirSync(join(root, "src"));
+    writeFileSync(join(root, "src/game.ts"), "before\n");
+    git("add", ".");
+    git("commit", "-qm", "chore: seed");
+    git("tag", "v1.0.0");
+    writeFileSync(join(root, "src/game.ts"), "after\n");
+    git("add", ".");
+    git("commit", "-qm", "fix: repair the battle");
+
+    execFileSync(
+      process.execPath,
+      [join(process.cwd(), "node_modules/commit-and-tag-version/bin/cli.js"), "--release-as", "patch"],
+      {
+        cwd: root,
+        stdio: "pipe",
+      },
+    );
+
+    expect(JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version).toBe("1.0.1");
+    expect(git("rev-parse", "v1.0.1^{commit}")).toBe(git("rev-parse", "HEAD"));
+    expect(existsSync(join(root, "CHANGELOG.md"))).toBe(false);
+    expect(generatePatchNotesMarkdown(root, { releaseVersion: "1.0.1" }).markdown).toContain("repair the battle");
   });
 
   it("writes sectioned notes from git commits and omits infra-only feats", () => {

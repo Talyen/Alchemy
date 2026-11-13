@@ -57,7 +57,10 @@ without a library; auditions do not install production assets.
 
 After authoring, run the source-freshness check and review the master, manifest
 and generated diff before committing. Regenerate stale outputs explicitly through
-the lifecycle command for that asset. Checks never convert, copy, write or delete.
+the lifecycle command for that asset. Checks do not regenerate prepared outputs
+or modify existing masters. Source-freshness checks can restore omitted masters
+in sparse worktrees as described under [repository sources](#repository-sources-and-ci);
+use the outputs-only check when masters must remain omitted.
 Rendered art, motion and listening acceptance remain separate from hash validation.
 
 For direct `assets.mjs` diagnosis, bare `--check` covers every pipeline, art
@@ -102,7 +105,8 @@ lookahead, while output trimming preserves the source duration rounded to the ne
 motion: interpolation synthesizes frames and can introduce distortion. Commit masters, prepared files
 under `src/assets/boss-idles/`, and their hash manifest together.
 
-`src/lib/game-data/boss-idle-assets.ts` explicitly maps prepared URLs to boss IDs.
+`src/lib/game-data/boss-idle-assets.ts` selects ordered clips by boss ID and resolves
+their prepared URLs through an eager video glob. Missing selected variants fail at startup.
 Battle presentation alone consumes this map. Videos never join `allGameArt` or
 startup image loading; only the current boss's two playback buffers load clips.
 Each clip lists ascending resolution variants. Battle presentation selects by the
@@ -116,11 +120,25 @@ Compare changes at their destination size, crop and surrounding UI under
 does not improve the game. Style references include Knight, Wizard and Fireball
 in `src/assets/optimized/`, plus Discordant Dice and Ascension Seal.
 
-Compose one prompt from the shared foundation and the applicable subject block.
+For illustrations, compose one prompt from the shared foundation and the applicable
+subject block. Logo and wordmark explorations use their own foundation below instead.
 References guide illustration treatment; screen composition follows the UI owners.
 
 ```text
 Illustrated in a bold, high-energy action-anime style in the visual tradition of kinetic modern action-anime studios. Sharp, angular exaggeration and dynamic motion implied by diagonal shadow shapes, never literal speed lines. Thick, confident near-black outlines of varying weight, saturated punchy colors, and two or three hard-edged flat shading steps. Minimal blending, no gradients or painterly subtlety. Dramatic perspective, sharp graphic highlight flares, and high-contrast graphic color blocking.
+```
+
+### Logo and wordmark explorations
+
+Use this foundation in place of the illustration foundation when exploring logos or
+wordmarks. It retains the game's illustrated ink and color treatment without requiring
+dramatic perspective or motion in the lettering. Add only the composition, imagery and
+wording needed for the particular concept; compare genuinely different typographic and
+compositional approaches instead of assuming one fantasy-logo treatment. A prompt is a
+starting point, not evidence that a design matches the art style or is readable in-game.
+
+```text
+Create a distinctive illustrated logo that belongs to the same world as Alchemy's game artwork. Use confident near-black outlines, deliberate color blocking and a limited number of clear shading shapes. Design the lettering for personality, balance and legibility at game-menu size. Let the composition, letterforms and visual rhythm suit the concept; use perspective, motion and highlights only where they strengthen the design. Keep the silhouette clear and the visual details purposeful.
 ```
 
 ### Master prompt (Playable Heroes, Bosses, and Enemy encounters)
@@ -147,10 +165,10 @@ Full-frame environment with no character focus. Exaggerated perspective and stre
 A clear weapon, armor, accessory or trinket silhouette on a 3:4 or square canvas. Dramatic three-quarter perspective and strong foreshortening, angular material design, weight and tension, with sharp highlights on metal, gems or leather. Tactile hand-drawn physical depth; no photorealism, 3D rendering or fine filigree.
 ```
 
-### Crafting Currencies & Artifacts (Opaque background)
+### Crafting Currencies (Transparent background)
 
 ```text
-One distinctive object occupying 80–88% of a square on a quiet opaque dark ink/charcoal background. Broad features, minimal decorative microtexture, two or three major shading steps. No text, runes or realistic photography.
+One distinctive object occupying 80–88% of a square with a genuinely transparent alpha background. Preserve dark internal shading and the full illustrated silhouette; no ground, panel or backdrop. Broad features, minimal decorative microtexture, two or three major shading steps. No text, runes or realistic photography.
 ```
 
 ### Inventory Resources, Mana & UI Icons (Transparent background)
@@ -178,8 +196,9 @@ optimized files directly. Oxlint enforces that boundary.
 art under [boot and loading](./ARCHITECTURE.md#boot-and-loading).
 
 `assets.generated.ts` has explicit named exports derived by `toAssetExportName`
-/ `kebabToCamel`. Only `catalog-art.ts` uses a narrow eager `import.meta.glob`
-with `import: "default"` for Gear URLs. `gearArtByDefinitionId` and slot backgrounds
+/ `kebabToCamel`. `catalog-art.ts` uses a narrow eager `import.meta.glob`
+with `import: "default"` for Gear URLs; boss idle video URLs use a separate eager glob.
+`gearArtByDefinitionId` and slot backgrounds
 derive from that registry; no second generated Gear map needs synchronization.
 Card/enemy builders resolve conventional art by content ID through `getCatalogArt`;
 use an explicit override for shared or renamed art. Trinkets follow their catalog
@@ -195,17 +214,18 @@ superseded studies, approval transcripts and duplicate sources. Use ignored
 in [design inputs](./design/README.md).
 
 Homestead resource masters live in `2d Assets/Game Sources/Items/Resources/`; crafting
-currency PNG masters live in `2d Assets/Game Sources/Items/Crafting/`. Resources and battle Mana
-use transparent backgrounds, while crafting currencies retain their illustrated
-dark backgrounds. Check the actual alpha channel before importing transparent
+currency PNG masters live in `2d Assets/Game Sources/Items/Crafting/`. Resources, battle Mana
+and the six crafting currencies use transparent backgrounds. Salvage remains a
+separate illustrated action, not a carried currency. Check the actual alpha channel before importing transparent
 art: a visible checkerboard may be baked into an opaque image.
 
-Set `requiresTransparency: true` in the owning art manifest when an image must have a transparent background; omission defaults to false. The eight resource icons, battle Mana, and both piles require it. Preparation and read-only freshness checks validate decoded source and prepared pixels, including cache hits: each must contain fully transparent pixels and visible artwork. The requirement participates in the asset fingerprint. Replacement images are staged and validated before publication; failure preserves that image's previous output and skips manifest publication and orphan removal.
+Set `requiresTransparency: true` in the owning art manifest when an image must have a transparent background; omission defaults to false. The eight resource icons, six crafting currencies, battle Mana, and both piles require it. Preparation and read-only freshness checks validate decoded source and prepared pixels, including cache hits: each must contain fully transparent pixels and visible artwork. The requirement participates in the asset fingerprint. Replacement images are staged and validated before publication; failure preserves that image's previous output and skips manifest publication and orphan removal.
 
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 
 `2d Assets/Game Sources/Interface/Card Elements/Card Back.png` supplies the back
-of Collection cards. Battle draws and discards use face-up card artwork under
+of Collection cards and the back-to-front battle draw flight. Battle discards
+flip from the card face to artwork sampled from the top of the discard pile; see
 the [transfer motion contract](./UI_BATTLE.md#battle-motion).
 `Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
 (spent/dormant compass stack, leaning right) are distinct compositions, not

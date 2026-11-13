@@ -1,6 +1,6 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { applyHealingWithCombatText } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText, emitNoticeText } from "./combat-text-events";
 import { resolvePlayerHit } from "./hit-resolution";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage } from "./status-helpers";
@@ -79,7 +79,7 @@ function recordPlayerHealthLost(
   const healthLost = playerHealthLostToDamage(prevState, nextState);
   if (healthLost > 0) {
     const stat = damageType === "physical" ? "health" : damageType;
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: healthLost });
+    emitDamageText(combatTexts, "player", stat, healthLost);
   }
 }
 
@@ -93,9 +93,6 @@ function applyBlockDepletedHeal(
   if (isPlayerDefeated(nextState)) return nextState;
   // The hit depleted Block even if threshold or healing rewards refilled it.
   let finalState = applyBlockDepletionRewards(prevState, nextState, combatTexts, isBlockDepleted);
-  if (isBlockDepleted)
-    finalState = addForgeToPlayer(finalState, prevState.talentEffects.forgeOnBlockDepleted, combatTexts);
-
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
     finalState = resolveFollowUpHit(
       finalState,
@@ -167,13 +164,13 @@ export function applyPlayerDefensiveReactions(
       nextState.playerCC.cooldown > 0 &&
       (effect.damageType === "stun" || effect.damageType === "freeze")
     ) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "notice",
-        stat: effect.damageType,
-        signal: "immune",
-        text: `Immune to ${effect.damageType === "stun" ? "Stun" : "Freeze"}`,
-      });
+      emitNoticeText(
+        combatTexts,
+        "player",
+        effect.damageType,
+        `Immune to ${effect.damageType === "stun" ? "Stun" : "Freeze"}`,
+        { signal: "immune" },
+      );
     }
     nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
   }

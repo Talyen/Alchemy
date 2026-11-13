@@ -32,12 +32,14 @@ describe("asset loading contract", () => {
     expect(unexpected.slice(0, 10), `${unexpected.length} unexpected dynamic imports`).toEqual([]);
   });
 
-  it("keeps URL globs eager and confined to the catalog owner", () => {
+  it("keeps URL globs eager and confined to the asset owners", () => {
     const globOwners = matchingFiles(listNonTestSourceFiles(), /import\.meta\.glob/u);
-    expect(globOwners).toEqual(["src/lib/game-data/catalog-art.ts"]);
-    const owner = readText(globOwners[0]!);
-    expect(owner).toMatch(/eager:\s*true/u);
-    expect(owner).toMatch(/import:\s*"default"/u);
+    expect(globOwners.sort()).toEqual(["src/lib/game-data/boss-idle-assets.ts", "src/lib/game-data/catalog-art.ts"]);
+    for (const file of globOwners) {
+      const owner = readText(file);
+      expect(owner).toMatch(/eager:\s*true/u);
+      expect(owner).toMatch(/import:\s*"default"/u);
+    }
   });
 
   it("references the whole art catalog only from boot preload and validation", () => {

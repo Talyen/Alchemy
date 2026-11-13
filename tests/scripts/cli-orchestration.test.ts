@@ -1,30 +1,26 @@
+import { temporaryDirectories, runNode } from "../helpers/script-fixtures";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveViteBin } from "../../scripts/lib/command-invocation.mjs";
 
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
 import { isolatedTestResources } from "../helpers/isolated-test-resources";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
-const temporary: string[] = [];
+
 function fixture() {
-  const directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-cli-orchestration-")));
-  temporary.push(directory);
+  const directory = fs.realpathSync(createTemporaryDirectory("alchemy-cli-orchestration-"));
+
   return directory;
 }
-afterEach(() => {
-  for (const directory of temporary.splice(0)) fs.rmSync(directory, { recursive: true, force: true });
-});
 
 // Probe CLI orchestration without starting simulations, downloads, builds, or browser tests.
 function probe(script: string, args: string[], cwd: string, interception: string) {
   const filename = path.join(ROOT, "scripts", script);
-  return spawnSync(
-    process.execPath,
+  return runNode(
     [
       "--input-type=module",
       "-e",
@@ -37,9 +33,11 @@ function probe(script: string, args: string[], cwd: string, interception: string
        try { await import(${JSON.stringify(pathToFileURL(filename).href)}); }
        catch (error) { console.error(error.message); process.exitCode = 1; }`,
     ],
-    { cwd, encoding: "utf8", timeout: 10_000 },
+    { cwd, timeout: 10_000 },
   );
 }
+
+const createTemporaryDirectory = temporaryDirectories();
 
 describe("CLI launch paths", () => {
   it("keeps discovery seeds fresh by default and preserves explicit uint32 replay seeds", () => {
@@ -72,6 +70,8 @@ describe("CLI launch paths", () => {
     ["run-prettier.mjs", ["--write"]],
     ["play-demo.mjs", []],
     ["run-interactions.mjs", []],
+    ["run-interactions.mjs", ["--family", "battle", "--seed", "12"]],
+    ["run-interactions.mjs", ["--family", "navigation", "--seed", "12"]],
   ] as const)("%s launches against the checkout from another directory", (script, args) => {
     // Isolate the lane too: this probe inspects launch options while the parent
     // unit runner holds the real lane. No nested test or build process starts.
@@ -91,6 +91,11 @@ describe("CLI launch paths", () => {
     const child = JSON.parse(line!.slice(6));
     expect(child.cwd).toBe(ROOT);
     if (script === "build-verified.mjs") expect(child.args[0]).toBe(resolveViteBin());
+    if (script === "run-interactions.mjs" && args.length > 0) {
+      const selectedFile = child.args[3];
+      expect(selectedFile).toMatch(/\.test\.tsx?$/);
+      expect(fs.statSync(path.join(ROOT, selectedFile)).isFile()).toBe(true);
+    }
   });
 
   it("routes profiling browsers through the shared test lane", () => {
@@ -176,7 +181,7 @@ describe("CLI launch paths", () => {
 });
 
 describe("CLI validation before side effects", () => {
-  it.each(["dist-desktop.mjs", "steam-upload.mjs", "release-changelog.mjs", "sync-steam-appid.mjs"])(
+  it.each(["dist-desktop.mjs", "steam-upload.mjs", "sync-steam-appid.mjs"])(
     "%s help needs no package or release credentials",
     (script) => {
       const result = probe(
@@ -263,14 +268,9 @@ describe("CLI validation before side effects", () => {
     );
     const envrc = path.join(directory, ".envrc");
     fs.writeFileSync(envrc, "existing configuration\n");
-    const result = spawnSync(
-      process.execPath,
-      [path.join(directory, "scripts/setup-git-safety.mjs"), "--repo", "--bogus"],
-      {
-        cwd: directory,
-        encoding: "utf8",
-      },
-    );
+    const result = runNode([path.join(directory, "scripts/setup-git-safety.mjs"), "--repo", "--bogus"], {
+      cwd: directory,
+    });
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("Unknown option");
     expect(fs.readFileSync(envrc, "utf8")).toBe("existing configuration\n");

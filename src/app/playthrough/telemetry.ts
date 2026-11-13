@@ -65,6 +65,6 @@ export function snapshotBattle(
     playerStatuses: { ...state.playerStatuses },
     enemyStatuses: { ...state.enemyStatuses },
     enemyMitigation: { ...state.enemyMitigation },
-    ...summarizeDeck(state.deck),
+    ...summarizeDeck([...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted]),
   };
 }

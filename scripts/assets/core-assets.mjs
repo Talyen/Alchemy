@@ -60,6 +60,8 @@ export const coreAssets = [
   // Crafting
   ...artGroup({ folder: "Items/Crafting", preset: ART_PRESETS.crafting }, [
     ["Salvage - Illustrated.png", "armory-salvage.webp"],
+  ]),
+  ...artGroup({ folder: "Items/Crafting", preset: ART_PRESETS.crafting, requiresTransparency: true }, [
     ["Ascension Seal/Ascension Seal - Illustrated.png", "crafting-ascension-seal.webp"],
     ["Discordant Dice/Discordant Dice - Illustrated.png", "crafting-discordant-dice.webp"],
     ["Severance Maw/Severance Maw - Illustrated.png", "crafting-severance-maw.webp"],
@@ -77,9 +79,9 @@ export const coreAssets = [
   ...artGroup({ folder: "Characters", preset: ART_PRESETS.enemy }, [
     ["Enemies/Skeleton.jpeg", "skeleton.webp"],
     ["Enemies/Goblin.jpeg", "goblin.webp"],
-    ["Enemies/Mimic.jpeg", "mimic.webp"],
+    ["Enemies/Mimic - Facing Left.png", "mimic.webp"],
     ["Enemies/Mud Elemental.jpeg", "mud-elemental.webp"],
-    ["Enemies/Necromancer.jpeg", "necromancer.webp"],
+    ["Enemies/Necromancer - Facing Left.png", "necromancer.webp"],
     ["Enemies/Plague Doctor.jpeg", "plague-doctor.webp"],
     ["Bosses/The Frostwarden.jpeg", "the-frostwarden.webp"],
     ["Bosses/The Forge Golem.jpeg", "the-forge-golem.webp"],
@@ -108,11 +110,11 @@ export const coreAssets = [
     ["Bosses/The Seraph.jpeg", "the-seraph.webp"],
     ["Enemies/Winter Wolf.jpeg", "winter-wolf.webp"],
     ["Enemies/Ice Wraith.jpeg", "ice-wraith.webp"],
-    ["Enemies/Yeti.jpeg", "yeti.webp"],
+    ["Enemies/Yeti - Facing Left.png", "yeti.webp"],
     ["Enemies/Banshee.jpeg", "banshee.webp"],
     ["Enemies/Brawler/Brawler - Facing Left.jpeg", "brawler.webp"],
-    ["Enemies/Stone Golem.jpeg", "stone-golem.webp"],
-    ["Enemies/Earth Elemental.jpeg", "earth-elemental.webp"],
+    ["Enemies/Stone Golem - Facing Left.png", "stone-golem.webp"],
+    ["Enemies/Earth Elemental - Facing Left.png", "earth-elemental.webp"],
     ["Bosses/The Stone Titan/The Stone Titan - Facing Left.jpeg", "the-stone-titan.webp"],
   ]),
   {

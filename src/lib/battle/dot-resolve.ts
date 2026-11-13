@@ -18,9 +18,9 @@ import {
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { payKillPayouts } from "./player-rewards";
 import { resolveBleedGoldReward } from "./bonus-effects";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./stun-leech-resolution";
-import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
+import { applyBleedDamageDraw, applyBurnDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
@@ -42,17 +42,23 @@ export function applyEnemyDotDamage(
   pulses: readonly EnemyDotPulse[],
   combatTexts: CombatTextEvent[],
   applyRiders?: (state: BattleState, hit: EnemyHitHealth) => BattleState,
+  onDamageDealt?: (healthDamage: number) => void,
 ): BattleState {
   let finalDamage = 0;
   let poisonPulse: EnemyDotPulse | undefined;
   let bleedIndex = -1;
+  let damageBeforeBleed = 0;
   for (let index = 0; index < pulses.length; index++) {
     const pulse = pulses[index]!;
+    if (bleedIndex < 0 && pulse.status === "bleed") {
+      bleedIndex = index;
+      damageBeforeBleed = finalDamage;
+    }
     finalDamage += pulse.finalDamage;
     if (!poisonPulse && pulse.status === "poison") poisonPulse = pulse;
-    if (bleedIndex < 0 && pulse.status === "bleed") bleedIndex = index;
   }
   const hit = damageEnemyHealth(state, finalDamage);
+  onDamageDealt?.(hit.healthDamage);
   const previousHealth = hit.previousHealth;
   const shredded = poisonPulse
     ? applyPoisonDamageArmorRider(hit.state, poisonPulse.finalDamage, combatTexts)
@@ -61,7 +67,15 @@ export function applyEnemyDotDamage(
   // Commit the tick's consumed stacks before rewards can apply fresh statuses.
   for (const pulse of pulses) nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
 
-  const bleedHealthDamage = bleedIndex >= 0 ? pulseHealthDamage(pulses, bleedIndex, previousHealth) : 0;
+  // Each pulse is one event; earlier pulses can exhaust the target's Health.
+  for (let index = 0; index < pulses.length; index++) {
+    if (pulses[index]!.status !== "burn") continue;
+    nextState = applyBurnDamageDraw(nextState, pulseHealthDamage(pulses, index, previousHealth), combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
+  }
+
+  const bleedHealthDamage =
+    bleedIndex >= 0 ? Math.min(pulses[bleedIndex]!.finalDamage, Math.max(0, previousHealth - damageBeforeBleed)) : 0;
   if (bleedHealthDamage > 0) {
     nextState = applyBleedDamageDraw(nextState, bleedHealthDamage, combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
@@ -120,10 +134,12 @@ export function projectEnemyDotDamage(
   let finalDamage = 0;
   let stacks = amount;
   const poisoned = state.enemyStatuses.poison > 0;
-  const bleedBonus =
-    (poisoned ? state.gearEffects.bleedTickBonusVsPoisoned : 0) +
-    (state.enemyStatuses.burn > 0 ? state.gearEffects.bleedTickBonusVsBurning : 0);
-  const burnBonus = poisoned ? state.gearEffects.burnTickBonusVsPoisoned : 0;
+  const needsBurnBleedBonus = status !== "poison";
+  const bleedBonus = needsBurnBleedBonus
+    ? (poisoned ? state.gearEffects.bleedTickBonusVsPoisoned : 0) +
+      (state.enemyStatuses.burn > 0 ? state.gearEffects.bleedTickBonusVsBurning : 0)
+    : 0;
+  const burnBonus = needsBurnBleedBonus && poisoned ? state.gearEffects.burnTickBonusVsPoisoned : 0;
   let bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
   if (status === "bleed") bonus = bleedBonus;
   if (status === "burn") bonus = burnBonus;
@@ -165,6 +181,7 @@ export function detonateEnemyStatuses(
     combatTexts: CombatTextEvent[],
     healthDamage: number,
   ) => BattleState,
+  onDamageDealt?: (healthDamage: number) => void,
 ): BattleState {
   if (state.enemyHealth <= 0) return state;
   const pulses: EnemyDotPulse[] = [];
@@ -192,33 +209,36 @@ export function detonateEnemyStatuses(
     for (const pulse of pulses) {
       if (pulse.finalDamage > 0) {
         const healthLost = Math.min(pulse.finalDamage, Math.max(0, previousHealth - earlierDamage));
-        mergeCombatText(combatTexts, {
-          target: "enemy",
-          kind: "damage",
-          stat: pulse.status,
-          amount: pulse.finalDamage,
+        emitDamageText(combatTexts, "enemy", pulse.status, pulse.finalDamage, {
+          detonation: true,
           ...(healthLost !== pulse.finalDamage ? { healthLost } : {}),
         });
       }
       earlierDamage += pulse.finalDamage;
     }
   };
-  const result = applyEnemyDotDamage(state, pulses, combatTexts, (nextState) => {
-    reportDamage();
-    if (poisonIndex >= 0 && applyPoisonRiders) {
-      // Attribute overkill in pulse order so Poison cannot Leech Health already lost to Bleed.
-      const healthDamage = pulseHealthDamage(pulses, poisonIndex, previousHealth);
-      nextState = applyPoisonRiders(nextState, pulses[poisonIndex]!.finalDamage, combatTexts, healthDamage);
-    }
-    if (bleedIndex < 0) return nextState;
-    return payPendingBleedLeech(
-      previousHealth,
-      nextState,
-      combatTexts,
-      state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
-      pulseHealthDamage(pulses, bleedIndex, previousHealth),
-    );
-  });
+  const result = applyEnemyDotDamage(
+    state,
+    pulses,
+    combatTexts,
+    (nextState) => {
+      reportDamage();
+      if (poisonIndex >= 0 && applyPoisonRiders) {
+        // Attribute overkill in pulse order so Poison cannot Leech Health already lost to Bleed.
+        const healthDamage = pulseHealthDamage(pulses, poisonIndex, previousHealth);
+        nextState = applyPoisonRiders(nextState, pulses[poisonIndex]!.finalDamage, combatTexts, healthDamage);
+      }
+      if (bleedIndex < 0) return nextState;
+      return payPendingBleedLeech(
+        previousHealth,
+        nextState,
+        combatTexts,
+        state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
+        pulseHealthDamage(pulses, bleedIndex, previousHealth),
+      );
+    },
+    onDamageDealt,
+  );
   // A fatal nested draw skips riders, but the already-landed pulses still need feedback.
   if (!reported) reportDamage();
   return result;

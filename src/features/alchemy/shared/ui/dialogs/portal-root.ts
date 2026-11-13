@@ -8,8 +8,9 @@ function notify() {
 }
 
 function setPortalRoot(name: string, element: HTMLElement | null) {
-  if (roots.get(name) === element) return;
-  roots.set(name, element);
+  if ((roots.get(name) ?? null) === element) return;
+  if (element === null) roots.delete(name);
+  else roots.set(name, element);
   notify();
 }
 
@@ -24,16 +25,15 @@ function subscribe(listener: () => void) {
   };
 }
 
-function usePortalRoot(name: string): HTMLElement | null {
-  return useSyncExternalStore(subscribe, () => getPortalRoot(name));
-}
+const getModalRoot = () => getPortalRoot("modal");
+const getTooltipRoot = () => getPortalRoot("tooltip");
 
 export function setModalRoot(element: HTMLElement | null) {
   setPortalRoot("modal", element);
 }
 
 export function useModalRoot(): HTMLElement | null {
-  return usePortalRoot("modal");
+  return useSyncExternalStore(subscribe, getModalRoot);
 }
 
 export function setTooltipRoot(element: HTMLElement | null) {
@@ -41,5 +41,5 @@ export function setTooltipRoot(element: HTMLElement | null) {
 }
 
 export function useTooltipRoot(): HTMLElement | null {
-  return usePortalRoot("tooltip");
+  return useSyncExternalStore(subscribe, getTooltipRoot);
 }

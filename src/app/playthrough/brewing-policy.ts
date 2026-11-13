@@ -64,11 +64,18 @@ export function potionUtility(card: BattleCard): number {
   return card.effects.reduce((sum, effect) => sum + value(effect), 0) / Math.max(1, card.cost);
 }
 
-export interface BrewCandidate {
-  kind: "mix" | "distill";
-  indices: number[];
+export type BrewCandidate = {
   result: BattleCard;
   improvement: number;
+} & ({ kind: "mix"; indices: [number, number] } | { kind: "distill"; indices: [number] });
+
+/** Playthroughs stop acquiring potions after four. */
+export function hasPotionRoom(deck: readonly BattleCard[]): boolean {
+  let count = 0;
+  for (const card of deck) {
+    if (isPotionCard(card) && ++count === 4) return false;
+  }
+  return true;
 }
 
 export function brewCandidates(deck: readonly BattleCard[]): BrewCandidate[] {
@@ -99,13 +106,9 @@ export function brewCandidates(deck: readonly BattleCard[]): BrewCandidate[] {
 }
 
 export function potionPurchaseScore(card: BattleCard, deck: readonly BattleCard[]): number {
-  let count = 0;
-  for (const owned of deck) {
-    if (isPotionCard(owned) && ++count === 4) break;
-  }
   const value = potionUtility(card);
   const inferiorCopy = deck.some((owned) => owned.id === card.id && potionUtility(owned) > value);
-  return count >= 4 || value <= 0 || inferiorCopy ? -1 : 1 + value / 10;
+  return !hasPotionRoom(deck) || value <= 0 || inferiorCopy ? -1 : 1 + value / 10;
 }
 
 export function shouldPreserveConsumable(card: BattleCard, state: BattleSnapshot): boolean {

@@ -9,6 +9,7 @@ import {
   selectRewardCards,
   trinketLibrary,
   type BattleCard,
+  type KeywordId,
 } from "@/lib/game-data";
 import {
   gearBaseItemList,
@@ -32,6 +33,7 @@ export interface RewardOfferInput {
   rng: () => number;
   createInstanceId?: (() => string) | undefined;
   runDeck?: BattleCard[];
+  heroKeywords?: readonly KeywordId[];
   gearAstralChanceBonus?: number;
   ownedTrinketIds?: readonly string[];
   excludedBoonIds?: readonly string[];
@@ -83,6 +85,7 @@ export function createRewardOffer({
   lootProgress,
   rng,
   runDeck = [],
+  heroKeywords = [],
   gearAstralChanceBonus = 0,
   ownedTrinketIds = [],
   excludedBoonIds = [],
@@ -104,8 +107,8 @@ export function createRewardOffer({
     ownedTrinkets ? trinketLibrary.filter((entry) => !ownedTrinkets.has(entry.id)) : trinketLibrary;
   const availability = getRewardLootAvailability(ownedUniqueIds, {
     cards: cards.length > 0,
-    boons: trinketLibrary.some((entry) => !excludedBoons?.has(entry.id)),
-    trinkets: trinketLibrary.some((entry) => !ownedTrinkets?.has(entry.id)),
+    boons: excludedBoons ? trinketLibrary.some((entry) => !excludedBoons.has(entry.id)) : trinketLibrary.length > 0,
+    trinkets: ownedTrinkets ? trinketLibrary.some((entry) => !ownedTrinkets.has(entry.id)) : trinketLibrary.length > 0,
   });
   const weightsFor = (available: typeof availability) =>
     resolveLootWeights({ source, progress: lootProgress, astralChanceBonus: gearAstralChanceBonus, available });
@@ -125,6 +128,7 @@ export function createRewardOffer({
         baseIds,
         true,
         createInstanceId,
+        heroKeywords,
       );
       if (choices.length > 0) return { rewardType: "gear", choices };
       break;
@@ -140,6 +144,7 @@ export function createRewardOffer({
         undefined,
         false,
         createInstanceId,
+        heroKeywords,
       );
       if (choices.length > 0) return { rewardType: "gear", choices };
       break;
@@ -166,6 +171,7 @@ export function createRewardOffer({
           undefined,
           false,
           createInstanceId,
+          heroKeywords,
         ),
       };
     case "trinket":

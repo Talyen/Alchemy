@@ -7,7 +7,7 @@ import {
   getBattleCardAnimationTarget,
   type BattleSnapshot,
 } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
+import { visitBattleCardEffects, type BattleCard } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
@@ -47,6 +47,7 @@ export function createBattleCardPlay(
     onReveal: () => void,
     sessionNum: number,
     errorContext: string,
+    drawnCardUids: readonly number[],
   ) {
     if (!ctx.playback.isCurrent(sessionNum)) return;
     if (!ctx.playback.finishing && !ctx.playback.beginAction(sessionNum)) return;
@@ -58,9 +59,14 @@ export function createBattleCardPlay(
       session: sessionNum,
       deps: transferDeps.getDrawSequenceDeps(sessionNum),
       errorContext: `handle ${errorContext} draw sequence`,
+      drawnCardUids,
       onSettled: () => {
-        finishDraw();
-        finishDrawSequence(sessionNum);
+        void getPresentation()
+          .waitForCompanionActions()
+          .then(() => {
+            finishDraw();
+            finishDrawSequence(sessionNum);
+          });
       },
     });
   }
@@ -73,6 +79,7 @@ export function createBattleCardPlay(
       ctx.playback.canPlayCard() &&
       state.turnPhase === "player" &&
       !state.wishOptions &&
+      !presentation.companionActionCue &&
       !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
     );
   }
@@ -163,7 +170,8 @@ export function createBattleCardPlay(
       return false;
     }
     getPresentation().setDisplayedBattle(null);
-    session.checkBattleEnd(played.state, sessionNum);
+    if (visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion"))
+      getPresentation().clearCompanionActions();
     if (!ctx.playback.isCurrent(sessionNum)) return true;
     // Victory grace permits the accepted card feedback while finishing.
     if (!ctx.playback.finishing && !ctx.playback.beginAction(sessionNum)) return true;
@@ -184,10 +192,13 @@ export function createBattleCardPlay(
       currentState.hand,
       played.state,
       () => {
+        getPresentation().enqueueCompanionActions(played.companionActions ?? []);
         presentCombatTexts(getPresentation(), played.combatTexts, focalSound);
+        session.checkBattleEnd(played.state, sessionNum);
       },
       sessionNum,
       "play card",
+      played.drawnCardUids ?? [],
     );
     return true;
   }
@@ -246,7 +257,7 @@ export function createBattleCardPlay(
     playUISound("selection");
     const sessionNum = ctx.playback.id;
     session.checkBattleEnd(newState, sessionNum);
-    runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, errorContext);
+    runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, errorContext, []);
     return true;
   }
 

@@ -168,6 +168,7 @@ function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   const chips: StatusChip[] = [];
   const { flags } = state;
   for (const id of ARMED_PLAYER_CHIP_IDS) {
+    if (id === "dodgeNextAttackChance" && flags.dodgeNextAttack) continue;
     const value = flags[id];
     if (value === true || (typeof value === "number" && value > 0))
       chips.push({

@@ -9,8 +9,7 @@ Alchemy builds steamworks.js 0.4.0 from upstream commit
   commit `206fc5be6aff62eb62286c417c3547c6e8559939`. The unrelated workshop
   declaration is excluded.
 
-Both upstream changes remained open on October 23, 2026. The source archive is
-checksum-pinned; upstream's Cargo.lock pins native dependencies. The upstream MIT
+The source archive is checksum-pinned; upstream's Cargo.lock pins native dependencies. The upstream MIT
 license and Steam SDK redistribution files stay with the existing dependency.
 
 `npm run steam:build-native` requires Rust/Cargo 1.90.0 (`rustup toolchain install 1.90.0 --profile minimal`)

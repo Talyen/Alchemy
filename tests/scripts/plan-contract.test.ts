@@ -1,18 +1,14 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { finishTerminalPlans } from "../../scripts/finish-plans.mjs";
 import { parsePlanMetadata } from "../../scripts/lib/plan-checks.mjs";
-import { planTemplate, safePlanName } from "../../scripts/new-plan.mjs";
+import { createPlan, planTemplate, safePlanName } from "../../scripts/new-plan.mjs";
 
-const roots: string[] = [];
-afterEach(() => {
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
 function fixture() {
-  const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plans-"));
-  roots.push(plansDir);
+  const plansDir = createTemporaryDirectory("alchemy-plans-");
+
   const write = (name: string, status: string) =>
     fs.writeFileSync(
       path.join(plansDir, name),
@@ -25,6 +21,8 @@ function fixture() {
   fs.writeFileSync(path.join(plansDir, "Unrelated.md"), "unfinished metadata");
   return { plansDir, write };
 }
+
+const createTemporaryDirectory = temporaryDirectories();
 
 it("deletes only named terminal plans, with a non-mutating preview and no archive", () => {
   const { plansDir } = fixture();
@@ -65,4 +63,16 @@ it("requires blocked reasons, valid dates and safe scaffold names", () => {
     "blocked plans require reason",
   );
   expect(() => safePlanName("../unsafe")).toThrow();
+});
+
+it("creates plans exclusively without following dangling symlinks or replacing existing work", () => {
+  const { plansDir } = fixture();
+  const danglingTarget = path.join(plansDir, "other-file");
+  fs.symlinkSync(danglingTarget, path.join(plansDir, "Linked.md"));
+  expect(() => createPlan("Linked", "2026-10-05", plansDir)).toThrow("Plan already exists");
+  expect(fs.existsSync(danglingTarget)).toBe(false);
+  expect(() => createPlan("Active", "2026-10-05", plansDir)).toThrow("Plan already exists");
+  expect(fs.readFileSync(path.join(plansDir, "Active.md"), "utf8")).toContain("# Active.md");
+  createPlan("New", "2026-10-05", plansDir);
+  expect(fs.readFileSync(path.join(plansDir, "New.md"), "utf8")).toContain("# New");
 });

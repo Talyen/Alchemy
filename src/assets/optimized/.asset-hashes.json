@@ -235,34 +235,34 @@
     "selectionHash": "a4cb2c1926c271f741bad6a4e949930d7611a85d220e2ca59dc0d63ef4fa8a78"
   },
   "crafting-ascension-seal.webp": {
-    "hash": "cd067ec23729f0c2f731040d17109543",
-    "outputHash": "115f3a1ef1e712bee63ff831b44bf93f",
-    "selectionHash": "d0f7470575e7aa5fa4a624fcb32dfa1e5a13fdce454a995e79b49628b83ae4d2"
+    "hash": "f4e00c76052a1d3530dbaa9d8911584b",
+    "outputHash": "ecacb57b839aa98259b154d8bdafaafb",
+    "selectionHash": "1619b0511c3e4ed44df43045910822c446e5322b203209f05873cfc468103698"
   },
   "crafting-discordant-dice.webp": {
-    "hash": "aae07a555810ca63574d7386ffa6a09a",
-    "outputHash": "8277ba30ca9cae498b79b0b7d5a0235c",
-    "selectionHash": "95ed07423d8c7850824d206878caa068dd507c2f5efd33b549b3a1a1f05de130"
+    "hash": "b408d2f4912f93775c9d6e56aa5c97db",
+    "outputHash": "446ae0f323328fa1a677b3455e3ab1dc",
+    "selectionHash": "840795fc544429972cab5c02a5345a70b83d0a2a11cb60f4e09495aca861e253"
   },
   "crafting-severance-maw.webp": {
-    "hash": "b1dea85cf86897a966a6b26b75576c6d",
-    "outputHash": "9297f4f6c55aa6042649af4236fc6181",
-    "selectionHash": "09096a12ef04430e4805941ddca9924186ee97f5b5a5df79ac40cc62923a953c"
+    "hash": "15479f6c5f0c57ce7e315b4c4fbfde42",
+    "outputHash": "414dfb25e9fbf45826cca252a83d6801",
+    "selectionHash": "4fe906c75333320b020cd7ddf5bc36bc4542541eb6a274d6225c1870c1f9f59c"
   },
   "crafting-smiths-whetstone.webp": {
-    "hash": "e45dcd93fbe8352b1798d965f22769fd",
-    "outputHash": "5375937aedd68bb09052b082c595ef17",
-    "selectionHash": "54867659b970debd86f2340264395903315b4e6152a062aef93c138bb67ee9fe"
+    "hash": "52aa2a70225afd3b344d0700cc49eb97",
+    "outputHash": "1b853f0c14d9479b1b3b4feb2d56ecd6",
+    "selectionHash": "d33988e0b7442caa0fb4507ff0d1f8f505e8443d6d95b0d47c206e0a49a9b34a"
   },
   "crafting-sprig-of-growth.webp": {
-    "hash": "166bdc9d4ec8051a9caa2c52efe0c344",
-    "outputHash": "1a8b890628304db56701a64f2b5918b5",
-    "selectionHash": "66423d7974580c41d058af6c2a7c4a758a0e20d1874c901fa47738be1cc80d0a"
+    "hash": "a041e5a4c52d2d7661855554d81d9e4e",
+    "outputHash": "a8e05a2a91e98d9e3477182d7c9d28c0",
+    "selectionHash": "8b823f51978b1181264b1e20c03d72aabf4e7e5b7c90d5d5c4daee512bef734d"
   },
   "crafting-voidstone.webp": {
-    "hash": "f043d0b4e3abb644bd0f8514de504c93",
-    "outputHash": "bc73e443e395193d5ac82fc544c9e598",
-    "selectionHash": "29cda8f24d83c483c293feb54939dc800ffd7a077451be4324594b62f34b1c42"
+    "hash": "82656085470d8caebc0cff7ba1f52863",
+    "outputHash": "e48ec2c72a7828b692f530df7f0377e8",
+    "selectionHash": "161fbf8adb6697d854b4bde590b650fce60128fc26d1a8f828c3c4cea1df1cfd"
   },
   "crystal-bulwark.webp": {
     "hash": "a83ecd1a5b811ed9ef1903a79151a617",
@@ -370,9 +370,9 @@
     "selectionHash": "7e17a14340b52b4b012589d05f41b8c0019591facdbdcf0c6756293a0423de90"
   },
   "earth-elemental.webp": {
-    "hash": "9fe6d08f8f845e3d04473c68f3a03253",
-    "outputHash": "31e4f131bcbae90e5ffe2c66d2afba5d",
-    "selectionHash": "7d89dd3fd3e751000724fa5955aa0964f7a126956597a22a25bf77e50a97bd5a"
+    "hash": "b6fe18d7018b13cd70b80088fd999fb6",
+    "outputHash": "ec10963a9ff4455ca6e477d6486c0a83",
+    "selectionHash": "cdf36eb669ebefad3578a4f4207a7b4e8c1a11ed94305a43438553899da8bfeb"
   },
   "earthquake.webp": {
     "hash": "9f6e4cd7a52e82c809fca727e781afc0",
@@ -1035,9 +1035,9 @@
     "selectionHash": "7deb4c554ac97a0e02a52884744c2a970823a80e9415fcf73b3db8fed20b5438"
   },
   "mimic.webp": {
-    "hash": "e3f5f5820d6f1b1ff04940e8e2e486d6",
-    "outputHash": "b909de861686da4d9fddbaf6b25db642",
-    "selectionHash": "521896578969cc0466bcaf90baabaa127d2700e6ff224cd103838f9ac30c98cb"
+    "hash": "0b34bbea3b0ca9b6dbe43354009d5a7c",
+    "outputHash": "c66183dd790b09d6cf7c82e9fefe7be4",
+    "selectionHash": "afacc0595c4196ddf612982f5a20f2e1d558d669b8e96c7398c7d159e7c6587a"
   },
   "mixed-potion.webp": {
     "hash": "fb4c1c058ae4537917692fc015d5d253",
@@ -1185,9 +1185,9 @@
     "selectionHash": "36516abd7c974ee9e47850624d61d3eda7c1d21b7d6a267aa226f7a1ddc80e4f"
   },
   "necromancer.webp": {
-    "hash": "7c508bfb15c98f43bd0cabc3c62d9828",
-    "outputHash": "b2b31dd302473d3bd79ddc198911e413",
-    "selectionHash": "1a813e5e58150f9f944cef016ddea0c11a5b1ed39314cd00c9bae8b731952c27"
+    "hash": "aa3989cc849b3f3e5e812fce95e567eb",
+    "outputHash": "d4e9f19f2e95fa2ce3aff3e77870a9b4",
+    "selectionHash": "717896d3d103a831c058bd93efe80286ff08b607ca075bd88143b52031e0c530"
   },
   "normal-enemy.webp": {
     "hash": "6681df2ac1c5410a45ffa7de0ea2f277",
@@ -1530,9 +1530,9 @@
     "selectionHash": "7819ec4c785ea43ac6263d865dacbe9d214eb78f1c1893bd4d28883216a46d95"
   },
   "stone-golem.webp": {
-    "hash": "32c0e774727501a3f5482503206adbbb",
-    "outputHash": "815e6e4d8013f4c55081198a0d9be04d",
-    "selectionHash": "1de86ae1c4c3b33834c9d8b03d5ec3dce01c5feb33bdcba3e8a63da5b900c418"
+    "hash": "847ab779f7304aa3ca608ef11312de5f",
+    "outputHash": "c76809f4fc1cfc5e8ba8989cb246e060",
+    "selectionHash": "425c80c15035d917f53c105ecde4297fec26b70a633345bb65fe3d0a06067099"
   },
   "stoneskin-potion.webp": {
     "hash": "d1599f6ba2e1cf13b03b2dec58469b02",
@@ -1815,9 +1815,9 @@
     "selectionHash": "3f86afc7b959ffbb6076e105343518a78a9f909ccbfea3d66c4ec6f074f408f0"
   },
   "yeti.webp": {
-    "hash": "97dcef58f5238e6a4a19bb02cf182bd2",
-    "outputHash": "9c6fe0f64d6c11c1c1bc3b270b000732",
-    "selectionHash": "b1e970dbb96edd008e25d349da9f99341c6dff0c1f6802aa0815ab69dee715d3"
+    "hash": "476544f67e8c7f5f753aee9bf023ea3d",
+    "outputHash": "8494716f74798b6922a95b404bab8aa2",
+    "selectionHash": "03797dfe7873810131add8ffc77c8fa4750dc72f7874d173435b66ee97ec7832"
   },
   "zealot.webp": {
     "hash": "029f6358ec5f60d94c460a838e39eac3",

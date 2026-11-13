@@ -18,10 +18,8 @@ export function DetailPopup({
   descriptionNodes,
   newLineIndices,
   card,
-  triggerRef,
-  visible,
   padding,
-  plasmaColorPair,
+  ...tooltipProps
 }: {
   idPrefix: string;
   title: ReactNode;
@@ -39,11 +37,9 @@ export function DetailPopup({
   const i18n = useGameTranslation();
   return (
     <PortaledTooltip
-      triggerRef={triggerRef}
-      visible={visible}
-      className="rounded-shell-tooltip"
-      plasmaColorPair={plasmaColorPair}
+      {...tooltipProps}
       {...(padding !== undefined ? { padding } : {})}
+      className="rounded-shell-tooltip"
     >
       <TooltipHeader className={chip ? "flex flex-wrap items-center gap-2" : undefined}>
         {title}

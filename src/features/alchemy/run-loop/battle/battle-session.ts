@@ -56,11 +56,25 @@ export function createBattleSession(ctx: BattleControllerContext) {
     }
   }
 
+  let awaitingCompanionEnd: number | undefined;
+
   function checkBattleEnd(state: BattleSnapshot, session: number): boolean {
     if (!isCurrentBattleSession(session)) return false;
     const outcome = getBattleOutcome(state);
     if (outcome === "victory" && state.wishOptions) return false;
     if (outcome !== null) {
+      if (getPresentationStore().companionActionCue) {
+        if (awaitingCompanionEnd !== session) {
+          awaitingCompanionEnd = session;
+          void getPresentationStore()
+            .waitForCompanionActions()
+            .then(() => {
+              if (awaitingCompanionEnd === session) awaitingCompanionEnd = undefined;
+              if (isCurrentBattleSession(session)) checkBattleEnd(getStore().battleState, session);
+            });
+        }
+        return false;
+      }
       handleVictoryDefeat(outcome, session);
       return true;
     }

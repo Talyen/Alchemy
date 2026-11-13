@@ -23,6 +23,7 @@ import {
   CORRUPTION_MAX_EFFECT_LINES,
   TRANSMUTATION_KEYWORD_GROUPS,
   TRANSMUTATION_PREFIXES,
+  ELUSIVE_DODGE_PROBABILITY,
 } from "@/lib/game-constants";
 import type {
   AlchemyVisit,
@@ -340,7 +341,8 @@ function getPendingVariants(
       build: () => {
         const effects = [...card.effects];
         if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
-        else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
+        else if (keyword === "dodge")
+          effects.push({ kind: "dodge-next-attack", probability: ELUSIVE_DODGE_PROBABILITY });
         else effects.push({ kind: "companion-action", amount: 1 });
         return finishAlteration(card, keyword, effects, {}, analysis);
       },
@@ -397,14 +399,16 @@ export function createTransmutationOffers(
       }
       return pool;
     });
-    const selected = prismatic ? [...available] : [];
+    const selected = prismatic ? available : [];
     const guaranteedOffer =
       prismatic || guaranteed === undefined ? undefined : available.find((offer) => offer.keyword === guaranteed);
     if (!prismatic && guaranteedOffer) selected.push(guaranteedOffer);
-    for (const pool of pools) {
-      if (prismatic || pool.some((offer) => selected.includes(offer))) continue;
-      const offer = pickRandom(pool, rng);
-      if (offer) selected.push(offer);
+    if (!prismatic) {
+      for (const pool of pools) {
+        if (pool.some((offer) => selected.includes(offer))) continue;
+        const offer = pickRandom(pool, rng);
+        if (offer) selected.push(offer);
+      }
     }
     if (selected.length < 3) {
       const remaining = available.filter((offer) => !selected.includes(offer));
@@ -485,9 +489,7 @@ export function canTransmuteCard(
 
 export function isTransmutationSourceCurrent(visit: AlchemyVisit, deck: readonly BattleCard[]): boolean {
   const selection = visit.transmutation;
-  const source =
-    selection?.sourceIndex === null || selection?.sourceIndex === undefined ? undefined : deck[selection.sourceIndex];
-  return (
-    !!source && source.id === selection?.source?.id && cardSnapshotKey(source) === cardSnapshotKey(selection?.source)
-  );
+  if (!selection?.source || selection.sourceIndex == null) return false;
+  const source = deck[selection.sourceIndex];
+  return !!source && source.id === selection.source.id && cardSnapshotKey(source) === cardSnapshotKey(selection.source);
 }

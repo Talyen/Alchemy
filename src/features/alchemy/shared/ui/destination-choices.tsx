@@ -93,7 +93,6 @@ function DestinationChoiceTile({
   padded: boolean;
   onChoose: (destination: Destination) => void;
 }) {
-  useGameTranslation();
   const bossTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (

@@ -1,29 +1,14 @@
-import { computeStartingMaxHealth, computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
-import { computeGearManifest, flattenGearInventories, type GearEffectManifest } from "@/lib/gear";
-import { combineTrinketEffectIds, computeTrinketManifest } from "@/lib/trinkets";
-import { mergeIntoManifest } from "@/lib/homestead/effects";
+import { computeStartingMaxHealth } from "@/lib/game-data";
+import { computeTrinketManifest } from "@/lib/trinkets";
 import type { GameplayDraft } from "../../session/gameplay-command";
+import { deriveCombatMeta, type CombatMeta } from "../../session/combat-meta";
 import { syncBattleGoldFromPurse } from "./run-gold";
+
+export { deriveCombatMeta, type CombatMeta } from "../../session/combat-meta";
 
 // ── Live meta rebind ─────────────────────────────────────────────────────────
 // After gear/talent/homestead changes, refresh derived run Health and the live
 // battle manifest in the same command. Skipped when no run is active.
-
-export interface CombatMeta {
-  talentEffects: TalentEffectManifest;
-  gearEffects: GearEffectManifest;
-  activeTrinketIds: string[];
-}
-
-export function deriveCombatMeta(draft: GameplayDraft): CombatMeta {
-  const run = draft.run.activeRun;
-  const characterId = run.characterId;
-  return {
-    talentEffects: mergeIntoManifest(computeTalentEffects(draft.runProfile.unlockedTalents), draft.runProfile.effects),
-    gearEffects: computeGearManifest(characterId, flattenGearInventories(draft.gear.inventories), draft.gear.loadouts),
-    activeTrinketIds: combineTrinketEffectIds(run.runBoons, draft.gear.equippedTrinkets[characterId]),
-  };
-}
 
 function applyDerivedMaxHealth(draft: GameplayDraft, gearBonus: number): void {
   const derived =

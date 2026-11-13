@@ -44,12 +44,16 @@ function utcDate(offsetDays = 0) {
   return date.toISOString().slice(0, 10);
 }
 
-export function createPlan(name, now = utcDate()) {
+export function createPlan(name, now = utcDate(), plansDir = PLANS_DIR) {
   const safeName = safePlanName(name);
-  const target = path.join(PLANS_DIR, `${safeName}.md`);
-  if (fs.existsSync(target)) throw new Error(`Plan already exists: Docs/Plans/${safeName}.md`);
-  fs.mkdirSync(PLANS_DIR, { recursive: true });
-  fs.writeFileSync(target, planTemplate(safeName, now), "utf8");
+  const target = path.join(plansDir, `${safeName}.md`);
+  fs.mkdirSync(plansDir, { recursive: true });
+  try {
+    fs.writeFileSync(target, planTemplate(safeName, now), { encoding: "utf8", flag: "wx" });
+  } catch (error) {
+    if (error.code === "EEXIST") throw new Error(`Plan already exists: Docs/Plans/${safeName}.md`, { cause: error });
+    throw error;
+  }
   return path.relative(ROOT, target);
 }
 

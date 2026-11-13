@@ -3,30 +3,28 @@ import { campaignLootDepth, createLootProgress, labyrinthLootDepth, type LootPro
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { RunTransaction } from "./run-session-command";
 
-export function resolveDraftLootProgress(draft: RunTransaction): LootProgress {
+function resolveDraftLootDepth(draft: RunTransaction): number {
   const run = draft.run.activeRun;
   switch (run.contentSystemType) {
     case CONTENT_SYSTEMS.LABYRINTH:
-      return createLootProgress(
-        labyrinthLootDepth(
-          snapshotTransactionValue(draft.session.labyrinthMap),
-          draft.session.activeLabyrinthPendingNode,
-        ),
-        draft.profile.completedDifficulties,
+      return labyrinthLootDepth(
+        snapshotTransactionValue(draft.session.labyrinthMap),
+        draft.session.activeLabyrinthPendingNode,
       );
     case CONTENT_SYSTEMS.WILDWOOD:
-      return createLootProgress(Math.max(1, run.roomsEncountered), draft.profile.completedDifficulties);
+      return run.roomsEncountered;
     case CONTENT_SYSTEMS.CAMPAIGN:
-      return createLootProgress(
-        campaignLootDepth(
-          run.currentAct,
-          run.destinationIndexInAct + (draft.session.progressClaim.kind === "destination" ? 1 : 0),
-        ),
-        draft.profile.completedDifficulties,
+      return campaignLootDepth(
+        run.currentAct,
+        run.destinationIndexInAct + (draft.session.progressClaim.kind === "destination" ? 1 : 0),
       );
     default: {
       const exhaustive: never = run.contentSystemType;
       throw new Error(`Unhandled content system for loot progress: ${String(exhaustive)}`);
     }
   }
+}
+
+export function resolveDraftLootProgress(draft: RunTransaction): LootProgress {
+  return createLootProgress(resolveDraftLootDepth(draft), draft.profile.completedDifficulties);
 }

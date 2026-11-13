@@ -23,12 +23,12 @@ export function computeGearManifest(
   const manifest: GearEffectManifest = createEmptyGearEffectManifest();
   const characterLoadout = loadouts[characterId];
   if (!characterLoadout) return manifest;
-  const equippedIds = new Set<string>();
+  let equippedIds: Set<string> | undefined;
   for (const slot of GEAR_SLOTS) {
     const id = characterLoadout[slot];
-    if (id) equippedIds.add(id);
+    if (id) (equippedIds ??= new Set()).add(id);
   }
-  if (equippedIds.size === 0) return manifest;
+  if (!equippedIds) return manifest;
 
   const byId = new Map<string, GearInstance>();
   for (const item of inventory) {
@@ -37,7 +37,8 @@ export function computeGearManifest(
 
   for (const slot of GEAR_SLOTS) {
     const instanceId = characterLoadout[slot];
-    if (!instanceId) continue;
+    // One physical item contributes once, even before a malformed loadout is repaired.
+    if (!instanceId || !equippedIds.delete(instanceId)) continue;
     const instance = byId.get(instanceId);
     if (!instance) continue;
     const definition = gearDefinitions[instance.definitionId];

@@ -120,9 +120,5 @@ export function rollLootGearRarity(
     { ...weights, card: 0, boon: 0, trinket: 0 },
     { ...available, card: false, boon: false, trinket: false },
   );
-  return pickLootKind(
-    LOOT_GEAR_RARITIES,
-    { basic: eligible.basic, astral: eligible.astral, unique: eligible.unique },
-    rng,
-  );
+  return pickLootKind(LOOT_GEAR_RARITIES, eligible, rng);
 }

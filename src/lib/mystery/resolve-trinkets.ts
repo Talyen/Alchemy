@@ -49,6 +49,7 @@ export function mysteryLootEligibility(progress: LootProgress, ownedTrinketIds: 
         if (owned.has(effect.trinketId) || seen?.has(effect.trinketId)) return false;
         (seen ??= new Set()).add(effect.trinketId);
         needed += 1;
+        if (needed > available) return false;
       }
       return needed <= available;
     });

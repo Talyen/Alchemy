@@ -16,6 +16,20 @@ const nativeClock: SessionClock = {
   clearTimeout: (timer) => globalThis.clearTimeout(timer),
 };
 
+const defaultSessionFeedback: SessionFeedback = Object.freeze({
+  playUISound: () => {},
+  playGoldGain: () => {},
+  playGoldSpend: () => {},
+  playVictory: () => {},
+  playRunVictory: () => {},
+  playDefeat: () => {},
+  stopAllSfx: () => {},
+  clearCardHover: () => {},
+  clearBattleUi: () => {},
+  clearSaveConfirmation: () => {},
+  resetTransientUi: () => {},
+});
+
 /** Capture declared methods while preserving prototype providers and their receiver. */
 function bindRuntimeMethods<T extends object>(defaults: T, source?: Partial<T>): T {
   const bound = { ...defaults };
@@ -38,29 +52,13 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   const gameplay = createGameplayStore(generateRunSeed, lifetime.isActive);
   const progressCompletion = new ProgressCompletion<ReturnType<typeof gameplay.reads.getState>>(lifetime.isActive);
   const settings = createSettingsStore(lifetime.isActive, lifetime.track, () => {
-    if (!progressCompletion.hasRetryDriver && progressCompletion.read().kind === "idle") return;
+    if (!progressCompletion.isTracking) return;
+    const state = gameplay.reads.getState();
     // Settings have no gameplay revision. Revoke older acknowledgements before
     // observers can capture the changed settings in a new save snapshot.
-    progressCompletion.mark(gameplay.reads.getState().revision, true, gameplay.reads.getState());
+    progressCompletion.mark(state.revision, true, state);
   });
-  const feedback = isolateSessionFeedback(
-    bindRuntimeMethods<SessionFeedback>(
-      {
-        playUISound: () => {},
-        playGoldGain: () => {},
-        playGoldSpend: () => {},
-        playVictory: () => {},
-        playRunVictory: () => {},
-        playDefeat: () => {},
-        stopAllSfx: () => {},
-        clearCardHover: () => {},
-        clearBattleUi: () => {},
-        clearSaveConfirmation: () => {},
-        resetTransientUi: () => {},
-      },
-      options.feedback,
-    ),
-  );
+  const feedback = isolateSessionFeedback(bindRuntimeMethods(defaultSessionFeedback, options.feedback));
   const lifecycle = createRunLifecycleEffects(feedback, lifetime.isActive);
   const io = createSaveIo(options.saveBackend, sourceClock.now, allowPlatformStorage, lifetime.isActive);
   const saveSnapshots = new SessionSaveSnapshots(progressCompletion);
@@ -130,8 +128,8 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
     })().then(complete, fail);
     return disposal;
   }
-  const session = { dispose } as GameSession;
-  Object.assign(session, { [Symbol.asyncDispose]: dispose });
+  // Only this constructor brands the opaque handle; its runtime lives in the WeakMap.
+  const session = Object.freeze({ dispose, [Symbol.asyncDispose]: dispose }) as unknown as GameSession;
   runtimes.set(session, runtime);
   return session;
 }

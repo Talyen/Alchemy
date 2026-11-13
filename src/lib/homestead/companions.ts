@@ -10,11 +10,13 @@ export const COMPANION_BOND_TIERS = Object.freeze(
 
 export const COMPANION_MAX_TIER = COMPANION_BOND_TIERS.length;
 
+const companionTiers = Object.freeze(COMPANION_BOND_TIERS.map((cost) => Object.freeze({ cost })));
+
 export const companionTierItems: ReadonlyArray<TieredItem<CompanionId>> = Object.freeze(
   Object.keys(companionLibrary).map((id) =>
     Object.freeze({
       id: id as CompanionId,
-      tiers: Object.freeze(COMPANION_BOND_TIERS.map((cost) => Object.freeze({ cost }))),
+      tiers: companionTiers,
     }),
   ),
 );
@@ -38,10 +40,10 @@ export function canBondCompanion(
   bondedCompanions: Record<string, number>,
   inventory: MaterialInventory,
 ): boolean {
-  const cardId = companionSummonCardId(companionId);
-  if (!cardId || !discoveredCardIds.includes(cardId)) return false;
   const currentLevel = bondedCompanions[companionId] ?? 0;
   if (currentLevel >= COMPANION_MAX_TIER) return false;
   const bondTier = COMPANION_BOND_TIERS[currentLevel];
-  return bondTier !== undefined && canAfford(inventory, bondTier);
+  if (bondTier === undefined) return false;
+  const cardId = companionSummonCardId(companionId);
+  return Boolean(cardId && discoveredCardIds.includes(cardId) && canAfford(inventory, bondTier));
 }

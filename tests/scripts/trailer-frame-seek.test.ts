@@ -69,5 +69,9 @@ it.skipIf(!available)(
       rmSync(root, { recursive: true, force: true });
     }
   },
-  25_000,
+  ciTimeout(25_000),
 );
+
+function ciTimeout(ms: number) {
+  return process.env.CI ? 0 : ms;
+}

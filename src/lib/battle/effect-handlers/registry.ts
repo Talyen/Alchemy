@@ -1,6 +1,7 @@
+import { resolveReactionAction } from "../action-context";
 import { resolveBattleSequence } from "../battle-sequence";
 import { applyPotionMultiplier, cardPotionMultiplier } from "../amount-helpers";
-import { mergeCombatText } from "../combat-text-events";
+import { mergeCombatText, emitNoticeText } from "../combat-text-events";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
 import { hasEncounterBenefit } from "../encounter-trait-state";
@@ -122,6 +123,7 @@ function resolveSingleEffect(
     const rng = getBattleRng(state);
     const success = rollChance(effect.probability, rng);
     state.observer?.branch(effect, success);
+    context.onChanceResolved?.(effect, success);
     const branch = success ? effect.successEffects : effect.failureEffects;
 
     return resolveBattleSequence(
@@ -134,11 +136,7 @@ function resolveSingleEffect(
   }
 
   if (effect.kind === "repeat-over-turns") {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "notice",
-      stat: "scheduled",
-      text: "",
+    emitNoticeText(combatTexts, "player", "scheduled", "", {
       ...(context.feedback ? { feedback: context.feedback } : {}),
     });
     return {
@@ -205,7 +203,7 @@ function ineffectiveEffectFeedback(effect: BattleCardEffect): CombatTextEvent | 
   }
 }
 
-export function applyCardEffects(
+function resolveCardEffects(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
@@ -228,7 +226,15 @@ export function applyCardEffects(
     state,
     card.effects,
     effectTexts,
-    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, effectTexts, context),
+    (currentState, effect) => {
+      if (!context.onEffectResolved)
+        return applySingleEffect(currentState, card, effect, potionMult, effectTexts, context);
+      const texts: CombatTextEvent[] = [];
+      const after = applySingleEffect(currentState, card, effect, potionMult, texts, context);
+      context.onEffectResolved(effect, currentState, after, texts);
+      for (const event of texts) mergeCombatText(effectTexts, event);
+      return after;
+    },
     { kind: "each-step", settle: resolvePendingBattleReactions },
   );
   const primary = card.effects[0];
@@ -249,7 +255,10 @@ export function applyCardEffects(
   let firstMeaningful: CombatTextEvent | undefined;
   let hasImpact = false;
   for (const event of effectTexts) {
-    if (event.feedback !== "primary") continue;
+    // A commanded Companion owns its own later impact. It must not demote the
+    // card's Block or other authored result before that separate action plays.
+    if (event.feedback !== "primary" || (event.companionActionId !== undefined && context.origin !== "companion"))
+      continue;
     firstDirect ??= event;
     if (event.kind === "notice" || event.amount !== 0) {
       firstMeaningful ??= event;
@@ -258,7 +267,7 @@ export function applyCardEffects(
   }
   const first = firstMeaningful ?? firstDirect;
   for (const event of effectTexts) {
-    if (!context.feedback) {
+    if (!context.feedback || (event.companionActionId !== undefined && context.origin !== "companion")) {
       mergeCombatText(combatTexts, event);
       continue;
     }
@@ -267,4 +276,14 @@ export function applyCardEffects(
     mergeCombatText(combatTexts, { ...event, feedback: main ? "primary" : "secondary" });
   }
   return result;
+}
+
+export function applyCardEffects(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  context?: CardEffectResolutionContext,
+): BattleState {
+  return resolveReactionAction(state, (current) => ({ state: resolveCardEffects(current, card, combatTexts, context) }))
+    .state;
 }

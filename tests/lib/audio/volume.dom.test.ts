@@ -97,7 +97,7 @@ it("setMusicVolume preserves the incoming fade gain when music volume changes", 
 });
 
 it("applies channel limits to live music, sound effects and ambience independently", () => {
-  playMusicImmediate(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  playMusicImmediate(MUSIC_KEYS.BOSS_IRON_BEAR);
   const music = lastFakeAudio()!;
   playBattleEvent("playerHeal", { volume: 0.5 });
   const sfx = lastFakeAudio()!;

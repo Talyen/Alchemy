@@ -97,6 +97,8 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   ),
 });
 
+const encounterTraitList = Object.values(ENCOUNTER_TRAITS);
+
 export type EncounterTraitId = keyof typeof ENCOUNTER_TRAITS;
 type EncounterTraitIdFor<Category extends EncounterTraitCategory> = {
   [Id in EncounterTraitId]: (typeof ENCOUNTER_TRAITS)[Id]["category"] extends Category ? Id : never;
@@ -107,12 +109,12 @@ export type EncounterRewardTraitId = EncounterTraitIdFor<"reward">;
 function idsForCategory<Category extends EncounterTraitCategory>(
   category: Category,
 ): [EncounterTraitIdFor<Category>, ...Array<EncounterTraitIdFor<Category>>] {
-  const ids = Object.values(ENCOUNTER_TRAITS)
-    .filter((trait) => trait.category === category)
-    .map((trait) => trait.id) as Array<EncounterTraitIdFor<Category>>;
-  const [first, ...rest] = ids;
-  if (!first) throw new Error(`Encounter trait category ${category} must not be empty`);
-  return [first, ...rest];
+  const ids: Array<EncounterTraitIdFor<Category>> = [];
+  for (const trait of encounterTraitList) {
+    if (trait.category === category) ids.push(trait.id as EncounterTraitIdFor<Category>);
+  }
+  if (!ids[0]) throw new Error(`Encounter trait category ${category} must not be empty`);
+  return ids as [EncounterTraitIdFor<Category>, ...Array<EncounterTraitIdFor<Category>>];
 }
 
 export const COMBAT_ENCOUNTER_TRAIT_IDS = idsForCategory("combat");
@@ -123,7 +125,7 @@ export function eligibleEncounterTraitIds<Category extends EncounterTraitCategor
   category: Category,
 ): Array<EncounterTraitIdFor<Category>> {
   const ids: Array<EncounterTraitIdFor<Category>> = [];
-  for (const trait of Object.values(ENCOUNTER_TRAITS)) {
+  for (const trait of encounterTraitList) {
     if (trait.category === category && trait.modes.includes(mode)) ids.push(trait.id as EncounterTraitIdFor<Category>);
   }
   return ids;

@@ -32,7 +32,7 @@ export function animateParticleLoop<T>({
     const elapsed = now - startTime;
     const dt = Math.min((now - lastTime) / 16.67, 3);
     lastTime = now;
-    const progress = Math.min(elapsed / duration, 1);
+    const progress = duration <= 0 ? 1 : Math.min(elapsed / duration, 1);
 
     ctx.clearRect(0, 0, width, height);
 

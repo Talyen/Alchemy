@@ -31,7 +31,7 @@ const additionalDefaults = {
   homesteadPotionBonus: 0,
   homesteadFreeManaChance: 0,
   homesteadForgeBurnPercent: 0,
-  startBlock: 0,
+  homesteadPhysicalCritDamagePercent: 0,
   startThorns: 0,
   healMultiplier: 1,
   burnDamageReduction: 0,
@@ -70,6 +70,11 @@ export const DEFAULT_TALENT_EFFECTS: Readonly<TalentEffectManifest> = Object.fre
   ...additionalDefaults,
 } as TalentEffectManifest);
 
+// Only nested defaults need deep cloning; scalar defaults can be copied directly.
+const mutableDefaults: Partial<TalentEffectManifest> = Object.fromEntries(
+  Object.entries(DEFAULT_TALENT_EFFECTS).filter(([, value]) => value !== null && typeof value === "object"),
+);
+
 export function createEmptyTalentEffectManifest(): TalentEffectManifest {
-  return structuredClone(DEFAULT_TALENT_EFFECTS);
+  return { ...DEFAULT_TALENT_EFFECTS, ...structuredClone(mutableDefaults) };
 }

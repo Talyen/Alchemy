@@ -78,6 +78,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - When a hook returns callback refs alongside layout values, destructure them before JSX so React Compiler can distinguish callbacks from ref objects.
 - Use `cn()` for conditional classes and existing CVA variants for semantic states.
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
+- Talent nodes keep a neutral reading surface with centered icon, title and rules. Locked content is muted and mostly grayscale; available choices have a lighter neutral frame that gently drifts while their content stays still. Owned borders use the category color. Unlock moves only the rounded frame and glow, preserving text and icon coordinates. Nodes grow for localized content, and reduced motion or disabled animations keep available and owned states still.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). Callbacks receive the chosen element's click event; keyboard activation of a div dispatches a click. `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography. Gradient text resets inherited text strokes to keep letter interiors clean; use a dark drop shadow for contrast. Nonempty keyword palettes include the shared white shine highlight, including palettes with multiple keywords.
 - Item title and affix palettes follow [item shine](#item-shine).
 - Shop-specific price presentation follows [Browsing UI](./UI_BROWSING.md#shop-prices).
@@ -97,7 +98,7 @@ Death's Door decoration retain border-only shine.
 
 Astral instance titles and borders derive their shine keywords from the rolled affix descriptions, using the same keyword recognition as tooltip text (`src/lib/keyword-text.ts`). Base affinity only prioritizes present keywords for the three-keyword title limit; it never adds absent keywords.
 
-Card artwork shine uses keywords found in the displayed description. Conditional keywords such as Pack Tactics' Wish color its border; mechanics such as a summon card's hidden Consume do not. Battle and inspection cards use the same neutral shine when no keyword appears.
+Card artwork shine uses keywords found in the displayed description. Conditional keywords such as Pack Tactics' Wish color its border; mechanics absent from the description do not add keyword shine. Battle and inspection cards use the same neutral shine when no keyword appears.
 
 Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a 55%-opacity stop. Single-keyword borders retain the keyword's full 3-stop pulse (`[light, dark, light]`), while multi-keyword borders normalize to each keyword’s primary accent color looped back to the first (`[k1, k2, k1]` or `[k1, k2, k3, k1]`) to maintain a consistent cadence and visual tempo across all items. Trinket titles use at most three described keywords in description order. Artwork palettes remain independent.
 
@@ -196,6 +197,11 @@ Screen-specific geometry belongs in [Browsing](./UI_BROWSING.md),
 [Battle](./UI_BATTLE.md) and [Labyrinth](./UI_LABYRINTH.md).
 
 ## Display sizing
+
+Text wraps at ordinary language-appropriate boundaries without discretionary
+hyphenation or inserted word breaks. Keep intentional compound-word hyphens and
+keyword formatting. Let content grow rather than splitting prose or shrinking its
+type to fit. Technical error logs may wrap long opaque tokens to prevent overflow.
 
 On macOS, both desktop fullscreen modes fill the entire display, including the area beside the camera notch, using Electron simple fullscreen. They stay on the current desktop rather than opening a native fullscreen Space. Windowed mode restores the standard movable, resizable window. Do not request native or HTML fullscreen on macOS: it reserves a black strip at the notch.
 

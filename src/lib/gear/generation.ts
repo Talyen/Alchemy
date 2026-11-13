@@ -1,3 +1,4 @@
+import type { KeywordId } from "@/lib/game-data";
 import { rollLootGearRarity, type LootAvailability, type LootWeights } from "@/lib/loot";
 import { pickRandom, sampleItems } from "@/lib/rng";
 import { createInstanceId } from "@/lib/utils";
@@ -26,6 +27,7 @@ interface GenerateGearOfferingsOptions {
   fillCount?: boolean;
   baseItemIds?: readonly string[] | undefined;
   createId?: () => string;
+  heroKeywords?: readonly KeywordId[];
 }
 
 function generateGearOfferings({
@@ -36,6 +38,7 @@ function generateGearOfferings({
   fillCount = false,
   baseItemIds,
   createId = createInstanceId,
+  heroKeywords,
 }: GenerateGearOfferingsOptions): GearInstance[] {
   if (count === 0 || (baseItemIds?.length === 0 && Number.isInteger(count) && count > 0)) return [];
   const allowed = baseItemIds === undefined ? null : new Set(baseItemIds);
@@ -110,7 +113,7 @@ function generateGearOfferings({
     reserveBase(base.id, "ordinary");
     const definition = gearDefinitions[gearDefinitionId(base.id, rarity)];
     if (!definition) break;
-    choices.push(createRolledGearInstance(definition, rng, createId));
+    choices.push(createRolledGearInstance(definition, rng, createId, heroKeywords));
   }
 
   return choices;
@@ -124,6 +127,7 @@ export function generateLootGearChoices(
   baseItemIds?: readonly string[],
   fillCount = false,
   createId: () => string = createInstanceId,
+  heroKeywords: readonly KeywordId[] = [],
 ): GearInstance[] {
   return generateGearOfferings({
     count,
@@ -133,6 +137,7 @@ export function generateLootGearChoices(
     baseItemIds,
     fillCount,
     createId,
+    heroKeywords,
   });
 }
 
@@ -144,6 +149,7 @@ export function generateGearRewardChoicesForRarity(
   baseItemIds?: readonly string[],
   fillCount = false,
   createId: () => string = createInstanceId,
+  heroKeywords: readonly KeywordId[] = [],
 ): GearInstance[] {
   return generateGearOfferings({
     count,
@@ -153,5 +159,6 @@ export function generateGearRewardChoicesForRarity(
     baseItemIds,
     fillCount,
     createId,
+    heroKeywords,
   });
 }

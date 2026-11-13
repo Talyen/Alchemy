@@ -5,9 +5,9 @@ import {
   LABYRINTH_MODIFIER_CONFIG,
   PERCENT_DENOMINATOR,
 } from "../game-constants";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { paceCombatDamage } from "./fight-pacing";
-import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
+import { elementalArmorAmount, reduceDamageByMana } from "./status-helpers";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { mitigatePlayerCombatDamage } from "./health-state";
@@ -44,14 +44,11 @@ function computeMitigatedDamage(
   options: Pick<EnemyDamageOptions, "ignorePlayerMitigation" | "ignoreArmor">,
   protectionState: BattleState,
 ) {
-  const armorMitigatesDamage =
-    effect.damageType === "physical" ||
-    effect.damageType === "stun" ||
-    armorMitigatesElementalDamage(state, effect.damageType);
-  const rawDamage =
-    armorMitigatesDamage && !options.ignoreArmor
-      ? Math.max(0, remainingDamage - state.playerStatuses.armor)
-      : remainingDamage;
+  const armor =
+    effect.damageType === "physical" || effect.damageType === "stun"
+      ? state.playerStatuses.armor
+      : elementalArmorAmount(state, effect.damageType);
+  const rawDamage = options.ignoreArmor ? remainingDamage : Math.max(0, remainingDamage - armor);
   const scaledDamage = options.ignorePlayerMitigation
     ? rawDamage
     : scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
@@ -77,8 +74,8 @@ export function prepareEnemyDamage(
     let damage = Math.max(0, amount + (options.flatBonus ?? 0)) * (options.amountMultiplier ?? 1);
     if (
       effect.damageType === "physical" &&
-      hasEnemyTrait(state, "executioner") &&
-      state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
+      state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR &&
+      hasEnemyTrait(state, "executioner")
     )
       damage *= LABYRINTH_MODIFIER_CONFIG.double;
     return Math.round(paceCombatDamage(state, damage, "enemy"));
@@ -117,11 +114,7 @@ export function calculateBlockAndArmorMitigation(
         : Math.min(state.playerStatuses.block, Math.round(blockAbsorb / blockMultiplier));
   remainingDamage -= blockAbsorb;
   if (blockSpent > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "block",
-      amount: blockSpent,
+    emitDamageText(combatTexts, "player", "block", blockSpent, {
       ...(blockAbsorb !== blockSpent ? { absorbedDamage: blockAbsorb } : {}),
     });
   }
@@ -137,13 +130,7 @@ export function calculateBlockAndArmorMitigation(
       : 0;
   const totalExtraBlock = extraBreak + extraStrip;
   if (totalExtraBlock > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "block",
-      amount: totalExtraBlock,
-      impact: false,
-    });
+    emitDamageText(combatTexts, "player", "block", totalExtraBlock, { impact: false });
   }
   const actualDamage = computeMitigatedDamage(state, effect, remainingDamage, options, protectionState);
   return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage };

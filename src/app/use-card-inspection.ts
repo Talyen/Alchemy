@@ -13,8 +13,13 @@ import {
   useHiddenHandCardKeys,
 } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 import { handHasHiddenCard, type HiddenHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
-import { getBattleCardDescriptionInspection, type BattleSnapshot } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
+import {
+  getBattleCardDescriptionInspection,
+  getBattleCompanionDescriptionLines,
+  getRunCompanionDescriptionLines,
+  type BattleSnapshot,
+} from "@/lib/battle";
+import { companionLibrary, type BattleCard, type CompanionId } from "@/lib/game-data";
 import type { CardInspectionCollection } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 
 const RUN_META_SCREENS: readonly Screen[] = ["armory", "talents", "homestead", "collection", "options"];
@@ -145,12 +150,23 @@ export function useCardInspection({
     () => ({
       ...data.talentEffects,
       inspectBattleCard: (card: BattleCard) => getBattleCardDescriptionInspection(card, data.battleState),
+      describeCompanion: (id: CompanionId) =>
+        data.hasActiveBattle
+          ? getBattleCompanionDescriptionLines(companionLibrary[id], data.battleState)
+          : getRunCompanionDescriptionLines(companionLibrary[id], data.companionInspection),
       companionDamageModifiers: {
         damageBonus: data.companionDamageBonus,
         damageMultiplier: data.companionDamageMultiplier,
       },
     }),
-    [data.battleState, data.talentEffects, data.companionDamageBonus, data.companionDamageMultiplier],
+    [
+      data.battleState,
+      data.talentEffects,
+      data.companionDamageBonus,
+      data.companionDamageMultiplier,
+      data.hasActiveBattle,
+      data.companionInspection,
+    ],
   );
 
   return {
@@ -163,6 +179,6 @@ export function useCardInspection({
     collections,
     returnFocusRef,
     count: data.runDeck.length,
-    battleDescriptionContext: data.hasActiveBattle ? battleDescriptionContext : null,
+    battleDescriptionContext: data.hasActiveRun ? battleDescriptionContext : null,
   };
 }

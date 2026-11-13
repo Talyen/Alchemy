@@ -1,5 +1,5 @@
-import { expect } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
+import type { Page } from "@playwright/test";
+import { expect, test } from "../../fixtures/e2e";
 import { ShopPage } from "../../pages/shop-page";
 import { RewardPage } from "../../pages/reward-page";
 import { DestinationPage } from "../../pages/destination-page";
@@ -7,7 +7,7 @@ import { enterPrimaryRewardScreen, readSavedGame, withSavedGame, startAtDestinat
 import type { ParsedSaveData } from "@/lib/validation";
 import { critical } from "../../playwright-tags";
 
-async function enterShop(page: import("@playwright/test").Page, gold: number, destination: "Card Shop" | "Gear Shop") {
+async function enterShop(page: Page, gold: number, destination: "Card Shop" | "Gear Shop") {
   await startAtDestination(page, { runGold: gold }, { forceDestination: destination });
   await page.getByRole("button", { name: destination }).click();
   await expect(page.getByRole("heading", { name: destination })).toBeVisible();

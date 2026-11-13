@@ -6,7 +6,7 @@ import { validateRegistryEntries } from "./registry-validation.mjs";
 
 export const staticAssets = [...coreAssets, ...cardAssets, ...contentAssets, ...talentAssets];
 
-export async function validateAssetRegistry(entries, { sourceDir } = {}) {
+export async function validateAssetRegistry(entries, { sourceDir, allowMissingSource = false } = {}) {
   for (const entry of entries) {
     if (entry.lossless !== undefined && typeof entry.lossless !== "boolean") {
       throw new Error(`Asset registry: lossless must be boolean for ${entry.source}.`);
@@ -18,6 +18,7 @@ export async function validateAssetRegistry(entries, { sourceDir } = {}) {
   try {
     await validateRegistryEntries(entries, {
       sourceDir,
+      allowMissingSource,
       allowSourceAliases: true,
       checkExport: true,
       targetPattern: /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.webp$/,

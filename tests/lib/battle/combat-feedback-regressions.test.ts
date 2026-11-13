@@ -1,5 +1,9 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { companionLibrary } from "@/lib/game-data";
+import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyCrowdControlTriggerBonuses } from "@/lib/battle/bonus-effects";
@@ -9,6 +13,62 @@ import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("combat feedback regressions", () => {
+  it("retains secondary intent for the turn-start Bear's genuine Stunned notice and reward", () => {
+    const state = regressionBattle({
+      activeCompanion: companionLibrary.bear,
+      enemyHealth: 10,
+      enemyMaxHealth: 10,
+      enemyStatuses: { stun: 9 },
+      gearEffects: { blockOnStun: 6 },
+      rng: () => 0.99,
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = processCompanionTurnStart(state, texts);
+    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
+    expect(texts).toContainEqual(
+      expect.objectContaining({
+        kind: "notice",
+        stat: "stun",
+        text: "Stunned",
+        feedback: "secondary",
+        companionActionId: 1,
+      }),
+    );
+    expect(texts).toContainEqual(
+      expect.objectContaining({
+        kind: "status",
+        stat: "block",
+        amount: 6,
+        feedback: "secondary",
+        companionActionId: 1,
+      }),
+    );
+  });
+  it("keeps Bonded Briar Shield's Block primary without borrowing the commanded Bear's impact", () => {
+    const card = makeTestCard({
+      effects: [
+        { kind: "player-status", status: "block", amount: 2 },
+        { kind: "player-status", status: "thorns", amount: 4 },
+        { kind: "companion-action", amount: 1 },
+      ],
+    });
+    const state = regressionBattle({ hand: [card], activeCompanion: companionLibrary.bear, rng: () => 0.99 });
+    const before = structuredClone({ ...state, rng: undefined });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ kind: "status", stat: "block", amount: 2, feedback: "primary" }),
+    );
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ kind: "status", stat: "thorns", amount: 4, feedback: "secondary" }),
+    );
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ kind: "damage", stat: "stun", amount: 1, companionActionId: 1, feedback: "primary" }),
+    );
+    expect(result.state.playerStatuses).toMatchObject({ block: 2, thorns: 4 });
+    expect(result.state.enemyHealth).toBe(state.enemyHealth - 1);
+    expect({ ...state, rng: undefined }).toEqual(before);
+  });
+
   it("acknowledges a capped Mana restoration without inventing a resource gain or damage impact", () => {
     const state = regressionBattle({ mana: 3, maxMana: 3 });
     const texts: CombatTextEvent[] = [];
@@ -20,11 +80,7 @@ describe("combat feedback regressions", () => {
   it("acknowledges an ineffective attack on the enemy without claiming a hit", () => {
     const state = regressionBattle();
     const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0 }] }),
-      texts,
-    );
+    const result = applyCardEffects(state, makeDamageCard("physical", 0), texts);
     expect(result.enemyHealth).toBe(state.enemyHealth);
     expect(texts).toEqual([{ target: "enemy", kind: "damage", stat: "physical", amount: 0, impact: false }]);
   });

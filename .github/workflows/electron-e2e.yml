@@ -8,9 +8,6 @@ on:
       renderer:
         type: string
         default: dist-desktop
-      timeout:
-        type: number
-        default: 20
       full:
         type: boolean
         default: false
@@ -19,7 +16,6 @@ permissions:
 jobs:
   electron-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.timeout }}
     steps:
       - name: Record test job setup start
         run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"

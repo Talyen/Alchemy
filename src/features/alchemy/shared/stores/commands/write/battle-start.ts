@@ -96,6 +96,7 @@ export function initializeBattle(draft: GameplayDraft, request: BattleStartReque
   return {
     startingTexts,
     companionId: opening.companion?.id ?? null,
+    companionActions: opening.companionActions,
     outcome: opening.outcome,
     openingCardIds: opening.state.hand.map((card) => card.id),
   };

@@ -1,3 +1,4 @@
+import { assetPipelineFixture } from "../helpers/asset-pipeline-mock";
 import { createCleanup } from "@/lib/cleanup";
 import { mkdtempSync, rmSync } from "node:fs";
 import { copyFile, mkdir, readFile, readdir, rename, rm, utimes, writeFile } from "node:fs/promises";
@@ -6,27 +7,9 @@ import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fixture = vi.hoisted(() => ({
-  root: "",
   failedSource: "",
   transform: vi.fn<(source: string, target: string) => Promise<void>>(),
 }));
-vi.mock("../../scripts/lib/repository-paths.mjs", () => ({
-  get REPO_ROOT() {
-    return fixture.root;
-  },
-}));
-vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
-  const { pathToFileURL } = await import("node:url");
-  return {
-    ...original,
-    resolveRootDir: () => fixture.root,
-    // resolvePipelinePaths closes over the real resolver internally, so route
-    // it through the fixture root explicitly.
-    resolvePipelinePaths: (_url: string, options: { managedKey: "art" | "sounds" | "music" }) =>
-      original.resolvePipelinePaths(pathToFileURL(path.join(fixture.root, "scripts", "mock-entry.mjs")).href, options),
-  };
-});
 vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/assets/asset-manifest.mjs")>()),
   staticAssets: [
@@ -73,22 +56,22 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   };
 });
 
-fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-art-music-"));
+assetPipelineFixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-art-music-"));
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
 const { optimizeMusic } = await import("../../scripts/optimize-music.mjs");
 const { musicAssets } = await import("../../scripts/assets/music-assets.mjs");
-const rawDir = path.join(fixture.root, "assets/sources");
+const rawDir = path.join(assetPipelineFixture.root, "assets/sources");
 const gearDir = path.join(rawDir, "Gear");
 const slotDir = path.join(gearDir, "Gear Slot Backgrounds");
 const musicDir = path.join(rawDir, "Music");
-const artOutput = path.join(fixture.root, "src/assets/optimized");
-const musicOutput = path.join(fixture.root, "public/Music");
+const artOutput = path.join(assetPipelineFixture.root, "src/assets/optimized");
+const musicOutput = path.join(assetPipelineFixture.root, "public/Music");
 const slots = ["Body", "Weapon", "Accessory", "Trinket"];
 
-afterAll(() => rmSync(fixture.root, { recursive: true, force: true }));
+afterAll(() => rmSync(assetPipelineFixture.root, { recursive: true, force: true }));
 
 beforeEach(async () => {
-  rmSync(fixture.root, { recursive: true, force: true });
+  rmSync(assetPipelineFixture.root, { recursive: true, force: true });
   await mkdir(slotDir, { recursive: true });
   await mkdir(musicDir, { recursive: true });
   for (const slot of slots) await writeFile(path.join(slotDir, `${slot} Slot.png`), slot);

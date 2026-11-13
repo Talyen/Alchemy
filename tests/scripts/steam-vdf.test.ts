@@ -1,28 +1,23 @@
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { temporaryDirectories } from "../helpers/script-fixtures";
+import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { substituteSteamVdf, writeSteamBuildVdfs } from "../../scripts/lib/release/steam-vdf.mjs";
 import { steamContentRoot } from "../../scripts/lib/release/desktop-artifact.mjs";
 
 const sourceRoot = join(import.meta.dirname, "../..");
-const temporaryRoots: string[] = [];
 
 function createWorkspace() {
-  const workspaceRoot = mkdtempSync(join(tmpdir(), "alchemy-steam-vdf-$&-"));
+  const workspaceRoot = createTemporaryDirectory("alchemy-steam-vdf-$&-");
   const steamRoot = join(workspaceRoot, "steam");
   mkdirSync(steamRoot);
   copyFileSync(join(sourceRoot, "steam", "app_build.vdf"), join(steamRoot, "app_build.vdf"));
   copyFileSync(join(sourceRoot, "steam", "depot_build.vdf"), join(steamRoot, "depot_build.vdf"));
-  temporaryRoots.push(workspaceRoot);
+
   return workspaceRoot;
 }
 
-afterEach(() => {
-  for (const root of temporaryRoots.splice(0)) {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
+const createTemporaryDirectory = temporaryDirectories();
 
 describe("steam VDF substitution", () => {
   it("substitutes literal paths once without interpreting dollar signs or folder placeholders", () => {

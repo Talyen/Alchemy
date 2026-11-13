@@ -106,6 +106,8 @@ function measureCell(
     available: getRewardLootAvailability(ownedUniqueIds, { trinkets: trinketCount > 0 }),
   });
   const rng = createRunStreamRng(hashStringToUint32(`loot-v2:${source}:${depth}:${account}:${collection}`), "rewards");
+  const choiceCount = source === "mystery" ? 1 : 3;
+  const remainingUniques = uniqueItemList.length - ownedUniqueIds.size;
   for (let sample = 0; sample < samples; sample += 1) {
     const group = rollLootGroup(weights, rng);
     let premium = false;
@@ -116,8 +118,6 @@ function measureCell(
       // Count rarities directly instead of generating full gear instances:
       // the report needs offer rates, not affixes or instance IDs. Unique
       // rolls stop once the screen has offered every remaining unique.
-      const choiceCount = source === "mystery" ? 1 : 3;
-      const remainingUniques = uniqueItemList.length - ownedUniqueIds.size;
       let offeredUniques = 0;
       for (let choice = 0; choice < choiceCount; choice += 1) {
         const rarity = rollLootGearRarity(weights, rng, offeredUniques < remainingUniques ? {} : { unique: false });

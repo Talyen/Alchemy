@@ -1,3 +1,4 @@
+import { makeDamageCard, makeTestCard } from "../../fixtures/cards";
 import { processEncounterTraitActionDamage } from "@/lib/battle/encounter-trait-events";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
@@ -8,7 +9,6 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { describe, expect, it, vi } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
-import { makeTestCard } from "../../fixtures/cards";
 
 describe("enemy attack damage", () => {
   it.each(["bleed", "poison"] as const)("halves incoming %s damage while Block is present", (damageType) => {
@@ -33,7 +33,8 @@ describe("enemy attack damage", () => {
         deathsDoorUsed: prevention !== "deaths-door",
         playerHealth: 2,
         playerMaxHealth: 30,
-        mana: prevention === "aetherward" ? 4 : 3,
+        mana: prevention === "aetherward" ? 8 : 3,
+        maxMana: prevention === "aetherward" ? 8 : 3,
         playerStatuses: { block: prevention === "block" ? 4 : 0, armor: prevention === "armor" ? 4 : 0 },
         gearEffects: {
           damageReductionPerMana: prevention === "aetherward" ? 1 : 0,
@@ -154,29 +155,45 @@ describe("enemy attack damage", () => {
     expect(hit.state.enemyHealth).toBeGreaterThan(2);
   });
 
-  it.each([
-    ["burn", "armorMitigatesBurn"],
-    ["bleed", "armorMitigatesBleed"],
-  ] as const)("Armor protects against direct %s hits with the matching talent", (damageType, talent) => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: { armor: 3, block: 2 },
-      talentEffects: { [talent]: true },
-    });
-    const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 7 }, []);
-    expect(result.playerHealth).toBe(28);
-    expect(result.playerStatuses[damageType]).toBe(2);
-    expect(result.playerStatuses.armor).toBe(2);
-    expect(result.playerStatuses.block).toBe(0);
-    expect(state.playerHealth).toBe(30);
+  it.each(["burn", "freeze", "nature"] as const)(
+    "Elemental Ward applies a quarter of Armor to direct %s damage after Block",
+    (damageType) => {
+      const state = patchBattleState({
+        playerHealth: 30,
+        playerMaxHealth: 30,
+        playerStatuses: { armor: 6, block: 2 },
+        talentEffects: { armorMitigatesBurn: true },
+      });
+      const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 7 }, []);
+      expect(result.playerHealth).toBe(27);
+      expect(result.playerStatuses.block).toBe(0);
+      expect(result.playerStatuses.armor).toBe(5);
+      expect(state.playerHealth).toBe(30);
+    },
+  );
+
+  it("leaves direct elemental damage unmitigated without Elemental Ward", () => {
+    const state = patchBattleState({ playerStatuses: { armor: 6 } });
+    for (const damageType of ["burn", "freeze", "nature"] as const) {
+      const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 7 }, []);
+      expect(result.playerHealth).toBe(23);
+    }
   });
 
-  it("Fireward also protects against Cauterize's self-inflicted Burn", () => {
-    const state = patchBattleState({ playerStatuses: { armor: 3 }, talentEffects: { armorMitigatesBurn: true } });
-    const result = dealSelfDamage(state, 1, "burn", []);
-    expect(result.healthLost).toBe(0);
-    expect(result.state.playerHealth).toBe(state.playerHealth);
+  it("preserves full Armor mitigation for Bleed with Thick Hide", () => {
+    const state = patchBattleState({
+      playerStatuses: { armor: 3, block: 2 },
+      talentEffects: { armorMitigatesBleed: true },
+    });
+    const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "bleed", amount: 7 }, []);
+    expect(result.playerHealth).toBe(28);
+    expect(result.playerStatuses.bleed).toBe(2);
+  });
+
+  it("Elemental Ward protects against typed self-inflicted Burn using rounded quarter Armor", () => {
+    const state = patchBattleState({ playerStatuses: { armor: 6 }, talentEffects: { armorMitigatesBurn: true } });
+    expect(dealSelfDamage(state, 5, "burn", []).healthLost).toBe(3);
+    expect(dealSelfDamage(state, 5, "health", []).healthLost).toBe(5);
   });
 
   it.each(["sunder", "caustic", "banshee"])("Reactive Guard rewards Armor broken by %s", (source) => {
@@ -211,11 +228,7 @@ describe("enemy attack damage", () => {
       playerStatuses: { block: 0, armor: 0 },
       talentEffects: { receiveHalfHolyDamage: true },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] }),
-      [],
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("holy", 10), []);
     expect(result.playerHealth).toBe(25);
   });
 
@@ -227,11 +240,7 @@ describe("enemy attack damage", () => {
       playerStatuses: { block: 5, armor: 0 },
       talentEffects: { blockDepletedHeal: 4 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-      texts,
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("physical", 5), texts);
     expect(result.playerHealth).toBe(30);
     expect(texts.find((t) => t.kind === "heal")).toEqual({
       target: "player",

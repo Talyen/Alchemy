@@ -33,8 +33,11 @@ the outgoing fade, and incoming artwork preparation.
 `FadeSlot` keeps outgoing and artwork-pending content inert. Identity-dependent
 headings, prompts, resources, and actions must travel with their content: Victory
 reward prompts/Skip share the reward-kind-and-choice identity, and Mystery titles
-share the event-and-phase identity. Corruption phases and Armory slot headings use
-the same boundary as their choices. An identity swap remounts the `FadeSlot` subtree,
+share the event-and-phase identity. Corruption intro/picker navigation and Armory
+slot headings use the same boundary as their choices. Committing Corruption keeps the picker/result
+identity live: the original comparison card and altar remain visible while only
+the changed card reveals. Resuming an existing result uses the route reveal.
+An identity swap remounts the `FadeSlot` subtree,
 so nested fades cannot retain a previous identity beneath a new heading; state that
 must survive a swap belongs above that boundary. Labyrinth selection and run-end
 summaries retain their display data while navigation or teardown clears live state.

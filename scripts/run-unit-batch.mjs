@@ -2,10 +2,8 @@
 import path from "node:path";
 import { defineScript } from "./lib/script-run.mjs";
 import { unitSelection } from "./lib/verification/unit-selection.mjs";
-import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 defineScript(import.meta.url, async () => {
-  assertHeavyLocalAllowed("Combined task unit tests");
   const { related, selectors, maxWorkers } = JSON.parse(process.argv[2]);
   unitSelection(["run", ...selectors], process.cwd());
   process.env.TEST = "true";

@@ -217,14 +217,7 @@ export function BrewPotionPanel({
     />
   );
   const resultCard = (card: BattleCard, label: string) => (
-    <BattleCardButton
-      card={card}
-      ariaLabel={label}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      className="h-full w-full"
-      wrapperClassName="absolute inset-0"
-    />
+    <BattleCardButton card={card} ariaLabel={label} className="h-full w-full" wrapperClassName="absolute inset-0" />
   );
   const ingredients = (
     <div
@@ -315,23 +308,14 @@ export function BrewPotionPanel({
       ) : kind === "combine" ? null : kind === "strengthen" && variant === "campfire" && result && sourceDeck[a] ? (
         <PotionComparison original={sourceDeck[a]} result={result} />
       ) : recipeBrew ? null : variant === "alchemist" ? (
-        <>
-          {variant === "alchemist" ? (
-            <FlankingPagination
-              page={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={setPage}
-              className={collectionShellWidthClass}
-            >
-              {ingredients}
-            </FlankingPagination>
-          ) : (
-            <>
-              {ingredients}
-              <PaginationControls page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
-            </>
-          )}
-        </>
+        <FlankingPagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          className={collectionShellWidthClass}
+        >
+          {ingredients}
+        </FlankingPagination>
       ) : (
         <CardSelectionGrid
           items={items}
@@ -380,8 +364,6 @@ export function BrewPotionPanel({
                     className="h-full w-full"
                     wrapperClassName="absolute inset-0"
                     suppressTooltip={recipeOpen}
-                    shimmerActive={false}
-                    shimmerToken={undefined}
                     ariaDisabled={submitted}
                     onClick={() => {
                       if (kind === "combine") {

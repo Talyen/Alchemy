@@ -127,6 +127,12 @@ export function validateResults({ messages, glossary, locale, results, previous 
   );
 }
 
+// Both preparation and application accept editable strings/forms. Freshness
+// comes from the prepared message; editable input never carries its own review.
+const isEditableResult = (result) => typeof result === "string" || (result && !Object.hasOwn(result, "sourceHash"));
+const normalizeResultText = (result) =>
+  typeof result === "string" ? { text: result } : { ...result, text: result?.text ?? result?.forms?.other };
+
 export function translationPackets({ messages, glossary, catalogs }, drafts = []) {
   const saved = new Map();
   for (const packet of Array.isArray(drafts) ? drafts : [drafts]) {
@@ -139,83 +145,60 @@ export function translationPackets({ messages, glossary, catalogs }, drafts = []
       Object.fromEntries(
         Object.entries(packet.results).map(([id, result]) => [
           id,
-          typeof result === "string" || (result && !Object.hasOwn(result, "sourceHash"))
-            ? {
-                ...(typeof result === "string"
-                  ? { text: result }
-                  : { ...result, text: result.text ?? result.forms?.other }),
-                sourceHash: packet.messages?.[id]?.sourceHash,
-                reviewed: false,
-              }
+          isEditableResult(result)
+            ? { ...normalizeResultText(result), sourceHash: packet.messages?.[id]?.sourceHash, reviewed: false }
             : result,
         ]),
       ),
     );
   }
-  return TARGETS.flatMap((locale) => {
-    const previous = catalogs[locale] ?? {};
-    const pending = Object.entries(messages).filter(
-      ([id, message]) =>
-        !message.aliasOf &&
-        (previous[id]?.sourceHash !== sourceHash(message, glossary[locale], locale) || previous[id]?.reviewed !== true),
-    );
-    if (!pending.length) return [];
-    return [
-      {
+  const packets = [];
+  for (const locale of TARGETS) {
+    const pendingMessages = [];
+    const results = [];
+    for (const [id, message] of Object.entries(messages)) {
+      if (message.aliasOf) continue;
+      const previous = catalogs[locale]?.[id];
+      const hash = sourceHash(message, glossary[locale], locale);
+      if (previous?.sourceHash === hash && previous?.reviewed === true) continue;
+      pendingMessages.push([id, { ...message, sourceHash: hash, previous: previous?.text ?? null }]);
+      const draft = saved.get(locale)?.[id];
+      const result = { text: draft?.text ?? previous?.text ?? "", sourceHash: hash, reviewed: false };
+      if (message.plural) {
+        result.forms = Object.fromEntries(
+          new Intl.PluralRules(locale)
+            .resolvedOptions()
+            .pluralCategories.map((category) => [
+              category,
+              (draft ? draft.forms?.[category] : previous?.forms?.[category]) ?? "",
+            ]),
+        );
+        if (!result.text) result.text = result.forms.other;
+        if (!result.forms.other) result.forms.other = result.text;
+      }
+      // Restore mechanical metadata, never carry review across changed
+      // English/glossary or incomplete plural forms. Translation stays editable.
+      if (draft?.sourceHash === hash && draft.reviewed === true) {
+        try {
+          validateTranslation(message, result.text);
+          validatePluralForms(message, result, locale);
+          result.reviewed = true;
+        } catch {
+          // Preserve the draft for repair without claiming it is reviewed.
+        }
+      }
+      results.push([id, result]);
+    }
+    if (pendingMessages.length)
+      packets.push({
         locale,
         instructions: INSTRUCTIONS,
         glossary: glossary[locale],
-        messages: Object.fromEntries(
-          pending.map(([id, message]) => [
-            id,
-            {
-              ...message,
-              sourceHash: sourceHash(message, glossary[locale], locale),
-              previous: previous[id]?.text ?? null,
-            },
-          ]),
-        ),
-        results: Object.fromEntries(
-          pending.map(([id, message]) => {
-            const draft = saved.get(locale)?.[id];
-            const result = {
-              text: draft?.text ?? previous[id]?.text ?? "",
-              sourceHash: sourceHash(message, glossary[locale], locale),
-              reviewed: false,
-              ...(message.plural
-                ? {
-                    forms: Object.fromEntries(
-                      new Intl.PluralRules(locale)
-                        .resolvedOptions()
-                        .pluralCategories.map((category) => [
-                          category,
-                          (draft ? draft.forms?.[category] : previous[id]?.forms?.[category]) ?? "",
-                        ]),
-                    ),
-                  }
-                : {}),
-            };
-            // Restore mechanical metadata, never carry review across changed
-            // English/glossary or incomplete plural forms. Translation stays editable.
-            if (message.plural) {
-              if (!result.text) result.text = result.forms.other;
-              if (!result.forms.other) result.forms.other = result.text;
-            }
-            if (draft?.sourceHash === result.sourceHash && draft.reviewed === true) {
-              try {
-                validateTranslation(message, result.text);
-                validatePluralForms(message, result, locale);
-                result.reviewed = true;
-              } catch {
-                // Preserve the draft for repair without claiming it is reviewed.
-              }
-            }
-            return [id, result];
-          }),
-        ),
-      },
-    ];
-  });
+        messages: Object.fromEntries(pendingMessages),
+        results: Object.fromEntries(results),
+      });
+  }
+  return packets;
 }
 
 // Editable packets carry freshness in their generated message context. Authors
@@ -287,14 +270,12 @@ export function validateBatch(input, { messages, glossary, catalogs }, { reviewe
       locale,
       results: Object.fromEntries(
         Object.entries(results).map(([id, result]) => {
-          const editable = typeof result === "string" || (result && !Object.hasOwn(result, "sourceHash"));
+          const editable = isEditableResult(result);
           if (editable && !packet.messages?.[id]?.sourceHash) throw new Error(`Missing prepared source context: ${id}`);
           return [
             id,
             {
-              ...(typeof result === "string"
-                ? { text: result }
-                : { ...result, text: result?.text ?? result?.forms?.other }),
+              ...normalizeResultText(result),
               ...(editable ? { sourceHash: packet.messages[id].sourceHash } : {}),
               ...(reviewed ? { reviewed: true } : {}),
             },

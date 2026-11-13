@@ -88,21 +88,23 @@ function collectRateFindings({
 }
 
 function collectEnemyRateFindings(model: BalanceReportModel): BalanceFinding[] {
-  return model.enemies.flatMap((enemy) =>
-    REPORT_TIERS.flatMap(({ preset: tier }) => {
-      const title = titleFor("enemy", enemy.id);
-      return collectRateFindings({
+  return model.enemies.flatMap((enemy) => {
+    const title = titleFor("enemy", enemy.id);
+    const enemyType = enemyTypeOf(enemy.id);
+    const causeHint = enemyCauseHint(enemy.id);
+    return REPORT_TIERS.flatMap(({ preset: tier }) =>
+      collectRateFindings({
         scope: "enemy",
         id: enemy.id,
         title,
         tier,
         cell: enemy.rates[tier],
-        enemyType: enemyTypeOf(enemy.id),
+        enemyType,
         worstScenario: `${title} (${tier})`,
-        ...enemyCauseHint(enemy.id),
-      });
-    }),
-  );
+        ...causeHint,
+      }),
+    );
+  });
 }
 
 function collectClassRateFindings(model: BalanceReportModel): BalanceFinding[] {
@@ -199,6 +201,8 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
 
   for (const [enemyId, rows] of byEnemy) {
     const enemyType = rows[0]?.enemyType ?? enemyTypeOf(enemyId);
+    const enemyTitle = titleFor("enemy", enemyId);
+    const causeHint = enemyCauseHint(enemyId);
     for (const { preset: tier } of REPORT_TIERS) {
       const cells: Array<{ row: ClassMatchupRow; cell: RateCell }> = [];
       for (const row of rows) {
@@ -217,7 +221,13 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
         const spread = Math.abs(cell.winRate - med);
         const turnSpread = Math.abs(cell.averageTurns - turnMed);
         const effectiveEnemyType = row.enemyType || enemyType;
-        const matchupTitle = `${titleFor("character", row.characterId)} vs ${titleFor("enemy", row.enemyId)}`;
+        const equityOutlier = !clustered && spread >= EQUITY_SPREAD;
+        const lengthOutlier =
+          effectiveEnemyType &&
+          turnSpread >= MATCHUP_TURN_SPREAD_THRESHOLD &&
+          isLengthOutsideBand(cell.averageTurns, effectiveEnemyType);
+        if (!equityOutlier && !lengthOutlier) continue;
+        const matchupTitle = `${titleFor("character", row.characterId)} vs ${enemyTitle}`;
 
         const context: FindingContext = {
           scope: "matchup",
@@ -225,16 +235,9 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
           title: matchupTitle,
           tier,
           worstScenario: `${matchupTitle} (${tier})`,
-          ...enemyCauseHint(row.enemyId),
+          ...causeHint,
         };
-        const equityOutlier = !clustered && spread >= EQUITY_SPREAD;
-        const lengthOutlier =
-          effectiveEnemyType &&
-          turnSpread >= MATCHUP_TURN_SPREAD_THRESHOLD &&
-          isLengthOutsideBand(cell.averageTurns, effectiveEnemyType);
-        if (equityOutlier || lengthOutlier) {
-          findings.push(...collectRateFindings({ ...context, cell, enemyType: effectiveEnemyType }));
-        }
+        findings.push(...collectRateFindings({ ...context, cell, enemyType: effectiveEnemyType }));
         if (equityOutlier) {
           findings.push(
             finding(context, {

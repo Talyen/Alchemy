@@ -135,14 +135,14 @@ it("previews the same selection without executing or capturing source state", as
   expect(captureDigest).not.toHaveBeenCalled();
 });
 
-it("rejects the full local gate before source capture while allowing its plan", async () => {
+it("admits a full local gate without a separate opt-in", async () => {
   vi.stubEnv("GITHUB_ACTIONS", undefined);
   vi.stubEnv("ALCHEMY_ALLOW_HEAVY_LOCAL", undefined);
-  const captureDigest = vi.fn(() => ({ head: "test", hash: "unchanged" }));
-  await expect(runCheck(["scripts/check.mjs", "--full"], { captureDigest })).rejects.toThrow("belongs to CI");
-  expect(captureDigest).not.toHaveBeenCalled();
-  expect(await runCheck(["scripts/check.mjs", "--full", "--plan"], { captureDigest })).toBe(0);
-  expect(captureDigest).not.toHaveBeenCalled();
+  const captureDigest = vi.fn(() => {
+    throw new Error("source capture reached");
+  });
+  await expect(runCheck(["scripts/check.mjs", "--full"], { captureDigest })).rejects.toThrow("source capture reached");
+  expect(captureDigest).toHaveBeenCalledOnce();
 });
 
 it("checks localization inputs but skips tooling-only and test-only edits", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarizeCoreRates, type CoreRateRow } from "@/lib/balance/core-report-summary";
+import { summarizeCoreRates, sumCardPlayCounts, type CoreRateRow } from "@/lib/balance/core-report-summary";
 import { reportCharacterIds } from "@/lib/balance/report-catalog";
 import { emptyRateCell } from "@/lib/balance/report-rankings";
 
@@ -17,6 +17,18 @@ function row(
 }
 
 describe("core balance report summaries", () => {
+  it("aggregates card IDs independently of Object prototype names", () => {
+    const counts = sumCardPlayCounts([
+      { ["__proto__"]: 2, constructor: 3, toString: 4 },
+      { ["__proto__"]: 5, constructor: 7, toString: 11 },
+    ]);
+    expect(Object.entries(counts)).toEqual([
+      ["__proto__", 7],
+      ["constructor", 10],
+      ["toString", 15],
+    ]);
+  });
+
   it("keeps battle weights, equal enemy-type weights, and late card counts distinct", () => {
     const knightSkeleton = { characterId: "knight", enemyId: "skeleton", enemyType: "normal" } as const;
     const rows = [

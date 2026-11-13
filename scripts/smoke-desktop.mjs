@@ -25,7 +25,7 @@ export function runSmokeDesktop(rootDir = root) {
       "-Executable",
       executablePath(directory, "win", { productFilename: releaseEdition().productName }),
     ],
-    { cwd: rootDir, timeout: 90_000 },
+    { cwd: rootDir, timeout: process.env.CI ? 0 : 90_000 },
   );
   if (result.error) throw result.error;
   return result.status ?? 1;

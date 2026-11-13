@@ -58,6 +58,34 @@ describe("ErrorBoundary", () => {
     expect(screen.queryByText("Something went wrong")).toBeNull();
   });
 
+  it.each([null, undefined, "failure", { detail: "failure" }])(
+    "recovers when a child throws a non-Error value: %s",
+    (thrown) => {
+      const logSpy = vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
+      const onError = vi.fn();
+      function Broken(): never {
+        throw thrown;
+      }
+
+      render(
+        <ErrorBoundary label="battle" onError={onError}>
+          <Broken />
+        </ErrorBoundary>,
+      );
+
+      expect(screen.getByRole("button", { name: "Reload" })).toBeDefined();
+      expect(logSpy).toHaveBeenCalledWith(
+        "ErrorBoundary (battle): A non-Error value was thrown",
+        "react",
+        { screen: "battle" },
+        expect.any(String),
+        expect.any(String),
+        thrown,
+      );
+      expect(onError).toHaveBeenCalledWith(expect.objectContaining({ cause: thrown }), expect.anything());
+    },
+  );
+
   it("keeps the error latched until the fallback's reset action recovers its children", () => {
     vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
     const view = (shouldThrow: boolean) => (

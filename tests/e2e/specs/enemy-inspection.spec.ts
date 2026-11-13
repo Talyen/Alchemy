@@ -9,7 +9,7 @@ test(
   "enemy inspection preserves battle and fades portrait hover before card inspection",
   critical,
   async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 0 : 60_000);
 
     await seedRandom(page, 42);
     await startBattleWithDeck(

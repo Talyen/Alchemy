@@ -43,27 +43,66 @@ export function usePortaledTooltipPlacement(
   maxWidthFraction?: number,
   allowFlip = true,
   horizontalInsetOverride?: number,
+  preservePlacementOnResize = false,
+  visible = active,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
+  // A reused ref can point at a new inventory target after commit. Rebind before
+  // paint rather than carrying that target's observers or hover reservation over.
+  // oxlint-disable-next-line react/exhaustive-deps -- inspect ref identity after every commit; the equality guard prevents an update loop
+  useLayoutEffect(() => {
+    const current = triggerRef.current;
+    if (current !== triggerElement) setTriggerElement(current);
+  });
+  const hoverReservation = useRef({
+    width: 0,
+    visible: false,
+    placement: preferredFloatingPlacement(placement),
+    trigger: null as HTMLElement | null,
+    horizontalOffset: null as number | null,
+  });
   const [position, setPosition] = useState<{
     placement: Placement;
     tooltipStyle: CSSProperties | undefined;
   }>({ placement: "top", tooltipStyle: undefined });
 
   useLayoutEffect(() => {
-    const trigger = triggerRef.current;
+    const trigger = triggerElement;
     const tooltipEl = tooltipRef.current;
     if (!active || !trigger || !tooltipEl) {
-      if (tooltipEl) tooltipEl.style.width = "";
+      if (tooltipEl) {
+        tooltipEl.style.width = "";
+        tooltipEl.style.minWidth = "";
+      }
+      hoverReservation.current = {
+        width: 0,
+        visible: false,
+        placement: preferredFloatingPlacement(placement),
+        trigger: null,
+        horizontalOffset: null,
+      };
       setPosition((previous) => ({ ...previous, tooltipStyle: undefined }));
       return;
     }
+
+    const reservation = hoverReservation.current;
+    const entering = visible && !reservation.visible;
+    reservation.visible = visible;
+    if (entering || reservation.trigger !== trigger || !preservePlacementOnResize) {
+      reservation.width = 0;
+      reservation.placement = preferredFloatingPlacement(placement);
+      reservation.horizontalOffset = null;
+      tooltipEl.style.minWidth = "";
+    }
+    reservation.trigger = trigger;
 
     let cancelled = false;
     let measurement = 0;
     let needsSizing = true;
     let sizedWidth = 0;
     let sizedHeight = 0;
+    let retainedPlacement = reservation.placement;
 
     const update = () => {
       if (cancelled) return;
@@ -87,19 +126,36 @@ export function usePortaledTooltipPlacement(
           tooltipEl.style.maxWidth = `${availableWidth}px`;
           tooltipEl.style.width = `${availableWidth}px`;
         }
+        if (preservePlacementOnResize) {
+          // An outgoing affix can determine the panel's intrinsic width. Keep
+          // that width through this hover/exit fade so its retained text does
+          // not recenter when the old line finishes collapsing.
+          reservation.width = Math.min(
+            availableWidth,
+            Math.max(reservation.width, tooltipEl.getBoundingClientRect().width),
+          );
+          tooltipEl.style.minWidth = `${reservation.width}px`;
+        }
       }
+      const preferredPlacement = preservePlacementOnResize ? retainedPlacement : preferredFloatingPlacement(placement);
       void computePosition(trigger, tooltipEl, {
-        placement: preferredFloatingPlacement(placement),
+        placement: preferredPlacement,
         strategy: "fixed",
         middleware: [
           offset(padding),
           allowFlip &&
             flip({
               boundary: stage,
+              // A reserved vertical panel can be shifted horizontally without
+              // abandoning its side solely because wider content reaches an edge.
+              crossAxis:
+                preservePlacementOnResize && (preferredPlacement === "top" || preferredPlacement === "bottom")
+                  ? false
+                  : undefined,
               fallbackPlacements:
-                placement === "above"
+                preferredPlacement === "top"
                   ? ["bottom", "left", "right"]
-                  : placement === "below"
+                  : preferredPlacement === "bottom"
                     ? ["top", "left", "right"]
                     : undefined,
             }),
@@ -113,6 +169,29 @@ export function usePortaledTooltipPlacement(
       }).then(
         ({ x, y, placement: finalPlacement }) => {
           if (cancelled || currentMeasurement !== measurement) return;
+          // A shrinking crafted affix should not move an otherwise fitting panel
+          // back across its trigger. Flip still handles viewport constraints.
+          const vertical = finalPlacement.startsWith("top") || finalPlacement.startsWith("bottom");
+          const triggerBounds = trigger.getBoundingClientRect();
+          const triggerCenter = triggerBounds.left + triggerBounds.width / 2;
+          if (preservePlacementOnResize && vertical) {
+            if (reservation.horizontalOffset === null || retainedPlacement !== finalPlacement)
+              reservation.horizontalOffset = x - triggerCenter;
+            // Width growth must expand away from the existing left edge, rather
+            // than recentering visible affix text. Follow moving artwork, but let
+            // viewport constraints override the reservation without retaining a
+            // temporary clamp for the rest of the hover.
+            x = clamp(
+              triggerCenter + reservation.horizontalOffset,
+              bounds.left + horizontalInset,
+              Math.max(
+                bounds.left + horizontalInset,
+                bounds.right - horizontalInset - tooltipEl.getBoundingClientRect().width,
+              ),
+            );
+          } else reservation.horizontalOffset = null;
+          retainedPlacement = finalPlacement;
+          reservation.placement = finalPlacement;
           const left = `${x}px`;
           // Anchor fixed above panels directly to the artwork so resizing and
           // celebratory scale never feed transformed panel dimensions back into placement.
@@ -173,7 +252,18 @@ export function usePortaledTooltipPlacement(
       if (frame !== null) cancelAnimationFrame(frame);
       cleanup();
     };
-  }, [active, triggerRef, padding, placement, maxWidthFraction, allowFlip, horizontalInsetOverride]);
+  }, [
+    active,
+    triggerRef,
+    triggerElement,
+    padding,
+    placement,
+    maxWidthFraction,
+    allowFlip,
+    horizontalInsetOverride,
+    preservePlacementOnResize,
+    visible,
+  ]);
 
   return { tooltipRef, ...floatingPlacementToTooltipState(position.placement), tooltipStyle: position.tooltipStyle };
 }

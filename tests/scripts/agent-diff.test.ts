@@ -1,18 +1,18 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { main, reviewDiff } from "../../scripts/agent-diff.mjs";
 
-const roots: string[] = [];
 afterEach(() => {
   vi.restoreAllMocks();
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
+const createTemporaryDirectory = temporaryDirectories();
+
 it("retains both change layers, renames, deletions, untracked files and generated inventory under a bounded preview", () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-diff-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("agent-diff-");
+
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
   const write = (file: string, text: string | Buffer) => fs.writeFileSync(path.join(root, file), text);
   git("init");
@@ -100,8 +100,8 @@ it("retains both change layers, renames, deletions, untracked files and generate
 });
 
 it("locates oversized patches without hiding small patches or reading unrelated changes", () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-diff-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("agent-diff-");
+
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
   git("init");
   fs.writeFileSync(path.join(root, ".gitignore"), "reports/\n");
@@ -161,8 +161,8 @@ it("locates oversized patches without hiding small patches or reading unrelated 
 });
 
 it("bounds scoped status while keeping both layers, rename sources and unrelated inventory", () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-status-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("agent-status-");
+
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
   git("init");
   fs.writeFileSync(path.join(root, ".gitignore"), "reports/\n");

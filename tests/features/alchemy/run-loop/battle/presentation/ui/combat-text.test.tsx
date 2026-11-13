@@ -2,6 +2,8 @@ import { prepareCombatFeedback } from "@/features/alchemy/run-loop/battle/combat
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CombatTextRail } from "@/features/alchemy/run-loop/battle/presentation/ui/combat-text";
+import { secondaryStatusFeedbackKey } from "@/features/alchemy/run-loop/battle/presentation/combat-status-feedback";
+import { combatTextLane } from "@/features/alchemy/run-loop/battle/combat-feedback-motion";
 import type { CombatTextBurst } from "@/features/alchemy/shared/types";
 import {
   advanceCombatFeedback,
@@ -15,6 +17,22 @@ const protectedHit: CombatTextBurst = {
   firstShownAt: 0,
   entries: [{ id: "notice", target: "player", kind: "notice", stat: "deathsDoor", text: "", displayText: "" }],
 };
+
+it("deduplicates an untagged Stunned notice against the active chip without suppressing Bear's typed hit", () => {
+  const hit = {
+    target: "enemy",
+    kind: "damage",
+    stat: "stun",
+    amount: 6,
+    feedback: "secondary",
+    companionActionId: 1,
+  } as const;
+  const notice = { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" } as const;
+  expect(combatTextLane(hit)).toBe("impact");
+  expect(secondaryStatusFeedbackKey(hit, combatTextLane(hit))).toBeUndefined();
+  expect(secondaryStatusFeedbackKey(notice, combatTextLane(notice))).toBe("enemy:stunned");
+  expect(secondaryStatusFeedbackKey({ ...notice, feedback: "primary" }, "impact")).toBeUndefined();
+});
 
 describe("CombatTextRail", () => {
   it("retains the Death's Door skull in setback feedback without adding text", () => {
@@ -238,14 +256,16 @@ it("fans direct hits independently and gives simultaneous reactions separate sta
   );
   const scheduled = scheduleCombatFeedback(prepared.bursts, prepared.reactions, 0, 1050, false);
   const hits = scheduled.floatingCombatBursts[0]!.entries;
+  expect(hits[0]!.presentation).toMatchObject({ launchAt: 0, spread: 0 });
   expect(hits[0]!.presentation!.spread).not.toBe(hits[1]!.presentation!.spread);
   expect(scheduled.reactionAnnouncements[0]!.presentation!.spread).not.toBe(
     scheduled.reactionAnnouncements[1]!.presentation!.spread,
   );
-  expect([...hits, ...scheduled.reactionAnnouncements].every((entry) => entry.presentation!.launchAt <= 180)).toBe(
-    true,
-  );
-  const shown = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 180);
+  expect(hits.every((entry) => entry.presentation!.launchAt <= 180)).toBe(true);
+  expect(scheduled.reactionAnnouncements.map((entry) => entry.presentation!.launchAt)).toEqual([0, 320]);
+  const early = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 180);
+  expect(early.reactionAnnouncements[1]!.presentation!.phase).toBe("waiting");
+  const shown = advanceCombatFeedback(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements, 320);
   const { container } = render(
     <CombatTextRail bursts={shown.floatingCombatBursts} reactions={shown.reactionAnnouncements} />,
   );
@@ -254,6 +274,8 @@ it("fans direct hits independently and gives simultaneous reactions separate sta
     const pair = container.querySelector(`[data-reaction="${id}"]`)!.closest('[data-testid="combat-feedback-action"]');
     expect(pair?.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
     expect(pair?.querySelector(`[data-reaction-id="${id}"]`)).not.toBeNull();
+    const accent = pair?.querySelector(".reaction-impact-accent");
+    expect(accent?.getAttribute("style")).toContain("--reaction-accent");
   }
 });
 

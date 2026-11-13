@@ -30,5 +30,5 @@ export const SIMPLE_EFFECT_DEFINITIONS = [
   defineFlagEffect("play-next-card-twice"),
   defineFlagEffect("next-hit-poison"),
   defineFlagEffect("next-archery-free"),
-  defineFlagEffect("dodge-next-attack"),
+  z.object({ kind: z.literal("dodge-next-attack"), probability: z.number().min(0).max(1).optional() }),
 ] as const;

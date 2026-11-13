@@ -19,6 +19,7 @@ import {
   GOLD_TROVE_REWARD_MULTIPLIER,
 } from "@/lib/game-constants";
 import {
+  characters,
   computeTalentEffects,
   ENEMY_TYPES,
   getGoldMultiplier,
@@ -199,6 +200,7 @@ export function computeVictoryRewards(
   );
   const sharedFlowInput = {
     lootProgress: input.lootProgress,
+    heroKeywords: characters[input.characterId].keywords,
     goldPayout,
     materials: settlement.materials,
     rng,

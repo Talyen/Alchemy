@@ -1,3 +1,4 @@
+import { makeDamageCard, makeTestCard } from "../../fixtures/cards";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn, reduceSkipTurns } from "@/lib/battle/player-turn-transition";
@@ -6,7 +7,6 @@ import { companionLibrary, computeTalentEffects } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
-import { makeTestCard as makeEnemyTestCard, makeTestCard } from "../../fixtures/cards";
 import * as talentBattle from "../../fixtures/talent-battle";
 
 describe("Talent talent turn rewards", () => {
@@ -65,16 +65,7 @@ describe("Talent talent turn rewards", () => {
       rng: () => 0.5,
       deck: Array.from({ length: 10 }, (_, i) => attack(`draw-${i}`)),
     });
-    const dodged = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({
-        effects: [
-          { kind: "damage", damageType: "physical", amount: 2 },
-          { kind: "damage", damageType: "physical", amount: 2 },
-        ],
-      }),
-      [],
-    );
+    const dodged = applyEnemyAbility(state, makeDamageCard("physical", [2, 2]), []);
     expect(dodged.hand).toHaveLength(2);
     const after = endPlayerTurn(state).state;
     expect(after.hand.length).toBeGreaterThan(5);
@@ -112,16 +103,7 @@ describe("Talent talent turn rewards", () => {
       flags: { companionNextAttackBonus: 2 },
       rng: () => 0.1,
     });
-    const after = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({
-        effects: [
-          { kind: "damage", damageType: "physical", amount: 2 },
-          { kind: "damage", damageType: "physical", amount: 2 },
-        ],
-      }),
-      [],
-    );
+    const after = applyEnemyAbility(state, makeDamageCard("physical", [2, 2]), []);
     expect(after.hand).toHaveLength(2);
     expect(after.enemyHealth).toBe(96);
     expect(after.flags.companionNextAttackBonus).toBe(0);

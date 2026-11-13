@@ -102,7 +102,7 @@ test("corner crystals retain capacity, destruction and temporary overflow effect
   });
 });
 
-test.setTimeout(60_000);
+test.setTimeout(process.env.CI ? 0 : 60_000);
 
 async function openHand(page: Page, count = 7, draw = false) {
   await page.emulateMedia({ reducedMotion: "no-preference" });

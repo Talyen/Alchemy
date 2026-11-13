@@ -38,7 +38,11 @@ export async function readArtManifest(manifestPath) {
     }
   }
   try {
-    await validateAssetRegistry(Object.keys(manifest).map((target) => ({ target })));
+    // Prepared manifests record output hashes, not authoring source filenames.
+    await validateAssetRegistry(
+      Object.keys(manifest).map((target) => ({ target })),
+      { allowMissingSource: true },
+    );
   } catch (cause) {
     throw new Error(`Invalid art manifest "${manifestPath}": ${cause.message}`, { cause });
   }

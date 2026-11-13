@@ -49,6 +49,9 @@ sizes rather than shipping a speculative size reduction.
 
 ## Quick start
 
+Profiling and its renderer builds may run locally under [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change). On the shared Mac, wrap measurements in the bounded host lane specified there and run them before protected integration. `--help` and comparison of existing reports
+do not launch a measurement.
+
 ```bash
 npm run perf -- --electron --seed 9
 npm run perf -- --all
@@ -251,9 +254,9 @@ fixtures separately from earned journey checkpoints. Reuse a current build with
 - `large-deck`: a 60-card deck representing a long run, with authored effects and
   art; 20 inspections traverse several pages, hover cards, close and reopen the
   dialog. The UI must report 60 cards. Pagination bounds simultaneous rendering.
-- `combat-feedback-burst`: a full seven-card hand plus Burn, Poison and Bleed on
-  both actors. Normal card and end-turn controls resolve authored cards and status
-  ticks. A renderer observer must capture at least six concurrent numeric texts
+- `combat-feedback-burst`: a full seven-card hand, an armored enemy, and Burn,
+  Poison and Bleed on both actors. Normal card and end-turn controls resolve
+  authored cards and status ticks. A renderer observer must capture at least six concurrent numeric texts
   and two bursts in each of at least six measured battles; an idle battle cannot
   satisfy the workload. Each battle needs 50 frames overall and 10 during feedback
   overlap, giving at least 300 and 60 respectively across actual bursts. A short
@@ -381,7 +384,7 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 
 Metric and comparison coverage lives in `tests/performance/` and runs in the
 full unit suite. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
-owns check selection and local execution permissions.
+owns check selection and local resource coordination.
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).
 

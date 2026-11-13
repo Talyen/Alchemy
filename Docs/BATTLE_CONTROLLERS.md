@@ -27,15 +27,11 @@ offered the input. The command compares its identity with the current battle
 inside the transaction, before resolving gameplay, consuming RNG, or awarding XP.
 A retained action cannot affect a later turn, Wish queue, replacement battle, or
 restored save even when card IDs and turn numbers repeat. Unrelated navigation
-leaves the battle snapshot intact and does not invalidate input. Autoplay retains
-its snapshot across preview delays; headless offers retain it in their callbacks.
-The battle route binds manual Card and Wish callbacks to the committed input
-snapshot captured for that render, separately from copied playback frames.
-Autoplay retains the snapshot used to select
-its card, and automatic turn endings retain the snapshot that scheduled their
-timer. The corner End Turn button passes its captured snapshot
-to `handleEndTurn(expected)`; all input handlers require that identity and reject
-a changed snapshot before playback. End Turn commits directly after the current playback and save gates pass.
+leaves the battle snapshot intact and does not invalidate input. Manual Card and
+Wish callbacks capture the committed render snapshot; autoplay, headless offers,
+and automatic turn endings retain the snapshot that scheduled their action. The
+corner End Turn button passes its captured snapshot to `handleEndTurn(expected)`
+and commits after the playback and save gates pass.
 
 `battle-presentation-store.ts` keeps its mutable Zustand store private. The public
 port exposes React-compatible reads and selector subscriptions; every action in
@@ -166,6 +162,19 @@ completion flags or cleanup ordering.
 
 `draw-sequence.ts` sequences work; `battle-transfers.ts` adapts DOM measurements,
 sounds and timers. End-turn cleanup resets hand transfers after all draws settle.
+Resolved card and turn frames carry actual drawn-card UIDs from the execution-only
+`onCardsDrawn` hook. Draw helpers report fresh deck draws; newly created Wish
+cards do not emit a deck-draw receipt. The saved overflow queue deliberately
+contains no origin metadata: its later delivery settles through normal hand
+reflow without a new deck flight or departure sound, for both queued draws and
+created cards. Delivery never invents an origin or replays an earlier draw.
+The hook is removed by
+`battleSnapshot`, and receipts are never committed or saved. Playback hides only
+new hand cards matching those receipts before publishing their resolved hand,
+including the separate Companion frame after ordinary turn draws. The end-turn
+action's own playing phase must not be mistaken for a newer card draw that owns
+the hand. Companion cast/attack cues and committed gameplay remain independent
+of transfer completion, failure or cancellation.
 
 ### Route lifetime
 
@@ -219,6 +228,17 @@ current playback gates and hand playability.
 Wishes wait for active card transfers. Draw-and-Wish cards show draws first;
 queued Wishes also wait for the prior chosen card to reach the hand. Use the
 existing transfer-in-progress signal without delaying gameplay commits.
+
+### Companion action playback
+
+The engine retains each Companion action's actual feedback and before/after Health,
+including successful Bond repeats. These execution-only facts are not saved and
+never draw additional RNG. The feedback owner queues independent attack/cast beats
+and publishes each action's chips and display-only Health at its impact. Other card
+results keep their ordinary timing. Manual input and terminal navigation wait for
+this queue; cancellation settles its waiters and removes pending impacts. Mana,
+statuses and hand contents still read the committed result rather than simulating
+another combat state in presentation.
 
 ### Outcome timing
 

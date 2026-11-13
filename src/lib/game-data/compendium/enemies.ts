@@ -35,7 +35,7 @@ export const enemyBestiary = [
     art: assetRefs.theFrostwarden,
     enemyType: "boss",
     traits: [
-      trait("glacial-shell", "Glacial Surge", "Deals 1 additional Freeze damage."),
+      trait("glacial-shell", "Glacial Surge", "Deals 1 additional Freeze damage and receives half Freeze damage."),
       { ...sharedWeaknesses.thawing },
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
@@ -47,7 +47,7 @@ export const enemyBestiary = [
     enemyType: "boss",
     traits: [
       trait("regeneration", "Rotting Regrowth", "Restores 1 Health each turn."),
-      { ...sharedWeaknesses.kindling },
+      trait("brittle-bark", "Brittle Bark", "Receives 30% more Burn damage and 30% more Stun damage.", "negative"),
     ],
     abilityIds: ["grasping-vines", "bloodthorn", "thorn-whip"],
   }),
@@ -253,7 +253,7 @@ export const enemyBestiary = [
     art: assetRefs.theBloodCountess,
     enemyType: "boss",
     traits: [
-      trait("crimson-pulse", "Crimson Pulse", "Deals 1 Bleed damage every other turn."),
+      trait("crimson-pulse", "Crimson Pulse", "Deals 1 Bleed damage every third turn."),
       trait("blood-countess", "Profane Blood", "Takes 1 Holy damage whenever the hero restores Health.", "negative"),
     ],
     abilityIds: ["fangs", "rend", "bloodthorn"],
@@ -299,7 +299,12 @@ export const enemyBestiary = [
     enemyType: "boss",
     traits: [
       trait("radiant-judgment", "Radiant Judgment", "Deals 1 Holy damage every other turn."),
-      { ...sharedWeaknesses.flickering },
+      trait(
+        "cracked-halo",
+        "Cracked Halo",
+        "Receives 2 additional damage from the second attack hit each turn.",
+        "negative",
+      ),
     ],
     abilityIds: ["smite", "judgment", "holy-radiance"],
   }),

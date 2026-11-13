@@ -20,8 +20,6 @@ export function PotionComparison({ original, result }: { original: BattleCard; r
         })}
         className={viewCardWidthClass}
         shineColor={getCardInspectionShineColors(original)}
-        shimmerActive={false}
-        shimmerToken={undefined}
       />
       <MoveRight aria-hidden="true" className="h-10 w-10 self-center text-gold-pale" />
       <BattleCardButton
@@ -31,8 +29,6 @@ export function PotionComparison({ original, result }: { original: BattleCard; r
         })}
         className={viewCardWidthClass}
         shineColor={getCardInspectionShineColors(result)}
-        shimmerActive={false}
-        shimmerToken={undefined}
       />
       <div className="col-start-1 text-center">
         <CardTitle card={original} />

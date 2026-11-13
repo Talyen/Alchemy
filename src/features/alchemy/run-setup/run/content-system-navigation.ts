@@ -225,14 +225,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps,
     const session = readRunSession(gameSession);
     const hasActiveRun = readHasActiveRun(gameSession);
     const activeCharacterId = hasActiveRun ? readActiveRun(gameSession).characterId : null;
-    if (
-      hasActiveRun &&
-      !isDifficultySelectContinuation({
-        characterId: activeCharacterId,
-        activityKind: session.activity.kind,
-        hasActiveBattle: readHasActiveBattle(gameSession),
-      })
-    ) {
+    if (hasActiveRun && !isDifficultySelectContinuation(activeCharacterId, session.activity.kind)) {
       resumeRun();
       return;
     }
@@ -257,11 +250,10 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps,
   function handleBackFromDifficultySelect() {
     if (readHasActiveRun(gameSession)) {
       if (
-        !isDifficultySelectContinuation({
-          characterId: readActiveRun(gameSession).characterId,
-          activityKind: readRunSession(gameSession).activity.kind,
-          hasActiveBattle: readHasActiveBattle(gameSession),
-        })
+        !isDifficultySelectContinuation(
+          readActiveRun(gameSession).characterId,
+          readRunSession(gameSession).activity.kind,
+        )
       ) {
         resumeRun();
         return;

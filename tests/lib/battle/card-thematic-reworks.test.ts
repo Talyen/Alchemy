@@ -33,6 +33,28 @@ function play(id: string, patch: BattleStatePatch = {}) {
 }
 
 describe("thematic card effects", () => {
+  it("Steal deals Stun damage and grants Gold with matching card text", () => {
+    const result = play("steal");
+    expect(result.enemyHealth).toBe(98);
+    expect(result.enemyStatuses.stun).toBe(2);
+    expect(result.gold).toBe(1);
+    expect(cardById.steal!.descriptionLines).toEqual(["Deal 2 Stun damage", "Steal 1 Gold"]);
+  });
+
+  it("Blackjack steals Gold only while the enemy is Stunned and retains its Gold binding", () => {
+    expect(play("blackjack").gold).toBe(0);
+    expect(play("blackjack", { enemyCC: { stunSkipTurns: 1 } }).gold).toBe(2);
+
+    const card = cardById.blackjack!;
+    expect(card.descriptionLines).toEqual(["Deal 2 Stun damage", "Steal 2 Gold if the enemy is Stunned"]);
+    const goldTarget = getEditableCorruptionTargets(card).find((target) =>
+      target.edits.some((edit) => edit.kind === "gain-gold"),
+    )!;
+    const upgraded = applyNumericCorruption(card, goldTarget, 1);
+    expect(upgraded.descriptionLines[1]).toBe("Steal 3 Gold if the enemy is Stunned");
+    expect(upgraded.effects[1]).toEqual({ kind: "gain-gold", amount: 3, ifEnemyStunned: true });
+  });
+
   it.each([
     ["combustion", "burn", 2],
     ["hemorrhage", "bleed", 4],
@@ -151,9 +173,9 @@ describe("thematic card effects", () => {
   });
 
   it.each([
-    [0, 96, 2],
+    [0, 98, 2],
     [0.99, 98, 0],
-  ])("Cinderbloom ignites Poison only when the selected hit Burns (roll %s)", (roll, health, burn) => {
+  ])("Cinderbloom leaves immature Poison intact for either selected hit (roll %s)", (roll, health, burn) => {
     const result = play("cinderbloom", {
       rng: sequenceRng([roll, 0.99]),
       enemyStatuses: { poison: 1 },
@@ -161,6 +183,7 @@ describe("thematic card effects", () => {
     });
     expect(result.enemyHealth).toBe(health);
     expect(result.enemyStatuses.burn).toBe(burn);
+    expect(result.enemyStatuses.poison).toBe(1);
   });
 
   it("Roll the Dice draws each die result, respects hand capacity, and Consumes once", () => {
@@ -184,10 +207,10 @@ describe("thematic card effects", () => {
     const utility = play("pack-tactics", { activeCompanion: companionLibrary["golden-retriever"] });
     expect(utility.gold).toBe(2);
     expect(utility.wishOptions).toBeNull();
-    expect(utility.playerStatuses.block).toBe(4);
+    expect(utility.playerStatuses.block).toBe(3);
     const absent = play("pack-tactics");
     expect(absent.enemyHealth).toBe(100);
-    expect(absent.playerStatuses.block).toBe(4);
+    expect(absent.playerStatuses.block).toBe(3);
     expect(absent.wishOptions).toHaveLength(3);
     expect(absent.wishOptions?.every((card) => card.effects.some((effect) => effect.kind === "summon-companion"))).toBe(
       true,
@@ -196,7 +219,7 @@ describe("thematic card effects", () => {
     expect(chooseWishCard(absent, chosen.id).hand.some((card) => card.id === chosen.id)).toBe(true);
     const lethal = play("pack-tactics", { activeCompanion: companionLibrary.wolf, enemyHealth: 1 });
     expect(lethal.enemyHealth).toBe(0);
-    expect(lethal.playerStatuses.block).toBe(4);
+    expect(lethal.playerStatuses.block).toBe(3);
     expect(lethal.wishOptions).toBeNull();
   });
 
@@ -232,7 +255,7 @@ describe("thematic card effects", () => {
       expect(changed.descriptionLines).toContain(line);
       expect(changed.effects).toEqual(expect.arrayContaining([expect.objectContaining(expected)]));
       if (id === "pack-tactics") {
-        expect(changed.effects).toContainEqual({ kind: "player-status", status: "block", amount: 4 });
+        expect(changed.effects).toContainEqual({ kind: "player-status", status: "block", amount: 3 });
       }
       expect(validateCardDescriptionParity(changed)).toEqual([]);
       expect(hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(changed))))).toMatchObject({

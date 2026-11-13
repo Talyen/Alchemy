@@ -73,7 +73,6 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/assets/optimize-pipelines.mjs", ["assets", "tooling"], ["assets"]],
   // Release/desktop sync helpers share the sync-* prefix but reproduce no
   // committed asset output: tooling route only, no CI gate.
-  ["scripts/sync-changelog.mjs", ["tooling"], []],
   ["scripts/sync-steam-appid.mjs", ["tooling"], ["desktop"]],
   ["scripts/ensure-steamworks.mjs", ["desktop", "tooling"], ["desktop"]],
   ["scripts/steamworks/overlay.patch", ["desktop", "tooling"], ["desktop"]],
@@ -157,7 +156,6 @@ describe("desktop CI artifact flow", () => {
     expect(readWorkflow("nightly").jobs["ship-gate-full"].with).toMatchObject({
       full: true,
       renderer: "",
-      timeout: 45,
     });
     expect(nightly.steps).toContainEqual(
       expect.objectContaining({

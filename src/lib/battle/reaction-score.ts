@@ -15,7 +15,14 @@ import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc"
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolveSecondaryAction } from "./action-context";
 import { createCompanionActionCard } from "./companion-scaling";
-import { applyShatter, canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
+import {
+  applyShatter,
+  canShatter,
+  consumeReactionOpportunity,
+  getPostHitReactionPayoffs,
+  projectReactionDamage,
+  reactionDotIngredients,
+} from "./elemental-reactions";
 import { projectEnemyDotDamage } from "./dot-resolve";
 import { addPlayerStatus, setEnemyStatus } from "./status-state";
 import { dealSelfDamage } from "./status-helpers";
@@ -55,7 +62,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
     )
   )
     return { ...path, state: attempted };
-  const shatter = consumed.packet.damageType === "physical" && canShatter(before);
+  const shatter = before.reactionSpent !== true && consumed.packet.damageType === "physical" && canShatter(before);
   const candidate = shatter ? applyShatter(consumed.state, []) : consumed.state;
   const resolved = computeCardDamageToEnemy(
     candidate,
@@ -90,14 +97,19 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
     state = { ...setEnemyStatus(state, "bleed", 0), enemyHealth: Math.max(0, state.enemyHealth - detonated) };
   }
   const payoffs = getPostHitReactionPayoffs(before, state, consumed.packet.damageType, healthDamage);
-  let score = shatter ? before.enemyMitigation.block + before.enemyMitigation.armor : 0;
+  let score = shatter ? before.enemyMitigation.block : 0;
   if (shatter) payoffs.unshift({ id: "shatter", damage: before.reactions.shatterDamage });
   for (const payoff of payoffs) {
     if (state.enemyHealth <= 0) break;
-    score += Math.min(state.enemyHealth, payoff.damage);
+    const damage = projectReactionDamage(state, payoff);
+    score += Math.min(state.enemyHealth, damage);
+    const enemyStatuses = { ...state.enemyStatuses };
+    for (const status of reactionDotIngredients(payoff.id)) enemyStatuses[status] = 0;
     state = {
       ...consumeReactionOpportunity(state, payoff.id),
-      enemyHealth: Math.max(0, state.enemyHealth - payoff.damage),
+      reactionSpent: true,
+      enemyStatuses,
+      enemyHealth: Math.max(0, state.enemyHealth - damage),
     };
   }
   return { ...path, state, score: path.score + score };
@@ -116,11 +128,11 @@ function projectionKey(state: BattleState): string {
   const reactions = [
     state.reactions.shatterDamage,
     state.reactions.frostfireDamage,
-    state.reactions.thunderclapDamage,
-    state.reactions.wildfirePendingTickDamage ?? "x",
-    state.reactions.wildfireLastTickTurn ?? "x",
-    state.reactions.wildfireDamage,
-    state.reactions.consecrated ? "1" : "0",
+    state.reactions.ruptureDamage,
+    state.reactions.naturalBurnDamage,
+    state.reactions.naturalPoisonDamage,
+    state.reactions.naturalBleedDamage,
+    state.reactionSpent ? "1" : "0",
   ].join(",");
   const action = state.action ? `${state.action.source},${state.action.repeatActive ? "1" : "0"}` : "-";
   const cc = `${state.enemyCC.freezeSkipTurns},${state.enemyCC.stunSkipTurns}`;
@@ -156,6 +168,7 @@ const playerResources = createPlayerResourceResolver({
 // These are deliberate score approximations. The production utility owner still
 // owns effect ordering, conversions, resource floors, and prepared flags.
 const utilityHandlers = createCardUtilityHandlers({
+  // Nominal healing intentionally excludes card-specific and potion bonuses.
   healingAmount: (_state, _card, effect) => effect.amount,
   heal: (state, amount) => ({ ...state, playerHealth: Math.min(state.playerMaxHealth, state.playerHealth + amount) }),
   mana: (state, amount, _texts, overflow) => gainMana(state, amount, overflow),
@@ -245,13 +258,14 @@ function projectEffects(
         if (effect.kind === "cleanse-player-status-to-damage") {
           const stacks = path.state.playerStatuses[effect.status] ?? 0;
           if (stacks <= 0) return [path];
-          const cleansedState = {
-            ...path.state,
-            playerStatuses: {
-              ...path.state.playerStatuses,
-              [effect.status]: 0,
-            },
-          };
+          const cleansedState = utilityHandlers["remove-player-status"](
+            path.state,
+            card,
+            { kind: "remove-player-status", status: effect.status },
+            1,
+            [],
+            { manaAtStart },
+          );
           return [
             projectHit({ ...path, state: cleansedState }, card, {
               kind: "damage",
@@ -296,14 +310,23 @@ function projectEffects(
         }
         if (effect.kind === "self-damage") {
           if (path.state.enemyHealth <= 0 || path.state.playerHealth <= 0) return [path];
-          const { state: nextState, healthLost } = dealSelfDamage(path.state, effect.amount, effect.damageType, []);
+          // Armor can break during self-damage and grant Block. Live Block
+          // rewards may roll to draw a Holy card, but this projection does not
+          // simulate draws and must not consume combat RNG.
+          const talents = path.state.talentEffects;
+          const projected =
+            talents.drawHolyOnBlockChance > 0
+              ? { ...path.state, talentEffects: { ...talents, drawHolyOnBlockChance: 0 } }
+              : path.state;
+          const result = dealSelfDamage(projected, effect.amount, effect.damageType, []);
+          const nextState = projected === path.state ? result.state : { ...result.state, talentEffects: talents };
+          const { healthLost } = result;
           const statusType = harmfulPlayerStatusIds.find((id) => id === effect.damageType);
           const withStatus =
             statusType && healthLost > 0 ? addPlayerStatus(nextState, statusType, healthLost) : nextState;
           return [{ ...path, state: withStatus }];
         }
         if (
-          effect.kind !== "heal" &&
           effect.kind !== "gain-gold" &&
           effect.kind !== "summon-companion" &&
           Object.hasOwn(utilityHandlers, effect.kind)
@@ -311,9 +334,6 @@ function projectEffects(
           const apply = utilityHandlers[effect.kind as keyof typeof utilityHandlers] as EffectHandler;
           return [{ ...path, state: apply(path.state, card, effect, 1, [], { manaAtStart }) }];
         }
-        // Nominal healing intentionally excludes card-specific/potion bonuses.
-        if (effect.kind === "heal")
-          return [{ ...path, state: utilityHandlers.heal(path.state, card, effect, 1, [], { manaAtStart }) }];
         if (effect.kind === "companion-action" && path.state.activeCompanion) {
           const companionCard = createCompanionActionCard(path.state, path.state.activeCompanion);
           let next = [path];

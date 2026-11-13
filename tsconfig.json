@@ -18,7 +18,7 @@
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": true,
     "incremental": true,
-    "tsBuildInfoFile": "./node_modules/.cache/tsbuild/main.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsbuild/main.tsbuildinfo",
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,

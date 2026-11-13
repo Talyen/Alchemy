@@ -1,8 +1,8 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { cardById, enemyById } from "@/lib/game-data";
 import { describe, expect, it } from "vitest";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 
 describe("applyEnemyAbility: reactions", () => {
   it("applies the Fire Imp follow-up to each landed hit", () => {
@@ -12,16 +12,7 @@ describe("applyEnemyAbility: reactions", () => {
       playerStatuses: { block: 0, armor: 0 },
       rng: () => 0.99,
     });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({
-        effects: [
-          { kind: "damage", damageType: "physical", amount: 2 },
-          { kind: "damage", damageType: "physical", amount: 2 },
-        ],
-      }),
-      makeTexts(),
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("physical", [2, 2]), makeTexts());
 
     expect(result.playerHealth).toBeLessThan(state.playerHealth - 2);
     expect(result.playerStatuses.burn).toBe(2);
@@ -45,11 +36,7 @@ describe("applyEnemyAbility: reactions", () => {
       gearEffects: { stunOnArmorLostToAttack: 1 },
       rng: () => 0.99,
     });
-    const next = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(state, makeDamageCard("physical", 1), []);
     expect(next.playerHealth).toBe(playerHealth - 1);
     expect(next.enemyHealth).toBe(playerHealth === 1 ? 19 : 0);
     expect(next.enemyStatuses.onAttackBleed).toBe(playerHealth === 1 ? 30 : 0);
@@ -64,11 +51,7 @@ describe("applyEnemyAbility: reactions", () => {
         rng: () => 0.99,
       });
       const texts = makeTexts();
-      const result = applyEnemyAbility(
-        state,
-        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
-        texts,
-      );
+      const result = applyEnemyAbility(state, makeDamageCard("physical", 1), texts);
       expect(result.playerStatuses[status]).toBe(0);
       expect(result.enemyHealth).toBe(state.enemyHealth);
       expect(texts.filter((text) => text.kind === "notice" && text.signal === "purge")).toEqual([
@@ -92,11 +75,7 @@ describe("player Thorns", () => {
       currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
       rng: () => 0.99,
     });
-    const next = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(state, makeDamageCard("physical", 1), []);
     expect(next.playerHealth).toBe(playerHealth - 1);
     expect(next.enemyHealth).toBe(playerHealth === 1 ? 19 : 0);
     expect(next.playerStatuses.thorns).toBe(playerHealth === 1 ? 30 : 0);
@@ -115,11 +94,7 @@ describe("player Thorns", () => {
         playerStatuses: { block, thorns: 3 },
         rng: () => roll,
       });
-      const result = applyEnemyAbility(
-        state,
-        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-        makeTexts(),
-      );
+      const result = applyEnemyAbility(state, makeDamageCard("physical", 5), makeTexts());
       expect(result.playerHealth).toBe(health);
       expect(result.enemyHealth).toBe(enemyHealth);
       expect(result.playerStatuses).toMatchObject({ thorns, block: block ? 5 : 0 });

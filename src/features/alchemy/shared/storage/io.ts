@@ -4,8 +4,11 @@ import { sessionRuntime } from "../stores/session/session-runtime";
 import type { UnstampedSaveData } from "./types";
 import type { SaveStorageEvent } from "./save-operation-queue";
 
+export type PersistenceInterruption = SaveStorageEvent | "restored";
+
 export function isSaveClearPending(gameSession: GameSession): boolean {
-  return sessionRuntime(gameSession).io.isClearing();
+  const runtime = sessionRuntime(gameSession);
+  return runtime.io.isClearing() || runtime.persistentClearInFlight;
 }
 
 export function getSaveWriteFailure(gameSession: GameSession) {
@@ -28,9 +31,17 @@ export function setWritesDisabled(disabled: boolean, gameSession: GameSession) {
 export function routeWritesToRecovery(gameSession: GameSession) {
   sessionRuntime(gameSession).io.routeWritesToRecovery();
 }
-export function subscribeSaveEvents(listener: (event: SaveStorageEvent) => void, gameSession: GameSession) {
+export function subscribePersistenceInterruptions(
+  listener: (event: PersistenceInterruption) => void,
+  gameSession: GameSession,
+) {
   const runtime = sessionRuntime(gameSession);
-  return runtime.track(runtime.io.subscribeSaveEvents(listener));
+  const cancelStorage = runtime.io.subscribeSaveEvents(listener);
+  const cancelRestore = runtime.progressCompletion.subscribeRestore(() => listener("restored"));
+  return runtime.track(() => {
+    cancelStorage();
+    cancelRestore();
+  });
 }
 export function waitForPendingSaveWrites(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.waitForPendingSaveWrites();
@@ -38,19 +49,17 @@ export function waitForPendingSaveWrites(gameSession: GameSession) {
 export function loadAlchemySaveState(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.loadAlchemySaveState();
 }
-function writeSessionSnapshot(data: UnstampedSaveData, gameSession: GameSession, exit: boolean) {
+function writeSessionSnapshot(data: UnstampedSaveData, gameSession: GameSession, mode: "normal" | "exit") {
   const runtime = sessionRuntime(gameSession);
   const admission = runtime.saveSnapshots.prepare(data);
   if (typeof admission === "string") return Promise.resolve(admission);
-  return exit
-    ? runtime.io.saveAlchemySaveDataForExit(data, admission.complete, admission.validate)
-    : runtime.io.saveAlchemySaveData(data, admission.complete, admission.validate);
+  return runtime.io.writeSnapshot(data, mode, admission.complete, admission.validate);
 }
 export function saveAlchemySaveData(data: UnstampedSaveData, gameSession: GameSession) {
-  return writeSessionSnapshot(data, gameSession, false);
+  return writeSessionSnapshot(data, gameSession, "normal");
 }
 export function saveAlchemySaveDataForExit(data: UnstampedSaveData, gameSession: GameSession) {
-  return writeSessionSnapshot(data, gameSession, true);
+  return writeSessionSnapshot(data, gameSession, "exit");
 }
 export function clearAlchemySaveData(mode: "default" | "localWipe" = "default", gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);

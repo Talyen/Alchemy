@@ -42,6 +42,7 @@ export function ItemPickerGrid({
   activeCurrencyId,
   onEquip,
   craftingResult,
+  craftingChanges,
   onSalvage,
   onApplyCurrency,
   onCombatLockedAttempt,
@@ -64,6 +65,7 @@ export function ItemPickerGrid({
   activeCurrencyId: CraftingCurrencyId | null;
   onEquip: (instance: GearInstance) => void;
   craftingResult: CraftingResult | null;
+  craftingChanges: Record<string, Record<string, "new" | "modified">>;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
   onCombatLockedAttempt: () => void;
@@ -87,6 +89,13 @@ export function ItemPickerGrid({
     }
     return byInstance;
   }, [loadouts]);
+  const handInventory = useMemo(() => {
+    if (slot !== "main-hand" && slot !== "off-hand") return [];
+    const mainHandId = loadout["main-hand"];
+    const offHandId = loadout["off-hand"];
+    if (!mainHandId && !offHandId) return [];
+    return inventory.filter((item) => item.instanceId === mainHandId || item.instanceId === offHandId);
+  }, [slot, loadout, inventory]);
 
   return (
     <ArmoryPagedGrid
@@ -110,7 +119,9 @@ export function ItemPickerGrid({
         const EquippedIcon = equippedCharacterId ? CHARACTER_ICONS[equippedCharacterId] : null;
         const keywordId = equippedCharacterId ? CHARACTER_KEYWORDS[equippedCharacterId] : null;
         const colorClass = keywordId ? keywordDefinitions[keywordId]?.colorClass : undefined;
-        const loadoutLegal = definition ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory) : false;
+        const loadoutLegal = definition
+          ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, handInventory)
+          : false;
         const shineColor = getAstralShineColors(item);
         const target = i18n.read(() =>
           getArmoryItemInteraction({
@@ -180,8 +191,11 @@ export function ItemPickerGrid({
                   <GearDetailPopup
                     definition={definition}
                     instance={item}
+                    craftingChanges={craftingChanges[item.instanceId]}
                     visible={visible}
                     triggerRef={triggerRef}
+                    placement="below"
+                    preservePlacementOnResize
                     notice={blockedReason ?? undefined}
                   />
                 )}

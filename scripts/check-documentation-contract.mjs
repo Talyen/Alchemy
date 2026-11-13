@@ -25,16 +25,9 @@ const IGNORED_DIRECTORIES = new Set([
 const markdownSourceCache = new Map();
 let repositoryFileCache = null;
 
-// Release notes intentionally retain historical commands.
-export function isHistoryOnlyDoc(relativePath) {
-  return relativePath === "CHANGELOG.md";
-}
-
 /** Reachability exemption: active plans and agent-local workflows need no inbound owner links. */
 export function isReachabilityExempt(relativePath) {
-  return (
-    relativePath === "CHANGELOG.md" || relativePath.startsWith("Docs/Plans/") || relativePath.startsWith(".agents/")
-  );
+  return relativePath.startsWith("Docs/Plans/") || relativePath.startsWith(".agents/");
 }
 
 function markdownFiles(directory = ROOT) {
@@ -110,8 +103,7 @@ export function checkLocalMarkdownLinks() {
 export function checkDocumentedNpmScripts() {
   const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const missing = [];
-  for (const { file, relative, source, scripts } of markdownFacts()) {
-    if (isHistoryOnlyDoc(relative)) continue;
+  for (const { file, source, scripts } of markdownFacts()) {
     for (const match of scripts) {
       const script = match[1];
       if (script && !packageJson.scripts[script]) {
@@ -132,15 +124,14 @@ export function checkMarkdownHeadingAnchors() {
     return slugs;
   };
   const broken = [];
-  for (const { file, relative, source, links } of markdownFacts()) {
-    if (isHistoryOnlyDoc(relative)) continue;
+  for (const { file, source, links } of markdownFacts()) {
     for (const { target, index } of links) {
       if (/^(?:https?:|mailto:)/u.test(target) || !target.includes("#")) continue;
       const [relativePath, ...anchorParts] = target.split("#");
       const anchor = decodeURIComponent(anchorParts.join("#"));
       if (!anchor) continue;
       const absolutePath = relativePath ? resolve(dirname(file), decodeURIComponent(relativePath)) : file;
-      if (!existsSync(absolutePath) || !absolutePath.endsWith(".md") || absolutePath.endsWith("CHANGELOG.md")) {
+      if (!existsSync(absolutePath) || !absolutePath.endsWith(".md")) {
         continue;
       }
       if (!slugsFor(absolutePath).has(anchor)) {

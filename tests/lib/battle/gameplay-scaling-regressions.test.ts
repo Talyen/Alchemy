@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { cardById } from "@/lib/game-data";
 import { upgradeWishCard } from "@/lib/battle/wish";
@@ -7,7 +8,7 @@ import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";
-import { makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { patchBattleState } from "../../fixtures/battle";
 
 describe("gameplay scaling regressions", () => {
   it("Powerful Wish improves Blood Offering without increasing its Health cost", () => {
@@ -32,10 +33,7 @@ describe("gameplay scaling regressions", () => {
   });
 
   it("Returning Gale carries Follow-through into its half-damage echo", () => {
-    const arrow = makeTestCard({
-      tags: ["archery"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
+    const arrow = makeDamageCard("physical", 4, { tags: ["archery"] });
     const state = patchBattleState({
       hand: [arrow],
       enemyHealth: 100,

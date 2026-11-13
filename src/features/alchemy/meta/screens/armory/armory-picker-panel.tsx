@@ -73,7 +73,7 @@ export function ArmoryPickerPanel({
   hiddenArtworkIds,
 }: ArmoryPickerPanelProps) {
   const i18n = useGameTranslation();
-  const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
+  const { editable, salvageMode, activeCurrencyId, craftingResult, craftingChanges } = targeting;
   const paging = { page, totalPages, onPageChange, fillerCount, placeholderIndex, hiddenArtworkIds };
   return (
     <section
@@ -142,6 +142,7 @@ export function ArmoryPickerPanel({
             activeCurrencyId={activeCurrencyId}
             onEquip={actions.onEquipGear}
             craftingResult={craftingResult}
+            craftingChanges={craftingChanges}
             onSalvage={actions.onSalvage}
             onApplyCurrency={actions.onApplyCurrency}
             onCombatLockedAttempt={actions.onCombatLockedAttempt}

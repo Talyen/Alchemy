@@ -101,6 +101,7 @@ attempt revokes late failures. Failed track setup releases its partial media
 element. Invalidation releases the source without seeking a discarded track;
 reset revokes playback before releasing every cached source.
 
+- A fresh Forge Golem track starts at 28.5 seconds and fades in ahead of the first lyric. The playback clock stays on the original media timeline, so lyrics and cached resumes retain their existing positions.
 - Starting a battle invalidates the upcoming enemy's battle music cache, even while the previous screen remains visible. It preserves menu playback until navigation selects the battle track. Invalidating the currently playing key forgets it entirely, so the next play builds a fresh track.
 - Invalidating either the playing track or the pending destination cancels the transition. Invalidating the playing track stops playback; invalidating only the destination restores the outgoing track to full gain. Unrelated cache invalidation leaves playback and its fade alone. A later explicit play can build the invalidated track afresh.
 - If the destination track cannot initialize after a fade-out, restore the outgoing track's configured volume. The failed destination remains uncached and can be retried on the next request.
@@ -151,8 +152,9 @@ resolved outcome. Companion turns use their actual damage/healing/status results
 summoning cards retain their arrival cues.
 
 Shatter uses its existing impact recording without implying a Critical.
-Thunderclap and Frostfire reuse ordinary typed-damage selection and existing
-assets; their reaction names use the existing combat announcements.
+Frostfire, Rupture, Toxic Shock, Consecration, and Venomflash reuse ordinary
+typed-damage selection and existing assets; their reaction names use the
+existing combat announcements.
 
 Death's Door replaces the ordinary action cue. Actual Shatter, Dodge, Freeze and
 Stun outcomes precede ordinary results; prepared, removed and immune statuses are
@@ -161,7 +163,7 @@ Block gained and Block absorbed compete. Ties favor damage, healing, then Block,
 with source order retained within a priority. Mana, Gold, Armor, Forge, Thorns,
 Wish and draw are semantic fallbacks; stripping and spending do not add strength.
 Critical Health-damage metadata selects a typed critical recording for the winning
-damage result. There is no universal metallic critical layer or extra Wildfire
+damage result. There is no universal metallic critical layer or extra reaction
 sound over a focal cue. Slash/Stab retain weapon criticals; Astral Arrow uses one
 bow-plus-element recording matching its actual element, with corresponding critical
 revisions. Periodic Poison and Bleed retain separate tick recordings.

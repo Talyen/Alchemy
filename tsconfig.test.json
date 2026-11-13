@@ -10,7 +10,7 @@
     "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": false,
     "incremental": true,
-    "tsBuildInfoFile": "./node_modules/.cache/tsbuild/test.tsbuildinfo"
+    "tsBuildInfoFile": "./.cache/tsbuild/test.tsbuildinfo"
   },
   "include": ["src/vite-env.d.ts", "tests", "performance"]
 }

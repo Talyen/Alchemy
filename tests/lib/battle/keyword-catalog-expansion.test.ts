@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { effectsForAffixRolls, getGearAffixTooltipEntries, normalizeAffixRolls } from "@/lib/gear";
+import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
+import { rollAffixValue } from "@/lib/gear/affixes";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { applyScaledLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
@@ -151,10 +154,13 @@ describe("keyword catalog expansion", () => {
       enemyStatuses: { poison: 2 },
       playerHealth: 10,
       playerMaxHealth: 20,
-      gearEffects: { natureLeechVsPoisoned: 1 },
-      rng: missChance,
+      gearEffects: { natureLeechVsPoisoned: 25 },
+      rng: () => 0.24,
     });
-    expect(dealDamageToEnemy(natureState, nature.card, nature.effect, []).playerHealth).toBeGreaterThan(10);
+    expect(dealDamageToEnemy(natureState, nature.card, nature.effect, []).playerHealth).toBe(12);
+    expect(dealDamageToEnemy({ ...natureState, rng: () => 0.25 }, nature.card, nature.effect, []).playerHealth).toBe(
+      10,
+    );
     expect(
       dealDamageToEnemy(
         { ...natureState, enemyStatuses: { ...natureState.enemyStatuses, poison: 0 } },
@@ -168,7 +174,29 @@ describe("keyword catalog expansion", () => {
       { source: "player-follow-up", damageType: "nature", amount: 4 },
       [],
     );
-    expect(triggered.playerHealth).toBeGreaterThan(10);
+    expect(triggered.playerHealth).toBe(12);
+    expect(
+      resolveFollowUpHit(
+        { ...natureState, rng: () => 0.25 },
+        { source: "player-follow-up", damageType: "nature", amount: 4 },
+        [],
+      ).playerHealth,
+    ).toBe(10);
+    expect(
+      resolveFollowUpHit(triggered, { source: "player-follow-up", damageType: "nature", amount: 4 }, []).playerHealth,
+    ).toBe(14);
+    const sylvan = { ...natureState, talentEffects: { ...natureState.talentEffects, natureLeechChance: 100 } };
+    expect(dealDamageToEnemy(sylvan, nature.card, nature.effect, []).playerHealth).toBe(12);
+    expect(
+      dealDamageToEnemy(
+        { ...sylvan, gearEffects: { ...sylvan.gearEffects, natureLeechVsPoisoned: 0 } },
+        nature.card,
+        nature.effect,
+        [],
+      ).playerHealth,
+    ).toBe(12);
+    const boosted = { ...natureState, talentEffects: { ...natureState.talentEffects, leechHealingBonus: 1 } };
+    expect(dealDamageToEnemy(boosted, nature.card, nature.effect, []).playerHealth).toBe(13);
     const blockedNature = dealDamageToEnemy(
       { ...natureState, enemyMitigation: { ...natureState.enemyMitigation, block: 10 } },
       nature.card,
@@ -200,6 +228,34 @@ describe("keyword catalog expansion", () => {
     expect(
       dealDamageToEnemy({ ...physicalState, playerHealth: 10 }, physical.card, physical.effect, []).playerHealth,
     ).toBe(10);
+  });
+
+  it("rolls Rootmender by rarity and normalizes legacy fixed rolls consistently", () => {
+    const affix = gearAffixCatalog["nature-leech-vs-poisoned"];
+    for (const [rarity, min, max] of [
+      ["basic", 20, 25],
+      ["astral", 30, 35],
+      ["unique", 30, 35],
+    ] as const) {
+      expect(rollAffixValue(affix, rarity, () => 0)).toBe(min);
+      expect(rollAffixValue(affix, rarity, () => 0.999)).toBe(max);
+      const legacy = [{ id: "nature-leech-vs-poisoned", value: 1 }] as const;
+      expect(normalizeAffixRolls(legacy, rarity)).toEqual([{ id: affix.id, value: min }]);
+      expect(effectsForAffixRolls(legacy, rarity).natureLeechVsPoisoned).toBe(min);
+      expect(getGearAffixTooltipEntries(legacy, rarity)[0]?.text).toBe(
+        `Nature damage against Poisoned enemies has a ${min}% chance to Leech`,
+      );
+      expect(normalizeAffixRolls(normalizeAffixRolls(legacy, rarity), rarity)).toEqual([{ id: affix.id, value: min }]);
+    }
+    expect(
+      effectsForAffixRolls(
+        [
+          { id: affix.id, value: 20 },
+          { id: affix.id, value: 25 },
+        ],
+        "basic",
+      ).natureLeechVsPoisoned,
+    ).toBe(45);
   });
 
   it("adds flat Poison damage to direct hits and ticks against Bleeding enemies", () => {

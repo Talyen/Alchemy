@@ -43,17 +43,43 @@ export function trinketOrderRow(entry: TrinketEntry): ArmoryOrderRow {
   return { id: entry.id, title: entry.title, rank: 0, baseType: "" };
 }
 
-export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: ArmorySortOption): number {
-  const rankCompare = a.rank - b.rank;
-  if (sort === "rarity" && rankCompare !== 0) return rankCompare;
-  if (sort === "base-type") {
-    const baseCompare = displayText(a.baseType).localeCompare(displayText(b.baseType), localization.language);
-    if (baseCompare !== 0) return baseCompare;
+const localeCollators = new Map<string, Intl.Collator>();
+const defaultIdCollator = new Intl.Collator();
+
+function collatorFor(language: string): Intl.Collator {
+  const locale = language === "en-XA" ? "en" : language;
+  let collator = localeCollators.get(locale);
+  if (!collator) {
+    collator = new Intl.Collator(locale);
+    localeCollators.set(locale, collator);
   }
-  const titleCompare = displayText(a.title).localeCompare(displayText(b.title), localization.language);
-  if (titleCompare !== 0) return titleCompare;
-  if (rankCompare !== 0) return rankCompare;
-  return a.id.localeCompare(b.id);
+  return collator;
+}
+
+/** Pre-resolve localized strings once per row before sorting large inventories. */
+export function sortOrderRows<T extends ArmoryOrderRow>(rows: readonly T[], sort: ArmorySortOption): T[] {
+  if (rows.length <= 1) return [...rows];
+  const collator = collatorFor(localization.language);
+  const includeBaseType = sort === "base-type";
+  return rows
+    .map((row) => ({
+      row,
+      title: displayText(row.title),
+      baseType: includeBaseType ? displayText(row.baseType) : "",
+    }))
+    .sort((a, b) => {
+      const rankCompare = a.row.rank - b.row.rank;
+      if (sort === "rarity" && rankCompare !== 0) return rankCompare;
+      if (includeBaseType) {
+        const baseCompare = collator.compare(a.baseType, b.baseType);
+        if (baseCompare !== 0) return baseCompare;
+      }
+      const titleCompare = collator.compare(a.title, b.title);
+      if (titleCompare !== 0) return titleCompare;
+      if (rankCompare !== 0) return rankCompare;
+      return defaultIdCollator.compare(a.row.id, b.row.id);
+    })
+    .map(({ row }) => row);
 }
 
 /** Keep surviving ids in manual order; append newly available rows in default order. */
@@ -62,10 +88,12 @@ export function reconcileOrder(currentIds: readonly string[], rows: readonly Arm
   for (const row of rows) available.add(row.id);
   const surviving = currentIds.filter((id) => available.delete(id));
   if (available.size === 0) return surviving;
-  const sortedAvailable = rows.filter((row) => available.has(row.id)).sort((a, b) => compareOrderRows(a, b, "rarity"));
-  const newlyAvailable: string[] = [];
-  for (const row of sortedAvailable) if (available.delete(row.id)) newlyAvailable.push(row.id);
-  return [...surviving, ...newlyAvailable];
+  const sortedAvailable = sortOrderRows(
+    rows.filter((row) => available.has(row.id)),
+    "rarity",
+  );
+  for (const row of sortedAvailable) if (available.delete(row.id)) surviving.push(row.id);
+  return surviving;
 }
 
 export interface DisplacedGearItem {
@@ -85,12 +113,12 @@ export function placeTransfer(
   additionalDisplaced: readonly DisplacedGearItem[],
   currentSlot: ArmorySlot,
 ): string[] {
-  const compatibleAdditional = additionalDisplaced
-    .filter((d) => {
-      const def = gearDefinitions[d.instance.definitionId];
-      return currentSlot !== "trinket" && (def?.compatibleSlots.includes(currentSlot) ?? false);
-    })
-    .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot));
+  const compatibleAdditional =
+    currentSlot === "trinket"
+      ? []
+      : additionalDisplaced
+          .filter((d) => gearDefinitions[d.instance.definitionId]?.compatibleSlots.includes(currentSlot) ?? false)
+          .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot));
 
   const additionalIds = compatibleAdditional.map((d) => d.instance.instanceId);
   // Displaced hand items may already be visible in this category. Remove them

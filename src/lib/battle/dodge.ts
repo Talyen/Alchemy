@@ -8,7 +8,7 @@ import {
   UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
 import { clamp } from "../math";
-import { mergeCombatText } from "./combat-text-events";
+import { emitNoticeText } from "./combat-text-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
@@ -32,6 +32,7 @@ function getPlayerDodgeChance(
     state.gearEffects.dodgeChance +
     state.talentEffects.dodgeChance +
     state.dodgeChanceFromDamage;
+  if (state.playerStatuses.block === 0) chance += state.talentEffects.dodgeChanceWithoutBlock;
   if (hasEncounterBenefit(state, "elusive")) chance += LABYRINTH_MODIFIER_CONFIG.playerDodgeBonusPercent;
   if (state.gearEffects.archeryDodgeAndDraw > 0 && state.uniqueGear.wrenflightActive)
     chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChancePercent;
@@ -48,11 +49,7 @@ function tryDodgePacket(
 ): BattleState | null {
   if (!options.canDodge) return null;
   if (!rollPercent(options.chance, getBattleRng(state), "dodge")) return null;
-  mergeCombatText(combatTexts, {
-    target: options.target,
-    kind: "notice",
-    stat: "dodge",
-    text: STATUS_CONFIG.DODGE_NOTICE,
+  emitNoticeText(combatTexts, options.target, "dodge", STATUS_CONFIG.DODGE_NOTICE, {
     ...(options.feedback ? { feedback: options.feedback } : {}),
   });
   return options.target === "player"
@@ -64,30 +61,32 @@ export function tryDodgeEnemyAttackPacket(
   state: BattleState,
   combatTexts: CombatTextEvent[],
   canDodge: boolean,
-): BattleState | null {
+): { state: BattleState; dodged: boolean } {
   const eligible = canDodge && state.playerCC.stunSkipTurns <= 0 && state.playerCC.freezeSkipTurns <= 0;
-  if (!eligible) return null;
+  if (!eligible) return { state, dodged: false };
 
-  if (state.flags.dodgeNextAttack) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "notice",
-      stat: "dodge",
-      text: STATUS_CONFIG.DODGE_NOTICE,
-    });
+  const chance = Math.max(getPlayerDodgeChance(state), state.flags.dodgeNextAttackChance);
+  const guaranteed = state.flags.dodgeNextAttack;
+  // Spend preparations before rewards can legitimately arm a new attempt.
+  const attempted =
+    guaranteed || state.flags.dodgeNextAttackChance > 0
+      ? { ...state, flags: { ...state.flags, dodgeNextAttack: false, dodgeNextAttackChance: 0 } }
+      : state;
+
+  if (guaranteed) {
+    emitNoticeText(combatTexts, "player", "dodge", STATUS_CONFIG.DODGE_NOTICE);
     return {
-      ...state,
-      flags: { ...state.flags, dodgeNextAttack: false },
-      playerDodgeCount: state.playerDodgeCount + 1,
-      dodgeChanceFromDamage: 0,
+      state: { ...attempted, playerDodgeCount: state.playerDodgeCount + 1, dodgeChanceFromDamage: 0 },
+      dodged: true,
     };
   }
 
-  return tryDodgePacket(state, combatTexts, {
+  const dodged = tryDodgePacket(attempted, combatTexts, {
     target: "player",
-    chance: getPlayerDodgeChance(state),
+    chance,
     canDodge: true,
   });
+  return { state: dodged ?? attempted, dodged: dodged !== null };
 }
 
 function enemyCanDodge(state: BattleState): boolean {

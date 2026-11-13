@@ -8,7 +8,7 @@ import {
 import { readCombatFlag, resolveSecondaryAction } from "./action-context";
 import { applyPotionMultiplier, scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import { UNIQUE_GEAR_COMBAT } from "../game-constants";
+import { CRACKED_HALO_DAMAGE_BONUS, UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { addGoldWithCombatText } from "./player-rewards";
 import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
 import { computeBaseDamage } from "./player-damage-base";
@@ -21,6 +21,8 @@ import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { observeAttackPower } from "./resolution-observer";
 import { isPlayerDefeated } from "./battle-outcome";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
@@ -53,9 +55,10 @@ function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { s
     damageState = { ...damageState, flags: { ...damageState.flags, nextStunAttackBonus: 0 } };
   }
 
+  const armedPhysicalBonus = readCombatFlag(damageState, "nextHitPhysicalBonus");
   let physicalBonus = 0;
-  if (readCombatFlag(damageState, "nextHitPhysicalBonus") > 0) {
-    physicalBonus = readCombatFlag(damageState, "nextHitPhysicalBonus");
+  if (armedPhysicalBonus > 0) {
+    physicalBonus = armedPhysicalBonus;
     damageState = {
       ...damageState,
       flags: { ...damageState.flags, nextHitPhysicalBonus: 0 },
@@ -134,7 +137,7 @@ export function dealDamageToEnemy(
   // Echoes are secondary actions, so capture the turn's earned sequence bonus
   // before their scope suppresses it. Other damage modifiers remain live.
   const sequenceBonus =
-    card.tags?.includes("archery") && readCombatFlag(state, "archerySecondCardActive")
+    context?.damageEffects && card.tags?.includes("archery") && readCombatFlag(state, "archerySecondCardActive")
       ? state.talentEffects.archerySecondCardDamage
       : 0;
   const captureDamageEffect = (packet: DamageEffect) =>
@@ -242,11 +245,19 @@ export function dealDamageToEnemy(
   }
 
   // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
-  const { nextState, modifiedDamage, critical } = computeCardDamageToEnemy(damageState, packet, card, {
-    manaAtStart: damageState.mana,
+  const haloHits = damageState.flags.crackedHaloAttackHitsThisTurn;
+  const hasHalo = hasEnemyTrait(damageState, "cracked-halo");
+  const haloBonus = hasHalo && haloHits === 1 ? CRACKED_HALO_DAMAGE_BONUS : 0;
+  const hitState =
+    hasHalo && haloHits < 2
+      ? { ...damageState, flags: { ...damageState.flags, crackedHaloAttackHitsThisTurn: haloHits + 1 } }
+      : damageState;
+  const { nextState, modifiedDamage, critical } = computeCardDamageToEnemy(hitState, packet, card, {
+    manaAtStart: hitState.mana,
     ...context,
     guaranteedCrit: context?.guaranteedCrit === true,
     baseDamageBonus,
+    enemyHitFlatBonus: haloBonus,
   });
   const viper =
     context?.origin === "played-card" &&
@@ -254,7 +265,8 @@ export function dealDamageToEnemy(
     modifiedDamage > 0 &&
     damageState.gearEffects.dodgeReadiesVenomousHit > 0 &&
     damageState.uniqueGear.viperReady;
-  const afterViper = viper ? { ...nextState, uniqueGear: { ...nextState.uniqueGear, viperReady: false } } : nextState;
+  const afterHalo = haloBonus > 0 ? recordEnemyAbilityActivation(nextState, "cracked-halo") : nextState;
+  const afterViper = viper ? { ...afterHalo, uniqueGear: { ...afterHalo.uniqueGear, viperReady: false } } : afterHalo;
   let healthDamage = 0;
   let result = resolvePlayerHit(
     afterViper,
@@ -277,15 +289,6 @@ export function dealDamageToEnemy(
   );
   if (isPlayerDefeated(result)) return result;
   const payoffs = reactionEligible ? getPostHitReactionPayoffs(state, result, packet.damageType, healthDamage) : [];
-  if (
-    reactionEligible &&
-    packet.damageType === "holy" &&
-    healthDamage > 0 &&
-    state.enemyStatuses.bleed > 0 &&
-    result.enemyStatuses.bleed > 0
-  ) {
-    result = { ...result, reactions: { ...result.reactions, consecrated: true } };
-  }
   if (shatter) payoffs.unshift({ id: "shatter", damage: shatterDamage });
   result = applyAttackPacketFollowUps(
     result,

@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it, vi } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
@@ -46,12 +47,7 @@ it.each([
   { cost: 2, mana: 5, remaining: 3 },
   { cost: 0, mana: 0, remaining: 0 },
 ])("pays $cost Mana once and refills the empty draw pile with the reusable card", ({ cost, mana, remaining }) => {
-  const card = makeTestCard({
-    id: "slash",
-    corrupted: true,
-    cost,
-    effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-  });
+  const card = makeDamageCard("physical", 6, { id: "slash", corrupted: true, cost });
   const state = makeState({ hand: [card], mana, rng: () => 0.99 });
   const result = playBattleCardResolved(state, card.id, 0).state;
   expect(result.mana).toBe(remaining);
@@ -97,13 +93,7 @@ it("keeps next-hit Poison through a failed chance and spends it on only the firs
       },
     ],
   });
-  const attack = makeTestCard({
-    id: "two-hits",
-    effects: [
-      { kind: "damage", damageType: "physical", amount: 2 },
-      { kind: "damage", damageType: "physical", amount: 2 },
-    ],
-  });
+  const attack = makeDamageCard("physical", [2, 2], { id: "two-hits" });
   const state = makeState({ hand: [uncertain, attack], rng: () => 0.99, flags: { nextHitPoison: true } });
   const missed = playBattleCardResolved(state, uncertain.id, 0).state;
   expect(missed.flags.nextHitPoison).toBe(true);
@@ -190,8 +180,8 @@ it("Hawk Eye crits the next packet when the first packet of a card Freezes", () 
   });
   const next = playBattleCardResolved(state, card.id, 0).state;
   expect(next.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
-  expect(next.enemyHealth).toBe(47); // Freeze 30, Critical Physical 8, Shatter 15.
-  expect(next.reactions).toMatchObject({ shatterDamage: 0, frostfireDamage: 15 });
+  expect(next.enemyHealth).toBe(54); // Freeze 30, Critical Physical 8, Shatter 8.
+  expect(next.reactions).toMatchObject({ shatterDamage: 0, frostfireDamage: 8 });
   expect(next.flags.hawkEyeReady).toBe(false);
 });
 
@@ -206,7 +196,7 @@ it("a repeated Mana conversion cannot spend the same Mana twice", () => {
 });
 
 it("Hawk Eye stays armed through full mitigation and is spent on the next damaging packet", () => {
-  const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+  const card = makeDamageCard("physical", 4);
   const state = patchBattleState({
     hand: [card],
     enemyHealth: 100,
@@ -264,7 +254,7 @@ describe("reusable evasion", () => {
     const card = cardById.feint!;
     let state = makeState({
       hand: [card],
-      deck: slashDeck(2),
+      deck: slashDeck(1),
       rng: () => 0.99,
       talentEffects: { forgeOnConsume: 3, forgeOnConsumeChance: 100 },
     });
@@ -273,7 +263,7 @@ describe("reusable evasion", () => {
       const before = state;
       state = playBattleCardResolved(state, card.id, index).state;
       expect(state.mana).toBe(before.mana - 1);
-      expect(state.hand.map((entry) => entry.id).sort()).toEqual(["slash-0", "slash-1"]);
+      expect(state.hand.map((entry) => entry.id)).toEqual(["slash-0"]);
       expect(state.deck).toEqual([expect.objectContaining({ id: "feint" })]);
       expect(state.discard).toEqual([]);
       expect(state.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
@@ -290,11 +280,11 @@ describe("reusable evasion", () => {
   it("Shadowstep doubles Feint's draw without stacking evasion", () => {
     const shadowstep = cardById.shadowstep!;
     const feint = cardById.feint!;
-    const initial = makeState({ hand: [shadowstep, feint], deck: slashDeck(4) });
+    const initial = makeState({ hand: [shadowstep, feint], deck: slashDeck(2) });
     const shadowed = playBattleCardResolved(initial, shadowstep.id, 0).state;
     expect(shadowed.exhausted).toContainEqual(expect.objectContaining({ id: "shadowstep" }));
     const result = playBattleCardResolved(shadowed, feint.id, 0).state;
-    expect(result.hand).toHaveLength(4);
+    expect(result.hand).toHaveLength(2);
     expect(result.flags.playNextCardTwice).toBe(false);
     expect(result.flags.dodgeNextAttack).toBe(true);
     expect(result.deck).toEqual([expect.objectContaining({ id: "feint" })]);

@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyScaledLeechHealing, resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
@@ -217,10 +218,7 @@ describe("resolveStunTrigger", () => {
 describe("resolveStunTrigger via applyCardEffects", () => {
   it("resolves and triggers stun when stun is added from burn damage riders", () => {
     const talentEffects = { ...defaultTalentEffects, burnStunChance: 100 };
-    const card = makeTestCard({
-      id: "fireball",
-      effects: [{ kind: "damage", damageType: "burn", amount: 12 }],
-    });
+    const card = makeDamageCard("burn", 12, { id: "fireball" });
     const state = makeStateWithFailedRolls({
       mana: 10,
       talentEffects,
@@ -319,9 +317,10 @@ describe("gear stun integration", () => {
       mana: 0,
       maxMana: 3,
       enemyStatuses: { stun: 20, poison: 1 },
-      gearEffects: { natureLeechVsPoisoned: 1, stunOnLeechBelowHalfHealth: 2 },
+      gearEffects: { natureLeechVsPoisoned: 25, stunOnLeechBelowHalfHealth: 2 },
       trinketEffects: { thunderstoneDamageOnStun: 6 },
       talentEffects: { manaOnLeechChance: 100 },
+      rng: () => 0.24,
     });
     const next = applyScaledLeechHealing(state, 2, []);
     expect(next.enemyHealth).toBe(30);
@@ -337,11 +336,24 @@ describe("gear stun integration", () => {
       enemyMaxHealth: 30,
       enemyStatuses: { stun: 30, poison: 1 },
       trinketEffects: { thunderstoneDamageOnStun: 6 },
-      gearEffects: { natureLeechVsPoisoned: 1 },
+      gearEffects: { natureLeechVsPoisoned: 25 },
+      rng: () => 0.24,
     });
     const next = resolveStunTrigger(state, []);
     expect(next.enemyHealth).toBe(24);
     expect(next.playerHealth).toBe(13);
+    expect(resolveStunTrigger({ ...state, rng: () => 0.25 }, []).playerHealth).toBe(10);
+    const tinyHit = patchBattleState({
+      playerHealth: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { stun: 30, poison: 1 },
+      trinketEffects: { thunderstoneDamageOnStun: 1 },
+      gearEffects: { natureLeechVsPoisoned: 25 },
+      talentEffects: { leechHealingBonus: 1 },
+      rng: () => 0.24,
+    });
+    expect(resolveStunTrigger(tinyHit, []).playerHealth).toBe(12);
   });
 
   it("Thunderstone cannot reward damage after Stun gear kills the enemy", () => {

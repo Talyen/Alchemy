@@ -43,20 +43,22 @@ describe("combat interaction regressions", () => {
     expect(tickPlayerStatuses(state, []).playerHealth).toBe(26);
   });
 
-  it("Winter's Credit does not earn Forged Bulwark from its Block payment", () => {
+  it("Winter's Credit does not trigger Second Wind from its Block payment", () => {
     const card = cardById["cold-snap"]!;
     const state = patchBattleState({
       hand: [card],
       mana: 0,
+      playerHealth: 10,
+      playerMaxHealth: 30,
       playerStatuses: { block: 3 },
       gearEffects: { blockPaysFreezeMana: 1 },
-      talentEffects: { forgeOnBlockDepleted: 1 },
+      talentEffects: { blockDepletedHeal: 1 },
       rng: () => 0.99,
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.cardsPlayedThisTurn).toBe(1);
     expect(result.playerStatuses.block).toBe(0);
-    expect(result.playerStatuses.forge).toBe(0);
+    expect(result.playerHealth).toBe(10);
   });
 
   it.each(["poison", "bleed"] as const)("Desperate Siphon doubles triggered %s Leech", (status) => {

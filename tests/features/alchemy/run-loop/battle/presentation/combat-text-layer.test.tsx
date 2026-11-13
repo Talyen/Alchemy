@@ -162,17 +162,24 @@ describe("CombatTextLayer geometry", () => {
     expect(feedback.style.visibility).toBe("");
   });
 
-  it.each([
-    { stat: "stun", chip: "stunned", target: "enemy", other: "player", text: "Stunned" },
-    { stat: "freeze", chip: "frozen", target: "player", other: "enemy", text: "Frozen" },
-  ] as const)(
-    "deduplicates secondary $chip only against its recipient's visible active chip",
-    ({ stat, chip, target, other, text }) => {
+  it.each(
+    (
+      [
+        { stat: "stun", chip: "stunned", target: "enemy", other: "player", text: "Stunned" },
+        { stat: "freeze", chip: "frozen", target: "player", other: "enemy", text: "Frozen" },
+      ] as const
+    ).flatMap((status) => [
+      { ...status, feedback: "secondary" as const, intent: "secondary" },
+      { ...status, feedback: undefined, intent: "untagged" },
+    ]),
+  )(
+    "deduplicates $intent $chip only against its recipient's visible active chip",
+    ({ stat, chip, target, other, text, feedback }) => {
       const buildup = statusRow(target, [stat]);
       battlePresentation.getState().clearFloatingCombatTexts();
       battlePresentation.getState().showCombatTexts([
-        { target, kind: "notice", stat, text, feedback: "secondary" },
-        { target: other, kind: "notice", stat, text, feedback: "secondary" },
+        { target, kind: "notice", stat, text, feedback },
+        { target: other, kind: "notice", stat, text, feedback },
         { target, kind: "damage", stat, amount: 60, feedback: "primary" },
       ]);
       const { container } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
@@ -187,7 +194,7 @@ describe("CombatTextLayer geometry", () => {
       expect(
         secondaryStatusFeedbackKey({ target, kind: "notice", stat, text, feedback: "primary" }, "impact"),
       ).toBeUndefined();
-      expect(secondaryStatusFeedbackKey({ target, kind: "notice", stat, text }, "setback")).toBeUndefined();
+      expect(secondaryStatusFeedbackKey({ target, kind: "notice", stat, text }, "setback")).toBe(`${target}:${chip}`);
       expect(
         secondaryStatusFeedbackKey(
           { target, kind: "notice", stat, text, signal: "cleanse", feedback: "secondary" },

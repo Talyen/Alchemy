@@ -119,7 +119,7 @@ export function comparePlaythroughReports(
         lost += start.playerHealth - rooms.get(start.room)!;
         count++;
       }
-      return lost / Math.max(1, count);
+      return count ? lost / count : null;
     },
     firstVictoryRunCensored: (result: CareerResult) => {
       const first = result.outcomes.findIndex((outcome) => outcome.outcome === "victory");
@@ -142,11 +142,17 @@ export function comparePlaythroughReports(
     cohort,
     comparison,
     metrics: Object.entries(metrics).map(([metric, measure]) => {
-      const deltas = indices.map((index) => measure(current[index]!) - measure(baseline[index]!));
+      const deltas = indices.flatMap((index) => {
+        const after = measure(current[index]!);
+        const before = measure(baseline[index]!);
+        return after === null || before === null ? [] : [after - before];
+      });
       const n = deltas.length;
-      const meanDelta = deltas.reduce((a, b) => a + b, 0) / n;
+      const meanDelta = n ? deltas.reduce((a, b) => a + b, 0) / n : null;
       const standardError =
-        n > 1 ? Math.sqrt(deltas.reduce((sum, delta) => sum + (delta - meanDelta) ** 2, 0) / (n - 1) / n) : null;
+        n > 1 && meanDelta !== null
+          ? Math.sqrt(deltas.reduce((sum, delta) => sum + (delta - meanDelta) ** 2, 0) / (n - 1) / n)
+          : null;
       return { metric, careers: n, meanDelta, standardError, interpretation: "advisory; thresholds uncalibrated" };
     }),
   }));

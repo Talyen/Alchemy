@@ -15,6 +15,7 @@ export interface ArmoryTargeting {
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   craftingResult: CraftingResult | null;
+  craftingChanges: Record<string, Record<string, "new" | "modified">>;
 }
 
 export interface ArmoryItemActions {

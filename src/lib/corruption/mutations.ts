@@ -59,12 +59,19 @@ function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengt
   for (const target of targets) {
     const effect = getCardEffect(card.effects, target);
     if (!effect) continue;
-    const harmful = ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind);
+    const harmful =
+      effect.kind === "lose-health" ||
+      effect.kind === "self-damage" ||
+      effect.kind === "lose-mana" ||
+      effect.kind === "lose-max-mana";
     const direction = strengthen !== harmful ? 1 : -1;
     const scalable =
       target.field === "amount" &&
       isPlainMagnitude(effect) &&
-      (effect.kind !== "damage" || ["physical", "holy", "nature"].includes(effect.damageType));
+      (effect.kind !== "damage" ||
+        effect.damageType === "physical" ||
+        effect.damageType === "holy" ||
+        effect.damageType === "nature");
     const amount = scalable
       ? Math.max(1, Math.round(target.value * (strengthen ? CORRUPTION_STRENGTHEN_RATIO : CORRUPTION_WEAKEN_RATIO)))
       : 1;
@@ -122,7 +129,7 @@ function canRemoveConsume(card: BattleCard): boolean {
   if (effect.kind === "heal") return effect.amount <= 8;
   if (effect.kind === "player-status") {
     return (
-      ["block", "armor", "thorns"].includes(effect.status) &&
+      (effect.status === "block" || effect.status === "armor" || effect.status === "thorns") &&
       effect.statusPool === undefined &&
       effect.amount <= 2 &&
       effect.perManaCrystal === undefined &&

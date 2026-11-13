@@ -11,5 +11,5 @@ export declare const staticAssets: readonly StaticAssetEntry[];
 
 export declare function validateAssetRegistry(
   entries: readonly unknown[],
-  options?: { sourceDir?: string },
+  options?: { sourceDir?: string; allowMissingSource?: boolean },
 ): Promise<unknown>;

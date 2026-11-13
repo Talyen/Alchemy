@@ -4,6 +4,7 @@ import { readActivityData } from "@/lib/active-run-session";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { getGoldMultiplier, type BattleCard } from "@/lib/game-data";
 import type { GameplayState } from "./gameplay-state-reads";
+import { selectRunCompanionInspectionState } from "./combat-meta";
 
 // Preserve the card-domain contract rather than exposing the save schema type.
 function selectRunDeck(state: GameplayState): BattleCard[] {
@@ -49,6 +50,7 @@ export const RUN_SCREEN_SELECTORS = {
     gold: state.runProfile.gold,
     runDeck: selectRunDeck(state),
     shopState: readActivityData(state.session.activity, "shop"),
+    companionInspection: selectRunCompanionInspectionState(state),
   }),
   alchemist: (state: GameplayState) => ({
     gold: state.runProfile.gold,
@@ -105,6 +107,7 @@ export const RUN_SCREEN_SELECTORS = {
       mysteryChosenCardId: visit.mysteryChosenCardId,
       mysteryChosenChoice: visit.mysteryChosenChoice,
       homesteadEffects: state.runProfile.effects,
+      companionInspection: selectRunCompanionInspectionState(state),
       goldMultiplier: getGoldMultiplier(state.run.activeRun.characterId, state.run.activeRun.selectedDifficulty),
       runPlayerHealth: state.run.activeRun.runPlayerHealth,
       runMaxHealth: state.run.activeRun.runMaxHealth,

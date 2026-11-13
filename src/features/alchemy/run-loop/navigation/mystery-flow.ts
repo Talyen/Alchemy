@@ -12,6 +12,7 @@ import {
 } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
+  characters,
   cardById,
   cardHasKeyword,
   getOfferableCardPoolView,
@@ -86,9 +87,16 @@ function gainRandomMysteryGear(context: MysteryEffectContext, forceAstral = fals
 }
 
 function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext, forceAstral = false) {
+  const heroKeywords = characters[context.draft.run.activeRun.characterId].keywords;
   const ownedUniqueIds = getOwnedUniqueDefinitionIds(snapshotTransactionValue(context.draft.gear.inventories));
   const instance = forceAstral
-    ? generateGearInstanceForBaseItem(baseItemId, context.rng, "astral", createDraftInstanceIdSource(context.draft))
+    ? generateGearInstanceForBaseItem(
+        baseItemId,
+        context.rng,
+        "astral",
+        createDraftInstanceIdSource(context.draft),
+        heroKeywords,
+      )
     : generateLootGearChoices(
         1,
         context.rng,
@@ -102,6 +110,7 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
         [baseItemId],
         false,
         createDraftInstanceIdSource(context.draft),
+        heroKeywords,
       )[0];
   if (!instance) {
     // The base item has no definition for the rolled rarity; granting nothing

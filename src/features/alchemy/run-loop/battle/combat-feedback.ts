@@ -1,4 +1,5 @@
-import type { CombatTextEvent } from "@/lib/battle";
+import type { CombatTextEvent, CompanionActionCue } from "@/lib/battle";
+import { createCompanionActionPlayback, type CompanionPlaybackCue } from "./companion-presentation";
 import {
   CARD_REJECTION_FEEDBACK_MS,
   COMBAT_RECOIL_COOLDOWN_MS,
@@ -11,17 +12,18 @@ import type { CombatImpactCue, CombatTextBurst, ReactionAnnouncement } from "../
 import { consolidateCombatBursts } from "./combat-feedback-merge";
 import { prepareCombatFeedback } from "./combat-feedback-model";
 import { advanceCombatFeedback, scheduleCombatFeedback, nextCombatFeedbackDeadline } from "./combat-feedback-queue";
+import { playCombatTextSounds } from "./controller-utils";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 
-type Combatant = "player" | "enemy" | "companion";
+type Combatant = "player" | "enemy";
 
 export interface CombatFeedbackState {
   floatingCombatBursts: CombatTextBurst[];
   reactionAnnouncements: ReactionAnnouncement[];
   cardRejection: { cardKey: string; mana: boolean } | null;
-  enemyShaking: boolean;
-  playerShaking: boolean;
   companionShaking: boolean;
+  companionActionCue: CompanionPlaybackCue | null;
+  companionHealth: { playerHealth: number; enemyHealth: number } | null;
   playerImpactCue: CombatImpactCue | null;
   enemyImpactCue: CombatImpactCue | null;
   playerAttackToken: number;
@@ -34,9 +36,10 @@ export interface CombatFeedbackState {
 
 export interface CombatFeedbackActions {
   rejectCardPlay: (cardKey: string, mana: boolean) => boolean;
-  shakeEnemy: () => void;
-  shakePlayer: () => void;
   shakeCompanion: () => void;
+  enqueueCompanionActions: (cues: readonly CompanionActionCue[]) => void;
+  clearCompanionActions: () => void;
+  waitForCompanionActions: () => Promise<void>;
   telegraphAttack: (side: Combatant) => void;
   telegraphCast: (side: Combatant) => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
@@ -48,9 +51,9 @@ export function createCombatFeedbackState(): CombatFeedbackState {
     floatingCombatBursts: [],
     reactionAnnouncements: [],
     cardRejection: null,
-    enemyShaking: false,
-    playerShaking: false,
     companionShaking: false,
+    companionActionCue: null,
+    companionHealth: null,
     playerImpactCue: null,
     enemyImpactCue: null,
     playerAttackToken: 0,
@@ -66,10 +69,11 @@ interface CombatFeedbackDeps {
   update: (reduce: (state: CombatFeedbackState) => Partial<CombatFeedbackState>) => void;
   isVisible: () => boolean;
   now: () => number;
+  isCompanionCurrent?: (cue: CompanionActionCue) => boolean;
 }
 
 /** One owner for feedback resources; the store remains the sole owner of visible state. */
-export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackDeps): {
+export function createCombatFeedback({ update, isVisible, now, isCompanionCurrent }: CombatFeedbackDeps): {
   actions: CombatFeedbackActions;
   cancel: () => void;
 } {
@@ -78,12 +82,31 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
   const rejectionTimers = new TimerGroup();
   const lastImpact = new Map<string, number>();
   let rejecting = false;
-  const shakeCancels = new Map<Combatant, () => void>();
+  let cancelCompanionShake: (() => void) | undefined;
   let generation = 0;
   let actionId = 0;
   let impactSequence = 0;
+  let companionImpactSequence = 0;
   let textPlanRevision = 0;
   let cancelTextDeadline: (() => void) | undefined;
+  const companionPlayback = createCompanionActionPlayback(
+    (companionActionCue) =>
+      update(() => ({
+        companionActionCue,
+        companionHealth: companionActionCue?.resolution?.before ?? null,
+      })),
+    (cue) => isVisible() && (isCompanionCurrent?.(cue) ?? true),
+    (cue) => {
+      if (!cue.resolution) return;
+      const current = generation;
+      update(() => ({ companionHealth: cue.resolution!.after }));
+      if (current !== generation || !isVisible()) return;
+      const id = --companionImpactSequence;
+      const texts = cue.resolution.texts.map((event) => ({ ...event, companionActionId: id }));
+      showCombatTexts(texts);
+      if (current === generation && isVisible()) playCombatTextSounds(texts);
+    },
+  );
 
   function cancelTexts() {
     generation += 1;
@@ -113,23 +136,66 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
     );
   }
 
-  function shake(side: Combatant) {
-    const key = `${side}Shaking` as const;
-    shakeCancels.get(side)?.();
+  function shakeCompanion() {
+    cancelCompanionShake?.();
     // Arm before publishing: a synchronous subscriber may reset presentation.
-    shakeCancels.set(
-      side,
-      shakeTimers.setTimeout(() => {
-        shakeCancels.delete(side);
-        update(() => ({ [key]: false }));
-      }, SHAKE_DURATION_MS),
-    );
-    update(() => ({ [key]: true }));
+    cancelCompanionShake = shakeTimers.setTimeout(() => {
+      cancelCompanionShake = undefined;
+      update(() => ({ companionShaking: false }));
+    }, SHAKE_DURATION_MS);
+    update(() => ({ companionShaking: true }));
   }
 
   function telegraph(kind: "Attack" | "Cast", side: Combatant) {
-    const key = `${side === "companion" ? "player" : side}${kind}Token` as const;
+    const key = `${side}${kind}Token` as const;
     update((state) => ({ [key]: state[key] + 1 }));
+  }
+
+  function showCombatTexts(events: CombatTextEvent[]) {
+    if (events.length === 0 || !isVisible()) return;
+    const sequence = generation;
+    const timestamp = now();
+    const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
+    const prepared = prepareCombatFeedback(events, ++actionId, timestamp, lifetimeMs);
+    if (prepared.bursts.length === 0 && prepared.reactions.length === 0) return;
+    const revision = ++textPlanRevision;
+    let dodged: Set<Combatant> | undefined;
+    for (const event of events) {
+      if (event.kind === "notice" && event.stat === "dodge") (dodged ??= new Set()).add(event.target);
+    }
+    const impacts: Partial<Pick<CombatFeedbackState, "playerImpactCue" | "enemyImpactCue">> = {};
+    for (const key of ["playerImpactCue", "enemyImpactCue"] as const) {
+      const visual = prepared.impacts[key];
+      // Keep outcomes and sounds immediate while bounding repeated portrait motion.
+      if (visual) {
+        const recoil = timestamp - (lastImpact.get(key) ?? -Infinity) >= COMBAT_RECOIL_COOLDOWN_MS;
+        if (recoil) lastImpact.set(key, timestamp);
+        impacts[key] = { ...visual, recoil, sequence: ++impactSequence };
+      }
+    }
+    let deadline = Infinity;
+    update((state) => {
+      const current = advanceCombatFeedback(state.floatingCombatBursts, state.reactionAnnouncements, timestamp);
+      const bursts = consolidateCombatBursts(current.floatingCombatBursts, prepared.bursts, timestamp);
+      const scheduled = scheduleCombatFeedback(
+        bursts,
+        [...current.reactionAnnouncements, ...prepared.reactions],
+        timestamp,
+        lifetimeMs,
+        shouldReduceMotion(),
+      );
+      deadline = nextCombatFeedbackDeadline(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements);
+      return {
+        ...scheduled,
+        ...impacts,
+        playerDodgeToken: state.playerDodgeToken + Number(dodged?.has("player") ?? false),
+        enemyDodgeToken: state.enemyDodgeToken + Number(dodged?.has("enemy") ?? false),
+      };
+    });
+    // A subscriber may reset or admit newer text during publication. Its
+    // queue, rather than this older plan, owns the next deadline.
+    if (sequence !== generation || revision !== textPlanRevision) return;
+    armTextDeadline(deadline, sequence);
   }
 
   return {
@@ -139,7 +205,8 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
       rejectionTimers.clearAll();
       rejecting = false;
       lastImpact.clear();
-      shakeCancels.clear();
+      cancelCompanionShake = undefined;
+      companionPlayback.clear(false);
     },
     actions: {
       rejectCardPlay: (cardKey, mana) => {
@@ -152,57 +219,13 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         update(() => ({ cardRejection: { cardKey, mana } }));
         return true;
       },
-      shakeEnemy: () => shake("enemy"),
-      shakePlayer: () => shake("player"),
-      shakeCompanion: () => shake("companion"),
+      shakeCompanion,
+      enqueueCompanionActions: (cues) => companionPlayback.enqueue(cues),
+      clearCompanionActions: () => companionPlayback.clear(),
+      waitForCompanionActions: () => companionPlayback.waitForIdle(),
       telegraphAttack: (side) => telegraph("Attack", side),
       telegraphCast: (side) => telegraph("Cast", side),
-      showCombatTexts: (events) => {
-        if (events.length === 0 || !isVisible()) return;
-        const sequence = generation;
-        const timestamp = now();
-        const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
-        const prepared = prepareCombatFeedback(events, ++actionId, timestamp, lifetimeMs);
-        if (prepared.bursts.length === 0 && prepared.reactions.length === 0) return;
-        const revision = ++textPlanRevision;
-        let dodged: Set<Combatant> | undefined;
-        for (const event of events) {
-          if (event.kind === "notice" && event.stat === "dodge") (dodged ??= new Set()).add(event.target);
-        }
-        const impacts: Partial<Pick<CombatFeedbackState, "playerImpactCue" | "enemyImpactCue">> = {};
-        for (const key of ["playerImpactCue", "enemyImpactCue"] as const) {
-          const visual = prepared.impacts[key];
-          // Keep outcomes and sounds immediate while bounding repeated portrait motion.
-          if (visual) {
-            const recoil = timestamp - (lastImpact.get(key) ?? -Infinity) >= COMBAT_RECOIL_COOLDOWN_MS;
-            if (recoil) lastImpact.set(key, timestamp);
-            impacts[key] = { ...visual, recoil, sequence: ++impactSequence };
-          }
-        }
-        let deadline = Infinity;
-        update((state) => {
-          const current = advanceCombatFeedback(state.floatingCombatBursts, state.reactionAnnouncements, timestamp);
-          const bursts = consolidateCombatBursts(current.floatingCombatBursts, prepared.bursts, timestamp);
-          const scheduled = scheduleCombatFeedback(
-            bursts,
-            [...current.reactionAnnouncements, ...prepared.reactions],
-            timestamp,
-            lifetimeMs,
-            shouldReduceMotion(),
-          );
-          deadline = nextCombatFeedbackDeadline(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements);
-          return {
-            ...scheduled,
-            ...impacts,
-            playerDodgeToken: state.playerDodgeToken + Number(dodged?.has("player") ?? false),
-            enemyDodgeToken: state.enemyDodgeToken + Number(dodged?.has("enemy") ?? false),
-          };
-        });
-        // A subscriber may reset or admit newer text during publication. Its
-        // queue, rather than this older plan, owns the next deadline.
-        if (sequence !== generation || revision !== textPlanRevision) return;
-        armTextDeadline(deadline, sequence);
-      },
+      showCombatTexts,
       clearFloatingCombatTexts: () => {
         cancelTexts();
         update(() => ({

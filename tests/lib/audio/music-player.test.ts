@@ -150,6 +150,24 @@ it("resolves boss tracks and skips the Iron Bear intro", () => {
   expect(elements.at(-1)).toMatchObject({ currentTime: 6, loop: true, paused: false });
 });
 
+it.each([false, true])(
+  "cues a fresh Forge Golem track and preserves its resume position (immediate: %s)",
+  (immediate) => {
+    const key = MUSIC_KEYS.BOSS_FORGE_GOLEM;
+    if (immediate) player.playMusicImmediate(key);
+    else player.playMusic(key);
+    const boss = elements.at(-1)!;
+    expect(boss).toMatchObject({ currentTime: 28.5, volume: 0, paused: false });
+    vi.advanceTimersByTime(2100);
+    expect(boss.volume).toBeCloseTo(0.91);
+    boss.currentTime = 41;
+    player.pauseAllMusic();
+    player.playMusicImmediate(key);
+    expect(player.readMusicPlayback()).toEqual({ key, currentTime: 41, audible: true });
+    expect(elements).toHaveLength(1);
+  },
+);
+
 it("caches tracks and preserves seek positions across switches", () => {
   player.playMusicImmediate(MUSIC_KEYS.BATTLE);
   const battle = elements.at(-1)!;

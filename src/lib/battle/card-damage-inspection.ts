@@ -1,4 +1,11 @@
-import { mapEffectChildren, isEnemyAbilityCard, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import {
+  mapEffectChildren,
+  isEnemyAbilityCard,
+  getCompanionDescriptionLines,
+  type BattleCard,
+  type BattleCardEffect,
+  type CompanionDefinition,
+} from "@/lib/game-data";
 import { resolveInspectedCardPlay } from "./card-play";
 import { battleSnapshot } from "./battle-snapshot";
 import { applyEnemyAbility } from "./enemy-turn-attack";
@@ -6,6 +13,7 @@ import { getEncounterEnemyAbility } from "./enemy-description";
 import { inspectResolutionOutcomes, type InspectedPackets } from "./inspection-outcomes";
 import type { ObservedAttack, ObservedDirectAmount } from "./resolution-observer";
 import type { BattleSnapshot } from "./types";
+import { createCompanionActionCard, resolveInspectedCompanionAction } from "./companion";
 import {
   describeKnownConditionalDamage,
   describeKnownForgeDamageTotal,
@@ -44,7 +52,7 @@ function summarize(packets: readonly DamageEffect[]): BattleCardEffect {
 export function inspectBattleCardOutcomes(
   card: BattleCard,
   snapshot: BattleSnapshot,
-  side: "player" | "enemy" = "player",
+  side: "player" | "enemy" | "companion" = "player",
 ): ReadonlyMap<string, InspectedPackets> {
   const sourceAddresses = new Map<BattleCardEffect, string>();
   function copyEffect(effect: BattleCardEffect, path: number[]): BattleCardEffect {
@@ -65,7 +73,8 @@ export function inspectBattleCardOutcomes(
       observer,
       sampleWishOptions: () => ({ cards: [], deferred: true }),
     };
-    if (enemyAbility) applyEnemyAbility(state, resolutionCard, []);
+    if (side === "companion") resolveInspectedCompanionAction(state, resolutionCard);
+    else if (enemyAbility) applyEnemyAbility(state, resolutionCard, []);
     else resolveInspectedCardPlay(state, resolutionCard, handIndex);
   });
   const outcomes = new Map<string, InspectedPackets>();
@@ -137,7 +146,7 @@ function firstAttack(outcome: InspectedPackets | undefined): BattleCardEffect | 
 export function getBattleCardDescriptionInspection(
   card: BattleCard,
   snapshot: BattleSnapshot,
-  side: "player" | "enemy" = "player",
+  side: "player" | "enemy" | "companion" = "player",
 ): BattleCard {
   const rules = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
   const outcomes = inspectBattleCardOutcomes(card, snapshot, side);
@@ -301,4 +310,13 @@ export function getBattleCardDescriptionInspection(
   result = describeKnownBlockSpendDamage(result, blockSpendDamage);
   for (const hit of forgeDamage) result = describeKnownForgeDamageTotal(result, hit.path, hit.amount, hit.damageType);
   return result;
+}
+
+/** Bond/Companion bonuses are applied once, then ordinary known effects are inspected in Companion scope. */
+export function getBattleCompanionDescriptionLines(companion: CompanionDefinition, snapshot: BattleSnapshot): string[] {
+  const card = createCompanionActionCard(snapshot, companion);
+  const inspected = getBattleCardDescriptionInspection(card, snapshot, "companion");
+  // The effects already contain Bond and all inspected grants. Reformat only;
+  // passing Bond again here would also duplicate Moth/Owl repeat chances.
+  return getCompanionDescriptionLines({ ...companion, turnStartEffects: inspected.effects });
 }

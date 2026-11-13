@@ -1,18 +1,15 @@
+import { temporaryDirectories, runNode } from "../helpers/script-fixtures";
 import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { commandInvocation } from "../../scripts/lib/command-invocation.mjs";
 
-const temporary: string[] = [];
-afterEach(() => {
-  for (const root of temporary.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
+const createTemporaryDirectory = temporaryDirectories();
 
 it("serves current main from a stale workspace, preserves task previews, and refuses a missing main checkout", () => {
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "alchemy dev-")));
-  temporary.push(root);
+  const root = fs.realpathSync(createTemporaryDirectory("alchemy dev-"));
+
   const git = (cwd: string, ...args: string[]) =>
     execFileSync("git", ["-c", "core.hooksPath=", ...args], { cwd, encoding: "utf8", stdio: "pipe" }).trim();
   git(root, "init", "-qb", "main");
@@ -53,11 +50,7 @@ it("serves current main from a stale workspace, preserves task previews, and ref
   }
   const [command, args] = commandInvocation("npm", ["run", "dev", "--", "--host", "literal & value"]);
   const preview = (cwd: string) =>
-    spawnSync(process.execPath, [path.join(cwd, "scripts/dev.mjs"), "serve", "--host", "literal & value"], {
-      cwd,
-      encoding: "utf8",
-      timeout: 3_000,
-    });
+    runNode([path.join(cwd, "scripts/dev.mjs"), "serve", "--host", "literal & value"], { cwd, timeout: 3_000 });
   const originalHead = git(root, "rev-parse", "HEAD");
   const result = spawnSync(command, args, { cwd: root, encoding: "utf8", timeout: 3_000 });
   expect(result.status, result.stderr).toBe(0);

@@ -138,7 +138,7 @@ for (const { gameSizePercent, viewports } of [
   { gameSizePercent: 120, viewports: [{ width: 1280, height: 480 }] },
 ]) {
   test(`full grid and tooltip fit viewport boundaries at Game Size ${gameSizePercent}`, async ({ page }) => {
-    if (viewports.length > 1) test.setTimeout(60_000);
+    if (viewports.length > 1) test.setTimeout(process.env.CI ? 0 : 60_000);
     await page.addInitScript((size) => {
       localStorage.setItem(
         "alchemy-device-display-v1",

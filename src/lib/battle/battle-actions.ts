@@ -5,11 +5,13 @@ import { getBattleOutcome } from "./battle-outcome";
 import { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
 import { resolveTurnSequence, type ResolvedBattleTurn } from "./enemy-turn";
 import { chooseWishCard } from "./wish";
-import type { BattleResolutionContext, BattleSnapshot, CombatTextEvent } from "./types";
+import type { BattleResolutionContext, BattleSnapshot, CombatTextEvent, CompanionActionCue } from "./types";
 
 export interface ResolvedPlayerAction {
   state: BattleSnapshot;
   combatTexts: CombatTextEvent[];
+  companionActions?: CompanionActionCue[];
+  drawnCardUids?: number[];
 }
 
 export type BattleAction =
@@ -45,8 +47,21 @@ export function resolveBattleAction(
         !canPlayCard(snapshot, card, action.index, action.options)
       )
         return reject("Card play is unavailable");
+      const companionActions: CompanionActionCue[] = [];
+      const drawnCardUids: number[] = [];
       const result = playBattleCardResolved(
-        { ...snapshot, rng: getBattleRng(context) },
+        {
+          ...snapshot,
+          rng: getBattleRng(context),
+          onCardsDrawn: (uids) => {
+            drawnCardUids.push(...uids);
+            context.onCardsDrawn?.(uids);
+          },
+          onCompanionAction: (cue) => {
+            companionActions.push(cue);
+            context.onCompanionAction?.(cue);
+          },
+        },
         card.id,
         action.index,
         action.options,
@@ -55,7 +70,12 @@ export function resolveBattleAction(
         kind: "accepted",
         action: "card",
         card,
-        resolution: { state: battleSnapshot(result.state), combatTexts: result.combatTexts },
+        resolution: {
+          state: battleSnapshot(result.state),
+          combatTexts: result.combatTexts,
+          companionActions,
+          drawnCardUids,
+        },
       };
     }
     case "wish": {

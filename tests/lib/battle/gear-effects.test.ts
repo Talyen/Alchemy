@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/player-rewards";
 import type { CombatTextEvent } from "@/lib/battle/types";
@@ -16,8 +17,8 @@ import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyDamageStatuses, applyPoisonTalentRiders, tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { addEnemyStatus } from "@/lib/battle/status-state";
-import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
-import { reduceDamageByMana } from "@/lib/battle/status-helpers";
+import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";
+import { dealSelfDamage, reduceDamageByMana } from "@/lib/battle/status-helpers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
 import { cardById } from "@/lib/game-data";
@@ -70,15 +71,30 @@ it("Archery piercing reduces mitigation without removing enemy Armor", () => {
   expect(result.nextState.enemyMitigation.armor).toBe(5);
 });
 
-it("Aetherward reduces damage before Block and counts filled crystals once, excluding overflow", () => {
+it("Aetherward reduces damage before Block, rounding filled crystals and excluding overflow", () => {
   const state = makeState({ mana: 3, playerStatuses: { block: 10 }, gearEffects: { damageReductionPerMana: 1 } });
   const result = processEnemyDamageEffect(state, makeEffect("physical", 10), []);
-  expect(result.playerStatuses.block).toBe(3);
+  expect(result.playerStatuses.block).toBe(2);
   expect(result.playerHealth).toBe(state.playerHealth);
   const overflow = makeState({ mana: 6, maxMana: 4, gearEffects: { damageReductionPerMana: 2 } });
-  expect(reduceDamageByMana(overflow, 10)).toBe(6);
+  expect(reduceDamageByMana(overflow, 10)).toBe(7);
+  expect(reduceDamageByMana({ ...overflow, mana: 3 }, 10)).toBe(8);
   expect(reduceDamageByMana({ ...overflow, mana: 2 }, 10)).toBe(8);
+  expect(reduceDamageByMana({ ...overflow, mana: 1 }, 10)).toBe(9);
   expect(reduceDamageByMana({ ...overflow, mana: 0 }, 10)).toBe(10);
+  expect(
+    reduceDamageByMana({ ...overflow, gearEffects: { ...overflow.gearEffects, damageReductionPerMana: 0 } }, 10),
+  ).toBe(10);
+  const statusState = makeState({
+    playerHealth: 40,
+    playerMaxHealth: 40,
+    mana: 3,
+    playerStatuses: { burn: 10 },
+    gearEffects: { damageReductionPerMana: 1 },
+  });
+  expect(tickPlayerStatuses(statusState, []).playerHealth).toBe(32);
+  expect(dealSelfDamage(statusState, 6, "burn", []).healthLost).toBe(4);
+  expect(dealSelfDamage(statusState, 6, "health", []).healthLost).toBe(6);
 });
 
 it("Leech rewards Mana", () => {
@@ -121,7 +137,7 @@ it("Burn bonuses against Bleeding enemies apply to card damage and ticks", () =>
   });
   expect(computeCardDamageToEnemy(state, effect, makeTestCard({ effects: [effect] })).modifiedDamage).toBe(15);
   const texts: CombatTextEvent[] = [];
-  expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(73);
+  expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(82); // Burn 15 and Bleed 3.
   expect(texts).toContainEqual(
     expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true }),
   );
@@ -234,10 +250,7 @@ it("does not grant armorOnConsume when playing a summon-companion card", () => {
 });
 
 it("grants armorOnConsume when playing an ordinary consume card", () => {
-  const regularCard = makeTestCard({
-    consume: true,
-    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-  });
+  const regularCard = makeDamageCard("physical", 5, { consume: true });
   const state = patchBattleState({
     playerStatuses: { armor: 0 },
     gearEffects: { armorOnConsume: 3 },

@@ -34,8 +34,8 @@ describe("current combat boundaries", () => {
         gearEffects: { resistBurn: 50, resistBleed: 50 },
       });
       for (const next of [tickPlayerStatuses(state, []), dealSelfDamage(state, 10, status, []).state]) {
-        expect(next.playerHealth).toBe(30);
-        expect(next.playerStatuses.armor).toBe(5);
+        expect(next.playerHealth).toBe(status === "burn" ? 26 : 30);
+        expect(next.playerStatuses.armor).toBe(status === "burn" ? 4 : 5);
       }
     },
   );

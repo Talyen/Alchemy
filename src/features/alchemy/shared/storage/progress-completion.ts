@@ -49,13 +49,13 @@ export class ProgressCompletion<Presentation = unknown> {
     };
   }
 
-  get hasRetryDriver() {
-    return this.retryOwners.size > 0;
+  get isTracking(): boolean {
+    return this.retryOwners.size > 0 || this.state.kind !== "idle";
   }
 
   /** All player entrypoints read this same durability admission policy. */
   canStartAction(clearing: boolean, writeFailed: boolean): boolean {
-    return !clearing && this.state.kind === "idle" && (!this.hasRetryDriver || !writeFailed);
+    return !clearing && this.state.kind === "idle" && (this.retryOwners.size === 0 || !writeFailed);
   }
 
   readPresentationBase(current: Presentation): Presentation {

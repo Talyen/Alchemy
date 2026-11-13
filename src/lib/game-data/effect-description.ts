@@ -14,11 +14,11 @@ import type { BattleCardEffect } from "./types";
 
 type EffectDescription = CardDescriptionPart[][];
 
-function joinOptions(items: readonly string[], alwaysComma = false): string {
+function joinOptions(items: readonly string[]): string {
   const rest = [...items];
   const last = rest.pop() ?? "";
   if (rest.length === 0) return last;
-  return `${rest.join(", ")}${rest.length > 1 || alwaysComma ? "," : ""} or ${last}`;
+  return `${rest.join(", ")}${rest.length > 1 ? "," : ""} or ${last}`;
 }
 
 function value(
@@ -49,7 +49,7 @@ function createConditionalDamageLine(
   if (effect.damageTypeIfTargetFrozen)
     return [
       ...base,
-      "; Against Frozen enemies, deal ",
+      ". Against Frozen enemies, deal ",
       value(effect, address, "amountIfTargetFrozen"),
       ` ${capitalizeWord(effect.damageTypeIfTargetFrozen)} instead`,
     ];
@@ -93,7 +93,7 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
         value(effect, address, "minAmount"),
         "–",
         value(effect, address, "maxAmount"),
-        ` ${effect.damageTypePool?.length ? joinOptions(effect.damageTypePool.map(capitalizeWord), true) : "Random"} damage`,
+        ` ${effect.damageTypePool?.length ? joinOptions(effect.damageTypePool.map(capitalizeWord)) : "Random"} damage`,
       ];
     case "player-status": {
       const status = capitalizeWord(effect.status);
@@ -114,8 +114,14 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
           amount(),
           " Armor",
         ];
-      if (effect.statusPool) return ["Gain ", amount(), ` ${joinOptions(effect.statusPool.map(capitalizeWord), true)}`];
-      if (["block", "armor", "thorns", "forge"].includes(effect.status)) return ["Gain ", amount(), ` ${status}`];
+      if (effect.statusPool) return ["Gain ", amount(), ` ${joinOptions(effect.statusPool.map(capitalizeWord))}`];
+      if (
+        effect.status === "block" ||
+        effect.status === "armor" ||
+        effect.status === "thorns" ||
+        effect.status === "forge"
+      )
+        return ["Gain ", amount(), ` ${status}`];
       throw new Error(`effectDescriptionLine: unsupported player-status ${effect.status}`);
     }
     case "heal":
@@ -174,7 +180,11 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
     case "next-archery-free":
       return ["Your next Archery card is free"];
     case "dodge-next-attack":
-      return ["Dodge the next attack"];
+      return [
+        effect.probability === undefined
+          ? "Dodge the next attack"
+          : `${Math.round(effect.probability * 100)}% chance to Dodge the next attack.`,
+      ];
     case "summon-companion":
     case "chance":
     case "repeat-over-turns":
@@ -202,9 +212,7 @@ function damageLines(
     );
   } else lines.push(createEffectLine(effect, address));
   if (effect.ignoreArmor || effect.ignoreBlock)
-    lines.push([
-      `Ignores ${[effect.ignoreArmor ? "Armor" : "", effect.ignoreBlock ? "Block" : ""].filter(Boolean).join(" and ")}`,
-    ]);
+    lines.push([`Ignores ${effect.ignoreArmor ? (effect.ignoreBlock ? "Armor and Block" : "Armor") : "Block"}`]);
   if (effect.doubleIfEnemyBleeding) lines.push(["Doubled if the enemy was already Bleeding"]);
   if (effect.tripleIfEnemyNotBurning) lines.push(["Tripled if enemy was not Burning"]);
   if (effect.detonateAllBurn) lines.push(["Detonate all Burn"]);

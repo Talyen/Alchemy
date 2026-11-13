@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { dealDamage, makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
@@ -95,12 +96,7 @@ describe("combat healing regressions", () => {
     const result =
       source === "tick"
         ? tickEnemyStatuses(state, [])
-        : dealDamage(
-            { ...state, rng: () => 0.99 },
-            makeTestCard({
-              effects: [{ kind: "damage", damageType: "poison", amount: 20 }],
-            }),
-          );
+        : dealDamage({ ...state, rng: () => 0.99 }, makeDamageCard("poison", 20));
     expect(result.playerHealth).toBe(12);
   });
 

@@ -76,8 +76,8 @@ function start(deck = cards("health-potion", "acid-potion"), gold = 100) {
 }
 
 describe("headless brewing through production commands", () => {
-  it("previews without RNG mutation, mixes with real pricing, and preserves the shared service limit after resume", () => {
-    const controller = start();
+  it("previews without RNG mutation, prices independent services, and preserves their limits after resume", () => {
+    const controller = start(undefined, 200);
     initializeShopForTest("alchemist", session);
     const actor = createCareerActor(config, undefined, session);
     const before = stateDigest(session);
@@ -94,8 +94,8 @@ describe("headless brewing through production commands", () => {
     recordBrewingCommit(visit, 0, mix, { gold, deckSize: 2 }, brewed, session);
     expect(readActiveRun(session).runDeck).toHaveLength(1);
     expect(readRunProfile(session).gold).toBe(gold - price);
-    expect(actor.observe().some((c) => c.kind === "distill" || c.kind === "mix")).toBe(false);
-    expect(controller.shop().alchemist.strengthenPotion(0)).toBeNull();
+    expect(actor.observe().some((c) => c.kind === "mix")).toBe(false);
+    expect(actor.observe().some((c) => c.kind === "distill")).toBe(true);
     expect(summarizeBrewing([result])).toMatchObject({ shopVisits: 1, goldSpent: price });
     expect(visit?.decisions[0]).toMatchObject({ kind: "mix", deckDelta: -1 });
     expect(visit?.decisions[0]?.result).toContain("Consume");
@@ -103,11 +103,25 @@ describe("headless brewing through production commands", () => {
     hydrateAlchemyPersistenceFields(saved, session);
     restoreRun(saved.activeRun, saved.talentXP, saved.unlockedTalents, session);
     expect(readActiveRun(session).runDeck).toHaveLength(1);
-    expect(
-      createCareerActor(config, undefined, session)
-        .observe()
-        .some((c) => c.kind === "mix" || c.kind === "distill"),
-    ).toBe(false);
+    expect(readRunSession(session).activity).toMatchObject({
+      kind: "alchemist",
+      data: { mixUsed: true, distillUsed: false, brewUsed: false },
+    });
+    const resumed = createCareerActor(config, undefined, session);
+    expect(resumed.observe().some((c) => c.kind === "mix")).toBe(false);
+    const distill = resumed.observe().find((c) => c.kind === "distill")!;
+    expect(distill).toBeDefined();
+    expect(resumed.execute(distill)).not.toBeNull();
+    expect(readRunProfile(session).gold).toBe(gold - price * 2);
+    expect(controller.shop().alchemist.strengthenPotion(0)).toBeNull();
+    const afterDistill = snapshotCareer(session);
+    hydrateAlchemyPersistenceFields(afterDistill, session);
+    restoreRun(afterDistill.activeRun, afterDistill.talentXP, afterDistill.unlockedTalents, session);
+    expect(readRunSession(session).activity).toMatchObject({
+      kind: "alchemist",
+      data: { mixUsed: true, distillUsed: true, brewUsed: false },
+    });
+    expect(resumed.observe().some((c) => c.kind === "mix" || c.kind === "distill")).toBe(false);
   });
 
   it("distills, rejects stale targets and unaffordable services, and keeps service Gold reserved when buying", () => {

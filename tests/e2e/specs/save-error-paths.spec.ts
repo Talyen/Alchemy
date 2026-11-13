@@ -25,7 +25,7 @@ test.describe("Save Error Paths", () => {
   );
 
   test("a fresh profile opens the menu with progression locked", critical, async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 0 : 60_000);
 
     await page.addInitScript(() => {
       localStorage.clear();

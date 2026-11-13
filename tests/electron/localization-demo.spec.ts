@@ -20,7 +20,7 @@ for (const [initialLocale, resumeLocale] of [
   test(`${initialLocale} to ${resumeLocale}: localized demo survives native quit/relaunch and cross-language resume`, async () => {
     // oxlint-disable-next-line playwright/no-skipped-test -- The native demo is explicitly built and selected by its release gate.
     test.skip(process.env.ALCHEMY_EDITION !== "demo", "Requires production demo");
-    test.setTimeout(90_000);
+    test.setTimeout(process.env.CI ? 0 : 90_000);
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-electron-test-localized-demo-"));
     let application: ElectronApplication | undefined;
     let activePage: Page | undefined;

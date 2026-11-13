@@ -24,27 +24,34 @@ const ARCHERY_KEYWORDS: readonly KeywordId[] = ["archery"];
 const DODGE_KEYWORDS: readonly KeywordId[] = ["dodge"];
 
 const PRESENTATION: { [K in LeafEffectKind]: EffectPresentation<K> } = {
-  damage: (effect) =>
-    effectKeywords(
-      effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
-      effect.lifesteal ? ["leech"] : [],
-      effect.damageTypeIfTargetFrozen ? [effect.damageTypeIfTargetFrozen] : [],
-      effect.equalToBlock ? ["block"] : [],
-      effect.equalToArmor ? ["armor"] : [],
-      effect.forgeBonusPercent !== undefined ? ["forge"] : [],
-    ),
-  "cleanse-player-status-to-damage": (effect) =>
-    effectKeywords([effect.status, effect.damageType], effect.lifesteal ? ["leech"] : []),
-  "random-damage": (effect) =>
-    effectKeywords(
-      effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES,
-      effect.lifesteal ? ["leech"] : [],
-    ),
-  "player-status": (effect) =>
-    effectKeywords(
-      effect.statusPool ?? (effect.status !== "haste" && effect.status !== "phoenixFeather" ? [effect.status] : []),
-      effect.perManaCrystal !== undefined || effect.convertCurrentMana !== undefined ? ["mana"] : [],
-    ),
+  damage: (effect) => {
+    const keywords: KeywordId[] = effect.damageTypePool?.length ? [...effect.damageTypePool] : [effect.damageType];
+    if (effect.lifesteal) keywords.push("leech");
+    if (effect.damageTypeIfTargetFrozen) keywords.push(effect.damageTypeIfTargetFrozen);
+    if (effect.equalToBlock) keywords.push("block");
+    if (effect.equalToArmor) keywords.push("armor");
+    if (effect.forgeBonusPercent !== undefined) keywords.push("forge");
+    return keywords;
+  },
+  "cleanse-player-status-to-damage": (effect) => {
+    const keywords: KeywordId[] = [effect.status, effect.damageType];
+    if (effect.lifesteal) keywords.push("leech");
+    return keywords;
+  },
+  "random-damage": (effect) => {
+    const keywords: KeywordId[] = [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)];
+    if (effect.lifesteal) keywords.push("leech");
+    return keywords;
+  },
+  "player-status": (effect) => {
+    const keywords: KeywordId[] = effect.statusPool
+      ? [...effect.statusPool]
+      : effect.status !== "haste" && effect.status !== "phoenixFeather"
+        ? [effect.status]
+        : [];
+    if (effect.perManaCrystal !== undefined || effect.convertCurrentMana !== undefined) keywords.push("mana");
+    return keywords;
+  },
   heal: () => HEALTH_KEYWORDS,
   "restore-mana": () => MANA_KEYWORDS,
   "lose-mana": () => MANA_KEYWORDS,
@@ -95,10 +102,6 @@ export function getCardDescription(card: BattleCard): CardDescription {
     !!card.consume && !card.effects.some((effect) => effect.kind === "summon-companion"),
   );
   return description;
-}
-
-function effectKeywords(...iterables: ReadonlyArray<readonly KeywordId[]>): KeywordId[] {
-  return iterables.flat();
 }
 
 export function collectKeywordsFromBattleEffects(effects: readonly BattleCardEffect[]): KeywordId[] {

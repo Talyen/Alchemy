@@ -34,6 +34,7 @@ const OUTCOME_CARDS = new Set([
 ]);
 
 export function playResolvedCombatSound(cardId: string | undefined, events: CombatTextEvent[], deathsDoor = false) {
+  events = events.filter((event) => event.companionActionId === undefined);
   if (deathsDoor) return playBattleEvent("deathsDoor");
   let sound = selectCombatSound(events, !!cardId && !OUTCOME_CARDS.has(cardId));
   if (sound === "hitCritical" && cardId === "slash") sound = "slashCritical";
@@ -60,28 +61,17 @@ export function playResolvedCombatSound(cardId: string | undefined, events: Comb
 
 export interface CombatTextPresenter {
   showCombatTexts: (events: CombatTextEvent[]) => void;
-  shakeEnemy: () => void;
-  shakePlayer: () => void;
 }
 
-/** Single home for fight feedback: floating numbers + portrait shake + sounds. */
+/** Single home for fight feedback: floating numbers, impact cues, and sounds. */
 export function presentCombatTexts(
   presenter: CombatTextPresenter,
   combatTexts: CombatTextEvent[],
   focalSound?: string,
 ) {
+  combatTexts = combatTexts.filter((event) => event.companionActionId === undefined);
   if (combatTexts.length === 0) return;
   presenter.showCombatTexts(combatTexts);
-  let enemyHit = false;
-  let playerHit = false;
-  for (const ct of combatTexts) {
-    if (ct.kind !== "damage" || !(ct.amount > 0) || ct.impact === false) continue;
-    if (ct.target === "enemy") enemyHit = true;
-    if (ct.target === "player") playerHit = true;
-    if (enemyHit && playerHit) break;
-  }
-  if (enemyHit) presenter.shakeEnemy();
-  if (playerHit) presenter.shakePlayer();
   playCombatTextSounds(combatTexts, focalSound);
 }
 

@@ -36,6 +36,7 @@ export function testResourceClass(command, args) {
     .split(/[\\/]/u)
     .at(-1)
     .replace(/\.(?:cmd|exe)$/u, "");
+  if (tool === "npx") return testResourceClass(args[0] ?? "", args.slice(1));
   if (tool !== "vitest" || args[0] !== "run") return "broad";
   return unitSelection(args).focused ? "focused" : "broad";
 }

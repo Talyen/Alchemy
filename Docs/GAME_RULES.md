@@ -40,7 +40,7 @@ adding a status stack. Thresholds and once-only kill rewards use `applyHitEpilog
 
 | Source                            | Amount and mitigation                                                                                                                                        | Reactions and closing order                                                                                                                                                                                                                             |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Card attack (including Companion) | Attack orchestration calculates bonuses, pacing, critical strikes, Block and Armor once before requesting the hit. Dodge precedes next-hit flag consumption. | Capture eligibility before purge; apply Health damage; preserve Forge; decay Armor; intrinsic/conversion reactions; Leech/frozen reactions; Archery reactions; Holy/Nature rewards; damage text; thresholds/kill rewards; frozen Physical Forge payout. |
+| Card attack (including Companion) | Attack orchestration calculates bonuses, pacing, critical strikes, Block and Armor once before requesting the hit. Dodge precedes next-hit flag consumption. | Capture eligibility before purge; apply Health damage; preserve Forge; decay Armor; intrinsic/conversion reactions; Leech/frozen reactions; Archery reactions; Holy/Nature rewards; damage text; frozen Physical Forge payout; thresholds/kill rewards. |
 | Player follow-up                  | Card-style numeric bonuses, pacing, critical strikes and mitigation, with no real card metadata.                                                             | Health; Armor decay; intrinsic statuses; damage text; thresholds/kill rewards; Nature Gold/mana refunds or Holy Faith Barrier/Brass Censer. No card conversion recipe or Forge spending.                                                                |
 | Fixed talent hit                  | Pace its fixed amount, apply enemy multiplier and round, then Block and Physical/Stun Armor. No offensive card bonuses or critical strike.                   | Stop if no damage remains; otherwise Health, Armor decay, intrinsic statuses, text, thresholds/kill rewards, then Holy Leech/Faith Barrier/Block/Tithe, Nature refunds, or Burn Forge payout.                                                           |
 | Derived talent hit                | Round its already-paced amount and apply only the enemy trait multiplier, then round and mitigate as above.                                                  | Same shallow talent recipe. Do not apply pacing or offensive bonuses again.                                                                                                                                                                             |
@@ -66,7 +66,7 @@ card-origin Wishes exclude the real originating card.
 
 - **1-on-1 targeting** — one enemy per battle; attacks/debuffs go to the enemy, blocks/heals/buffs to player/companions; no target selectors.
 - **Turn order** — Player (companion attacks → play cards) → Enemy (enemy DoTs → ability → player DoTs → regen) → reset (draw 4, restore mana, halve player block). Enemy block halves when the next enemy phase begins.
-- **Mana** — resets to `maxMana` each turn; unspent mana is lost (Wellspring talent excepted).
+- **Mana** — resets to `maxMana` each turn before applicable turn-start bonuses. Wellspring adds 1 when the player ended the previous turn with unspent Mana, regardless of the amount left.
 - **Companions** — invulnerable; act at player turn start; persist indefinitely. Summon cards leave the battle after playing without Consume, entering the battle-removed pile rather than discard. They grant no Consume XP, bonuses, rewards, or enemy Consume reactions. Non-summoning Companion cards retain their normal destinations.
 - **Draw / deck** — Ecosystem tutors one Nature card before the ordinary opening draw. If combat remains active, battle initialization then commits the opening 4 plus other battle-start bonus draws before their animation; later turns draw 4. A terminal opening or turn-end effect does not start a new draw or discard phase. Max hand 7; ordinary and keyword draws reserve actual cards in an ordered battle-only queue when the hand is full, and Wishes queue chosen cards the same way. Queued cards enter the hand oldest first when space opens, before later draws, and survive turn changes and save/resume. A draw with no eligible card grants nothing. The previous hand is discarded at player turn end, while cards drawn during the enemy phase remain alongside the next four draws; discard reshuffles immediately when the draw pile empties, including after the final requested draw. Cards discarded while the draw pile is empty also refill it immediately. Overflow cards remain reserved and are never included in the shuffle. Consumed cards are removed for the remainder of the battle. If a player-turn draw finds the hand, queue, draw pile, and discard empty, an Emergency Wish opens the normal Wish choices and the selected card enters the hand; this can recur whenever the piles are empty.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
@@ -92,7 +92,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Companion damage rewards** — Predator's Instinct doubles damage only strictly below 30% enemy Health, comparing against the unrounded threshold. Companion damage rewards use Health lost to its damage packets before enemy healing reactions; Second Wind cannot cancel those rewards, and utility actions cannot earn them through unrelated damage reactions.
 - **Companion card perks** — Whistle and Hunter's Bond use the card's Companion keyword, including Pack Tactics. Whistle makes the active Companion act after all effects of the card finish, including a newly summoned Companion. Whistle occurs once per card play, including automatic plays, never again for repeated or scheduled effects. Hunter's Bond draws only for the first Companion card played each turn. Both `getCardKeywords` and `cardHasKeyword` use the full content keywords, including utility effects.
 - **Companion Forge** — Companion attacks use ordinary damage-type Forge permissions and preserve player Forge.
-- **Pack Tactics** — makes the active Companion act twice, including utility actions. Without an active Companion, it opens a normal Wish whose options are restricted to Companion summon cards; the chosen card enters the hand. It then grants 4 Block. Ordinary Companion bonuses and reaction cutoffs apply, and card-play rewards occur once.
+- **Pack Tactics** — makes the active Companion act twice, including utility actions. Without an active Companion, it opens a normal Wish whose options are restricted to Companion summon cards; the chosen card enters the hand. It then grants 3 Block. Ordinary Companion bonuses and reaction cutoffs apply, and card-play rewards occur once.
 - **Wishing Potion** — costs 1 Mana and Consumes to Wish twice from the ordinary card pool, excluding the originating card as usual. It has no additional draw. Both Wishes trigger normal Wish bonuses; chosen cards enter the hand or its pending queue. Mixing and distilling can increase the Wish count.
 
 ### Enemy abilities and traits
@@ -100,6 +100,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 #### Repertoire and resolution
 
 - **Native Traits** — every enemy has exactly one positive and one negative native Trait, in that order; encounter modifiers are additional. Damage vulnerabilities are 30%. Hollow Frame prevents player Leech and its rewards. Pilfer steals up to 1 existing player Block before each direct attack hit, including Dodged hits. Snap Shut grants 1 Block after each landed hit. Soul Harvest independently chooses Purge or Leech below half Health for each hit. Contagion heals for positive Poison packets against the hero, including blocked, resisted, periodic and typed self-damage packets, while combat continues. Native traits refresh from the current catalog on resume. Mimic doubles its victory Gold by enemy identity, outside its trait slots.
+- **Cracked Halo** — the second landed card or Companion attack hit each player turn gains 2 damage before Block and Armor. Fully Blocked hits count; Dodged hits, damage-over-time ticks, and follow-up damage do not. The count resets at the start of the next player turn and persists when a battle is saved.
 - **Repertoire** — each enemy has three distinct canonical card IDs in `abilityIds`. `getEnemyAbilities` resolves the same card definitions used by heroes. The supported subset is validated recursively by `isEnemyAbilityCard`; unsupported card effects, Consume, and hero resource systems cannot silently fizzle on enemies.
 - **Selection** — `processEnemyAbility` uniformly selects one available card using world RNG, excluding `lastEnemyAbilityId`. The opening choice uses all three. Haste and crowd-control skips do not select cards or advance history. Recheck enemy crowd control after status ticks and turn-start traits, so Stun from either phase skips the upcoming ability without ticking statuses twice. If combat ends during a turn-start trait, no ability is selected or reported. Inspection never consumes RNG and does not reveal an upcoming action.
 - **Skipped enemy turns** — Stun and Freeze skip ability selection while status ticks, scheduled native/difficulty growth, Overgrowth, and ordinary regeneration retain their existing order. Pending enemy Bleed Leech still settles once with its matching tick.
@@ -113,10 +114,10 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Resolved player actions** — Jealous gains its Physical damage bonus for each resolved Wish, including Faustian Bargain's Wish, Stargaze's immediate Wish, and triggered Wishes. Insatiable also reacts to cards consumed by Dance of Blades. Consume rewards require the hero to survive retaliation, including automatic plays; Death’s Door still counts as survival. The card remains consumed even if retaliation defeats the hero. The older Thorns trait and Holy Retribution check attempted damage in the resolved action, including chance branches and Exorcism, only while the enemy survives; a utility-only chance outcome does not retaliate. Repeated effects track their attempts separately and retain existing reaction limits.
 - **Rooted** — gains Block once per played Nature card, using the same full keywords shown on the card, including nested effects and tags. Repeated effects and Companion actions do not count as another card play.
 - **Attack traits** — fully prevented positive incoming hits still land, consuming Ambush and permitting native hit rewards; Dodge prevents those rewards. Leech still requires Health damage. Cowardly and Flickering/Loose Rubble reduce the next attack’s total damage by 1 across its hits. Utility abilities preserve pending reductions. Concussion weakens every direct hit of the next damaging hero card by 25%, preserving the penalty through utility cards and excluding Companion and ongoing damage. Brawler’s Seeing Stars halves its next damaging ability after Stun.
-- **Hit traits** — Holy hits grant Zealot Forge and restore Cleric Health; Holy/Stun hits grant Paladin Block; Stun hits grant Stone Titan Armor. Each landed hit qualifies even when mitigation prevents Health loss. Fire Imp, Giant Spider and Winter Wolf add their riders to every landed hit. Dodge prevents hit rewards. Inquisitor adds 1 Holy damage against heroes below half Health. Self-Sacrifice costs 1 Health after every attempted hit; lethal recoil stops subsequent effects.
+- **Hit traits** — Holy hits grant Zealot Forge and restore Cleric Health; Holy/Stun hits grant Paladin Block; Stun hits grant Stone Titan Armor. Each landed hit qualifies even when mitigation prevents Health loss. Fire Imp, Giant Spider and Winter Wolf add their riders to every landed hit. Dodge prevents hit rewards. Inquisitor adds 1 Holy damage against heroes below half Health. Self-Sacrifice costs 1 Health after each landed hit while combat continues, including fully Blocked hits; Dodged hits cost nothing. Lethal recoil stops subsequent effects.
 - **Blood traits** — Blood Frenzy adds 1 damage to a Bleed hit against a hero already Bleeding before that hit; it grants no Leech. Blood Scent adds one separate 1-Bleed hit when the hero is strictly below half Health before each hit; defensive abilities do not trigger it and the bonus has no inherent Leech. Native Bleed Leech carries its own buildup into `pendingEnemyBleedLeechHealing`, so unrelated or bonus Bleed cannot fund extra healing. Cleansing Bleed clears that pending Leech; partial removal caps it to the remaining buildup before fresh Bleed can arrive. Existing healing reductions still apply. Profane Blood damages Blood Countess only when the hero actually restores Health, never from overhealing or the Countess's own healing.
 - **Enemy Thorns** — card-granted Thorns retaliate as Nature damage on a non-Dodged hero hit while the enemy survives, consuming the ordinary Thorns stacks. `legacyEnemyThornsReady` reserves one stack for the original encounter trait's distinct Physical, once-per-card retaliation while the enemy survives; new card stacks do not replace or disable that behavior.
-- **Boss traits** — Forge Golem gains 1 Forge every other turn; Frostwarden adds 1 Freeze damage; Iron Bear gains 1 Armor every other turn. Blood Countess emits 1 Bleed and Seraph emits 1 Holy every other turn. Periodic effects follow scheduled turn cadence, including control skips, and stop when combat ends. Stone Titan gains 1 Armor on each Stun hit.
+- **Boss traits** — Forge Golem gains 1 Forge every other turn; Frostwarden adds 1 Freeze damage and receives half Freeze damage; Iron Bear gains 1 Armor every other turn. Blood Countess emits 1 Bleed every third turn and Seraph emits 1 Holy every other turn. Periodic effects follow scheduled turn cadence, including control skips, and stop when combat ends. Stone Titan gains 1 Armor on each Stun hit.
 - **Elemental traits** — Frost Elemental adds 1 room-scaled Freeze damage to Freeze hits. Ice Wraith heals through Cold Embrace instead. Pyromancy adds 1 room-scaled Burn damage to Pyromancer ability Burn hits only while the hero has no Burn, through the original hit without a separate packet or direct buildup grant. Cinder Skin deals 1 room-scaled Burn damage on the first actual enemy Health damage on alternating player turns (1, 3, 5, and so on) while the enemy survives, including cards, Companions, triggered damage, and damage over time. Fully prevented and lethal hits do not spend the reaction. The Health-damage helper spends its once-per-turn flag and queues `pendingCinderSkinReaction`; action and tick resolvers drain it through the existing enemy damage path, clearing the pending flag before retaliation. Both flags persist through automatic actions; the once-per-turn flag resets at the next player turn.
 
 ### Damage, statuses, and survival
@@ -124,6 +125,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 #### Dodge
 
 - **Dodge** — both sides have a 5% chance to Dodge each opposing attack **damage packet** before Block and Armor, unless the target is actively Stunned or Frozen. A dodge deals 0, spends no Block/Armor, skips that packet's status riders and lifesteal, and shows Dodge combat text instead of damage. Status-only attacks, DoT ticks, and encounter/proc pulses cannot be dodged. Each damage packet rolls independently. Player Dodge adds gear, talent bonuses, and Finding Rhythm, capped at 75%. Torpor can additionally prevent enemy Dodge while Poisoned.
+- **Elusive Transmutation** — prepares one 50% Dodge chance for the next eligible attack damage packet. Use one roll at the higher of this chance and normal Dodge; consume the preparation on success or failure. Repeated casts do not stack chances or attempts. Stun, Freeze, zero-power hits, DoTs and undodgeable damage preserve it. Native guaranteed Dodge wins without a roll and consumes both existing preparations before Dodge rewards can prepare another. Save/resume preserves an already-armed guarantee once while normalizing saved Elusive cards to prepare 50% on future plays; the battle and RNG do not reset.
 - **Dodge chance bonuses** — Last Gasp requires strictly less than half Health. Finding Rhythm adds its talent-defined bonus for each hostile damage instance that reaches Health after mitigation, before death prevention (including harmful status ticks and enemy pulses; excluding self-damage and Health costs). Its bonus persists across turns, has no separate stack cap, and clears on a hero Dodge or battle end.
 - **Dodge rewards** — Unburdened cleanses player Stun and Freeze buildup on a Dodge; it does not add Dodge chance. On-Dodge gear, on-Dodge talents, and Dance of Blades fire only when the hero Dodges. Each successful hero Dodge earns 1 run Dodge XP; commit it with the resolved enemy turn, never with presentation callbacks. Clean Getaway subtracts its amount from each of Burn, Poison, and Bleed and triggers cleanse rewards once only if at least one status reaches zero. Matching numeric Dodge gear and talent rewards add together. Tailwind draws on each Dodge, including multiple Dodges within one enemy attack. Smoke Screen deals 2 triggered Burn damage when Dodging a Burning enemy.
 
@@ -131,13 +133,13 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 
 Crowd-control triggers require both combatants to survive the hit. A lethal Stun or Freeze hit does not control the defeated enemy or award crowd-control bonuses.
 
-- **Player damage mitigation** — Aetherward reduces hostile hits, Burn/Poison/Bleed ticks, and typed self-damage by the number of filled Mana Crystals, before the remaining defenses. Temporary overflow Mana does not count, and multiple Aetherward copies do not stack; Health costs bypass it. Burn, Poison, and Bleed ticks retain their damage type through flat reductions and Gear resistance. Enemy attack buildup, ordinary enemy Leech (including Flesheater), and Armor decay use damage after all applicable mitigation, before death prevention; fully resisted damage grants none. Later hero healing cannot cancel earned Leech. Ravenous still limits Leech to actual Health lost.
+- **Player damage mitigation** — Aetherward reduces hostile hits, Burn/Poison/Bleed ticks, and typed self-damage by 75% of filled Mana Crystals, rounded to the nearest integer, before the remaining defenses. Temporary overflow Mana does not count, and multiple Aetherward copies do not stack; Health costs bypass it. Burn, Poison, and Bleed ticks retain their damage type through flat reductions and Gear resistance. Enemy attack buildup, ordinary enemy Leech (including Flesheater), and Armor decay use damage after all applicable mitigation, before death prevention; fully resisted damage grants none. Later hero healing cannot cancel earned Leech. Ravenous still limits Leech to actual Health lost.
 - **Reinforce** — Reinforce divides absorbed Physical damage by its absorption multiplier to determine Block spent, rounded to nearest integer; exhausting the full absorption capacity spends all remaining Block. Extra enemy Block destruction applies to Block spent.
-- **Elemental Armor** — Fireward lets Armor mitigate direct Burn hits as well as Burn ticks and typed self-damage; Thick Hide does the same for Bleed. Enemy hits spend Block before applying Armor. Health costs still bypass Armor.
+- **Elemental Armor** — Elemental Ward lets 25% of Armor mitigate Burn, Freeze, and Nature damage, including Burn ticks and typed self-damage; Thick Hide lets full Armor mitigate Bleed. Enemy hits spend Block before applying Armor. Health costs still bypass Armor.
 - **Block status resistance** — while the hero has Block, Blood Ward halves incoming Bleed damage and Venom Ward halves incoming Poison damage. They mitigate damage rather than preventing buildup, and check Block before the incoming packet spends it; damage that breaks through Block still deals Health damage and matching status buildup.
 - **Shield Slam** — Physical damage increases by half the player’s current Block. Rupture detonates Bleed only from a positive Critical Physical packet; a fully blocked or armored hit does not detonate it.
 - **Crushing Force** — Earth Elemental checks the Block spent by the incoming hit. Replacing broken Block through a defensive reward does not cancel its follow-up; killing the enemy with retaliation does.
-- **Damage vulnerabilities** — Brittle Ice adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive adds 1 against Poisoned enemies, including Icy Heart, Thunderstone, and crowd-control Gear damage; Exploit Weakness doubles damage against Stunned enemies. A matching enemy trait never disables these Talents. Trait matching retains its established first-match order.
+- **Damage vulnerabilities** — Brittle Ice adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive adds 1 when the enemy already has at least 5 Poison. These include Icy Heart, Thunderstone, and crowd-control Gear damage; Exploit Weakness doubles damage against Stunned enemies. A matching enemy trait never disables these Talents. Trait matching retains its established first-match order.
 - **Sundering Charm** — Physical and Stun packets remove its stated Armor before Armor mitigation, including fixed/derived Talent hits and crowd-control Gear/Trinket damage. Fully blocked positive packets still remove Armor; zero-base effects grant no removal.
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/status-state.ts`; `braced` enemy trait halves incoming stun.
 - **Crowd-control thresholds** — baseline Stun and Freeze trigger when buildup reaches at least half Health. Enemies use Health before the hit; heroes use maximum Health. Enemy current Health lets control become easier as a boss weakens, while checking before the hit prevents one damage packet from both adding buildup and lowering its own threshold. Threshold modifiers apply before the comparison.
@@ -202,8 +204,8 @@ or another reward replaces the Armor.
 - **Opening resource gains** — starting Forge, Armor, and Block use ordinary gain bonuses and reactions without fight pacing. Grant Forge before Armor and Block so Tempered Guard sees opening Forge; apply flat Gear bonuses once. Last Stand, Desperate Forge, Ironwood Buckler, and Radiant Guard also apply to their matching opening gains. Resume does not replay these grants.
 - **Armor rewards** — Armor earned during battle is unpaced and passes through Last Stand, Reinforced’s doubling roll and Purification’s one-status cleanse roll. Armored Surge rolls on playing a Block-keyword card to grant its catalog Armor amount, including automatic plays, never again for repeated effects or secondary Block gains; Iron Guard rolls 10% on positive resolved Physical Health damage and grants Armor equal to that damage. Armor Siphon removes only the stated amount from the enemy before applying hero gain bonuses.
 - **Reactive Guard** — a surviving hero gains its Block reward whenever positive Armor falls to zero, including normal decay, Sunder, Caustic, and Banshee's purge. Partial removal and removal from zero grant nothing; Ironclad prevents decay but not explicit removal. Counterplate uses Armor actually removed by the attack before later defensive rewards. Caustic removes enemy Armor equal to each resolved Poison packet from direct Poison hits, natural ticks, and detonations.
-- **Forge rewards** — Each positive Forge grant independently rolls Overheat while Burning, Intensify, and Desperate Forge strictly below half Health. Each success adds its catalog bonus to the same award; bonus Forge does not roll again. Smithguard grants Block once for that combined award. Forge gains are unpaced, including Vanguard’s Crest and Burn rewards. Golden Crucible rolls per positive combat Gold award through the same gain owner. Current Forge Talents have no threshold reactions or deferred reward queue. Emberforged eligibility follows the [Gear battle rules](./ARMORY.md#battle-integration). Sunder removes Armor equal to rounded half the pre-hit Forge after a positive Physical hit, once per attack action, preserving Forge.
-- **Block depletion** — Second Wind and Resolute restore their combined Health amount, and Briarward grants Thorns when positive Block reaches zero. These rewards also apply to turn decay, Laughing Guard spending, and enemy purges. Forged Bulwark grants 1 Forge only when an enemy attack depletes positive Block, even if an earlier defensive reward refills it; non-attack removal grants none. Partial removal and removal from zero grant nothing; Winter’s Credit payment retains its explicit depletion-reward exception. Attack-only retaliation and Watchdog still require an enemy attack.
+- **Forge rewards** — Each positive Forge grant independently rolls Overheat while Burning, Intensify, and Desperate Forge strictly below half Health. Each success adds its catalog bonus to the same award; bonus Forge does not roll again. Smithguard and Forged Bulwark grant their combined Block once for that combined award. Forge gains are unpaced, including Vanguard’s Crest and Burn rewards. Golden Crucible rolls per positive combat Gold award through the same gain owner. Current Forge Talents have no threshold reactions or deferred reward queue. Emberforged eligibility follows the [Gear battle rules](./ARMORY.md#battle-integration). Sunder removes Armor equal to rounded half the pre-hit Forge after a positive Physical hit, once per attack action, preserving Forge.
+- **Block depletion** — Second Wind and Resolute restore their combined Health amount, and Briarward grants Thorns when positive Block reaches zero. These rewards also apply to turn decay, Laughing Guard spending, and enemy purges. Partial removal and removal from zero grant nothing; Winter’s Credit payment retains its explicit depletion-reward exception. Attack-only retaliation, Watchdog, and Block-depletion Stun Gear still require an enemy attack, even if an earlier defensive reward refills Block.
 - **Sun-Struck Shield** — reflects 30% of the Block actually lost when an enemy attack depletes Block, including Block removed by Sundered Guard before absorption. Reflection respects enemy Holy resistance/weakness and Block, without attack bonuses, critical strikes, Forge spending, or a second pacing multiplier. Holy damage rewards still apply, but neither reflected damage nor secondary enemy reactions trigger another retaliation.
 - **Gold rewards** — Seed Money rolls on positive resolved Nature damage, including Thunderstone, and pays from actual Health damage. Golden Wish rolls per Wish. Coinmail rolls on positive Armor gains and pays from actual Armor gained; victory payouts do not trigger it. Fetch adds its reward when a Companion is present at victory, including Wildwood. Exact chances and fixed payouts belong to the [Talent catalog](../src/lib/game-data/talents/talent-rows.ts).
 - **Lucky Clover** — rolls on positive Nature Health loss and grants Gold equal to that loss, including Thorns retaliation, Thunderstone, and triggered Nature hits. Overkill and fully prevented damage grant no Gold; lethal hits retain their reward. Physical damage from Stun or Freeze Gear cannot grant its Gold.
@@ -284,13 +286,14 @@ and return data-only results; low-level mechanics remain internal to the engine.
 Classification queries use [Card classification](#card-classification).
 
 - **Damage outcomes** — enemy hit results distinguish attempted damage before defenses, resolved damage after defenses, actual Health loss after death prevention, Dodge, contact, and defeat. Contact is independent of defensive absorption. Player Health-hit results capture resolved damage, actual Health loss, and defeat before threshold healing or secondary reactions; DoT and Companion damage rewards use that captured Health loss. These results are execution-only and do not change saves.
-- **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. Player Forge grants resolve authored amounts and independent +1 talent bonuses once, then Smithguard and Everkeen reactions; bonus Forge cannot recursively activate gain bonuses. Initialization and hydration retain raw state construction.
+- **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. Player Forge grants resolve authored amounts and independent +1 talent bonuses once, then Smithguard, Forged Bulwark, and Everkeen reactions; bonus Forge cannot recursively activate gain bonuses. Initialization and hydration retain raw state construction.
 - **Damage module ownership** — `player-damage-base.ts` constructs player damage packets from base amounts, Forge, and flat typed bonuses. `player-damage-multipliers.ts` owns additive multipliers and first-Burn bonus flags. `damage-calc.ts` orders those stages, then applies pacing, critical strikes, mitigation, and final resolution. `player-defensive-reactions.ts` owns Block/Health-triggered defensive rewards; `enemy-attack-damage.ts` retains incoming-hit orchestration and reaction ordering.
 - **Armor gain limits** — Layered adds its flat Armor bonus only to the first positive Armor grant each player turn, including opening grants and reactions. Ironroot grants Armor only for the first Nature card played each player turn, including automatic plays. Each limit has its own persisted combat flag and resets at the next player turn; save/resume cannot refresh either allowance.
 - **Leech bonuses** — [Healing and Leech](#healing-and-leech) owns Deep Siphon’s payout order and card attribution.
 - **Meteor** — its Mana-loss effect is additional to its card cost; it neither removes a Mana Crystal nor triggers Mana Flare. Its effects and magnitudes belong to the [card catalog](../src/lib/game-data/cards/library/core.ts).
 - **Resource scaling** — Talent bonuses from Forge, Armor, and Block, including below-half-Health Armor gains, use percentage fields in the talent manifest. Retired boolean overrides are absent from defaults and ignored during load. Homestead and Gear retain their distinct permissions and never add the same Forge contribution twice.
 - **Homestead** — Wheat Field restores purchased-tier Health after each combat, stacking with post-combat recovery and clamping to maximum Health in every mode. Orchard adds purchased-tier starting Thorns alongside gear/encounter grants; resume never repeats starting grants. Crystal Garden scales Freeze damage from current Mana, stacking with talents at normal damage-resolution timing; its tier magnitudes belong to the [Homestead catalog](../src/lib/homestead/data.ts). Homestead resource bonuses increase eligible reward quantities by 10 percentage points per node tier; they never grant per-room or run-end resources.
+- **Sparring Grounds** — Each tier increases Physical Critical Hit damage by 10%, for total bonuses of 10/20/30/40%. The normal 2× critical multiplier becomes 2.2/2.4/2.6/2.8× before rounding, Block and Armor. It strengthens the existing hit without an extra damage packet or combat-text event. Noncritical hits, other damage types and critical chance are unchanged; card descriptions retain their noncritical baseline. Upgrades and resume rebuild this modifier from the owned tier without removing already-held Block or other live progress. The building retains its Iron find bonus.
 - **Typed hit resolution** — `typed-hit-resolution.ts` owns the shared Health → Armor decay → buildup → combat text → threshold → kill-payout order for player follow-up and talent hits. Card attack riders retain their distinct ordering, including recursive Archery hits and persistent Forge. `follow-up-hit-resolution.ts` declares recurring damage-conversion reactions in ordered data; changing that order changes RNG consumption. Talent manifest types derive from their current defaults; retired fields follow the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 - **Common damage modifiers** — `damage-modifiers.ts` owns the typed mapping from damage types to Talent and Gear flat bonuses, flat reductions, half-damage traits, and Gear resistances. Preserve their existing application stages and rounding; special conversion and reaction handlers keep their explicit order. Source manifests follow the current Talent and Gear contracts and the save baseline.
 - **Fight pacing** — hidden combat scaler for damage, Block, Mana and healing; player Forge, Armor and Gold bypass it. Attack and triggered damage also receive a capped quadratic ramp, configured by enemy type and side in [FIGHT_PACING](../src/lib/game-constants/combat-rules.ts) and applied by [fight-pacing.ts](../src/lib/battle/fight-pacing.ts). The boss ramp is symmetric. This ramp is separate from the resource clock and does not affect healing or defensive/resource grants; derived hits and status ticks retain inherited pacing without applying it twice. [Pacing tests](../tests/lib/battle/fight-pacing.test.ts) protect these permissions. In the balance simulation, `ALCHEMY_BALANCE_PACING=off` disables both pacing components while retaining enemy progression scaling.
@@ -451,7 +454,7 @@ Save the complete resolved Mystery offer after Boon substitution and Labyrinth m
 
 Mystery choice commands accept only a choice object from the current resolved visit. Retained callbacks from an earlier visit, even one with the same event, cannot apply effects to the new visit. Resolve effects from the stored offer so the displayed choice and awarded outcome stay together. Choice and card-pick callbacks return whether the command was accepted; rejected actions keep the screen open, show a concise error, and suppress success feedback.
 
-`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker and `mysteryPendingRemoval` are retired.
+`removeCard` removes a random deck card immediately with no picker.
 
 Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 
@@ -482,7 +485,7 @@ already-generated next floors are reused. Prior floors cannot be entered.
 Resume preserves geography, completion, and pending encounters. Invalid location
 references fall back to the floor's completed entrance. Discovery is derived,
 not separately saved. Map-version recovery follows the
-[save migration history](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
+[save compatibility contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
 ### Labyrinth room modifiers
 
@@ -567,83 +570,77 @@ Transmutation offers one free alteration to an eligible card. Each visit rolls u
 
 Each new Labyrinth Transmutation node has one room modifier. Prismatic Crucible offers every compatible keyword for each card. A keyword Crucible guarantees its keyword within the normal three choices for each compatible card, preserving the other supported groups. Keyword Crucibles are eligible only when the deck can use that alteration as the floor is generated; later deck changes do not reroll the room or bypass card eligibility. All Crucibles retain one free alteration per visit and fixed saved previews. Campaign Transmutation keeps its normal offers.
 
-Damage converts to another damage type; Block, Armor, Forge, and Thorns convert among themselves; positive Health restoration, Mana restoration, and Gold gains convert among themselves. Every occurrence of the randomly chosen compatible source keyword changes, including nested branches and repeats. Existing magnitudes, costs, probabilities, durations, and targeting remain unchanged. Conversions with unsupported conditions or scaling are excluded. Other keywords add their native mechanic: Wish 1, Leech on damage, Archery on attacks, Consume, Dodge the next attack, or one Companion action when the deck contains a summon. Added effect lines respect Corruption's four-effect-line limit. Existing destination keywords are excluded.
+Damage converts to another damage type; Block, Armor, Forge, and Thorns convert among themselves; positive Health restoration, Mana restoration, and Gold gains convert among themselves. Every occurrence of the randomly chosen compatible source keyword changes, including nested branches and repeats. Existing magnitudes, costs, probabilities, durations, and targeting remain unchanged. Conversions with unsupported conditions or scaling are excluded. Other keywords add their native mechanic: Wish 1, Leech on damage, Archery on attacks, Consume, a 50% chance to Dodge the next attack, or one Companion action when the deck contains a summon. Added effect lines respect Corruption's four-effect-line limit. Existing destination keywords are excluded.
 
 Transmute commits the exact saved preview once. Cards keep their identity and artwork, gain the keyword's title prefix, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
 
 ## Universal reactions
 
-Shatter, Frostfire, Thunderclap, Wildfire, Consecration, Bloodboil, and Venomflash
-reward earned preparation. Direct
-card hits (including eligible automatic plays) and Companion attacks can release
-payoffs. Secondary Gear/talent hits, retaliation, delayed pulses, secondary
-repeats, and extra status ticks cannot initiate attack reactions, but successful crowd control from
-any source can prepare a payoff. Reaction damage never removes Burn, shortens
-crowd control, or spends another reaction's opportunity.
+The active roster is Shatter, Frostfire, Rupture, Toxic Shock, Consecration, and
+Venomflash. Bloodboil is shelved; Thunderclap and Wildfire are retired in favor of
+the shared Trinket roster. Direct card hits, eligible automatic plays and Companion
+attacks initiate attack finishers. Secondary hits, retaliation, delayed pulses,
+repeats and extra ticks do not. Fresh successful Stun from any source can release
+Toxic Shock. One complete card action, including nested effects and multiple hits,
+can release at most one reaction. Execution-only action claims are never saved.
 
-Successful enemy Freeze prepares independent Shatter and Frostfire bonuses;
-successful Stun prepares Thunderclap. Each bonus is 50% of the actual Health
-damage dealt by the packet causing that CC, rounded once, with a minimum of 2.
-Non-damaging CC prepares the minimum of 2. The amount is fixed when CC begins, so a
-small finishing hit or Companion receives the full reward. Each opportunity
-expires when its CC ends. Haste, duration extensions, additional buildup, and
-player-turn resets cannot replenish it; only a fresh successful CC can.
+DoT finishers require accumulated actual natural tick Health damage and current
+potency of their preparation keyword to each reach 10% of maximum enemy Health,
+rounded, minimum one. Normal scheduled ticks count even on control-skipped turns;
+extra ticks, detonations and Haste do not. Preparation accumulates across phases
+and status gaps. This is initial tuning toward occasional large reactions, not a
+hard limit of one or two per battle.
 
-- **Shatter:** a positive Physical attack against a Frozen enemy destroys all
-  Block and Armor before mitigation, then releases its stored Physical bonus.
-  Dodge and zero-power attacks preserve readiness. Shatter does not guarantee a
-  Critical; the underlying attack uses its ordinary Critical rules.
-- **Frostfire:** an eligible Freeze hit that successfully Freezes an already
-  Burning enemy releases its stored Burn bonus. Alternatively, a Burn hit dealing
-  Health damage to an already Frozen enemy releases it. These routes share one
-  opportunity per Freeze. Bonus damage adds no Burn stacks.
-- **Thunderclap:** Nature damage against an enemy already Stunned before that hit
-  releases its stored Nature bonus, once per Stun. The finishing hit must deal
-  positive Health damage.
-- **Wildfire:** two positive natural enemy-turn Burn ticks prepare bonus Burn
-  damage equal to 50% of their combined actual Health damage, rounded once, minimum 2. Ticks
-  of 8 and 4 prepare 6; ticks of 4 and 2 prepare 3. Only normal enemy-turn ticks
-  count, including CC-skipped enemy turns; Haste, extra ticks, direct hits, and
-  detonations do not. A Nature hit dealing positive Health damage releases all
-  completed pairs without consuming Burn. Additional pairs accumulate while
-  waiting; unmatched ticks carry forward, including across gaps between fires
-  and after Burn reaches zero. Preparation resets between battles.
+Successful Freeze prepares separate Shatter and Frostfire bonuses; Stun prepares
+Rupture. The bonus is 25% of actual Health damage from the triggering packet,
+rounded, minimum one. Non-damaging control prepares one. Control ending expires
+unused opportunities; extensions and turn resets do not refresh them. All finishers
+preserve existing Freeze/Stun duration.
 
-- **Consecration:** an eligible Holy hit dealing positive Health damage to an
-  already Bleeding enemy consecrates its next natural Bleed tick. The tick releases
-  Holy damage equal to 50% of its actual Health damage, rounded, minimum 2. More
-  Holy hits do not stack marks. Capture and consume the mark when the tick begins;
-  clearing or detonating Bleed cancels it. Preserved Bleed can be consecrated again
-  for a later tick. Current-format resume preserves the mark without replaying it.
-- **Bloodboil:** when Burn and Bleed both deal positive natural tick damage in the
-  same enemy phase, release Burn damage equal to 50% of their combined actual
-  Health damage, rounded once, minimum 2. A final Burn stack counts even if it
-  expires before Bleed resolves. Separate phases, extra ticks, and detonations
-  cannot combine. CC-skipped natural phases count. Bloodboil and Consecration
-  resolve after the Bleed tick and its riders, Consecration first.
-- **Venomflash:** an eligible Burn hit dealing positive Health damage newly ignites
-  an already Poisoned enemy: Burn was zero before that packet and the packet adds
-  Burn. Release Burn damage equal to 50% of the pre-hit Poison stacks, rounded,
-  minimum 2. Existing fires cannot trigger it; extinguishing and igniting again
-  can. Ordered effects in one card can establish Poison before ignition. Poison
-  and Burn stacks remain intact from the bonus itself. Combustion's fresh
-  ignition still qualifies when its own detonation consumes the new Burn.
+- **Shatter:** a positive, undodged Physical attack against a Frozen enemy strips
+  all Block before mitigation and pays the stored Physical bonus. Armor remains.
+- **Frostfire:** a Freeze attack successfully Freezing an enemy with prepared Burn
+  detonates all remaining Burn, adds the stored Burn bonus, and strips all Armor.
+  Burn against an already Frozen enemy no longer triggers it. Trinket's equivalent
+  unique benefit adds one frozen action skip because that game has no Armor pool.
+- **Rupture:** a Bleed attack dealing Health damage against an already Stunned enemy
+  with prepared Bleed detonates all remaining Bleed, adds the stored Bleed bonus,
+  and reduces enemy healing by 50% for two enemy turns. Decrement the timer after
+  enemy regeneration, including skipped turns; Haste does not shorten it.
+- **Toxic Shock:** fresh successful Stun against prepared Poison detonates all
+  remaining Poison and adds the Stun packet's control bonus as Poison damage. The
+  enemy's next actual attack deals 50% less damage across all its hits. Chance
+  branches resolving utility and control-skipped turns preserve that debuff.
+- **Consecration:** Holy Health damage against prepared Bleed immediately detonates
+  all remaining Bleed and adds Holy damage equal to 25% of accumulated natural Bleed
+  damage. Grants the Hero Block equal to 25% of total actual reaction Health damage,
+  rounded, minimum one, through normal Block rewards. The triggering Holy hit is
+  excluded. Alchemy Companions are invulnerable and have no Block pool; Trinket
+  grants the same percentage separately to each living ally.
+- **Venomflash:** Burn Health damage against prepared Poison detonates all remaining
+  Poison and Burn, adds Burn damage equal to 25% of accumulated natural Poison
+  damage, and Purges one enemy benefit through normal Purge rewards. Existing Burn
+  no longer prevents it.
 
-Bonuses bypass Block and Armor, cannot Critical, and apply no second damage
-scaling, status buildup, attack riders, or recursive reactions. Resolve them after
-normal attack follow-ups and retaliation, only while both combatants survive.
-Thunderclap resolves before Wildfire when both qualify; Venomflash follows other
-qualifying attack reactions. Standard health-threshold
-handling and once-only kill rewards still apply, including Archery attribution.
+Native remaining-tick detonation preserves its existing conditional multipliers,
+decay/tail rules and supported damage, draw, Mana, Gold and pending Bleed Leech
+rewards. Ingredients are projected together before removal so cross-status bonuses
+are retained in the payout. New effects from callbacks remain separate. Consumed
+keywords' natural preparation resets before payout. Growth/preservation chances,
+future natural-only tick rewards and continued status bonuses are not guaranteed
+by detonation; substantial setup, front-loaded damage and distinct benefits are
+intended to make the trade worthwhile rather than guarantee pure upside.
 
-Persist reaction progress in battle snapshots; reload cannot refresh spent
-opportunities or replay earned damage. Already-earned stored bonuses retain their
-amounts across resume. Resolved reactions reuse existing battle audio. Each action
-shows one central feedback group: its direct typed damage, then each reaction name
-with its separately attributed typed bonus, using the same keyword shine on the
-name and bonus number. The group shares one portrait anchor, flight and 1.6-second
-lifetime; see [battle feedback](./UI_BATTLE.md#battle-feedback). Repeated packets
-with the same reaction origin can total for display; direct damage and different
-reactions remain distinct, preserving separate engine packets. Add no readiness UI, explanations,
-tutorials, or card-description/keyword previews; see the
-[authoring contract](./CONTENT_AUTHORING.md#add-a-new-card).
+The additional bonus bypasses Block/Armor, cannot Critical and adds no buildup,
+attack riders or recursive reactions. Existing native detonation rules still apply
+to its cash-out. Resolve attack finishers after normal follow-ups and retaliation,
+while both combatants survive. All payoff damage shares one typed reaction origin
+for presentation; direct damage remains separate. Actual Health loss, not overkill
+or unrelated riders, funds Consecration's Block. Kill rewards remain once-only.
+
+Snapshots preserve natural preparation, spent control opportunities, pending Toxic
+Shock and its next-attack debuff, and Rupture duration. Hydration accepts the previous
+reaction shape: Thunderclap preparation maps to Rupture; earned Wildfire damage
+and unmatched Burn tick credit map to natural Burn preparation without replaying a
+payoff or refreshing spent Freeze opportunities. Retired delayed Consecration marks
+are discarded. No readiness UI or added instructional copy is introduced.

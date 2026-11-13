@@ -2,11 +2,12 @@ import { z } from "zod";
 import { BattleCardEffectSchema, ENEMY_TYPE_VALUES, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { GEAR_AFFIX_IDS, GEAR_EFFECT_KEYS, GEAR_RARITIES, GEAR_SLOTS } from "@/lib/gear";
 import { COMBAT_ENCOUNTER_TRAIT_IDS, REWARD_ENCOUNTER_TRAIT_IDS } from "../content-systems/encounter-traits";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 
 const keywordIds = Object.keys(keywordDefinitions) as [KeywordId, ...KeywordId[]];
 
-const NonEmptyStringSchema = z.string().min(1);
+const NonEmptyStringSchema = z.string().refine((value) => value.trim().length > 0, "Text must not be blank");
 const PositiveIntegerSchema = z.number().int().positive();
 const NonNegativeIntegerSchema = z.number().int().nonnegative();
 const KeywordIdSchema = z.enum(keywordIds);
@@ -84,39 +85,72 @@ export const TrinketContentSchema = z.object({
   effects: TrinketEffectsContentSchema,
 });
 
-export const GearDefinitionContentSchema = z.object({
-  id: NonEmptyStringSchema,
-  displayName: NonEmptyStringSchema,
-  baseItemId: NonEmptyStringSchema,
-  rarity: z.enum(GEAR_RARITIES),
-  descriptionLines: z.array(NonEmptyStringSchema),
-  art: NonEmptyStringSchema,
-  compatibleSlots: z.array(z.enum(GEAR_SLOTS)).min(1),
-  slotRule: z.enum(["two-handed", "ranged", "quiver", "standard"]),
-  affinityKeywords: z.array(KeywordIdSchema).min(1),
-  salvageValue: z.record(z.string(), NonNegativeIntegerSchema),
-});
-
-export const GearAffixContentSchema = z.object({
-  id: z.enum(GEAR_AFFIX_IDS),
-  name: NonEmptyStringSchema,
-  aspect: z.enum(["offensive", "defensive"]),
-  keywordId: KeywordIdSchema,
-  secondaryKeywordId: KeywordIdSchema.optional(),
-  descriptionTemplate: NonEmptyStringSchema,
-  effectKey: z.enum(GEAR_EFFECT_KEYS),
-  roll: z.record(z.enum(GEAR_RARITIES), z.object({ min: PositiveIntegerSchema, max: PositiveIntegerSchema })),
-});
-
-export const EncounterTraitContentSchema = z.object({
-  id: z.enum([...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS]),
-  category: z.enum(["combat", "reward"]),
-  label: NonEmptyStringSchema,
-  description: NonEmptyStringSchema,
-  modes: z.array(z.enum(["labyrinth", "wildwood"])).min(1),
-  enemyTrait: z.object({
+export const GearDefinitionContentSchema = z
+  .object({
     id: NonEmptyStringSchema,
-    title: NonEmptyStringSchema,
+    displayName: NonEmptyStringSchema,
+    baseItemId: NonEmptyStringSchema,
+    rarity: z.enum(GEAR_RARITIES),
+    descriptionLines: z.array(NonEmptyStringSchema),
+    art: NonEmptyStringSchema,
+    compatibleSlots: z
+      .array(z.enum(GEAR_SLOTS))
+      .min(1)
+      .refine((slots) => new Set(slots).size === slots.length, "Gear slots must be distinct"),
+    slotRule: z.enum(["two-handed", "ranged", "quiver", "standard"]),
+    affinityKeywords: z
+      .array(KeywordIdSchema)
+      .min(1)
+      .refine((keywords) => new Set(keywords).size === keywords.length, "Gear affinities must be distinct"),
+    salvageValue: z.record(z.enum(MATERIAL_IDS), NonNegativeIntegerSchema),
+  })
+  .refine(
+    (definition) => {
+      if (definition.slotRule === "standard") return true;
+      const expected = definition.slotRule === "quiver" ? "off-hand" : "main-hand";
+      return definition.compatibleSlots.length === 1 && definition.compatibleSlots[0] === expected;
+    },
+    { error: "Gear slots must match the hand rule", path: ["compatibleSlots"] },
+  );
+
+export const GearAffixContentSchema = z
+  .object({
+    id: z.enum(GEAR_AFFIX_IDS),
+    name: NonEmptyStringSchema,
+    aspect: z.enum(["offensive", "defensive"]),
+    uniqueOnly: z.boolean().optional(),
+    keywordId: KeywordIdSchema,
+    secondaryKeywordId: KeywordIdSchema.optional(),
+    descriptionTemplate: NonEmptyStringSchema,
+    effectKey: z.enum(GEAR_EFFECT_KEYS),
+    roll: z.record(z.enum(GEAR_RARITIES), z.object({ min: PositiveIntegerSchema, max: PositiveIntegerSchema })),
+  })
+  .refine((affix) => affix.secondaryKeywordId !== affix.keywordId, {
+    error: "Secondary affinity must differ from the primary affinity",
+    path: ["secondaryKeywordId"],
+  });
+
+export const EncounterTraitContentSchema = z
+  .object({
+    id: z.enum([...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS]),
+    category: z.enum(["combat", "reward"]),
+    label: NonEmptyStringSchema,
     description: NonEmptyStringSchema,
-  }),
-});
+    modes: z
+      .array(z.enum(["labyrinth", "wildwood"]))
+      .min(1)
+      .refine((modes) => new Set(modes).size === modes.length, "Encounter modes must be distinct"),
+    enemyTrait: z.object({
+      id: NonEmptyStringSchema,
+      title: NonEmptyStringSchema,
+      description: NonEmptyStringSchema,
+    }),
+  })
+  .refine(
+    (trait) => {
+      const ids: readonly string[] =
+        trait.category === "combat" ? COMBAT_ENCOUNTER_TRAIT_IDS : REWARD_ENCOUNTER_TRAIT_IDS;
+      return ids.includes(trait.id);
+    },
+    { error: "Encounter trait category does not match its canonical id", path: ["category"] },
+  );

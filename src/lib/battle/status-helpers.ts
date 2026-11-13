@@ -1,6 +1,9 @@
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   BATTLE_CONFIG,
+  CORROSIVE_POISON_THRESHOLD,
+  AETHERWARD_MANA_REDUCTION_PERCENT,
+  ELEMENTAL_WARD_ARMOR_PERCENT,
   HALF_DIVISOR,
   LABYRINTH_HALF_DAMAGE_WARDS,
   LABYRINTH_MODIFIER_CONFIG,
@@ -12,7 +15,7 @@ import {
   TRAIT_DAMAGE_WEAKNESS_MULTIPLIER,
 } from "../game-constants";
 import { addPlayerStatusWithCombatText } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPlayerCombatDamage, mitigatePlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
@@ -92,7 +95,7 @@ export function getEnemyDamageVulnerabilityBonus(
 ): number {
   return (
     (state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0) +
-    (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0)
+    (state.enemyStatuses.poison >= CORROSIVE_POISON_THRESHOLD ? state.talentEffects.poisonDamageBonusVsPoisoned : 0)
   );
 }
 
@@ -110,14 +113,15 @@ export function reduceDamageByMana(
 ): number {
   const fullCrystals =
     state.gearEffects.damageReductionPerMana > 0 ? Math.max(0, Math.min(state.mana, state.maxMana)) : 0;
-  return Math.max(0, amount - fullCrystals);
+  const reduction = Math.round((fullCrystals * AETHERWARD_MANA_REDUCTION_PERCENT) / PERCENT_DENOMINATOR);
+  return Math.max(0, amount - reduction);
 }
 
 /** Status ticks and typed self-damage share mitigation; Health costs bypass it. */
 export function mitigatePlayerStatusDamage(state: BattleState, damage: number, status: EnemyStatusDamageId): number {
   const scaled = scaleReceivedPlayerDamage(reduceDamageByMana(state, damage), state.talentEffects, status);
   const resisted = mitigatePlayerCombatDamage(state, scaled, status);
-  return armorMitigatesElementalDamage(state, status) ? Math.max(0, resisted - state.playerStatuses.armor) : resisted;
+  return Math.max(0, resisted - elementalArmorAmount(state, status));
 }
 
 export function dealSelfDamage(
@@ -138,13 +142,7 @@ export function dealSelfDamage(
   );
   const healthLost = playerHealthLostToDamage(state, postDamage);
   if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: statLabel,
-      amount: healthLost,
-      impact: false,
-    });
+    emitDamageText(combatTexts, "player", statLabel, healthLost, { impact: false });
   }
   return {
     state: healthCost
@@ -169,18 +167,21 @@ export function applyPoisonDamageArmorRider(
   const nextState = reduceEnemyArmor(state, damage);
   const removed = state.enemyMitigation.armor - nextState.enemyMitigation.armor;
   if (removed > 0 && combatTexts) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
+    emitDamageText(combatTexts, "enemy", "armor", removed, { impact: false });
   }
   return nextState;
 }
 
 export type ArmorDecayTarget = "player" | "enemy";
 
-export function armorMitigatesElementalDamage(state: BattleState, damageType: string): boolean {
-  return (
-    (damageType === "burn" && state.talentEffects.armorMitigatesBurn) ||
-    (damageType === "bleed" && state.talentEffects.armorMitigatesBleed)
-  );
+export function elementalArmorAmount(state: BattleState, damageType: string): number {
+  if (damageType === "bleed" && state.talentEffects.armorMitigatesBleed) return state.playerStatuses.armor;
+  if (
+    state.talentEffects.armorMitigatesBurn &&
+    (damageType === "burn" || damageType === "freeze" || damageType === "nature")
+  )
+    return Math.round((state.playerStatuses.armor * ELEMENTAL_WARD_ARMOR_PERCENT) / PERCENT_DENOMINATOR);
+  return 0;
 }
 
 export function removePlayerArmor(
@@ -207,7 +208,7 @@ function decayPlayerArmor(
   combatTexts?: CombatTextEvent[],
   onArmorLost?: (amount: number) => void,
 ): BattleState {
-  if (hasEncounterBenefit(state, "ironclad") || state.playerStatuses.armor <= MIN_ARMOR_AMOUNT) {
+  if (state.playerStatuses.armor <= MIN_ARMOR_AMOUNT || hasEncounterBenefit(state, "ironclad")) {
     return state;
   }
 

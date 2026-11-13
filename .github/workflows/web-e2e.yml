@@ -8,9 +8,6 @@ on:
       artifact:
         type: string
         required: true
-      timeout:
-        type: number
-        default: 30
       variant:
         type: string
         default: ""
@@ -22,7 +19,6 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.timeout }}
     steps:
       - name: Record test job setup start
         run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"

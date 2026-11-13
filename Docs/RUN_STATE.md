@@ -48,35 +48,13 @@ uses this boundary for save-gated navigation. Keep that sequencing when changing
 an action or its feedback; [completion lifecycle](#completion-lifecycle) has the
 full contract and [progress tests](../tests/features/alchemy/shared/storage/progress-completion.test.ts) exercise it.
 
-The [generated save/resume pilot](../tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts)
-checks Labyrinth map progress, pending card rewards, Health and RNG after the save
-candidate parser and session restore. These are controlled fixtures, not complete
-player journeys. The default unit tier uses 16 fixed seeds; nightly uses 64 other
-fixed seeds and 64 derived from the UTC date. A failing test names its seed. Replay
-one case with `ALCHEMY_SAVE_PROPERTY_SEED=<seed> npm run test:unit -- tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts`;
-local execution follows the focused-test policy in Contributing. The pilot does not
-shrink inputs, so preserve a failing seed as a focused regression when useful.
-The [generated Gear rejection test](../tests/features/alchemy/shared/stores/commands/gear-rejection-generated.test.ts)
-shuffles and repeats rejected equipment and crafting actions against an active run.
-It checks that the complete gameplay revision, including ownership and RNG, remains
-unchanged and no commit is published. Its test names include the seed; the default
-unit tier uses 16 fixed seeds and nightly uses 128. These are controlled fixtures.
+The [generated save/resume test](../tests/features/alchemy/shared/stores/persistence/save-resume-generated.test.ts)
+and [Gear rejection test](../tests/features/alchemy/shared/stores/commands/gear-rejection-generated.test.ts)
+exercise seeded save and transaction behavior. Their fixtures do not establish
+complete player journeys; failing cases report a seed for focused reproduction.
 
-Shop purchase/refresh recipes and `runShopTransaction` live together in
-`shop-commands-core.ts`; payment, acquisition, rollback and post-commit feedback
-remain under one transaction. Merchant removal and Alchemist mixing use that
-same guard directly.
-
-For a Merchant card purchase, change card-specific selection or acquisition in
-`merchant-shop-commands.ts`; change shared payment and purchase guards in
-`shop-commands-core.ts`. The shared transaction checks the active shop and owns
-rejection and feedback; the merchant capability binding enforces session lifetime.
-Neither is a forwarding-only layer. Start with the linked shop actions test when
-tracing a change; keep rejected actions from spending Gold or publishing a commit.
-
-Composition wrappers such as `createShopActions` and session capability bindings
-retain a specific role: assembling route authority and revoking retained actions
-when the session ends. Keep those ownership checks when simplifying forwarding.
+Shop commands share the transactional guards in `shop-commands-core.ts`. Keep
+session-bound capability and lifetime checks when changing the route adapters.
 
 ## Run state
 
@@ -530,34 +508,26 @@ branch and derives its route directly. Retired screen/visit/reward shapes are
 rejected before validation. `run-restore.ts` applies the decoded
 fields and explicit current-data repairs in the command draft.
 
-`run-lifecycle.ts` exposes `snapshotRun(session)`, `restoreRun(…)` for run-only
-restoration, and `restoreSessionSave(save, session, options)` for complete saves.
-Bootstrap, independent session initialization, and playthrough fixtures use the
-complete-save command: profile, Gear, permanent progress, codec repairs, active
-run decoding, battle rebinding, and incompatible-battle settlement share one
-draft and one gameplay revision. Settings remain a separate store; their codec
-prepares normalized values without mutation, then installs them during the same
-publication boundary. Before notification, restore replaces the acknowledgement
-epoch and arms pending-save protection. It invalidates deferred navigation,
-restarts mounted battle playback, then clears outgoing presentation before
-settings, progress and gameplay observers run. `onRunRestored` listeners cancel
-only while the command guard is held. Equal-data restores and bootstrap preserving
-an initialized activity still invalidate old presentation; failed restores do not.
-Session disposal cancels playback independently of React unmount. Gameplay, settings, and progress observers therefore read
-the complete replacement, never a mixture of careers. Preparation, decoding,
-rejection or result-validation failure changes neither store, completion callbacks
-nor pending save protection.
-Successful Clear Save Data uses this same replacement boundary after disk deletion;
-failed deletion preserves memory/presentation, and settings/gameplay reset together.
-Abandonment feedback
-and its immediate save follow publication of the complete replacement.
-Repeated bootstrap may preserve an initialized activity while applying saved
-progression and rebinding its live manifests in the same command.
-`persistence-hydration.ts` composes the gameplay codec repairs inside that draft;
-`hydrateAlchemyPersistenceFields` remains the fields-only operation and does not
-restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/validation/parse-active-run.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
+`run-lifecycle.ts` exposes run-only snapshots/restores and complete-save restore.
+Complete restore prepares profile, Gear, progress, settings, activity and battle
+repairs before publishing one coordinated replacement. It arms save protection and
+invalidates outgoing navigation and playback before observers see the new career.
+Failed preparation or rejection leaves the existing state and pending protection
+untouched. Clear Save Data uses the same boundary after successful disk deletion.
 
-Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence/persistence-codec.ts`.
+`persistence-hydration.ts` composes gameplay repairs in that transaction; its
+fields-only wrapper does not restore activity. [Save recovery](../src/features/alchemy/shared/storage/MIGRATIONS.md#current-data-recovery)
+owns parsing, normalization and malformed-data behavior.
+
+Domain persistence codecs own field selection, defaults, encoding and hydration.
+`GameplayPersistenceCodec<T>` encodes from an explicit `GameSession` and hydrates
+into a `GameplayDraft`; `StandalonePersistenceCodec<T>` has no draft argument.
+The settings codec binds to its session-owned settings store and prepares hydration
+for coordinated publication. `shared/storage/persistence.ts` composes the saved
+fields into the versioned envelope and delegates subscriptions to
+`persistence-commit-filter.ts`, which observes settings and gameplay together.
+Keep change detection in that shared owner rather than adding subscriptions to
+individual codecs. Codec types live in `shared/stores/persistence/persistence-codec.ts`.
 
 The settings store defers hydration notifications until the coordinator arms save
 protection; subscriber failures are isolated so they cannot interrupt publication.
@@ -601,7 +571,8 @@ one tagged activity, independently of presentation navigation. `idle` is constru
 inactive runs save no active run. [Recovery](../src/features/alchemy/shared/storage/MIGRATIONS.md#current-data-recovery)
 owns malformed selected activities without reviving stale visits.
 
-`platform-save-backend.ts` owns transport; Steam initialization returns capabilities.
+`platform-save-backend.ts` owns transport; Steam initialization returns Cloud availability
+without exposing the player name used for its readiness check.
 Configure backends only while storage is idle, retaining method receivers so
 submitted work cannot switch transport. Independent sessions configure their own;
 only the application retains platform/SSR defaults. Storage drain includes published
@@ -637,7 +608,7 @@ adapters in `react/`, intent commands and writes in `commands/`, and codecs in
 | Gear player actions                       | `commands/gear-commands.ts`                                                    | [Armory write paths](./ARMORY.md#write-paths)                                                              |
 | Snapshot, restore, save and retry         | `shared/storage/session-persistence.ts`                                        | [Persistence API](#persistence-api) and [local saving](#completed-actions-and-local-saving)                |
 | Run lifecycle                             | `commands/run-lifecycle.ts`                                                    | [Teardown and settlement](./RUN_WORKFLOWS.md#run-teardown)                                                 |
-| Settings and meta intents                 | `session/settings-store.ts`, `commands/meta-commands.ts`                       | Named actions; raw hydration/replacement stays private                                                     |
+| Settings and meta intents                 | `react/settings-store.ts`, `commands/meta-commands.ts`                         | Named actions; raw hydration/replacement stays private                                                     |
 | Route actions and shop/battle composition | `shell/use-alchemy-run-controller.ts`, `shell/route-commands.ts`               | Signatures derive from factories; routes borrow only their phase's authority                               |
 | Navigation and outcomes                   | `shell/run-flow-engine.ts`, `run-loop/run/run-flow.ts`                         | [Controller navigation timing](./BATTLE_CONTROLLERS.md#navigation-timing)                                  |
 | Room entry and destination sampling       | `run-loop/run/room-entry-commands.ts`, `commands/destination-offer-command.ts` | [Activity ownership](#activity-and-rewards) and [run setup](./ARCHITECTURE.md#run-setup-ownership)         |

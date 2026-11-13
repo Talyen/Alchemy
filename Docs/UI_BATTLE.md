@@ -54,10 +54,11 @@ health and controls clear. Backgrounds fill the frame.
 
 ## Boss idle artwork
 
-Battle portraits for Blight Treant, Blood Countess, Seraph and Stone Titan play
-muted idle clips continuously. Each next clip is selected randomly excluding the
-current clip. Two video elements preload the next clip. Playback starts its
-replacement 240 ms before the end, retains the outgoing image until the incoming
+Battle portraits with registered [idle clips](../src/lib/game-data/boss-idle-assets.ts)
+play them muted and continuously. The catalog covers Forge Golem, Frostwarden,
+Iron Bear, Blight Treant, Blood Countess, Seraph and Stone Titan. Each next clip
+is selected randomly excluding the current clip. Two video elements preload the
+next clip. Playback starts its replacement 240 ms before the end, retains the outgoing image until the incoming
 decoder is ready, then blends opacity for 180 ms. Native looping keeps the
 outgoing video moving if loading or a busy main thread delays that handoff. The
 outgoing buffer is paused and rewound before reuse, including when the next
@@ -66,6 +67,16 @@ Only the short blend plays both decoders. This cosmetic selection never uses
 the world's gameplay RNG. Hidden tabs pause playback; reduced/disabled motion and
 unavailable video playback use the usual static artwork. Defeat freezes the
 visible video frame for the existing sliced-portrait effect.
+The death slice consumes a latched canvas directly, preserving the live surface's
+dimensions, contain placement and any in-progress clip blend. A temporarily
+unready displayed buffer stays paused until it can be captured; it never swaps to
+static art during that handoff. Static-art death is used only when static fallback
+was already displayed. No video frame from another portrait or earlier clip is cached.
+The crowd-control wrapper retains its portrait subtree when its effect clears, so
+death can freeze the displayed decoder rather than mounting a new fallback portrait.
+Defeat stops the control loop and removes its canvas while retaining the portrait's
+last rendered tilt through the slice. Ending control on a living portrait still
+clears the tilt normally.
 
 Prepared clips contain 60 fps motion interpolation, computed offline, and filtered
 640/1280/1920-pixel variants. The player selects the smallest width covering the
@@ -83,8 +94,8 @@ so a second portrait never shows around the video. Neither video nor its static
 fallback uses cover/crop scaling. Their extra width retains the same base
 frame height as the hero's 3:4 portrait and other enemies' 4:3
 portraits. Hero and enemy frames keep that height through turn changes and hover;
-the shining border indicates the active turn. Earth Elemental and Stone Titan battle artwork is
-mirrored toward the hero, including available idle playback and the defeat image. Collections, Destination,
+the shining border indicates the active turn. Enemy portraits and boss idle clips are
+oriented in their source assets to face the hero without runtime mirroring. Collections, Destination,
 Labyrinth, inspection and bosses without clips retain their static artwork.
 
 ## Battle feedback
@@ -142,17 +153,24 @@ buildup. Receipts and expiry remain unchanged; the renderer checks live row visi
 without changing combat math or status values.
 Status chips stay opaque through their existing entrance pop, so an entering or
 updated chip never briefly reintroduces its redundant corner feedback.
+Untagged turn and retaliation control notices use that same active-chip check;
+Stun damage remains a separate central hit and ordinary buildup is not mistaken
+for a successfully Stunned opponent.
+
+A card-commanded Companion remains a separate action when choosing the card's
+primary result. Bonded Briar Shield shows its own Block centrally, while Bear's
+damage remains attached to Bear's later impact; neither result demotes the other.
 
 Direct typed damage retains its independent fan flights, including actions that
 trigger reactions. Each reaction has a separate central portrait-anchored pair:
 the localized name beside its actual typed bonus. Damage packets carry their exact
 reaction ID through display aggregation: prerequisite keywords never imply extra
-damage types. Shatter's Block and Armor losses remain separate defense feedback.
-The name and bonus number use the same keyword text shine, with a dark shadow and
-no inherited stroke through transparent glyphs. The ordinary type icon preserves
-the payoff's damage type. Shatter uses Freeze/Physical, Frostfire Freeze/Burn,
-Thunderclap Stun/Nature, Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil
-Burn/Bleed, and Venomflash Poison/Burn.
+damage types. Shatter's Block loss and Frostfire's Armor loss remain separate
+defense feedback. The name and bonus number use the same keyword text shine, with
+a dark shadow and no inherited stroke through transparent glyphs. The ordinary
+type icon preserves the payoff's damage type. Shatter uses Freeze/Physical,
+Frostfire Freeze/Burn, Rupture Stun/Bleed, Toxic Shock Stun/Poison, Consecration
+Bleed/Holy, and Venomflash Poison/Burn.
 
 Each complete pair pops, settles, rises up to 24 scaled pixels, then holds and
 fades together over 1600 ms. Each localized name and its bonus fit the portrait
@@ -171,6 +189,15 @@ type matches. Resource removals and Health costs remain separate. Preserve origi
 packets for gameplay, audio and impact strength; visual aggregation never turns
 a reaction into a Critical. A direct total containing Critical damage retains its
 existing accent and accessible label saying it includes a Critical.
+
+Consumed Burn, Bleed and Poison detonations always use central damage feedback,
+including detonations triggered by talents or gear. Within one resolved action,
+the same recipient's direct hit and detonation can share a same-type total from
+their actual resolved receipts. Mixed types retain separate typed central flights;
+reactions, periodic ticks and distinct Companion actions remain separate. A total
+with a Critical constituent says it includes a Critical, without making its
+detonation Critical. Detonation totals do not merge into later action bursts.
+Original receipts still own mitigation, overkill, impact and audio facts.
 
 Critical damage retains ordinary typed color/icon with a brief pale flash and
 gold glow, without changing font size, weight or angle. Reduced/disabled motion
@@ -191,7 +218,11 @@ The [feedback owner](../src/features/alchemy/run-loop/battle/combat-feedback.ts)
 assigns each entry a waiting/visible phase, launch time, and post-launch lifetime.
 The [queue](../src/features/alchemy/run-loop/battle/combat-feedback-queue.ts) samples
 projected visible footprints with a preferred 6px clearance and 80 ms launch interval.
-Every entry launches within 180 ms of arrival, even when that permits overlap.
+Ordinary numeric and status entries launch within 180 ms of arrival, even when that permits overlap.
+Named reaction pairs instead use a 320 ms launch gap with a bounded 640 ms wait,
+so simultaneous reactions retain distinct readable beats. Their native keyword
+colors pulse briefly around the glyphs; reduced motion omits that accent. Damage
+resolution, Health, impact cues and audio remain immediate and unchanged.
 New numeric flights compare projected footprints before selecting a fixed center
 or diagonal path. Wider paths add vertical separation, protecting different damage
 types from receiving the same path when their queue deadlines coincide. Complete
@@ -286,6 +317,11 @@ Pile, and scale to its top card. Both follow the shallow curved path in
 with batch-accelerated timing. Flights run sequentially;
 each departure starts its sound. The live card identity follows hand reflow.
 Tuning lives in `CARD_TRANSFER_CONFIG`.
+Library Owl's actual draws use the same flights after the ordinary turn hand,
+while retaining its utility cast cue. Resolved draw identities distinguish those
+cards from newly created Wish cards, which do not fly out of the Draw Pile.
+Later delivery from Hand Overflow uses normal hand reflow without replaying a
+deck flight or departure sound, including created cards that were queued there.
 
 Existing playback owns batch completion, input gates, hidden-card handoff,
 cancellation, and timers. A batch waits for its last flight rather than pausing
@@ -345,8 +381,23 @@ identities or inspection work limits leave dependent damage at its authored
 value; already known earlier packets and state-independent nominal counts remain usable. Delayed attacks also retain
 authored values because future resources and pacing are unknown. Inspection
 never consumes live RNG, resources, or prepared effects. Collection and other
-nonbattle views retain authored descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
+nonbattle views retain authored attack descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
 defines execution seams, uncertainty limits, and effect-authoring requirements.
+
+Companion summon cards, pile inspection and the active Companion panel use the
+same detached effect inspection in Companion action scope. Bond and Companion
+bonuses are applied once before ordinary typed Gear, Forge and current conditional
+Talents such as First Blood. Numbers update when those conditions change. Damage
+types with different known values retain a range; utility and Bond repeat wording
+remain intact. Like card attacks, these are offensive packet values before target
+Block/Armor, critical strikes and Dodge, rather than promised Health loss or a
+sum of separate follow-up effects. Active-run Card Shops and Deck inspection use
+the same standing actor manifests as battle initialization. Their Companion
+descriptions include Bond, generic Companion bonuses, typed flat damage and known
+utility grants. They do not invent an unbled, Frozen or low-Health enemy to enable
+conditional bonuses such as First Blood. Temporary battle resources, encounter
+pacing and target defenses remain battle-only; class-independent catalogs retain
+their intrinsic descriptions. No preview borrows a previous battle's target.
 
 Proportions, per-Mana coefficients, explicit Forge-scaling operands, multiplication
 factors, durations and charges remain rule operands. Replacing one with a current

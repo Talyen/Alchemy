@@ -5,7 +5,11 @@ export function battleSnapshot(state: BattleSnapshot & Partial<BattleResolutionC
     // oxlint-disable-next-line alchemy/restricted-syntax -- Serialization removes the execution dependency without drawing it.
     rng: _rng,
     action: _action,
+    reactionSpent: _reactionSpent,
     onEmptyDraw: _onEmptyDraw,
+    onCardsDrawn: _onCardsDrawn,
+    onCompanionAction: _onCompanionAction,
+    companionActionSequence: _companionActionSequence,
     observer: _observer,
     sampleWishOptions: _sampleWishOptions,
     ...snapshot

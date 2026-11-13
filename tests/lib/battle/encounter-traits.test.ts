@@ -11,7 +11,12 @@ import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage"
 import { damageEnemyHealth } from "@/lib/battle/health-state";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
-import { processEncounterTraitHealthThreshold } from "@/lib/battle/encounter-trait-health-threshold";
+import {
+  addEnemyMitigationWithCombatText,
+  processEncounterTraitHealthThreshold,
+} from "@/lib/battle/encounter-trait-health-threshold";
+import { addEnemyMitigation } from "@/lib/battle/enemy-mitigation-state";
+import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
@@ -608,6 +613,35 @@ it("encounter trait health threshold shares the original crossing between Second
     const unchanged = { ...state, enemyHealth };
     expect(processEncounterTraitHealthThreshold(10, unchanged, [])).toBe(unchanged);
   }
+});
+
+it("skips zero mitigation changes, non-positive grants and unneeded threshold processing", () => {
+  const state = makeTestBattleState({
+    enemyHealth: 9,
+    enemyMaxHealth: 20,
+    currentEnemy: enemyWith("toxic"),
+  });
+  // Enemy without threshold traits returns unchanged state reference even when crossing 50%
+  expect(processEncounterTraitHealthThreshold(10, state, [])).toBe(state);
+
+  // When both flags are already triggered, threshold returns unchanged state reference immediately
+  const triggeredState = patchBattleState({
+    ...state,
+    currentEnemy: enemyWith("second-wind", "divine-aegis"),
+    flags: { ...state.flags, secondWindTriggered: true, divineAegisTriggered: true },
+  });
+  expect(processEncounterTraitHealthThreshold(10, triggeredState, [])).toBe(triggeredState);
+
+  // Zero mitigation changes return the unchanged state reference.
+  expect(addEnemyMitigation(state, "block", 0)).toBe(state);
+
+  // Combat text mitigation with non-positive amount or defeated enemy does nothing
+  const texts: CombatTextEvent[] = [];
+  expect(addEnemyMitigationWithCombatText(state, "block", 0, texts)).toBe(state);
+  expect(addEnemyMitigationWithCombatText(state, "block", -2, texts)).toBe(state);
+  const defeatedState = { ...state, enemyHealth: 0 };
+  expect(addEnemyMitigationWithCombatText(defeatedState, "block", 5, texts)).toBe(defeatedState);
+  expect(texts).toEqual([]);
 });
 
 it("stops trait pulses when healing from Flesheater defeats Blood Countess", () => {

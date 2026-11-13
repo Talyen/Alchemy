@@ -52,11 +52,11 @@ describe("applyPlayerStatusEffectHandler", () => {
   it.each([3, 0])(
     "scales the start-of-card Mana by %i and spends live Mana even for a zero factor",
     (convertCurrentMana) => {
-      const original = effectsCard({
-        id: "test-mana-conversion",
-        art: "",
-        effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
-      });
+      const original = effectsCard(
+        "test-mana-conversion",
+        [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
+        { art: "" },
+      );
       const target = getEditableCorruptionTargets(original).find((entry) => entry.field === "convertCurrentMana")!;
       const card = applyNumericCorruption(original, target, convertCurrentMana - target.value);
       const effect = card.effects[0]!;

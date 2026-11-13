@@ -58,7 +58,7 @@ export const talentRows = [
   ),
   archery("archery-eagle-eye", "Eagle Eye")(
     "Eye",
-    "When you play an Archery card against a Stunned enemy, draw a card",
+    "Your first Archery card against a Stunned enemy each turn draws a card",
     { drawOnArcheryVsStunned: 1 },
   ),
   archery("archery-hawk-eye", "Hawk Eye")(
@@ -71,11 +71,13 @@ export const talentRows = [
     "Archery deals double damage against enemies at full Health",
     { archeryDoubledVsHighHealth: true },
   ),
-  archery("archery-piercing-shot", "Piercing Shot")("Aperture", "Archery cards ignore 1 Armor", {
-    archeryArmorPiercing: add(1),
-  }),
-  archery("archery-quickdraw", "Skirmisher")("Zap", "Archery deals 1 additional damage while you have no Block", {
-    archeryDamageWithoutBlock: 1,
+  archery("archery-piercing-shot", "Piercing Shot")(
+    "Aperture",
+    "Archery damage removes 1 Armor and deals 1 additional damage",
+    { archeryArmorRemoval: add(1), archeryDamageBonus: add(1) },
+  ),
+  archery("archery-quickdraw", "Skirmisher")("Zap", "While you have no Block, gain 15% Dodge chance", {
+    dodgeChanceWithoutBlock: 15,
   }),
   archery("archery-kill-shot", "Kill Shot")(
     "Crosshair",
@@ -97,7 +99,9 @@ export const talentRows = [
     armorOnBlockCardChance: 10,
     armorOnBlockCard: 6,
   }),
-  armor("armor-burn-mitigate", "Fireward")("Flame", "Armor mitigates Burn damage taken", { armorMitigatesBurn: true }),
+  armor("armor-burn-mitigate", "Elemental Ward")("Flame", "25% of Armor mitigates Burn, Freeze, and Nature damage", {
+    armorMitigatesBurn: true,
+  }),
   armor("armor-break-block", "Reactive Guard")("ShieldPlus", "When Armor breaks, gain 3 Block", { armorBreakBlock: 3 }),
   armor("armor-start-combat", "Bulwark")("Square", "Start each combat with 2 Armor", { startArmor: 2 }),
   armor("armor-mitigate-bleed", "Thick Hide")("Hexagon", "Armor mitigates Bleed damage taken", {
@@ -151,8 +155,8 @@ export const talentRows = [
   bleed("bleed-rip-and-tear", "Bloodrush")("Scissors", "Dealing Bleed damage has a 10% chance to draw a card", {
     drawOnBleedDamageChance: 10,
   }),
-  block("block-depleted-heal", "Second Wind")("Wind", "When Block is depleted, restore 2 Health", {
-    blockDepletedHeal: 2,
+  block("block-depleted-heal", "Second Wind")("Wind", "When Block is depleted, restore 1 Health", {
+    blockDepletedHeal: 1,
   }),
   block("block-absorb-physical", "Reinforce")("ShieldCheck", "Block absorbs 10% more Physical damage", {
     blockAbsorbPhysicalBonus: 10,
@@ -287,8 +291,8 @@ export const talentRows = [
   forge("forge-to-holy", "Sanctify")("Sun", "Holy damage is increased by 25% of your Forge", {
     forgeHolyDamagePercent: 25,
   }),
-  forge("forge-to-block", "Tempered Guard")("Shield", "Block gained is increased by 25% of your Forge", {
-    forgeBlockPercent: 25,
+  forge("forge-to-block", "Tempered Guard")("Shield", "Block gained is increased by 15% of your Forge", {
+    forgeBlockPercent: 15,
   }),
   forge("forge-burn-burst", "Overheat")(
     "Thermometer",
@@ -310,8 +314,8 @@ export const talentRows = [
     "Below half Health, gaining Forge has a 25% chance to grant 1 additional Forge",
     { forgeLowHealthBonusChance: 25 },
   ),
-  forge("forge-strength-6", "Forged Bulwark")("Castle", "Gain 1 Forge when an enemy attack depletes your Block", {
-    forgeOnBlockDepleted: 1,
+  forge("forge-strength-6", "Forged Bulwark")("Castle", "When you gain Forge, gain 1 Block", {
+    blockOnForgeGain: 1,
   }),
   freeze("freeze-threshold", "Bitter Cold")(
     "ThermometerSnowflake",
@@ -571,7 +575,7 @@ export const talentRows = [
   poison("poison-leech-chance", "Hemotoxin")("Biohazard", "Poison has a 10% chance to also deal Bleed damage", {
     poisonBleedDamageChance: 10,
   }),
-  poison("poison-physical-bonus", "Corrosive")("Droplets", "Poisoned enemies take 1 additional damage", {
+  poison("poison-physical-bonus", "Corrosive")("Droplets", "Enemies with at least 5 Poison take 1 additional damage", {
     poisonDamageBonusVsPoisoned: 1,
   }),
   poison("poison-strip-armor", "Caustic")("FlaskRound", "Poison damage removes enemy Armor equal to damage dealt", {

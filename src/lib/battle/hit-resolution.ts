@@ -1,6 +1,7 @@
 import { rollBattleChance } from "./chance-roll";
 import {
   applyBleedDamageDraw,
+  applyBurnDamageDraw,
   applyElementalDamageManaRestore,
   applyHitHealth,
   reportEnemyHitDamage,
@@ -11,7 +12,12 @@ import { applyHitEpilogue } from "./player-rewards";
 import { computeReflectedHolyDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
+import {
+  resolveFollowUpHit,
+  resolvePoisonBleedFollowUp,
+  tryPoisonStunProc,
+  tryTalentTypedHit,
+} from "./follow-up-hit-resolution";
 import { applyCardHitReactions } from "./card-hit-reactions";
 import { applyHolyDamageRiders, applyNatureDamageRiders } from "./elemental-hit-reactions";
 import { decayArmorAfterDamage } from "./status-helpers";
@@ -82,12 +88,12 @@ function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]
     ["bleed", "poison"],
     combatTexts,
     "remaining-ticks",
-    (current, damage, texts, healthDamage) => {
-      const reacted = applyPoisonTalentRiders(current, healthDamage, texts, true, (next, amount, events) =>
-        resolveFollowUpHit(next, { source: "talent-derived", damageType: "bleed", amount }, events),
-      );
-      return tryPoisonStunProc(reacted, damage, texts);
-    },
+    (current, damage, texts, healthDamage) =>
+      tryPoisonStunProc(
+        applyPoisonTalentRiders(current, healthDamage, texts, resolvePoisonBleedFollowUp),
+        damage,
+        texts,
+      ),
   );
 }
 
@@ -142,6 +148,7 @@ function resolveCardHit(
   let nextState = hit.state;
   nextState = applyIronGuardReward(nextState, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage, combatTexts);
+  if (effect.damageType === "burn") nextState = applyBurnDamageDraw(nextState, facts.healthDamage, combatTexts);
 
   if (isPlayerDefeated(nextState)) {
     // Bloodrush can invoke an Emergency Wish whose retaliation is fatal.
@@ -166,8 +173,8 @@ function resolveCardHit(
   if (
     facts.critical &&
     modifiedDamage > 0 &&
-    card.tags?.includes("archery") &&
-    nextState.gearEffects.archeryCritDrawsCompanion > 0
+    nextState.gearEffects.archeryCritDrawsCompanion > 0 &&
+    card.tags?.includes("archery")
   ) {
     nextState = drawKeywordCard(nextState, "companion", { combatTexts });
   }

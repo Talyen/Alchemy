@@ -43,11 +43,16 @@ async function main(argv = process.argv.slice(2)) {
   if (!argv.includes("--help") && !argv.includes("-h")) {
     if (isDesktop) validateDesktopBuildConfig();
 
-    const localizationCheck = await runTaskCommand("node", ["scripts/localization.mjs", "check"], { cwd: REPO_ROOT });
-    if (localizationCheck.status !== 0) throw new Error("Localization is not current; run npm run i18n:tasks.");
-
-    // Help does not build or upload; normal builds must reject stale outputs.
-    await syncGenerated({ check: true });
+    // These read-only checks are independent. Settle both before building or
+    // reporting failures so a rejected check never leaves background work behind.
+    const checks = await Promise.allSettled([
+      runTaskCommand("node", ["scripts/localization.mjs", "check"], { cwd: REPO_ROOT }).then((result) => {
+        if (result.status !== 0) throw new Error("Localization is not current; run npm run i18n:tasks.");
+      }),
+      syncGenerated({ check: true }),
+    ]);
+    const failures = checks.filter((result) => result.status === "rejected").map((result) => result.reason);
+    if (failures.length > 0) throw new AggregateError(failures, failures.map(String).join("\n"));
   }
 
   const viteArgs = ["build"];

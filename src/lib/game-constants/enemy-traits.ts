@@ -1,6 +1,8 @@
 export const TRAIT_FORGE_PER_TURN = 1;
 export const IRON_HIDE_ARMOR_PER_TURN = 1;
 export const GLACIAL_SURGE_FREEZE_DAMAGE_BONUS = 1;
+export const CRIMSON_PULSE_TURN_INTERVAL = 3;
+export const CRACKED_HALO_DAMAGE_BONUS = 2;
 export const LIVING_ARMOR_STARTING_ARMOR = 4;
 export const ENEMY_STARTING_BLOCK = 4;
 export const COLD_EMBRACE_HEALING = 3;
@@ -18,6 +20,8 @@ export const GIANT_SNAKE_EXTRA_BLOCK_STRIP = 1;
 export const TRAIT_DAMAGE_WEAKNESS_MULTIPLIER = 2;
 
 export const LABYRINTH_HALF_DAMAGE_WARDS = [
+  // Glacial Surge shares the same non-stacking Freeze ward as Frostbound Ward.
+  { traitId: "glacial-shell", damageType: "freeze" },
   { traitId: "venom-ward", damageType: "poison" },
   { traitId: "crimson-ward", damageType: "bleed" },
   { traitId: "sunward", damageType: "holy" },
@@ -35,6 +39,7 @@ export const ENEMY_TRAIT_IDS = {
   HOLLOW_FRAME: "hollow-frame",
   PILFER: "pilfer",
   SNAP_SHUT: "snap-shut",
+  CRACKED_HALO: "cracked-halo",
   SOUL_HARVEST: "soul-harvest",
   CONTAGION: "contagion",
   GLACIAL_BODY: "glacial-body",
@@ -51,6 +56,7 @@ export const ENEMY_TRAIT_IDS = {
   HOLY_VULNERABILITY: "holy-vulnerability",
   BURN_RESISTANCE: "burn-resistance",
   BURN_VULNERABILITY: "burn-vulnerability",
+  BRITTLE_BARK: "brittle-bark",
   LIVING_ARMOR: "living-armor",
   THICK_HIDE: "thick-hide",
   POISON_RESISTANCE: "poison-resistance",
@@ -92,6 +98,8 @@ export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; mu
   { traitId: ENEMY_TRAIT_IDS.HOLY_VULNERABILITY, damageType: "holy", multiplier: 1.3 },
   { traitId: ENEMY_TRAIT_IDS.BURN_RESISTANCE, damageType: "burn", multiplier: 0.5 },
   { traitId: ENEMY_TRAIT_IDS.BURN_VULNERABILITY, damageType: "burn", multiplier: 1.3 },
+  { traitId: ENEMY_TRAIT_IDS.BRITTLE_BARK, damageType: "burn", multiplier: 1.3 },
+  { traitId: ENEMY_TRAIT_IDS.BRITTLE_BARK, damageType: "stun", multiplier: 1.3 },
   { traitId: ENEMY_TRAIT_IDS.THICK_HIDE, damageType: "physical", multiplier: 0.5 },
   { traitId: ENEMY_TRAIT_IDS.POISON_RESISTANCE, damageType: "poison", multiplier: 0.75 },
   { traitId: ENEMY_TRAIT_IDS.FREEZE_VULNERABILITY, damageType: "freeze", multiplier: 1.3 },
@@ -110,6 +118,7 @@ export const REACTION_ONLY_ENEMY_TRAIT_IDS = [
   ENEMY_TRAIT_IDS.HOLLOW_FRAME,
   ENEMY_TRAIT_IDS.PILFER,
   ENEMY_TRAIT_IDS.SNAP_SHUT,
+  ENEMY_TRAIT_IDS.CRACKED_HALO,
   ENEMY_TRAIT_IDS.SOUL_HARVEST,
   ENEMY_TRAIT_IDS.CONTAGION,
   ENEMY_TRAIT_IDS.FROST_ELEMENTAL,

@@ -143,6 +143,7 @@ export async function validateSoundAssetRegistry({ sourceDir } = {}) {
       curatedSoundFiles.map((target) => ({ target })),
       {
         targetPattern,
+        allowMissingSource: true,
         caseInsensitiveDuplicates: true,
         label: "Curated sound registry",
       },

@@ -8,89 +8,50 @@ Git authorization and local integration. Read known owners directly; use
 
 Use four entry points for ordinary work:
 
-| Need                                                            | Command                                        |
-| --------------------------------------------------------------- | ---------------------------------------------- |
-| Lightweight checks for the isolated task                        | `npm run check`                                |
-| Lightweight checks for selected paths                           | `npm run check -- <paths>`                     |
-| Full repository validation (CI; local only by explicit request) | `npm run check:all`                            |
-| Focused unit diagnosis                                          | `npm run test:unit -- <one-or-two-test-files>` |
+| Need                                     | Command                                        |
+| ---------------------------------------- | ---------------------------------------------- |
+| Lightweight checks for the isolated task | `npm run check`                                |
+| Lightweight checks for selected paths    | `npm run check -- <paths>`                     |
+| Full repository validation (CI or local) | `npm run check:all`                            |
+| Focused unit diagnosis                   | `npm run test:unit -- <one-or-two-test-files>` |
 
-| Change                                        | Additional work                                                                             |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Code or documentation                         | Use the task gate; run a focused unit when it answers a concrete question.                  |
-| Player-facing text                            | After wording settles, prepare, translate and review the localization packet.               |
-| Visible UI                                    | Compare matched rendered states and exercise affected interactions; translate changed text. |
-| Explicitly requested heavy local verification | Follow the authorization and host-lane rules below before running it.                       |
+| Change                   | Additional work                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| Code or documentation    | Use the task gate; run a focused unit when it answers a concrete question.                  |
+| Player-facing text       | After wording settles, prepare, translate and review the localization packet.               |
+| Visible UI               | Compare matched rendered states and exercise affected interactions; translate changed text. |
+| Heavy local verification | Follow the host-lane rules below before running it.                                         |
 
-`check` selects the isolated task, including its uncommitted work. In a mixed or
-unrecorded checkout, name task-owned paths explicitly, including deletions and
-both sides of renames. Add `--plan` to inspect the selected scope before running.
-[Selection details](./scripts/VERIFICATION.md#task-selection) cover advanced selectors
-and the relationship to main. Both the plan and completed check list their selected
-paths and step outcomes. Completed runs write `reports/runs/<run-id>/check/coverage.json`
-with the complete selection, reuse provenance, deferred checks and nested verification
-summary when available. A skipped step is not a passed check.
-`--plan` prints proposed steps only; it does not establish a pass. The nested
-changed-path plan describes one step inside the outer gate. A completed local gate
-reports its actual step outcomes and deferred CI work; it does not dispatch CI.
+`check` selects the isolated task, including uncommitted work. In a mixed or
+unrecorded checkout, name task-owned paths, including deletions and both sides of
+renames. `--plan` previews selection; it is not a pass. The completed gate reports
+its scope, outcomes and deferred CI work. See [selection and gate details](./scripts/VERIFICATION.md#local-verification-profiles).
 
-The default task gate runs applicable localization freshness, documentation
-contracts, and selected-file formatting and lint. Formatting and lint batches
-above 50 files or containing a file above 256,000 bytes are deferred to CI and
-reported. Unit suites (including dependency-related and risk-selected suites),
-source/test compilation, repository-wide static checks, builds, bundle budgets,
-and automated browser/Electron acceptance belong to CI. Integration and pre-push
-use this same lightweight default; neither escalates to those heavy checks.
-[Gate details](./scripts/VERIFICATION.md#local-verification-profiles) explain selection
-and compatibility commands.
+The task gate runs applicable localization and documentation contracts and
+selected-file formatting and lint. Units, compilation, broad static checks, builds,
+bundle budgets and automated browser/Electron acceptance are deferred to CI by default. Large
+format/lint batches are deferred as reported by the gate. A passing local gate
+is not CI or platform acceptance.
 
-Task work authorizes lightweight checks, a focused reproduction using one or two
-explicit unit test files with one worker, and development previews for required
-visual review. Use focused units to answer a concrete unresolved question; editing
-a file alone does not require a local test run. Do not split a broad suite into
-many focused invocations to bypass CI. Do not run broad units, compilation, builds, automated
-browser/Electron suites, coverage, mutation, simulation sweeps or profiling locally
-unless the user explicitly requests that local execution. A general implementation,
-verification, audit or integration request does not authorize heavy local validation.
-Do not substitute raw CLI commands, watch mode or `CI=true` to bypass this policy.
-For an explicitly requested heavy local run, set
-`ALCHEMY_ALLOW_HEAVY_LOCAL=1` on that command only. The full completion gate and
-managed broad unit/browser runners enforce this override; GitHub Actions runs
-normally without it. Unfiltered, directory and related unit selections need the
-override, including `test:unit` without paths. Avoid overlapping expensive runs on
-an overloaded host. Release packaging, signing, publication and uploads retain
-their release rules. No check command authorizes a push or CI dispatch.
+Choose checks suited to the task, including focused reproductions, browser and Electron tests, and development previews for required visual review. Focused tests have a 30-second limit on the shared Mac; retry a
+timeout and investigate before widening scope or changing that limit. Use focused
+units to answer a concrete question, not to split a broad suite into smaller runs.
 
-On the shared Mac, focused regressions have a 30-second limit and use one worker;
-retry a timeout and investigate before widening scope or changing that limit.
-Essential authorized local builds, heavier tests and rendered inspection use the
-shared host lane described in `/Users/ryanmcintire/Developer/.coordination/README.md`.
-Run that evidence before protected integration, not while holding its lock. The
-host lane does not grant permission for heavy verification.
+Local verification, including broad units, compilation, builds, browser and Electron suites, coverage, mutation, simulation sweeps and profiling, does not require a separate permission request. Use managed runners rather than raw CLI, watch mode or `CI=true` to bypass resource coordination. Builds, heavier tests and rendered inspection on the shared Mac use the host lane in `/Users/ryanmcintire/Developer/.coordination/README.md` before integration. Publication and disruptive desktop actions retain their existing authorization requirements.
 
-Run the task gate before handoff. Protected integration checks the merged task
-against pinned main/task commits, then revalidates both under the integration lock
-before advancing the clean integration checkout on `main`. If main advances during verification, integration
-incorporates it and checks again. Pre-push uses the same task gate against outgoing
-changes and requires a clean checkout. A passing gate establishes lightweight local completion
-for its reported scope; tests and compilation remain pending CI. Do not rerun
-heavy checks locally to remove that limitation. Claim CI or platform acceptance
-only when actually run.
-When a push and CI follow-up are requested, finish both before calling the task complete.
+Run the task gate before handoff. Protected integration verifies the combined result
+outside the lock and revalidates the pinned commits under the lock; if main changes,
+it incorporates and checks again. Pre-push uses the same lightweight gate and
+requires a clean checkout. Finish requested push and CI follow-up before completion.
 
 For visible changes, [visual review](./Docs/UI_VISUAL_REVIEW.md) requires rendered
 comparison and affected interactions. Finalize text in the task worktree, then
 [translate and review](./Docs/LOCALIZATION.md#agent-workflow) before final checks
 and integration. Checks and builds never invoke a translation service.
 
-Explicit local tests use managed scheduling and print the selected lane. One broad
-run and one focused unit run can execute together; focused runs use one worker,
-including when filtering by test name or selecting a reporter. Reservations wait
-in registration order and remain cancellable. A task's overlapping unit selections
-share one Vitest session and reservation. Never terminate another task's run. Use `test:status`
-only to diagnose contention. Raw CLI/watch commands bypass managed scheduling.
-[Runner details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
-are for diagnosing scheduling and advanced filters.
+Local tests use managed scheduling; never terminate another task's run. Use
+`test:status` to diagnose contention. [Runner details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
+own reservations and advanced filters.
 
 ### Agent preview ownership
 
@@ -198,10 +159,10 @@ owns tool configuration, dependency security, platform targets and CI mechanics.
 Follow [failure-first triage](./scripts/VERIFICATION.md#failure-first-triage): start with the compact
 failure digest, form a hypothesis, and inspect only the relevant logs or traces.
 
-## Changelog and patch notes
+## Patch notes
 
-Update changelogs at release only. Use Conventional Commits and `User-Facing: yes`
-or `User-Facing: no` trailers under [release policy](./Docs/RELEASE.md#changelog-release-time-only).
+Use Conventional Commits and `User-Facing: yes` or `User-Facing: no` trailers
+under [release policy](./Docs/RELEASE.md#patch-notes-and-commit-messages).
 
 ### Connected interaction progress tests
 

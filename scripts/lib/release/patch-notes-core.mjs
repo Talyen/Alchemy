@@ -1,4 +1,4 @@
-// Parses conventional commits into changelog and player-facing patch note sections.
+// Parses conventional commits into player-facing patch notes.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -11,8 +11,6 @@ const TYPE_METADATA = [
   { type: "other", section: "Other", hidden: true },
 ];
 const PLAYER_TYPES = new Set(TYPE_METADATA.filter(({ hidden }) => !hidden).map(({ type }) => type));
-const CHANGELOG_BODY_MAX_LINES = 6;
-const CHANGELOG_BODY_MAX_CHARS = 800;
 const USER_FACING_TRAILER = /^User-Facing:\s*(yes|no)\s*$/imu;
 const IMPLEMENTATION_BULLET = /^(update|add|fix) tests\b/iu;
 const TECHNICAL_TERMS = [
@@ -43,7 +41,6 @@ const INFRA_PREFIXES = [
   "steam/",
 ];
 const INFRA_NAMES = new Set([
-  "CHANGELOG.md",
   "package-lock.json",
   "package.json",
   "knip.config.js",
@@ -64,8 +61,6 @@ const INFRA_NAMES = new Set([
   "vercel.json",
 ]);
 
-export const CHANGELOG_SECTION_ORDER = TYPE_METADATA.map(({ section }) => section);
-const TYPE_TO_CHANGELOG_SECTION = Object.fromEntries(TYPE_METADATA.map(({ type, section }) => [type, section]));
 const TYPE_TO_PATCH_SECTION = Object.fromEntries(
   TYPE_METADATA.filter(({ type }) => PLAYER_TYPES.has(type)).map(({ type, section }) => [
     type,
@@ -91,7 +86,7 @@ export function parseConventionalCommit(subject) {
 export function cleanCommitBody(body) {
   return (body ?? "")
     .split("\n")
-    .filter((line) => !line.startsWith("Co-authored-by:"))
+    .filter((line) => !/^\s*Co-authored-by:/iu.test(line))
     .filter((line) => !USER_FACING_TRAILER.test(line.trim()))
     .join("\n")
     .trim();
@@ -106,7 +101,7 @@ export function isInfraPath(filePath) {
   if (INFRA_NAMES.has(filePath) || filePath.endsWith(".md") || filePath.endsWith(".generated.ts")) {
     return true;
   }
-  if (filePath.includes("/tests/") || filePath.endsWith(".test.ts") || filePath.endsWith(".spec.ts")) {
+  if (filePath.includes("/tests/") || /\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(filePath)) {
     return true;
   }
   return INFRA_PREFIXES.some((prefix) => filePath.startsWith(prefix));
@@ -167,55 +162,6 @@ export function normalizeCommits(commits) {
   );
 }
 
-function compactChangelogBody(body) {
-  const cleaned = cleanCommitBody(body);
-  if (!cleaned) return "";
-
-  const lines = cleaned.split("\n").slice(0, CHANGELOG_BODY_MAX_LINES);
-  let compacted = lines.join("\n").trim();
-  if (compacted.length > CHANGELOG_BODY_MAX_CHARS) {
-    compacted = `${compacted.slice(0, CHANGELOG_BODY_MAX_CHARS).trimEnd()}…`;
-  } else if (cleaned.split("\n").length > CHANGELOG_BODY_MAX_LINES) {
-    compacted = `${compacted}\n…`;
-  }
-  return compacted;
-}
-
-export function buildChangelogUnreleased(commits) {
-  const grouped = new Map();
-
-  for (const { subject, body } of normalizeCommits(commits)) {
-    const parsed = parseConventionalCommit(subject);
-    const section = TYPE_TO_CHANGELOG_SECTION[parsed.type];
-    if (!section || section === TYPE_TO_CHANGELOG_SECTION.other) continue;
-    if (!grouped.has(section)) grouped.set(section, []);
-
-    let entry = `- ${subject}`;
-    const cleaned = compactChangelogBody(body);
-    if (cleaned) {
-      entry += `\n${cleaned
-        .split("\n")
-        .map((line) => `  ${line}`)
-        .join("\n")}`;
-    }
-    grouped.get(section).push(entry);
-  }
-
-  const lines = ["## [Unreleased]", ""];
-
-  for (const section of CHANGELOG_SECTION_ORDER) {
-    const items = grouped.get(section);
-    if (!items?.length) continue;
-    lines.push(`### ${section}`, "", ...items, "");
-  }
-
-  if (lines.length === 2) {
-    lines.push("_No changes yet._", "");
-  }
-
-  return lines.join("\n").trimEnd() + "\n";
-}
-
 export function buildPatchNotesMarkdown(version, commits, knownIssues = []) {
   const sections = {
     Features: [],
@@ -227,7 +173,7 @@ export function buildPatchNotesMarkdown(version, commits, knownIssues = []) {
   for (const commit of normalizeCommits(commits)) {
     if (!isUserFacing(commit)) continue;
     const parsed = parseConventionalCommit(commit.subject);
-    const target = TYPE_TO_PATCH_SECTION[parsed.type] ?? "Features";
+    const target = Object.hasOwn(TYPE_TO_PATCH_SECTION, parsed.type) ? TYPE_TO_PATCH_SECTION[parsed.type] : "Features";
     const lines = extractPlayerFacingLines(commit);
     if (lines.length === 0) continue;
     sections[target].push(...lines);
@@ -254,79 +200,4 @@ export function buildPatchNotesMarkdown(version, commits, knownIssues = []) {
   }
 
   return lines.join("\n").trimEnd() + "\n";
-}
-
-export function parseChangelogCommits(sectionMarkdown) {
-  const commits = [];
-  let current;
-  for (const line of sectionMarkdown.split("\n")) {
-    if (line.startsWith("- ")) {
-      current = { subject: line.slice(2).trim(), body: [] };
-      commits.push(current);
-    } else if (current && line.startsWith("  ")) {
-      current.body.push(line.slice(2));
-    } else {
-      current = undefined;
-    }
-  }
-
-  return commits.map(({ subject, body }) => ({ subject, body: body.join("\n") }));
-}
-
-export function extractChangelogSection(content, heading) {
-  const lines = content.split("\n");
-  const baseHeading = heading.trim();
-  const startIndex = lines.findIndex((line) => {
-    const trimmed = line.trim();
-    return trimmed === baseHeading || trimmed.startsWith(`${baseHeading} (`);
-  });
-  if (startIndex === -1) return null;
-
-  const sectionLines = [];
-  for (let index = startIndex + 1; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (line.startsWith("## [")) break;
-    sectionLines.push(line);
-  }
-
-  return sectionLines.join("\n").trim();
-}
-
-export function replaceChangelogUnreleased(content, unreleasedMarkdown) {
-  const unreleasedHeading = "## [Unreleased]";
-  const unreleasedBlock = unreleasedMarkdown.trimEnd() + "\n";
-  const unreleasedIndex = content.indexOf(unreleasedHeading);
-
-  if (unreleasedIndex === -1) {
-    const versionSection = content.search(/\n## \[/u);
-    if (versionSection !== -1) {
-      return `${content.slice(0, versionSection + 1)}${unreleasedBlock}${content.slice(versionSection + 1)}`;
-    }
-    return `${content.trimEnd()}\n\n${unreleasedBlock}`;
-  }
-
-  const afterHeading = unreleasedIndex + unreleasedHeading.length;
-  const nextSectionMatch = /\n## \[/u.exec(content.slice(afterHeading));
-  const endIndex = nextSectionMatch ? afterHeading + nextSectionMatch.index + 1 : content.length;
-
-  return `${content.slice(0, unreleasedIndex)}${unreleasedBlock}${content.slice(endIndex)}`;
-}
-
-export function promoteUnreleasedSection(content, version, dateIso) {
-  const unreleased = extractChangelogSection(content, "## [Unreleased]");
-  const heading = `## [${version.replace(/^v/, "")}]`;
-  const rawBody = (unreleased ?? "").replace(/^_No changes yet\._$/u, "").trim();
-  if (extractChangelogSection(content, heading) !== null) {
-    if (rawBody) throw new Error(`Changelog already contains ${heading}; unreleased changes were not promoted.`);
-    return content;
-  }
-  const versionHeading = `${heading} (${dateIso})`;
-  const promotedBody = rawBody === "" ? "_No changes yet._" : rawBody;
-  const emptyUnreleased = buildChangelogUnreleased([]);
-
-  let next = replaceChangelogUnreleased(content, emptyUnreleased);
-  const insertAt = next.indexOf("## [Unreleased]");
-  const versionBlock = `${versionHeading}\n\n${promotedBody}\n\n`;
-  next = `${next.slice(0, insertAt)}${versionBlock}${next.slice(insertAt)}`;
-  return next;
 }

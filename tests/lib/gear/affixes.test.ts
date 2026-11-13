@@ -1,7 +1,52 @@
 import { describe, expect, it } from "vitest";
 import { defaultGearEffects, effectsForAffixRolls, getGearAffixTooltipEntries, normalizeAffixRolls } from "@/lib/gear";
+import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
+import { rollAffixValue } from "@/lib/gear/affixes";
+import { getUniqueAffixes } from "@/lib/gear/unique-catalog";
 
 describe("gear affixes", () => {
+  it.each([
+    ["flat-burn", "flatBurnDamage", 1, 2, 2, 3, 3, 4, "bloodfire-signet"],
+    ["flat-poison", "flatPoisonDamage", 1, 2, 2, 3, 3, 4, "blackfletch"],
+    ["flat-bleed", "flatBleedDamage", 1, 2, 2, 3, 3, 4, "blackfletch"],
+    ["flat-nature", "flatNatureDamage", 1, 2, 2, 3, 3, 4, "huntsmasters-call"],
+    ["archery-damage", "flatArrowDamage", 2, 3, 3, 4, 4, 5, "blackfletch"],
+    ["burn-per-mana", "burnDamagePerManaPercent", 5, 8, 8, 10, 8, 12, "twin-casting"],
+    ["block-gain", "flatBlockGained", 1, 2, 2, 3, 3, 4, "laughing-guard"],
+  ] as const)(
+    "keeps %s Astral rolls within their tuned range without changing Basic or Unique rolls",
+    (id, effectKey, basicMin, basicMax, astralMin, astralMax, uniqueMin, uniqueMax, uniqueId) => {
+      const affix = gearAffixCatalog[id];
+      expect(affix.roll.basic).toEqual({ min: basicMin, max: basicMax });
+      expect(affix.roll.astral).toEqual({ min: astralMin, max: astralMax });
+      expect(affix.roll.unique).toEqual({ min: uniqueMin, max: uniqueMax });
+      expect(rollAffixValue(affix, "astral", () => 0)).toBe(astralMin);
+      expect(rollAffixValue(affix, "astral", () => 0.999)).toBe(astralMax);
+
+      const oldRoll = [{ id, value: uniqueMax }];
+      expect(normalizeAffixRolls(oldRoll, "astral")).toEqual([{ id, value: astralMax }]);
+      expect(effectsForAffixRolls(oldRoll, "astral")[effectKey]).toBe(astralMax);
+      expect(getGearAffixTooltipEntries(oldRoll, "astral")[0]?.value).toBe(astralMax);
+      expect(getUniqueAffixes(uniqueId)).toContainEqual({ id, value: uniqueMax });
+      expect(effectsForAffixRolls(oldRoll, "unique")[effectKey]).toBe(uniqueMax);
+    },
+  );
+
+  it("limits Astral Ashkeeper to 1 Armor while preserving Basic and Unique ranges", () => {
+    const affix = gearAffixCatalog["armor-on-consume"];
+    expect(affix.roll.basic).toEqual({ min: 1, max: 1 });
+    expect(affix.roll.astral).toEqual({ min: 1, max: 1 });
+    expect(affix.roll.unique).toEqual({ min: 1, max: 2 });
+    expect(rollAffixValue(affix, "astral", () => 0)).toBe(1);
+    expect(rollAffixValue(affix, "astral", () => 0.999)).toBe(1);
+
+    const oldRoll = [{ id: "armor-on-consume" as const, value: 2 }];
+    expect(normalizeAffixRolls(oldRoll, "astral")).toEqual([{ id: "armor-on-consume", value: 1 }]);
+    expect(effectsForAffixRolls(oldRoll, "astral").armorOnConsume).toBe(1);
+    expect(getGearAffixTooltipEntries(oldRoll, "astral")[0]?.value).toBe(1);
+    expect(effectsForAffixRolls(oldRoll, "unique").armorOnConsume).toBe(2);
+  });
+
   it("shows both Saintfall magnitudes in its tooltip", () => {
     const [entry] = getGearAffixTooltipEntries([{ id: "saintfall", value: 4 }], "unique");
     expect(entry?.text).toBe("When Block is depleted, deal 4 Holy to the attacker and restore 4 Health");
@@ -86,7 +131,7 @@ describe("gear affixes", () => {
     for (const [rarity, flatPhysicalDamage, flatBurnDamage, damageReductionPerMana] of [
       [undefined, 999, 2, 5],
       ["basic", 3, 2, 1],
-      ["astral", 7, 3, 1],
+      ["astral", 7, 2, 1],
       ["unique", 7, 3, 1],
     ] as const) {
       const normalized = normalizeAffixRolls(raw, rarity);

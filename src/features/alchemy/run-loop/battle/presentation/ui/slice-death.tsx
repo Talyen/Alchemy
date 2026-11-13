@@ -12,6 +12,7 @@ const SLICE_HALF_FRAME_CLASS = "border border-border/80";
 
 interface SliceDeathProps {
   imageUrl: string;
+  frame?: HTMLCanvasElement | undefined;
   alt: string;
   imageClassName: string;
 }
@@ -27,15 +28,28 @@ function applyHalfTransform(
   el.style.opacity = String(opacity);
 }
 
-export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
+export function SliceDeath({ imageUrl, frame, alt, imageClassName }: SliceDeathProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const leftFrameRef = useRef<HTMLCanvasElement>(null);
+  const rightFrameRef = useRef<HTMLCanvasElement>(null);
   const [complete, setComplete] = useState(shouldReduceMotion);
 
   useLayoutEffect(() => {
     if (shouldReduceMotion()) return;
+
+    // Copy the latched video pixels before the slice starts, without an image
+    // decode or a static-art replacement between the live and death surfaces.
+    if (frame) {
+      for (const half of [leftFrameRef.current, rightFrameRef.current]) {
+        if (!half) continue;
+        half.width = frame.width;
+        half.height = frame.height;
+        half.getContext("2d")?.drawImage(frame, 0, 0);
+      }
+    }
 
     const root = rootRef.current;
     const canvas = canvasRef.current;
@@ -97,7 +111,7 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
       running = false;
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [imageUrl]);
+  }, [imageUrl, frame]);
 
   if (complete) {
     return <div className={cn("w-full", imageClassName)} />;
@@ -107,22 +121,30 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
     <div ref={rootRef} className="relative w-full overflow-visible">
       <div ref={leftRef} className="w-full" style={{ transformOrigin: "center center" }}>
         <div className="rounded-shell-hero" style={{ clipPath: SLICE_PRIMARY_CLIP_PATH }}>
-          <img
-            src={imageUrl}
-            alt={alt}
-            className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
-            loading="eager"
-          />
+          {frame ? (
+            <canvas ref={leftFrameRef} role="img" aria-label={alt} className={cn("block w-full", imageClassName)} />
+          ) : (
+            <img
+              src={imageUrl}
+              alt={alt}
+              className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
+              loading="eager"
+            />
+          )}
         </div>
       </div>
       <div ref={rightRef} className="absolute inset-0 w-full" style={{ transformOrigin: "center center" }}>
         <div className="rounded-shell-hero" style={{ clipPath: SLICE_SECONDARY_CLIP_PATH }}>
-          <img
-            src={imageUrl}
-            alt=""
-            className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
-            loading="eager"
-          />
+          {frame ? (
+            <canvas ref={rightFrameRef} aria-hidden="true" className={cn("block w-full", imageClassName)} />
+          ) : (
+            <img
+              src={imageUrl}
+              alt=""
+              className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
+              loading="eager"
+            />
+          )}
         </div>
       </div>
       <canvas ref={canvasRef} className="pointer-events-none absolute -top-1/2 -left-1/2 z-10 h-[200%] w-[200%]" />

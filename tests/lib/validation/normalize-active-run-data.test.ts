@@ -1,7 +1,8 @@
 import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, it, expect } from "vitest";
-import { ActiveRunDataSchema } from "@/lib/validation";
+import { ActiveRunDataSchema, toActiveRunData } from "@/lib/validation";
 import { createMixedPotion } from "@/lib/alchemist";
+import { canTransmuteCard, createTransmutationOffers, getTransmutationOffers } from "@/lib/alchemist/transmutation";
 import { cardById } from "@/lib/game-data";
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
@@ -80,6 +81,43 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.success).toBe(false);
   });
 
+  it("does not resume a mapless Labyrinth past the Wildcard draft", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      ...baseActiveRunInput(),
+      characterId: "wildcard",
+      contentSystemType: "labyrinth",
+      starterDraftChoices: [liveCard],
+      labyrinthMap: null,
+      activity: savedActivityFixture("destination"),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("keeps saved Transmutation choices attached to their deck slots after a damaged card is dropped", () => {
+    const first = cardById.heal!;
+    const second = cardById.slash!;
+    const choices = createTransmutationOffers([first, second], createSeededRng(2));
+    const result = toActiveRunData(
+      parseActiveRunData({
+        runDeck: [null, second],
+        activity: savedActivityFixture("transmutation", {
+          offers: [],
+          original: null,
+          result: null,
+          completed: false,
+          transmutation: { choices, sourceIndex: 1, source: second, keyword: null, offerIndex: null },
+        }),
+      }),
+    );
+    const visit = savedActivityData(result, "transmutation")!;
+    expect(visit.transmutation?.sourceIndex).toBe(0);
+    expect(canTransmuteCard(visit.transmutation!.choices, result.runDeck[0]!, 0, result.runDeck)).toBe(true);
+    expect(getTransmutationOffers(visit).length).toBeGreaterThan(0);
+    expect(
+      visit.transmutation!.choices.flatMap((choice) => choice.alterations).every((entry) => entry.sourceIndex === 0),
+    ).toBe(true);
+  });
+
   it("clamps player health to maxHealth", () => {
     const result = parseActiveRunData({ runPlayerHealth: 50, runMaxHealth: 30 });
     expect(result.runPlayerHealth).toBe(30);
@@ -132,6 +170,28 @@ describe("ActiveRunDataSchema normalize", () => {
     });
     expect(result.starterDraftChoices).toBeNull();
   });
+
+  it.each(["campaign", "labyrinth"] as const)(
+    "repairs missing Wildcard draft offers in %s and clears stale offers after the last pick",
+    (contentSystemType) => {
+      const input = {
+        characterId: "wildcard",
+        contentSystemType,
+        activity: savedActivityFixture("draft-deck"),
+        starterDraftChoices: null,
+      };
+      const unfinished = parseActiveRunData(input);
+      expect(unfinished.starterDraftChoices).toHaveLength(3);
+      expect(unfinished.rng.counters.rewards).toBeGreaterThan(0);
+
+      const completed = parseActiveRunData({
+        ...input,
+        runDeck: Array.from({ length: DRAFT_ROUNDS }, () => liveCard),
+        starterDraftChoices: [liveCard],
+      });
+      expect(completed.starterDraftChoices).toEqual([]);
+    },
+  );
 
   it.each([
     ["draft-deck", "draft", [], []],

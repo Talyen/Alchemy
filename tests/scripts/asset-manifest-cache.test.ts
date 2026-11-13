@@ -1,9 +1,9 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, readdir, utimes, writeFile } from "node:fs/promises";
-import { createReadStream, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, readdir, utimes, writeFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
 import path from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   computeContentHash,
@@ -30,23 +30,11 @@ vi.mock("node:fs", async (importOriginal) => {
   return { ...original, createReadStream: vi.fn(original.createReadStream) };
 });
 
-const tempDirs: string[] = [];
-
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-async function makeTempDir(prefix = "alchemy-asset-cache-") {
-  const dir = await mkdtemp(path.join(tmpdir(), prefix));
-  tempDirs.push(dir);
-  return dir;
-}
+const makeTempDir = temporaryDirectories("alchemy-asset-cache-");
 
 describe("asset-manifest-cache", () => {
   it("computes a stable content hash for source + settings + schema", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const sourcePath = path.join(dir, "a.png");
     await writeFile(sourcePath, "bytes-a");
 
@@ -63,7 +51,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("preserves digest compatibility across streamed chunks and canonical settings", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const sourcePath = path.join(dir, "large");
     const bytes = Buffer.alloc(256 * 1024, 171);
     await writeFile(sourcePath, bytes);
@@ -77,7 +65,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("detects changed bytes with identical size and timestamp", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const sourcePath = path.join(dir, "a.png");
     await writeFile(sourcePath, "bytes-a");
 
@@ -92,7 +80,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("loads legacy string hashes without an output digest", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const manifestPath = path.join(dir, ".asset-hashes.json");
     await writeFile(manifestPath, `${JSON.stringify({ "a.webp": "abc123" }, null, 2)}\n`);
 
@@ -102,7 +90,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("round-trips object manifest entries and skips unchanged writes", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const manifestPath = path.join(dir, ".asset-hashes.json");
     const entries = {
       "a.webp": { hash: "abc" },
@@ -117,7 +105,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("normalizes old metadata while preserving hashes and ownership", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const manifestPath = path.join(dir, ".asset-hashes.json");
     await writeFile(
       manifestPath,
@@ -132,7 +120,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("reports output freshness from hash + existence", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const outputPath = path.join(dir, "out.webp");
     await writeFile(outputPath, "out");
 
@@ -144,7 +132,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("rejects a changed output even when its source fingerprint still matches", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const outputPath = path.join(dir, "out.webp");
     await writeFile(outputPath, "expected-output");
     const entry = await withOutputHash({ hash: "source" }, outputPath);
@@ -155,7 +143,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("treats legacy entries without an output digest as stale", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const outputPath = path.join(dir, "out.webp");
     await writeFile(outputPath, "output");
 
@@ -163,7 +151,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("processes entries without persisting and normalizes failures", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const manifestPath = path.join(dir, ".asset-hashes.json");
 
     const result = await processManifestEntries({
@@ -186,7 +174,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("does not dirty the manifest when only source timestamps change", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const sourcePath = path.join(dir, "source");
     const manifestPath = path.join(dir, ".asset-hashes.json");
     await writeFile(sourcePath, "same bytes");
@@ -202,7 +190,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("recovers missing and malformed manifests", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const manifestPath = path.join(dir, "manifest");
     expect(await loadManifest(manifestPath)).toEqual({});
     await writeFile(manifestPath, "{broken");
@@ -210,7 +198,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("reports invalid manifest, output, and cleanup path types", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const file = path.join(dir, "file");
     await writeFile(file, "bytes");
     await expect(loadManifest(dir)).rejects.toMatchObject({ code: "EISDIR" });
@@ -220,7 +208,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it.each(["EACCES", "EIO"])("preserves %s errors from manifest, output, and cleanup reads", async (code) => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     const error = Object.assign(new Error(`${code}: ${dir}`), { code, path: dir });
     vi.mocked(readFile).mockRejectedValueOnce(error);
     await expect(loadManifest(dir)).rejects.toBe(error);
@@ -233,7 +221,7 @@ describe("asset-manifest-cache", () => {
   });
 
   it("removes only orphan files and propagates deletion errors", async () => {
-    const dir = await makeTempDir();
+    const dir = makeTempDir();
     await writeFile(path.join(dir, "keep"), "keep");
     await writeFile(path.join(dir, "manifest"), "manifest");
     await writeFile(path.join(dir, "orphan"), "orphan");

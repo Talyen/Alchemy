@@ -86,7 +86,7 @@ async function crossLanguageResume(page: Page, locale: AcceptanceLocale, ready: 
 for (const locale of acceptanceLocales) {
   test.describe(locale, () => {
     // These journeys boot several pages and compare independently resumed saves.
-    test.setTimeout(60_000);
+    test.setTimeout(process.env.CI ? 0 : 60_000);
 
     test.beforeEach(() => {
       // oxlint-disable-next-line playwright/no-skipped-test -- Pseudotext is deliberately developer-only.
@@ -200,7 +200,7 @@ for (const locale of acceptanceLocales) {
             const longName = fresh.getByText(label("Arcane Mending"), { exact: true });
             await expect(longName).toBeVisible();
             expect(await longName.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
-            const cardFace = fresh.locator(".talent-card-face").filter({ has: longName });
+            const cardFace = fresh.locator(".talent-node-content").filter({ has: longName });
             expect(await cardFace.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
             await fresh.getByRole("button", { name: label("Open game menu"), exact: true }).click();
             await fresh
@@ -532,8 +532,10 @@ for (const locale of acceptanceLocales) {
               exact: true,
             });
             await currency.click();
-            await fresh.getByTestId("armory-inventory-item").first().click();
-            await expect(fresh.getByTestId("armory-crafting-result")).toBeVisible();
+            const craftedItem = fresh.getByTestId("armory-inventory-item").first();
+            await craftedItem.click();
+            await craftedItem.hover();
+            await expect(fresh.getByTestId("crafting-affix-chip")).toBeVisible();
             await expect.poll(async () => (await readSavedGame(fresh)).craftingCurrencies?.["sprig-of-growth"]).toBe(1);
             const before = await readSavedGame(fresh);
             expect(

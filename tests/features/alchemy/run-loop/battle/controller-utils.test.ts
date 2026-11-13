@@ -70,16 +70,14 @@ it("defaultMeasureVisualCardRect uses border-box layout size so borders do not o
 });
 
 describe("presentCombatTexts", () => {
-  it("shows a prevented hit's zero feedback without shaking either portrait", () => {
-    const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
+  it("forwards a prevented hit's zero feedback", () => {
+    const presenter = { showCombatTexts: vi.fn() };
     const events = [{ target: "enemy", kind: "damage", stat: "burn", amount: 0 }] as const;
     presentCombatTexts(presenter, [...events]);
     expect(presenter.showCombatTexts).toHaveBeenCalledExactlyOnceWith(events);
-    expect(presenter.shakeEnemy).not.toHaveBeenCalled();
-    expect(presenter.shakePlayer).not.toHaveBeenCalled();
   });
-  it("shows texts, shakes the damaged side, and plays sounds in one call", () => {
-    const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
+  it("forwards mixed damage events to the impact owner", () => {
+    const presenter = { showCombatTexts: vi.fn() };
     const events = [
       { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
       { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
@@ -87,7 +85,5 @@ describe("presentCombatTexts", () => {
     ] as const;
     presentCombatTexts(presenter, [...events]);
     expect(presenter.showCombatTexts).toHaveBeenCalledExactlyOnceWith(events);
-    expect(presenter.shakeEnemy).toHaveBeenCalledOnce();
-    expect(presenter.shakePlayer).not.toHaveBeenCalled();
   });
 });

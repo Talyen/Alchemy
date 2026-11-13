@@ -10,6 +10,7 @@ function notifyListeners(): void {
 }
 
 function subscribe(listener: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
   // Animated text and effects share one browser subscription for the same preference.
   if (listeners.size === 0) {
     const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");

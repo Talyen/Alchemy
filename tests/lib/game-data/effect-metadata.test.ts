@@ -100,3 +100,40 @@ it("retains damage modifiers in recursive descriptions instead of merging away t
     describeCardEffects([{ kind: "repeat-over-turns", remainingTurns: 1, effects: [{ ...hit, lifesteal: true }] }]),
   ).toEqual([...lines, "Leech"].map((line) => `${line} next turn`));
 });
+
+it.each<{ effect: BattleCardEffect; expected: string[] }>([
+  {
+    effect: {
+      kind: "damage",
+      damageType: "physical",
+      amount: 1,
+      damageTypePool: ["holy", "burn"],
+      lifesteal: true,
+      damageTypeIfTargetFrozen: "freeze",
+      equalToBlock: true,
+      equalToArmor: true,
+      forgeBonusPercent: 0,
+    },
+    expected: ["holy", "burn", "leech", "freeze", "block", "armor", "forge"],
+  },
+  {
+    effect: { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy", lifesteal: true },
+    expected: ["burn", "holy", "leech"],
+  },
+  {
+    effect: { kind: "random-damage", minAmount: 1, maxAmount: 2, damageTypePool: ["burn", "holy"], lifesteal: true },
+    expected: ["burn", "holy", "leech"],
+  },
+  {
+    effect: { kind: "player-status", status: "block", statusPool: [], amount: 1, perManaCrystal: 0 },
+    expected: ["mana"],
+  },
+  {
+    effect: { kind: "player-status", status: "phoenixFeather", amount: 1 },
+    expected: [],
+  },
+])("preserves optional keyword ordering and empty pools for $effect.kind", ({ effect, expected }) => {
+  const before = structuredClone(effect);
+  expect(collectKeywordsFromBattleEffects([effect])).toEqual(expected);
+  expect(effect).toEqual(before);
+});

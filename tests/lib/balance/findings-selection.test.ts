@@ -20,6 +20,12 @@ function finding(id: string, overrides: Partial<BalanceFinding> = {}): BalanceFi
 }
 
 describe("selectBalanceFindings", () => {
+  it("rejects invalid caps instead of silently omitting findings", () => {
+    for (const cap of [NaN, Infinity, -1, 0.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => selectBalanceFindings([finding("skeleton")], cap)).toThrow("non-negative safe integer");
+    }
+  });
+
   it("deduplicates before clustering and keeps the most severe representative with a stable tie-break", () => {
     const candidates = [
       finding("wizard:skeleton", { scope: "matchup", severity: "critical" }),

@@ -6,6 +6,7 @@ import { isDeeplyFrozenData } from "@/lib/immutable-data";
 // Cache only fully frozen effect trees; copied cards remain editable. Consume
 // and tags belong to the card that actually requested the keywords.
 const EFFECT_KEYWORD_CACHE = new WeakMap<readonly BattleCardEffect[], readonly KeywordId[]>();
+const CARD_KEYWORD_CACHE = new WeakMap<BattleCard, readonly KeywordId[]>();
 
 function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly KeywordId[] {
   const cached = EFFECT_KEYWORD_CACHE.get(effects);
@@ -32,18 +33,26 @@ function mergeCardKeywords(card: BattleCard, base: readonly KeywordId[]): Keywor
 }
 
 export function getCardKeywords(card: BattleCard): KeywordId[] {
-  return mergeCardKeywords(card, cachedEffectKeywords(card.effects));
+  const cached = CARD_KEYWORD_CACHE.get(card);
+  return cached ? [...cached] : mergeCardKeywords(card, cachedEffectKeywords(card.effects));
 }
 
 /** Internal read-only view for consumers that do not retain or mutate keywords. */
 export function getCardKeywordView(card: BattleCard): readonly KeywordId[] {
+  const cached = CARD_KEYWORD_CACHE.get(card);
+  if (cached) return cached;
   const base = cachedEffectKeywords(card.effects);
   if (
     (!card.consume || base.includes("consume")) &&
     (!card.tags?.length || card.tags.every((tag) => base.includes(tag)))
   )
     return base;
-  return mergeCardKeywords(card, base);
+  const merged = mergeCardKeywords(card, base);
+  if (isDeeplyFrozenData(card)) {
+    Object.freeze(merged);
+    CARD_KEYWORD_CACHE.set(card, merged);
+  }
+  return merged;
 }
 
 /** Predicate callers can use the immutable cache without copying its array. */

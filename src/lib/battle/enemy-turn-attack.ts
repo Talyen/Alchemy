@@ -11,7 +11,7 @@ import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
 import { recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText, emitDamageText, mergeCombatText, emitMultiplyText } from "./combat-text-events";
 import { createEnemyAbilityContext, type EnemyAbilityContext } from "./enemy-ability-damage";
 import { applyAbilityDamage } from "./enemy-ability-damage";
 import { applyAbilityFollowups } from "./enemy-ability-followups";
@@ -67,7 +67,7 @@ function resolveEnemyEffect(
       const amount = scaleByRoomMultiplier(state, effect.amount);
       if (effect.status !== "thorns")
         return addEnemyMitigationWithCombatText(state, effect.status, amount, combatTexts);
-      mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "thorns", amount });
+      emitStatusText(combatTexts, "enemy", "thorns", amount);
       return addEnemyStatus(state, "thorns", amount);
     }
     case "remove-enemy-armor": {
@@ -78,7 +78,7 @@ function resolveEnemyEffect(
           ? state.playerStatuses.armor
           : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount ?? 0));
       if (amount <= 0) return state;
-      mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount, impact: false });
+      emitDamageText(combatTexts, "player", "armor", amount, { impact: false });
       const removed = removePlayerArmor(state, amount, combatTexts);
       return applyArmorLossAttackRetaliation(removed, amount, combatTexts);
     }
@@ -98,8 +98,7 @@ function resolveEnemyEffect(
       const amount = Math.round(state.playerStatuses.freeze * effect.factor);
       const nextState = setPlayerStatus(state, "freeze", amount);
       const added = amount - state.playerStatuses.freeze;
-      if (added > 0)
-        mergeCombatText(combatTexts, { target: "player", kind: "multiply", stat: "freeze", amount: added });
+      if (added > 0) emitMultiplyText(combatTexts, "player", "freeze", added);
       return resolvePlayerCrowdControlTriggers(nextState, combatTexts);
     }
   }

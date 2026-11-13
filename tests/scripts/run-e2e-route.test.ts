@@ -1,6 +1,6 @@
+import { runNode } from "../helpers/script-fixtures";
 import fs, { existsSync } from "node:fs";
 import os from "node:os";
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { E2E_ROUTES, resolveE2eRoute } from "../../scripts/run-e2e-route.mjs";
@@ -28,9 +28,8 @@ describe("e2e routes", () => {
         const cli = path.join(root, "node_modules/@playwright/test/cli.js");
         fs.mkdirSync(path.dirname(cli), { recursive: true });
         fs.writeFileSync(cli, "require('node:fs').writeFileSync('browser-started', 'unexpected');");
-        const result = spawnSync(process.execPath, ["scripts/run-e2e-route.mjs", "audio", ...args], {
+        const result = runNode(["scripts/run-e2e-route.mjs", "audio", ...args], {
           cwd: root,
-          encoding: "utf8",
           timeout: 10_000,
           env: { ...process.env, ALCHEMY_LOCK_WAIT_MS: "20" },
         });

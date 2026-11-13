@@ -255,29 +255,384 @@
     transform: rotateY(180deg);
   }
 
+  /* Content and border geometry stay fixed; light travels on the measured rounded path. */
   .talent-node {
-    box-shadow: 0 0 0 transparent;
-    transition:
-      opacity 500ms var(--ease-out-expo),
-      box-shadow 500ms var(--ease-out-expo);
+    --talent-readable-accent: color-mix(in srgb, var(--talent-accent) 45%, #f6eddf);
+    background: #171918;
+    outline: none;
+    isolation: isolate;
+    transform: none;
+    scale: none;
+    translate: none;
   }
 
-  .talent-card-available {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--talent-accent) 35%, transparent);
-    animation: talentAllocatableIdle 3.4s ease-in-out infinite;
-  }
-
-  .talent-card-available:hover {
-    animation: none;
-  }
-
-  .talent-card-unlocked {
-    border-color: var(--talent-accent);
+  .talent-node-glow {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    border-radius: inherit;
     box-shadow:
-      inset 0 0 0 999px color-mix(in srgb, var(--talent-accent) 14%, transparent),
-      inset 0 1px 0 0 color-mix(in srgb, var(--talent-accent) 22%, transparent),
-      0 0 10px color-mix(in srgb, var(--talent-accent) 25%, transparent),
-      0 4px 16px rgba(0, 0, 0, 0.5);
+      0 0 4px rgb(255 248 223 / 90%),
+      0 0 20px color-mix(in srgb, var(--talent-readable-accent) 90%, transparent),
+      0 0 28px color-mix(in srgb, var(--talent-readable-accent) 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
+  }
+
+  .talent-node-frame {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    border: 2px solid #68716b;
+    border-radius: inherit;
+    background: #171918;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+    pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
+  }
+
+  .talent-node-content {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    width: 100%;
+    flex: 1;
+    align-self: stretch;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(0.75 * var(--content-rem, 1rem));
+    overflow: hidden;
+    padding: calc(1.2 * var(--content-rem, 1rem)) calc(1.35 * var(--content-rem, 1rem));
+    border: 2px solid transparent;
+    border-radius: inherit;
+    background: #171918;
+    background-clip: padding-box;
+    text-align: center;
+  }
+
+  .talent-node-header {
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(0.75 * var(--content-rem, 1rem));
+  }
+
+  .talent-node-icon-wrap {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    color: var(--talent-readable-accent);
+  }
+
+  .talent-node-icon {
+    width: calc(2.1 * var(--content-rem, 1rem));
+    height: calc(2.1 * var(--content-rem, 1rem));
+  }
+
+  .talent-node-title {
+    min-width: 0;
+    color: #f1eee7;
+    font-size: calc(1.5 * var(--content-rem, 1rem));
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .talent-node-description {
+    display: block;
+    color: #dfdfd8;
+    font-size: calc(1.275 * var(--content-rem, 1rem));
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+
+  .talent-node-keyword {
+    color: color-mix(in srgb, var(--talent-keyword-source) 45%, #f6eddf);
+  }
+
+  .talent-node[data-node-state="locked"] .talent-node-title {
+    color: #c6c7c1;
+  }
+
+  .talent-node[data-node-state="locked"] .talent-node-description {
+    color: #bec0b9;
+  }
+
+  .talent-node[data-node-state="locked"] .talent-node-content {
+    filter: grayscale(0.85);
+    opacity: 0.85;
+  }
+
+  .talent-node[data-node-state="available"] .talent-node-frame {
+    border-color: #b9bcb3;
+  }
+
+  .talent-node:is([data-node-state="unlocked"], [data-node-state="unlocking"]) .talent-node-frame {
+    border-color: var(--talent-readable-accent);
+  }
+
+  .talent-node:focus-visible {
+    outline: 3px double #e6dfce;
+    outline-offset: 4px;
+  }
+
+  .talent-node-frame[data-unlocking="true"] {
+    animation: talentBorderIgnition 1000ms linear both;
+  }
+
+  .talent-node-glow[data-unlocking="true"] {
+    animation: talentIgnitionGlow 1000ms ease-out both;
+  }
+
+  .talent-node-ignition {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    transform: none;
+    scale: none;
+    translate: none;
+  }
+
+  .talent-ignition-track,
+  .talent-ignition-dash,
+  .talent-ignition-shine {
+    opacity: 0;
+  }
+
+  .talent-ignition-track {
+    stroke: var(--talent-readable-accent);
+    stroke-dasharray: 0 100;
+  }
+
+  .talent-ignition-halo {
+    stroke: var(--talent-readable-accent);
+  }
+
+  .talent-ignition-core {
+    stroke: #fff8df;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-track {
+    animation: talentIgnitionTrack 1000ms linear both;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-dash {
+    animation: talentIgnitionDash 1000ms linear both;
+  }
+
+  .talent-node-ignition[data-active="true"] .talent-ignition-shine {
+    transform-box: view-box;
+    animation: talentIgnitionShine 1000ms ease-out both;
+  }
+
+  @supports (color: oklch(from #000 l c h)) {
+    .talent-node {
+      --talent-readable-accent: oklch(from var(--talent-accent) max(l, 0.76) c h);
+    }
+    .talent-node-keyword {
+      color: oklch(from var(--talent-keyword-source) max(l, 0.76) c h);
+    }
+  }
+
+  @keyframes talentBorderIgnition {
+    0%,
+    65% {
+      border-color: #b9bcb3;
+    }
+    75%,
+    100% {
+      border-color: var(--talent-readable-accent);
+    }
+  }
+
+  @keyframes talentIgnitionGlow {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    10%,
+    55% {
+      opacity: 0.4;
+    }
+    70% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes talentIgnitionTrack {
+    0%,
+    10% {
+      opacity: 1;
+      stroke-dasharray: 0 100;
+    }
+    65%,
+    90% {
+      opacity: 1;
+      stroke-dasharray: 100 0;
+    }
+    100% {
+      opacity: 0;
+      stroke-dasharray: 100 0;
+    }
+  }
+
+  @keyframes talentIgnitionDash {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: 0;
+    }
+    8%,
+    10% {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+    65% {
+      opacity: 1;
+      stroke-dashoffset: -100;
+    }
+    72%,
+    100% {
+      opacity: 0;
+      stroke-dashoffset: -100;
+    }
+  }
+
+  @keyframes talentIgnitionShine {
+    0%,
+    15% {
+      opacity: 0;
+      transform: translateX(-65%);
+    }
+    20% {
+      opacity: 0.65;
+    }
+    55% {
+      opacity: 0.65;
+      transform: translateX(65%);
+    }
+    65%,
+    100% {
+      opacity: 0;
+      transform: translateX(65%);
+    }
+  }
+
+  /* Two rounded-path unlock arcs split from the bottom and meet at the top. */
+  .talent-node-frame[data-unlocking="true"] {
+    animation-name: talentTwinBorder;
+  }
+  .talent-node-glow[data-unlocking="true"] {
+    animation-name: talentTwinGlow;
+  }
+  .talent-node-ignition[data-active="true"] .talent-twin-forward {
+    animation: talentTwinForward 1000ms linear both;
+  }
+  .talent-node-ignition[data-active="true"] .talent-twin-back {
+    animation: talentTwinBack 1000ms linear both;
+  }
+  .talent-node-ignition[data-active="true"] .talent-ignition-track {
+    animation: talentTwinTrack 1000ms linear both;
+  }
+  .talent-node-ignition[data-active="true"] .talent-ignition-shine {
+    animation: none;
+    opacity: 0;
+  }
+  @keyframes talentTwinBorder {
+    0%,
+    64% {
+      border-color: #b9bcb3;
+    }
+    72%,
+    100% {
+      border-color: var(--talent-readable-accent);
+    }
+  }
+  @keyframes talentTwinGlow {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    10%,
+    58% {
+      opacity: 0.3;
+    }
+    72% {
+      opacity: 1;
+    }
+  }
+  @keyframes talentTwinForward {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-start);
+    }
+    8%,
+    10% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-start);
+    }
+    64% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-forward-end);
+    }
+    78%,
+    100% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-forward-end);
+    }
+  }
+  @keyframes talentTwinBack {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-start);
+    }
+    8%,
+    10% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-start);
+    }
+    64% {
+      opacity: 1;
+      stroke-dashoffset: var(--talent-arc-back-end);
+    }
+    78%,
+    100% {
+      opacity: 0;
+      stroke-dashoffset: var(--talent-arc-back-end);
+    }
+  }
+  @keyframes talentTwinTrack {
+    0%,
+    58% {
+      opacity: 0;
+      stroke-dasharray: 100 0;
+    }
+    72%,
+    90% {
+      opacity: 1;
+      stroke-dasharray: 100 0;
+    }
+    100% {
+      opacity: 0;
+      stroke-dasharray: 100 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .talent-node-frame,
+    .talent-node-glow,
+    .talent-node-ignition * {
+      animation: none !important;
+    }
   }
 
   .surface {
@@ -435,15 +790,6 @@
   .companion-enter {
     animation: companionEnter 360ms var(--ease-out-expo) both;
     will-change: transform, opacity;
-  }
-
-  /* Talent entrance composes over the prop-driven 8s shine loop (see
-     talent-tree.tsx duration={8}): this adds the allocatable settle without
-     changing the loop both must share. */
-  .talent-card-available > .shine-border {
-    animation:
-      shine 8s linear infinite,
-      talentAllocatableShineIn 500ms var(--ease-out-expo) both;
   }
 }
 
@@ -919,14 +1265,6 @@
   );
 }
 
-.card-interactive-glow.talent-hover-scale-only:hover,
-.group:hover .card-interactive-glow.talent-hover-scale-only {
-  border-color: transparent;
-  --card-interaction-frame-color: transparent;
-  box-shadow: none;
-  filter: none;
-}
-
 .card-interactive-glow:active:not(:disabled) {
   scale: 0.98;
 }
@@ -996,8 +1334,7 @@
   filter: none;
 }
 
-.surface:has(> .shine-border),
-.talent-node:has(> .shine-border) {
+.surface:has(> .shine-border) {
   overflow: visible;
   filter: none;
 }
@@ -1267,4 +1604,161 @@ html.alchemy-disable-animations .card-play-rejected::before {
 .boss-lyric-word {
   animation: boss-lyric-enter 180ms ease-out both;
   transform-origin: center bottom;
+}
+
+.companion-action-highlight {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+/* Crafting changes only the affected affix; authoritative gear is already updated. */
+.gear-affix-lines {
+  margin-bottom: -4px;
+}
+.gear-affix-row {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.gear-affix-row-clip {
+  min-height: 0;
+}
+.gear-affix-line {
+  position: relative;
+  isolation: isolate;
+  padding-block: 4px;
+}
+/* Masks act on fully shaped block text: no extra word boxes or changing glyph layout. */
+.gear-affix-enter > .gear-affix-ink-line,
+.gear-affix-exit > .gear-affix-ink-line {
+  mask-image: linear-gradient(to right, #000 0%, #000 45%, transparent 55%, transparent 100%);
+  mask-size: 220% 100%;
+  mask-repeat: no-repeat;
+}
+.gear-affix-enter > .gear-affix-ink-line {
+  animation: gear-affix-write 260ms ease-out both;
+}
+.gear-affix-enter > .gear-affix-ink-description {
+  animation-delay: 55ms;
+}
+.gear-affix-exit > .gear-affix-ink-line {
+  animation: gear-affix-burn 140ms ease-in both;
+}
+.gear-affix-row[data-affix-change="removed"] {
+  animation: gear-affix-remove 420ms ease-in-out both;
+}
+.gear-affix-row[data-affix-change="removed"] > .gear-affix-row-clip {
+  overflow: hidden;
+}
+/* Rerolls and changed numbers share max(old,new) height, never a stacked double affix. */
+.gear-affix-replacement {
+  display: grid;
+  align-items: start;
+}
+.gear-affix-replacement > .gear-affix-line {
+  grid-area: 1 / 1;
+}
+.gear-affix-previous {
+  pointer-events: none;
+}
+.gear-affix-replacement .gear-affix-enter > .gear-affix-ink-line {
+  animation-duration: 225ms;
+  animation-delay: 145ms;
+}
+.gear-affix-replacement .gear-affix-enter > .gear-affix-ink-description {
+  animation-delay: 195ms;
+}
+@keyframes gear-affix-write {
+  0% {
+    mask-position: 100% 0;
+    opacity: 0;
+    text-shadow:
+      0 0 3px var(--affix-glow-color),
+      0 0 7px var(--affix-glow-color);
+  }
+  20% {
+    opacity: 1;
+  }
+  65% {
+    text-shadow:
+      0 0 2px var(--affix-glow-color),
+      0 0 5px var(--affix-glow-color);
+  }
+  100% {
+    mask-position: 0% 0;
+    opacity: 1;
+    text-shadow: none;
+  }
+}
+@keyframes gear-affix-burn {
+  0% {
+    mask-position: 0% 0;
+    opacity: 1;
+    text-shadow: none;
+  }
+  25% {
+    opacity: 1;
+    text-shadow:
+      0 0 2px #ffdc9a,
+      0 0 5px #e59b54;
+  }
+  100% {
+    mask-position: 100% 0;
+    opacity: 0;
+    text-shadow: 0 0 3px #e59b54;
+  }
+}
+@keyframes gear-affix-remove {
+  0%,
+  55% {
+    grid-template-rows: 1fr;
+  }
+  100% {
+    grid-template-rows: 0fr;
+  }
+}
+@keyframes gear-affix-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes gear-affix-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gear-affix-enter > .gear-affix-ink-line,
+  .gear-affix-exit > .gear-affix-ink-line {
+    mask-image: none;
+    text-shadow: none;
+    animation: gear-affix-fade-in 90ms linear both;
+    /* The global reduced-motion rule otherwise reduces this stationary fade to 1ms. */
+    animation-duration: 90ms !important;
+  }
+  .gear-affix-exit > .gear-affix-ink-line {
+    animation-name: gear-affix-fade-out;
+  }
+  .gear-affix-replacement .gear-affix-enter > .gear-affix-ink-line {
+    animation-duration: 90ms !important;
+    animation-delay: 90ms;
+  }
+  .gear-affix-enter > .gear-affix-ink-description {
+    animation-delay: 0ms;
+  }
+  .gear-affix-row[data-affix-change="removed"] {
+    animation-duration: 180ms !important;
+  }
+}
+html.alchemy-disable-animations .gear-affix-enter > .gear-affix-ink-line,
+html.alchemy-disable-animations .gear-affix-exit > .gear-affix-ink-line,
+html.alchemy-disable-animations .gear-affix-row[data-affix-change="removed"] {
+  mask-image: none;
+  text-shadow: none;
+  animation: none;
 }

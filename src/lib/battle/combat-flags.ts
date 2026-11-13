@@ -3,6 +3,7 @@ export const FLAG_DEFINITIONS = {
   obsidianHammerUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   layeredArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   ironrootArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  eagleEyeUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   huntersBondUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
   killRewardsPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
@@ -31,6 +32,7 @@ export const FLAG_DEFINITIONS = {
   pendingDeathgripBlock: { default: false as const, secondaryValue: null, lifetime: "combat" },
   pendingDisruptingPurge: { default: false as const, secondaryValue: null, lifetime: "combat" },
   cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  crackedHaloAttackHitsThisTurn: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
   holyRetributionUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   spitefulHealedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
 
@@ -49,6 +51,7 @@ export const FLAG_DEFINITIONS = {
   nextArcheryCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextNatureCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   dodgeNextAttack: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  dodgeNextAttackChance: { default: 0 as const, secondaryValue: 0 as const, lifetime: "until-consumed" },
 
   enemyAttackDamageReduction: { default: 0 as const, secondaryValue: null, lifetime: "combat" },
   concussionReady: { default: false as const, secondaryValue: null, lifetime: "combat" },

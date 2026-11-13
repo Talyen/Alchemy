@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -5,10 +6,7 @@ import { makeState, makeTestCard } from "../../fixtures/battle";
 
 describe("applyCardEffects", () => {
   it("does not repeat card effects when the first copy defeats the enemy", () => {
-    const card = makeTestCard({
-      id: "slash",
-      effects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-    });
+    const card = makeDamageCard("physical", 10, { id: "slash" });
     const state = makeState({
       enemyHealth: 8,
       hand: [card],

@@ -67,11 +67,11 @@ describe("processEnemyTraits", () => {
     });
   });
 
-  it("handles periodic damage in trait order on even turns and recognizes the same traits as covered", () => {
+  it("keeps Crimson Pulse and Radiant Judgment on their own cadences in trait order", () => {
     const traits = ["crimson-pulse", "radiant-judgment"].map((id) => ({ id, title: id, description: "" }));
     const state = patchBattleState({
       currentEnemy: { traits },
-      turn: 2,
+      turn: 6,
       playerHealth: 30,
       appliesFightPacing: false,
     });
@@ -83,6 +83,14 @@ describe("processEnemyTraits", () => {
       texts.filter((event) => event.target === "player" && event.kind === "damage").map((event) => event.stat),
     ).toEqual(["bleed", "holy"]);
     expect(processEnemyTraits({ ...state, turn: 1 }, []).playerHealth).toBe(30);
+    const even = processEnemyTraits({ ...state, turn: 2 }, []);
+    expect(even.playerHealth).toBe(29);
+    expect(even.playerStatuses.bleed).toBe(0);
+    const third = processEnemyTraits({ ...state, turn: 3 }, []);
+    expect(third.playerHealth).toBe(29);
+    expect(third.playerStatuses.bleed).toBe(1);
+    expect(processEnemyTraits({ ...state, turn: 4 }, []).playerStatuses.bleed).toBe(0);
+    expect(processEnemyTraits({ ...state, turn: 5 }, []).playerHealth).toBe(30);
     expect(collectUncoveredEnemyTraitIds([...traits.map((trait) => trait.id), "toString"])).toEqual(["toString"]);
     expect(collectUncoveredEnemyTraitIds(TRAIT_DAMAGE_RULES.map((rule) => rule.traitId))).toEqual([]);
   });

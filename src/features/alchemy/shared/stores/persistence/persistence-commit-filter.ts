@@ -46,7 +46,11 @@ function fieldsEqual<T extends object>(previous: T, next: T, keys: ReadonlyArray
 function saveValuesEqual(previous: unknown, next: unknown): boolean {
   if (Object.is(previous, next)) return true;
   if (previous === null || next === null || typeof previous !== "object" || typeof next !== "object") return false;
-  if (Array.isArray(previous) !== Array.isArray(next)) return false;
+  if (Array.isArray(previous)) {
+    if (!Array.isArray(next) || previous.length !== next.length) return false;
+    return previous.every((item, index) => saveValuesEqual(item, next[index]));
+  }
+  if (Array.isArray(next)) return false;
   const keys = Object.keys(previous);
   if (keys.length !== Object.keys(next).length) return false;
   return keys.every(
@@ -54,8 +58,9 @@ function saveValuesEqual(previous: unknown, next: unknown): boolean {
   );
 }
 
-export function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplayState): boolean {
-  if (previous === next) return true;
+const persistedComparisonCache = new WeakMap<GameplayState, WeakMap<GameplayState, boolean>>();
+
+function computeGameplayPersistedInputsEqual(previous: GameplayState, next: GameplayState): boolean {
   if (!fieldsEqual(previous.runProfile, next.runProfile, RUN_PROFILE_SAVE_KEYS)) return false;
   if (!Object.is(previous.gear, next.gear)) return false;
   if (!fieldsEqual(previous.profile, next.profile, PROFILE_SAVE_KEYS)) return false;
@@ -64,4 +69,18 @@ export function gameplayPersistedInputsEqual(previous: GameplayState, next: Game
     projectRunResumeSnapshot({ run: previous.run.activeRun, session: previous.session }),
     projectRunResumeSnapshot({ run: next.run.activeRun, session: next.session }),
   );
+}
+
+export function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplayState): boolean {
+  if (previous === next) return true;
+  let byNext = persistedComparisonCache.get(previous);
+  const cached = byNext?.get(next);
+  if (cached !== undefined) return cached;
+  const equal = computeGameplayPersistedInputsEqual(previous, next);
+  if (!byNext) {
+    byNext = new WeakMap();
+    persistedComparisonCache.set(previous, byNext);
+  }
+  byNext.set(next, equal);
+  return equal;
 }

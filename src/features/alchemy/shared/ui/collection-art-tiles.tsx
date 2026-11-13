@@ -1,7 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import type { ReactNode } from "react";
-
 import type { TrinketEntry } from "@/lib/game-data";
 import {
   gearDefinitions,
@@ -27,73 +25,53 @@ import {
 } from "../config";
 import { DetailPopup } from "./tooltips/card-popup";
 import { GearDetailPopup } from "./tooltips/gear-detail-popup";
-import { InteractiveArtTile } from "./interactive-art-tile";
+import { InteractiveArtTile, type InteractiveArtTileProps } from "./interactive-art-tile";
 import { TrinketItemTitle } from "./gear-item-title";
 
-export interface TrinketTileProps {
+type ItemTileProps = Pick<
+  InteractiveArtTileProps,
+  | "interactionKey"
+  | "as"
+  | "selected"
+  | "disabled"
+  | "ariaDisabled"
+  | "interactiveChrome"
+  | "onClick"
+  | "ariaLabel"
+  | "children"
+  | "onHoverChange"
+> & { className?: string | undefined; shine?: boolean | undefined };
+
+export interface TrinketTileProps extends ItemTileProps {
   trinket: TrinketEntry;
-  interactionKey: string;
-
   idPrefix?: string | undefined;
-  as?: "button" | "div" | undefined;
-  selected?: boolean | undefined;
-  disabled?: boolean | undefined;
-  ariaDisabled?: boolean | undefined;
-  interactiveChrome?: boolean | undefined;
-  onClick?: (() => void) | undefined;
-  ariaLabel?: string | undefined;
-
   chip?: string | null | undefined;
-
-  className?: string | undefined;
-
   imageClassName?: string | undefined;
-  shine?: boolean | undefined;
   temporary?: boolean | undefined;
-  children?: ReactNode | undefined;
-
-  onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
 export function TrinketTile({
   trinket,
-  interactionKey,
   idPrefix = trinket.id,
-  as,
-  selected,
-  disabled,
-  ariaDisabled,
-  interactiveChrome,
-  onClick,
-  ariaLabel,
   chip,
   className,
   imageClassName,
   shine = true,
   temporary = false,
-  children,
-  onHoverChange,
+  ...tileProps
 }: TrinketTileProps) {
   const i18n = useGameTranslation();
   const resolvedChip = chip ?? (temporary ? i18n.displayText("Boon") : undefined);
   return (
     <InteractiveArtTile
+      {...tileProps}
       id={trinket.id}
-      interactionKey={interactionKey}
       title={i18n.displayText(trinket.title)}
       art={trinket.art}
       className={cn(trinketArtTileClass, className)}
       imageClassName={cn(trinketArtFillClass, trinketArtImageClass, imageClassName)}
       shineOnHover
       shineColor={shine ? getTrinketShineColors(trinket.id) : undefined}
-      as={as}
-      selected={selected}
-      disabled={disabled}
-      ariaDisabled={ariaDisabled}
-      interactiveChrome={interactiveChrome}
-      onClick={onClick}
-      ariaLabel={ariaLabel}
-      onHoverChange={onHoverChange}
       popup={({ visible, triggerRef }) => (
         <DetailPopup
           idPrefix={idPrefix}
@@ -105,54 +83,29 @@ export function TrinketTile({
           plasmaColorPair={getPlasmaColorPairForTrinket(trinket)}
         />
       )}
-    >
-      {children}
-    </InteractiveArtTile>
+    />
   );
 }
 
-export interface GearTileProps {
+export interface GearTileProps extends ItemTileProps {
   instance: GearInstance;
-  className?: string | undefined;
-  interactionKey: string;
-  as?: "button" | "div" | undefined;
-  selected?: boolean | undefined;
-  disabled?: boolean | undefined;
-  ariaDisabled?: boolean | undefined;
-  interactiveChrome?: boolean | undefined;
-
-  shine?: boolean | undefined;
   hoverKeywordShine?: boolean | undefined;
-  onClick?: (() => void) | undefined;
-  ariaLabel?: string | undefined;
-  children?: ReactNode | undefined;
-
-  onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
 export function GearTile({
   instance,
   className,
-  interactionKey,
-  as,
-  selected,
-  disabled,
-  ariaDisabled,
-  interactiveChrome,
   shine = true,
   hoverKeywordShine = false,
-  onClick,
-  ariaLabel,
-  children,
-  onHoverChange,
+  ...tileProps
 }: GearTileProps) {
   const i18n = useGameTranslation();
   const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
   return (
     <InteractiveArtTile
+      {...tileProps}
       id={instance.instanceId}
-      interactionKey={interactionKey}
       title={i18n.displayText(title)}
       art={definition?.art ?? ""}
       className={cn(cardSurfaceClass, getTileWidthClass("collection"), gearArtAspectClass, className)}
@@ -168,19 +121,9 @@ export function GearTile({
             : getAstralShineColors(instance)
           : undefined
       }
-      as={as}
-      selected={selected}
-      disabled={disabled}
-      ariaDisabled={ariaDisabled}
-      interactiveChrome={interactiveChrome}
-      onClick={onClick}
-      ariaLabel={ariaLabel}
-      onHoverChange={onHoverChange}
       popup={({ visible, triggerRef }) => (
         <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
       )}
-    >
-      {children}
-    </InteractiveArtTile>
+    />
   );
 }

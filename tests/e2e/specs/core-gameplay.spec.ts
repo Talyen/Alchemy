@@ -27,7 +27,8 @@ test(
       { runDeck: cards, autoEndTurn: false },
     );
     const battle = new BattlePage(page);
-    // Autoplay also ends the turn, even when the separate auto-end setting is off.
+    await battle.waitForOpeningHand();
+    await expect(battle.autoplayToggle).toBeVisible({ timeout: 10_000 });
     // Observe the completed plays before the next turn consumes their Block.
     const observation = await page.evaluateHandle(() => {
       let cancelled = false;

@@ -86,7 +86,7 @@ owns the typed utility-effect table shared by live handlers and damage inspectio
 Health, Mana, Mana Crystals, Gold, player statuses, cleansing, Armor removal,
 Companion summoning/buffs, and armed action flags. It owns amount calculations,
 Potion potency, conditional eligibility, resource limits, and effect feedback.
-`effect-handlers/utility-handlers.ts` supplies live reactions and seeded status
+`battle/effect-handlers/utility-handlers.ts` supplies live reactions and seeded status
 choices. Reaction scoring uses the same table with explicit nominal healing, suppressed reward callbacks, and pre-enumerated status choices; it retains probability-weighted correlated alternatives without drawing live RNG. `damage.ts` owns attack flag preparation for both combat and reaction scoring. Inspection calls the production action resolver with an isolated finite
 choice source; it does not assemble another utility or attack recipe.
 
@@ -98,6 +98,11 @@ targeting read those outcomes directly. Player payment,
 pre-triggers, ordered effects, and follow-ups resolve through `card-play.ts`;
 enemy abilities resolve through `enemy-turn-attack.ts`. Admission alone is
 hypothetical, so cards outside the hand or above the current Mana remain inspectable.
+Companion descriptions use the `companion.ts` inspection seam in normal secondary
+action scope, after Bond/Companion scaling. Their own grants are marked primary
+only for detached observation; live feedback and separate post-action rewards
+are unchanged. Inspection cannot import the effect interpreter or low-level
+action context directly.
 `damage.ts` and `enemy-ability-damage.ts` report offensive power before defenses
 and critical strikes. Resulting state still includes mitigation and prepared
 critical consequences when later packets depend on them.
@@ -193,6 +198,7 @@ alternatives without consuming gameplay RNG. Unknown draws stop dependent projec
 `battle/stun-leech-resolution.ts` owns Leech restoration facts and riders;
 `elemental-hit-reactions.ts` owns Nature and Holy resource payouts, and
 `damage-status-riders.ts` owns Poison rewards and Bloodfire's Leech eligibility.
+`player-hit-core.ts` shares Tattered Pages Burn draw across direct hits and status pulses. It rolls once per Burn packet that removes enemy Health, including follow-ups, ticks and detonations; fully blocked or zero-Health-loss packets and reaction damage do not roll. Draws use the normal empty-draw and reaction handling.
 `bonus-effects.ts` shares Cutpurse Gold and ordinary Gold/Mana rewards across hit
 and tick callers. These owners call the production operations directly, so
 inspection carries earned resources between damage packets using the same rules.

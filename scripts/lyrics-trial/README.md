@@ -44,7 +44,7 @@ complete transitive lockfile.
 npm run lyrics:tool -- separate.py
 npm run lyrics:tool -- align.py --audio reports/boss-lyrics/vocals.wav --output reports/boss-lyrics/alignment-vocals.json
 npm run lyrics:tool -- phrase-align.py
-.cache/lyrics/venv/bin/python -m unittest discover -s scripts/lyrics-trial -p 'test_*.py'
+python3.11 -m unittest discover -s scripts/lyrics-trial -p 'test_*.py'
 ```
 
 [Phrase matching](./phrase_match.py) owns word/gap/confidence rules;
@@ -68,7 +68,7 @@ The preview's **Boss song** selector opens the imported snapshot directly.
 
 ## Export another boss
 
-Use distinct evidence directories for Forge Golem, Frostwarden and Iron Bear:
+Use distinct evidence directories for Forge Golem, Frostwarden, Iron Bear, Seraph and Stone Titan:
 
 ```sh
 npm run lyrics:tool -- phrase-align.py --audio 'public/Music/The Forge Golem.mp3' --lyrics scripts/lyrics-trial/forge-golem.txt --output-dir reports/boss-lyrics/forge-golem --snapshot reports/boss-lyrics/forge-golem/candidate.json

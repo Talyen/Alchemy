@@ -2,6 +2,7 @@ import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { battleSnapshot } from "@/lib/battle";
+import { companionLibrary } from "@/lib/game-data";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { playTurnFrames } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattlePresentationPort } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -13,11 +14,10 @@ function makePresentation() {
   return {
     setDisplayedBattle: vi.fn(),
     showCombatTexts: vi.fn(),
-    shakeEnemy: vi.fn(),
-    shakePlayer: vi.fn(),
     telegraphAttack: vi.fn(),
     telegraphCast: vi.fn(),
-    shakeCompanion: vi.fn(),
+    enqueueCompanionActions: vi.fn(),
+    waitForCompanionActions: vi.fn().mockResolvedValue(undefined),
   } as unknown as BattlePresentationPort;
 }
 
@@ -71,7 +71,9 @@ describe("playTurnFrames", () => {
       expect(presentation.showCombatTexts).toHaveBeenCalledWith(frame.turn.combatTexts);
     }
     expect(presentation.setDisplayedBattle).toHaveBeenCalledWith(frame.turn.state);
-    expect(presentation.telegraphAttack).not.toHaveBeenCalled();
+    expect(presentation.enqueueCompanionActions).not.toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ kind: "attack" })]),
+    );
     expect(presentation.telegraphCast).not.toHaveBeenCalled();
   });
 
@@ -108,17 +110,22 @@ describe("playTurnFrames", () => {
     expect(onHandDrawn).toHaveBeenCalledTimes(1);
   });
 
-  it("calls onHandDrawn to unblock card plays and delays companion attack by 0.5s", async () => {
+  it("keeps card input gated until delayed Companion playback completes", async () => {
     vi.useFakeTimers();
     using _scopeCleanup = createCleanup(() => vi.useRealTimers());
 
     const frame = makeHasteFrame();
     const companionTexts = [{ target: "enemy", kind: "damage", stat: "health", amount: 6 }] as const;
-    const companionState = patchBattleState({ ...frame.turn.state, enemyHealth: 14 });
+    const turn = {
+      ...frame.turn,
+      state: battleSnapshot(patchBattleState({ ...frame.turn.state, activeCompanion: companionLibrary.wolf })),
+    };
+    const companionState = patchBattleState({ ...turn.state, enemyHealth: 14 });
     const companionFrame = {
       ...frame,
+      turn,
       companion: {
-        id: "hound",
+        id: "wolf",
         texts: [...companionTexts],
         state: battleSnapshot(companionState),
       },
@@ -130,8 +137,8 @@ describe("playTurnFrames", () => {
     const playPromise = playTurnFrames([companionFrame], 3, deps, presentation, { onHandDrawn });
     await vi.advanceTimersByTimeAsync(0);
 
-    // Hand draw completed, unblocking card play
-    expect(onHandDrawn).toHaveBeenCalledTimes(1);
+    // The hand is visible, but its Companion action still owns playback.
+    expect(onHandDrawn).not.toHaveBeenCalled();
     // Companion attack has not triggered yet before 500ms
     expect(presentation.telegraphAttack).not.toHaveBeenCalled();
 
@@ -139,30 +146,35 @@ describe("playTurnFrames", () => {
     await vi.advanceTimersByTimeAsync(500);
     await playPromise;
 
+    expect(onHandDrawn).toHaveBeenCalledTimes(1);
     expect(presentation.setDisplayedBattle).toHaveBeenCalledWith(companionFrame.companion.state);
-    expect(presentation.telegraphAttack).toHaveBeenCalledWith("companion");
-    expect(presentation.shakeCompanion).toHaveBeenCalled();
+    expect(presentation.enqueueCompanionActions).toHaveBeenCalledWith([expect.objectContaining({ kind: "attack" })]);
     expect(presentation.showCombatTexts).toHaveBeenCalledWith(expect.arrayContaining([...companionTexts]));
   });
 
-  it("does not overwrite displayedBattle if a card play began during companion delay", async () => {
+  it("does not overwrite an externally superseded display during companion delay", async () => {
     vi.useFakeTimers();
     using _scopeCleanup = createCleanup(() => vi.useRealTimers());
 
     const frame = makeHasteFrame();
     const companionTexts = [{ target: "enemy", kind: "damage", stat: "health", amount: 6 }] as const;
-    const companionState = patchBattleState({ ...frame.turn.state, enemyHealth: 14 });
+    const turn = {
+      ...frame.turn,
+      state: battleSnapshot(patchBattleState({ ...frame.turn.state, activeCompanion: companionLibrary.wolf })),
+    };
+    const companionState = patchBattleState({ ...turn.state, enemyHealth: 14 });
     const companionFrame = {
       ...frame,
+      turn,
       companion: {
-        id: "hound",
+        id: "wolf",
         texts: [...companionTexts],
         state: battleSnapshot(companionState),
       },
     };
     const presentation = makePresentation();
     const deps = makeDrawSequenceDeps({ isSessionActive: () => true });
-    let cardPlayInProgress = false;
+    let cardPlayInProgress = true;
 
     const playPromise = playTurnFrames([companionFrame], 3, deps, presentation, {
       onHandDrawn: () => {
@@ -175,9 +187,8 @@ describe("playTurnFrames", () => {
     await vi.advanceTimersByTimeAsync(500);
     await playPromise;
 
-    // Companion sound, shake, lunge, and text still play
-    expect(presentation.telegraphAttack).toHaveBeenCalledWith("companion");
-    expect(presentation.shakeCompanion).toHaveBeenCalled();
+    // Independent companion action and text still play.
+    expect(presentation.enqueueCompanionActions).toHaveBeenCalledWith([expect.objectContaining({ kind: "attack" })]);
     expect(presentation.showCombatTexts).toHaveBeenCalledWith(expect.arrayContaining([...companionTexts]));
     // But displayedBattle was not overwritten with stale companion.state
     expect(presentation.setDisplayedBattle).not.toHaveBeenCalledWith(companionFrame.companion.state);

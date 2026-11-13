@@ -1,4 +1,4 @@
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
+import { makeDamageCard, makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { createBattleState, processCompanionTurnStart, tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
@@ -13,7 +13,7 @@ import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { tryDodgeEnemyAttackPacket, tryDodgePlayerAttackPacket } from "@/lib/battle/dodge";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { ENCOUNTER_TRAITS, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
-import { cardById, type BattleCard, type DamageType } from "@/lib/game-data";
+import { cardById, enemyById, type BattleCard, type DamageType } from "@/lib/game-data";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
 function state(overrides: BattleStatePatch = {}) {
@@ -99,13 +99,7 @@ describe("Labyrinth player benefits", () => {
       encounterBenefits: ["ironclad"],
       playerStatuses: { armor: 2, poison: 2 },
     });
-    expect(
-      applyEnemyAbility(
-        current,
-        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-        [],
-      ).playerStatuses.armor,
-    ).toBe(2);
+    expect(applyEnemyAbility(current, makeDamageCard("physical", 5), []).playerStatuses.armor).toBe(2);
     expect(tickPlayerStatuses(current, []).playerStatuses.armor).toBe(2);
   });
 
@@ -221,15 +215,15 @@ describe("Labyrinth player benefits", () => {
 
   it("Elusive helps player Dodge without changing enemy Dodge", () => {
     const current = state({ encounterBenefits: ["elusive"], rng: () => 0.1 });
-    expect(tryDodgeEnemyAttackPacket(current, [], true)).not.toBeNull();
+    expect(tryDodgeEnemyAttackPacket(current, [], true).dodged).toBe(true);
     expect(tryDodgePlayerAttackPacket(current, [])).toBeNull();
     expect(
       tryDodgeEnemyAttackPacket(
         { ...current, rng: () => 0.8, gearEffects: { ...current.gearEffects, dodgeChance: 100 } },
         [],
         true,
-      ),
-    ).toBeNull();
+      ).dodged,
+    ).toBe(false);
   });
 
   it("Restorative heals before the enemy attack, once per turn", () => {
@@ -256,11 +250,7 @@ describe("Labyrinth enemy modifiers", () => {
     });
     const hit = play(current, attack());
     expect(hit.enemyMitigation.armor).toBe(2);
-    const next = applyEnemyAbility(
-      hit,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(hit, makeDamageCard("physical", 4), []);
     expect(next.enemyMitigation.forge).toBe(3);
     expect(next.playerHealth).toBe(current.playerHealth - 7);
   });
@@ -300,16 +290,12 @@ describe("Labyrinth enemy modifiers", () => {
       currentEnemy: enemy("ravenous"),
       enemyHealth: 50,
     });
-    const next = applyEnemyAbility(
-      current,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 4 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(current, makeDamageCard("bleed", 4), []);
     expect(next.enemyHealth).toBe(52);
     expect(tickPlayerStatuses(next, []).enemyHealth).toBe(54);
     const blocked = applyEnemyAbility(
       { ...current, playerStatuses: { ...current.playerStatuses, block: 10 } },
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 4 }] }),
+      makeDamageCard("bleed", 4),
       [],
     );
     expect(blocked.enemyHealth).toBe(50);
@@ -329,20 +315,8 @@ describe("Labyrinth enemy modifiers", () => {
       currentEnemy: enemy("executioner"),
       enemyHealth: 49,
     });
-    expect(
-      applyEnemyAbility(
-        current,
-        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-        [],
-      ).playerHealth,
-    ).toBe(22);
-    expect(
-      applyEnemyAbility(
-        { ...current, enemyHealth: 50 },
-        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-        [],
-      ).playerHealth,
-    ).toBe(26);
+    expect(applyEnemyAbility(current, makeDamageCard("physical", 4), []).playerHealth).toBe(22);
+    expect(applyEnemyAbility({ ...current, enemyHealth: 50 }, makeDamageCard("physical", 4), []).playerHealth).toBe(26);
   });
 
   it("Thick Hide reuses the existing 50% Physical resistance", () => {
@@ -361,11 +335,7 @@ describe("Labyrinth enemy modifiers", () => {
         appliesFightPacing: false,
       });
       expect(initial.enemyMitigation.forge).toBe(1);
-      const hit = applyEnemyAbility(
-        initial,
-        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
-        [],
-      );
+      const hit = applyEnemyAbility(initial, makeDamageCard("physical", 1), []);
       expect(hit.enemyMitigation.forge).toBe(1);
       const resumed = normalizePersistedBattleState(JSON.parse(JSON.stringify(hit)));
       expect(resumed.enemyMitigation.forge).toBe(1);
@@ -401,14 +371,21 @@ describe("Labyrinth enemy modifiers", () => {
     expect(play(state({ currentEnemy: enemy(id) }), attack(type, 8)).enemyHealth).toBe(96);
   });
 
+  it("Glacial Surge halves Freeze once even with Frostbound Ward and preserves Thawing", () => {
+    const frostwarden = enemyById.frostwarden;
+    const warded = {
+      ...frostwarden,
+      traits: [...frostwarden.traits, ENCOUNTER_TRAITS["frostbound-ward"].enemyTrait],
+    };
+    expect(play(state({ currentEnemy: frostwarden }), attack("freeze", 8)).enemyHealth).toBe(96);
+    expect(play(state({ currentEnemy: warded }), attack("freeze", 8)).enemyHealth).toBe(96);
+    expect(play(state({ currentEnemy: frostwarden }), attack("burn", 8)).enemyHealth).toBe(90);
+  });
+
   it("Sundered Guard removes Block before attack damage", () => {
     const current = state({ currentEnemy: enemy("sundered-guard"), playerStatuses: { block: 6 } });
     const texts: Parameters<typeof applyEnemyAbility>[2] = [];
-    const next = applyEnemyAbility(
-      current,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-      texts,
-    );
+    const next = applyEnemyAbility(current, makeDamageCard("physical", 5), texts);
     expect(next.playerHealth).toBe(current.playerHealth - 1);
     expect(next.playerStatuses.block).toBe(0);
     expect(texts.filter((text) => text.stat === "block" && text.kind === "damage").length).toBeGreaterThan(0);
@@ -421,11 +398,7 @@ describe("Labyrinth enemy modifiers", () => {
       playerStatuses: { block: 2 },
       talentEffects: { blockDepletedHeal: 3 },
     });
-    const next = applyEnemyAbility(
-      current,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
-      [],
-    );
+    const next = applyEnemyAbility(current, makeDamageCard("physical", 2), []);
     expect(next.playerStatuses.block).toBe(0);
     expect(next.playerHealth).toBe(21);
   });
@@ -433,16 +406,7 @@ describe("Labyrinth enemy modifiers", () => {
   it("Unbinding Strike Purges a buff on each landed attack", () => {
     const current = state({ currentEnemy: enemy("unbinding-strike"), playerStatuses: { block: 10, forge: 2 } });
     const texts: Parameters<typeof applyEnemyAbility>[2] = [];
-    const next = applyEnemyAbility(
-      current,
-      makeEnemyTestCard({
-        effects: [
-          { kind: "damage", damageType: "physical", amount: 2 },
-          { kind: "damage", damageType: "physical", amount: 2 },
-        ],
-      }),
-      texts,
-    );
+    const next = applyEnemyAbility(current, makeDamageCard("physical", [2, 2]), texts);
     expect(next.playerStatuses.block).toBe(0);
     expect(next.playerStatuses.forge).toBe(0);
     expect(texts.filter((text) => text.kind === "notice" && text.signal === "purge")).toHaveLength(2);

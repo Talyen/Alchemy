@@ -202,12 +202,15 @@ describe("resolved card damage", () => {
     expect(detonateEnemyStatuses(afterDetonate, ["bleed"], []).playerHealth).toBe(26);
   });
 
-  it("distinguishes ignored Armor from destroyed Armor, and lets Burn bypass Armor", () => {
+  it("removes Armor with Archery and Sundering, and lets Burn bypass Armor", () => {
     const state = patchBattleState({ enemyMitigation: { armor: 5 }, rng: () => 0.99 });
     const card = makeTestCard({ tags: ["archery"], effects: [makeEffect("physical", 10)] });
-    const pierced = dealDamage({ ...state, talentEffects: { ...state.talentEffects, archeryArmorPiercing: 1 } }, card);
-    expect(pierced.enemyHealth).toBe(24);
-    expect(pierced.enemyMitigation.armor).toBe(4);
+    const pierced = dealDamage(
+      { ...state, talentEffects: { ...state.talentEffects, archeryArmorRemoval: 1, archeryDamageBonus: 1 } },
+      card,
+    );
+    expect(pierced.enemyHealth).toBe(23);
+    expect(pierced.enemyMitigation.armor).toBe(3);
     const sundered = dealDamage(
       { ...state, trinketEffects: { ...state.trinketEffects, sunderingArmorPiercing: 2 } },
       card,
@@ -219,7 +222,7 @@ describe("resolved card damage", () => {
 
   it.each<[string, BattleStatePatch]>([
     ["Brittle Ice", { enemyCC: { freezeSkipTurns: 1 }, talentEffects: { freezeDamageBonusVsFrozen: 1 } }],
-    ["Corrosive", { enemyStatuses: { poison: 1 }, talentEffects: { poisonDamageBonusVsPoisoned: 1 } }],
+    ["Corrosive", { enemyStatuses: { poison: 5 }, talentEffects: { poisonDamageBonusVsPoisoned: 1 } }],
   ])("%s cannot turn zero damage into a hit", (_name, patch) => {
     const state = patchBattleState(patch);
     expect(computeBaseDamage(state, { kind: "damage", damageType: "nature", amount: 0 })).toBe(0);

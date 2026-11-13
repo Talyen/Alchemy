@@ -1,10 +1,11 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { playUISound } from "@/lib/audio";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode, type SyntheticEvent } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import { canCorruptCard, type CorruptionResult } from "@/lib/corruption";
 import {
@@ -21,7 +22,95 @@ import { ScreenDescription, TitledScreenShell } from "../../shared/ui/layout-com
 import { ShineAccentButton } from "../../shared/ui/shine-accent-button";
 import { cn } from "@/lib/utils";
 import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
-import { FadeSlot } from "../../shared/ui/use-fade";
+import { useArtworkReady } from "../../shared/ui/use-artwork-ready";
+import { fadePhaseClass, useHeldWhile } from "../../shared/ui/use-fade";
+
+type EntryView = "intro" | "picker";
+
+function blockOutgoingInput(event: SyntheticEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function blockOutgoingKey(event: KeyboardEvent) {
+  event.stopPropagation();
+  if (event.key !== "Tab") event.preventDefault();
+}
+
+function CorruptionEntryPanel({
+  view,
+  requested,
+  shown,
+  reducedMotion,
+  onReady,
+  children,
+}: {
+  view: EntryView;
+  requested: boolean;
+  shown: boolean;
+  reducedMotion: boolean;
+  onReady: (view: EntryView) => void;
+  children: ReactNode;
+}) {
+  const { ref, pending } = useArtworkReady(view, {
+    initialRevealOnly: true,
+  });
+  const heldChildren = useHeldWhile(requested, children);
+  const heldPending = useHeldWhile(requested, pending);
+  useEffect(() => {
+    if (requested && !pending) onReady(view);
+  }, [requested, pending, view, onReady]);
+
+  const visible = shown && !heldPending;
+  const interactive = requested && visible;
+  return (
+    <div
+      ref={ref}
+      data-corruption-entry-panel={view}
+      data-artwork-pending={heldPending}
+      aria-hidden={!interactive}
+      inert={!interactive}
+      className={cn("col-start-1 row-start-1 min-w-0", !reducedMotion && fadePhaseClass(visible ? "enter" : "exit"))}
+      style={{ opacity: visible ? 1 : 0 }}
+      onClickCapture={!interactive ? blockOutgoingInput : undefined}
+      onKeyDownCapture={!interactive ? blockOutgoingKey : undefined}
+    >
+      {heldChildren}
+    </div>
+  );
+}
+
+function CorruptionEntry({ selecting, intro, picker }: { selecting: boolean; intro: ReactNode; picker: ReactNode }) {
+  const target = selecting ? "picker" : "intro";
+  // Keep the last ready view visible while the requested view decodes, then
+  // crossfade locally without hiding the altar heading or changing shared fades.
+  const [shown, setShown] = useState<EntryView>(target);
+  const reducedMotion = useReducedMotionPreference();
+  return (
+    // Both panels reserve the same grid footprint, so revealing the picker
+    // does not reposition the heading or the outgoing illustration.
+    <div className="grid w-full min-w-0">
+      <CorruptionEntryPanel
+        view="intro"
+        requested={target === "intro"}
+        shown={shown === "intro"}
+        reducedMotion={reducedMotion}
+        onReady={setShown}
+      >
+        {intro}
+      </CorruptionEntryPanel>
+      <CorruptionEntryPanel
+        view="picker"
+        requested={target === "picker"}
+        shown={shown === "picker"}
+        reducedMotion={reducedMotion}
+        onReady={setShown}
+      >
+        {picker}
+      </CorruptionEntryPanel>
+    </div>
+  );
+}
 
 function CorruptionDeckPicker({
   runDeck,
@@ -113,7 +202,15 @@ function CorruptionIntro({
   );
 }
 
-function CorruptionResultView({ result, onContinue }: { result: CorruptionResult; onContinue: () => void }) {
+function CorruptionResultView({
+  result,
+  revealChange,
+  onContinue,
+}: {
+  result: CorruptionResult;
+  revealChange: boolean;
+  onContinue: () => void;
+}) {
   const i18n = useGameTranslation();
   return (
     <div className="flex flex-col items-center gap-4">
@@ -129,8 +226,6 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             ariaLabel={i18n.text("ui.corruption-screen.7", "Original: {{value0}}", {
               value0: i18n.read(() => getCardDisplayTitle(result.originalCard)),
             })}
-            shimmerActive={false}
-            shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(result.originalCard)}
             className={viewCardWidthClass}
           />
@@ -138,15 +233,13 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         <div className="col-start-2 flex shrink-0 self-center">
           <MoveRight className="h-10 w-10 text-red-800" />
         </div>
-        <div className="col-start-3 flex flex-col items-center">
+        <div className={cn("col-start-3 flex flex-col items-center", revealChange && "screen-fade-in")}>
           <BattleCardButton
             card={result.corruptedCard}
             comparisonCard={result.originalCard}
             ariaLabel={i18n.text("ui.corruption-screen.8", "Result: {{value0}}", {
               value0: i18n.read(() => getCardDisplayTitle(result.corruptedCard)),
             })}
-            shimmerActive={false}
-            shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(result.corruptedCard)}
             className={viewCardWidthClass}
           />
@@ -154,7 +247,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         <div className={cn("col-start-1", controlLabelClass)}>
           <CardTitle card={result.originalCard} />
         </div>
-        <div className={cn("col-start-3", controlLabelClass)}>
+        <div className={cn("col-start-3", controlLabelClass, revealChange && "screen-fade-in")}>
           <CardTitle card={result.corruptedCard} />
         </div>
       </div>
@@ -213,56 +306,60 @@ export function CorruptionScreen({
   }
 
   return (
-    <FadeSlot swapKey={result ? "result" : selecting ? "select" : "intro"} className="h-full w-full">
-      <TitledScreenShell title={i18n.text("ui.corruption-screen.10", "Altar of Corruption")}>
-        <div className={cn("flex flex-col items-center gap-6 text-center", result || selecting ? "mt-3" : "mt-6")}>
-          {result ? (
-            <CorruptionResultView result={result} onContinue={handleExit} />
-          ) : selecting ? (
-            <div className="flex w-full min-w-0 flex-col items-center gap-4">
-              <div>
-                <ScreenDescription tone="danger">
-                  {i18n.text("ui.corruption-screen.11", "The altar may weaken, strengthen, or remake your card.")}
-                </ScreenDescription>
-              </div>
-              <CorruptionDeckPicker
-                runDeck={runDeck}
-                selectedIndex={selectedIndex}
-                onSelect={(index) => {
-                  setSelectedIndex(index);
-                  setSelectionNotice("");
+    <TitledScreenShell title={i18n.text("ui.corruption-screen.10", "Altar of Corruption")}>
+      <div className="mt-3 flex flex-col items-center gap-6 text-center">
+        {result ? (
+          <CorruptionResultView result={result} revealChange={selecting} onContinue={handleExit} />
+        ) : (
+          <CorruptionEntry
+            selecting={selecting}
+            intro={
+              <CorruptionIntro
+                hasEligibleCards={runDeck.some(canCorruptCard)}
+                onBegin={() => {
+                  setSelecting(true);
+                  setPage(0);
                 }}
-                page={page}
-                onPageChange={setPage}
+                onLeave={handleExit}
               />
-              {selectionNotice && <p role="status">{i18n.displayText(selectionNotice)}</p>}
-              <div className="flex justify-center gap-3">
-                <Button size="lg" variant="outline" onClick={cancelSelection}>
-                  {i18n.text("ui.corruption-screen.12", "Cancel")}
-                </Button>
-                <ShineAccentButton
-                  icon={Dices}
-                  accentClassName="text-red-400"
-                  shineColor={SHINE_PALETTES.corruption}
-                  disabled={!canConfirm}
-                  onClick={handleConfirm}
-                >
-                  {i18n.text("ui.corruption-screen.13", "Corrupt")}
-                </ShineAccentButton>
+            }
+            picker={
+              <div className="flex w-full min-w-0 flex-col items-center gap-4">
+                <div>
+                  <ScreenDescription tone="danger">
+                    {i18n.text("ui.corruption-screen.11", "The altar may weaken, strengthen, or remake your card.")}
+                  </ScreenDescription>
+                </div>
+                <CorruptionDeckPicker
+                  runDeck={runDeck}
+                  selectedIndex={selectedIndex}
+                  onSelect={(index) => {
+                    setSelectedIndex(index);
+                    setSelectionNotice("");
+                  }}
+                  page={page}
+                  onPageChange={setPage}
+                />
+                {selectionNotice && <p role="status">{i18n.displayText(selectionNotice)}</p>}
+                <div className="flex justify-center gap-3">
+                  <Button size="lg" variant="outline" onClick={cancelSelection}>
+                    {i18n.text("ui.corruption-screen.12", "Cancel")}
+                  </Button>
+                  <ShineAccentButton
+                    icon={Dices}
+                    accentClassName="text-red-400"
+                    shineColor={SHINE_PALETTES.corruption}
+                    disabled={!canConfirm}
+                    onClick={handleConfirm}
+                  >
+                    {i18n.text("ui.corruption-screen.13", "Corrupt")}
+                  </ShineAccentButton>
+                </div>
               </div>
-            </div>
-          ) : (
-            <CorruptionIntro
-              hasEligibleCards={runDeck.some(canCorruptCard)}
-              onBegin={() => {
-                setSelecting(true);
-                setPage(0);
-              }}
-              onLeave={handleExit}
-            />
-          )}
-        </div>
-      </TitledScreenShell>
-    </FadeSlot>
+            }
+          />
+        )}
+      </div>
+    </TitledScreenShell>
   );
 }

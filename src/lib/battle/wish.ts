@@ -5,7 +5,7 @@ import { resolveWishRewards } from "./wish-rewards";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   getCardEffect,
-  getOfferableCardPool,
+  getOfferableCardPoolView,
   isCompanionSummonCard,
   selectRewardCards,
   type BattleCard,
@@ -38,39 +38,36 @@ export function buildWishOptions(
 ): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT +
-    (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
+    (!state.flags.encounterWishUsed && hasEncounterBenefit(state, "wishful") ? 1 : 0) +
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
-  const candidates = getOfferableCardPool();
-  let candidateCount = 0;
-  for (const candidate of candidates) {
-    if (candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate))) {
-      candidates[candidateCount++] = candidate;
-    }
-  }
-  candidates.length = candidateCount;
+  const candidates = getOfferableCardPoolView().filter(
+    (candidate) => candidate.id !== card?.id && (!companionOnly || isCompanionSummonCard(candidate)),
+  );
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const battleRng = getBattleRng(state);
   let undiscovered: BattleCard[] = [];
   if (state.talentEffects.wishUndiscoveredCards) {
-    const discovered = new Set(state.discoveredCardIds);
-    undiscovered = candidates.filter((candidate) => !discovered.has(candidate.id));
+    if (state.discoveredCardIds.length === 0) undiscovered = candidates;
+    else {
+      const discovered = new Set(state.discoveredCardIds);
+      undiscovered = candidates.filter((candidate) => !discovered.has(candidate.id));
+    }
   }
   const guaranteed = undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], battleRng) : [];
-  const selected = [
-    ...guaranteed,
-    // Selection cannot offer more cards than the eligible pool.
-    ...selectRewardCards(
-      fullDeck,
-      candidates,
-      Math.min(baseCount, candidates.length) - guaranteed.length,
-      guaranteed,
-      battleRng,
-    ),
-  ];
+  const selected = guaranteed;
+  // Both arrays belong to this offer; append without copying the guaranteed choices.
+  const remaining = selectRewardCards(
+    fullDeck,
+    candidates,
+    Math.min(baseCount, candidates.length) - guaranteed.length,
+    guaranteed,
+    battleRng,
+  );
+  for (const candidate of remaining) selected.push(candidate);
 
   if (state.talentEffects.wishCardsUpgraded) {
-    return selected.map((c) => upgradeWishCard(c));
+    for (let index = 0; index < selected.length; index++) selected[index] = upgradeWishCard(selected[index]!);
   }
   return selected;
 }

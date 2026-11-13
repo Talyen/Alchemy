@@ -41,12 +41,19 @@ const DEFAULT_POLICY: BalancePlayPolicy = "random-playable";
 const DEFAULT_LOADOUT: BalanceLoadoutMode = "typical";
 export const DEFAULT_SEED = 1;
 
-function getPlayableCards(state: BattleSnapshot): Array<{ card: BattleCard; index: number }> {
+function getPlayableCards(
+  state: BattleSnapshot,
+  policy: BalancePlayPolicy,
+): Array<{ card: BattleCard; index: number }> {
   const hand = state.hand;
   const playable: Array<{ card: BattleCard; index: number }> = [];
   for (let index = 0; index < hand.length; index += 1) {
     const card = hand[index];
-    if (card && canPlayCard(state, card, index)) {
+    if (
+      card &&
+      canPlayCard(state, card, index) &&
+      (policy === "random-playable" || !hasPotentialLethalSelfCost(card, state))
+    ) {
       playable.push({ card, index });
     }
   }
@@ -58,9 +65,7 @@ function chooseCardToPlay(
   policy: BalancePlayPolicy,
   policyRng: Rng,
 ): { card: BattleCard; index: number } | null {
-  const playable = getPlayableCards(state).filter(
-    ({ card }) => policy === "random-playable" || !hasPotentialLethalSelfCost(card, state),
-  );
+  const playable = getPlayableCards(state, policy);
   if (playable.length === 0) return null;
   if (policy === "greedy-damage") return pickHighestScoring(playable, (card) => getImmediateDamage(card, state));
   if (policy === "greedy-effective-damage") {

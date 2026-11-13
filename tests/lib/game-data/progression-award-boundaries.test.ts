@@ -19,6 +19,14 @@ describe("progression award round trips", () => {
     ).toEqual({ physical: Number.MAX_SAFE_INTEGER });
   });
 
+  it("ignores absent optional XP awards without corrupting earned progress", () => {
+    const xp = { physical: 42 };
+    const result = mergeTalentXPAwards(xp, { physical: undefined, burn: undefined });
+    expect(TalentXPSchema.parse(result)).toEqual(xp);
+    expect(result).not.toHaveProperty("burn");
+    expect(xp).toEqual({ physical: 42 });
+  });
+
   it("preserves a full material stockpile when another bundle is awarded", () => {
     const inventory = { ...emptyInventory(), wood: Number.MAX_SAFE_INTEGER, stone: 7 };
     const awarded = addInventory(inventory, { ...emptyInventory(), wood: 3 });

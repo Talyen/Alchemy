@@ -20,7 +20,6 @@ permissions:
 jobs:
   sweep:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
@@ -56,7 +55,6 @@ jobs:
   report:
     needs: sweep
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     env:
       ALCHEMY_BALANCE_MODE: full
       ALCHEMY_BALANCE_FINDINGS_CAP: 500
@@ -85,7 +83,6 @@ jobs:
     if: inputs.verify_unsharded
     needs: report
     runs-on: ubuntu-latest
-    timeout-minutes: 360
     env:
       ALCHEMY_BALANCE_MODE: full
       ALCHEMY_BALANCE_FINDINGS_CAP: 500

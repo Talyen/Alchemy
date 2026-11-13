@@ -1,9 +1,8 @@
 # Steam trailer production suite
 
-## Active brief — October 25, 22:00 UTC
+## Menu-to-battle brief
 
-Earlier full films and opening recipes below are historical experiments. The
-next candidate records the actual main menu, a deliberate Continue input and a
+The `countess-menu-story-v1.json` direction test records the actual main menu, a deliberate Continue input and a
 chronological Countess battle from an isolated, modest six-talent/Basic-gear save.
 Countess music starts at song 18.68, with full battlefield reveal before the first
 vocal at 20.68. Other features belong in the later finale. No extra tooltip panel,
@@ -11,9 +10,8 @@ corner instructions, unrelated early inserts or differently scaled UI dissolves.
 Purposeful camera motion must use continuous subpixel sampling of the same live
 frame, with a return to full battlefield context before the action payoff.
 
-`countess-menu-story-v1.json` is the bounded 12.68-second direction test. Matched
-fade, soft light-sweep and ink-mask intro variants reuse its identical footage,
-music, Continue input and cut points. Deliver the first sample before the batch.
+This bounded 12.68-second test supports matched fade, soft light-sweep and
+ink-mask intro variants using identical footage, music, input and cut points.
 
 New capture acquisition uses CRF 16 H.264 4:4:4 with inter-frame compression,
 `veryfast`, two-second GOPs, 64 Mbps maximum rate and a 128 Mbit buffer. Small UI
@@ -28,13 +26,9 @@ editable JSON timelines, separate PNG overlays and closing graphics, original
 music, native sound cues, PCM mixes, reusable encoded shots, final MP4s and review
 evidence. Protected prototype footage is linked, never duplicated or modified.
 
-The five treatments are **Every Card Counts**, **A Run Through Alchemy**,
-**A Home Worth Fighting For**, **The Boss Gauntlet**, and **One More Heartbeat**.
-The Countess performance starts at song time zero, keeps the game's native
-lyrics, and runs through the first full chorus. Other footage has native lyrics
-disabled and can be reordered under a different music bed. Valid independent
-checkpoints illustrate the game's systems; these edits do not claim to show an
-uninterrupted progression run.
+Keep native lyrics synchronized to the Countess performance; disable them in
+other footage when using a different music bed. Independent checkpoints illustrate
+the game’s systems, not an uninterrupted progression run.
 
 The `capture-*.json` files in the output project preserve capture instructions.
 Use the repository's existing `npm run trailer -- capture` owner. Each capture
@@ -67,21 +61,13 @@ benchmarks. Full decode, codec/frame assertions, boundary images and loudness
 measurements do not establish subjective creative quality or listening approval.
 Read the output project's final creative review before selecting a store trailer.
 
-The captured Wizard turn takes damage after its offensive sequence, so the
-initial “Perfect Turn” working title was replaced with “Every Card Counts.”
-`combat-stories.json` adds complete Knight and Druid turns with enemy responses.
-The five short 4K detail takes keep menu reframing crisp; the Armory crop stays
-wide enough to retain its heading and equipped slot. Canary review caught missing
-color primaries after zoom composition; the finisher now applies explicit frame
-color parameters and the canonical renderer's H.264 metadata bitstream filter.
-
 English titles are external base-video recipe data, separate from shipped UI
 translations. Additional language versions can use separate timelines/overlays.
 No source gameplay, game wording or locale catalog is changed.
 
 ## Directed Countess revision
 
-V1 is retained as a baseline. `countess-directed-v2.json` stages three deliberate
+`countess-directed-v2.json` stages three deliberate
 turns from song time zero, placing the third turn's Shield Bash near the final
 chorus lyric. The attack and its real consequence replace a neutral closing
 deal. No health, damage, deck or game rules are overridden.
@@ -123,15 +109,12 @@ consequences, use sparse titles and close with a clear invitation. Files are
 local review masters; approved review copies are saved privately in ChatGPT
 Library. Nothing is published.
 
-## Current music-video direction
+## Music-video direction
 
-All earlier full films are historical drafts. The active review candidate is
-`06-countess-music-video-opening-v1.mp4`, a 10.683-second opening excerpt from
-song time zero, with locked crops, no corner captions, current game fixes and
-the legal catalog build documented in `sources/director-state-v1/`.
-It shows a real Block / Spiked Shield / Shield Bash interaction and short actual
-purchase, construction and equipment reveals. The first vocal starts at 20.68s,
-so this instrumental opening does not establish lyric-closeup quality.
+The opening excerpt in the production project shows a real Block / Spiked Shield /
+Shield Bash interaction and purchase, construction and equipment reveals. Its
+instrumental opening does not establish lyric-closeup quality; review the vocal
+sequence separately.
 
 `music_map.py` saves measured accents, a tempo guide and authoritative native
 word/phrase anchors. `catalog-audit.mjs` audits unique playable full-game IDs and
@@ -144,7 +127,5 @@ Static reframes use fixed even-pixel crops, rather than an animated zoom.
 `sfxMode: tails` retains native sound tails across visual cuts. Capture receipts
 retain actual end-save checkpoints for a separately validated continuation.
 
-The first longer opening attempt rejected an Anvil input after End Turn; its
-diagnostic footage is preserved. The shorter fresh canary passes every directed
-input. Second-turn presentation timing still needs focused validation before a
-long performance is recorded. Do not reuse the failed master as accepted media.
+Validate second-turn presentation timing and accepted inputs before recording a
+long performance. Do not use a failed capture as accepted media.

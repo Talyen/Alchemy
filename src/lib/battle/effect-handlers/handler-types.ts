@@ -13,8 +13,17 @@ export interface CardEffectResolutionContext {
   // resolve no damage for Unique repeats or Archery echoes.
   attackAttempted?: { value: boolean };
   onDamageDealt?: (amount: number) => void;
+  onChanceResolved?: (effect: Extract<BattleCardEffect, { kind: "chance" }>, success: boolean) => void;
+  /** Top-level authored effect only; recursive branches retain their original ordering. */
+  onEffectResolved?: (
+    effect: BattleCardEffect,
+    before: BattleState,
+    after: BattleState,
+    texts: CombatTextEvent[],
+  ) => void;
   damageMultiplier?: number;
   baseDamageBonus?: number;
+  enemyHitFlatBonus?: number;
   guaranteedCrit?: boolean;
   /** Inspection-only authored operands, retained before choosing a conditional hit. */
   descriptionDamage?: { effect: Extract<BattleCardEffect, { kind: "damage" }>; potionMultiplier: number };

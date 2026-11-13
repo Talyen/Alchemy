@@ -4,7 +4,7 @@ import { applyDrawResult, drawFromState } from "./draw";
 import { gainManaWithCombatText } from "./player-rewards";
 import type { BattleState, CombatTextEvent } from "./types";
 import { damageEnemyHealth } from "./health-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 
 /** Eligibility is captured before reactions; Health belongs to the actual target of this hit. */
@@ -25,11 +25,7 @@ export function reportEnemyHitDamage(
   feedback?: CombatTextEvent["feedback"],
 ): void {
   if (facts.resolvedDamage <= 0) return;
-  mergeCombatText(texts, {
-    target: "enemy",
-    kind: "damage",
-    stat: damageType,
-    amount: facts.resolvedDamage,
+  emitDamageText(texts, "enemy", damageType, facts.resolvedDamage, {
     ...(feedback ? { feedback } : {}),
     ...(facts.healthDamage !== facts.resolvedDamage ? { healthLost: facts.healthDamage } : {}),
     ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
@@ -55,12 +51,11 @@ type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 export type FollowUpHitRequest =
   | Readonly<{
       source: "player-follow-up";
-      damageType: "nature";
+      damageType: DamageType;
       amount: number;
       /** Health lost to this packet before threshold healing or other reactions. */
-      onDamageDealt: (amount: number) => void;
+      onDamageDealt?: (amount: number) => void;
     }>
-  | Readonly<{ source: "player-follow-up"; damageType: DamageType; amount: number }>
   | Readonly<{ source: "talent-fixed" | "talent-derived"; damageType: DamageType; amount: number }>;
 
 export type CardHitRequest = Readonly<{
@@ -82,16 +77,32 @@ export type HitRequest =
   | Readonly<{ source: "reflected-holy"; blockLost: number }>
   | Readonly<{ source: "attack-purge" }>;
 
+function applyChanceDamageDraw(
+  state: BattleState,
+  chance: number,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (healthDamage <= 0 || !rollBattleChance(chance, state)) return state;
+  const drawn = applyDrawResult(state, drawFromState(state, 1), combatTexts);
+  return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
+}
+
 export function applyBleedDamageDraw(
   state: BattleState,
   healthDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (healthDamage <= 0 || !rollBattleChance(state.talentEffects.drawOnBleedDamageChance, state)) {
-    return state;
-  }
-  const drawn = applyDrawResult(state, drawFromState(state, 1), combatTexts);
-  return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
+  return applyChanceDamageDraw(state, state.talentEffects.drawOnBleedDamageChance, healthDamage, combatTexts);
+}
+
+/** One roll per Burn packet that actually removes enemy Health. */
+export function applyBurnDamageDraw(
+  state: BattleState,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  return applyChanceDamageDraw(state, state.trinketEffects.tatteredPagesBurnDrawChance, healthDamage, combatTexts);
 }
 
 export function applyElementalDamageManaRestore(

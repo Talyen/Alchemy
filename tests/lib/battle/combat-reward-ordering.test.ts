@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it, vi } from "vitest";
 import { cardById } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -49,7 +50,7 @@ describe("combat reward ordering", () => {
   });
 
   it("cancels a queued Disrupting Purge after fatal Cinder Skin retaliation", () => {
-    const card = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "stun", amount: 5 }] });
+    const card = makeDamageCard("stun", 5, { cost: 0 });
     const state = patchBattleState({
       hand: [card],
       playerHealth: 1,
@@ -107,11 +108,7 @@ describe("combat reward ordering", () => {
         armorLowHealthBonusPercent: 100,
       },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
-      [],
-    );
+    const result = applyEnemyAbility(state, makeDamageCard("physical", 2), []);
     expect(result.playerStatuses.armor).toBe(0);
     expect(result.playerStatuses.block).toBe(2);
   });
@@ -185,7 +182,7 @@ describe("combat reward ordering", () => {
   });
 
   it("Seed Money and Coinmail scale Gold from actual Nature damage and Armor gained", () => {
-    const nature = makeTestCard({ id: "nature-gold", effects: [{ kind: "damage", damageType: "nature", amount: 3 }] });
+    const nature = makeDamageCard("nature", 3, { id: "nature-gold" });
     const natureState = patchBattleState({
       hand: [nature],
       rng: () => 0.99,

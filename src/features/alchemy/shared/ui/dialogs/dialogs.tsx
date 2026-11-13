@@ -58,7 +58,7 @@ export function ConfirmationDialog({
   onCancel,
 }: {
   open?: boolean;
-  title: React.ReactNode;
+  title: ReactNode;
   description?: ReactNode;
   confirmLabel: string;
   cancelLabel?: string;
@@ -95,7 +95,7 @@ export function ConfirmationDialog({
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-warning-surface/15 text-warning">
           <Icon className="h-6 w-6" />
         </div>
-        <h2 id={titleId} className={cn("mt-4 font-sans text-2xl font-bold text-balance text-gold-pale/75")}>
+        <h2 id={titleId} className="mt-4 font-sans text-2xl font-bold text-balance text-gold-pale/75">
           {title}
         </h2>
         {description && (

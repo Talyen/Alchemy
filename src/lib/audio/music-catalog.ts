@@ -5,6 +5,7 @@ interface MusicCatalogEntry {
   files: readonly string[];
   bossId?: string;
   skipSeconds?: number;
+  fadeInOnStart?: boolean;
 }
 
 /**
@@ -17,7 +18,13 @@ export const MUSIC_CATALOG: Readonly<Record<string, Readonly<MusicCatalogEntry>>
   [MUSIC_KEYS.BATTLE]: {
     files: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
   },
-  [MUSIC_KEYS.BOSS_FORGE_GOLEM]: { files: ["The Forge Golem.mp3"], bossId: "forge-golem" },
+  [MUSIC_KEYS.BOSS_FORGE_GOLEM]: {
+    files: ["The Forge Golem.mp3"],
+    bossId: "forge-golem",
+    // The first lyric starts at 30.94 seconds on the original media clock.
+    skipSeconds: 28.5,
+    fadeInOnStart: true,
+  },
   [MUSIC_KEYS.BOSS_FROSTWARDEN]: { files: ["The Frostwarden.mp3"], bossId: "frostwarden" },
   [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: { files: ["The Blight Treant.mp3"], bossId: "blight-treant" },
   [MUSIC_KEYS.BOSS_BLOOD_COUNTESS]: { files: ["The Blood Countess - Boss Track.mp3"], bossId: "blood-countess" },

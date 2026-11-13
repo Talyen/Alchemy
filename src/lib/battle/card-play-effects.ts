@@ -1,5 +1,5 @@
 import { rollBattleChance } from "./chance-roll";
-import { readCombatFlag, writeCombatFlag } from "./action-context";
+import { readCombatFlag, writeCombatFlag, resolveReactionAction } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -17,7 +17,7 @@ import { cardHasKeyword, isNatureCard } from "./card-classification";
 import { WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
-  if (isPlayerDefeated(state) || !isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0)
+  if (isPlayerDefeated(state) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0 || !isPotionCard(card))
     return state;
   return resolvePendingBattleReactions(
     resolveFollowUpHit(
@@ -41,7 +41,7 @@ interface CardEffectChainOptions {
 // Shared core for playing a card's effects: talent pre-triggers, pending
 // reactions, the effect dispatch itself, potion use, and talent rewards.
 // Payment, Unique Gear damage-only repeats, and card destination stay with callers.
-export function resolveCardEffectChain(
+function resolveCardEffectChainCore(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
@@ -142,8 +142,8 @@ export function applyResonantChimeTrinket(state: BattleState, combatTexts: Comba
   if (
     resonantChimeCardsRequired > 0 &&
     resonantChimeMana > 0 &&
-    !readCombatFlag(state, "resonantChimeUsedThisTurn") &&
-    state.cardsPlayedThisTurn >= resonantChimeCardsRequired
+    state.cardsPlayedThisTurn >= resonantChimeCardsRequired &&
+    !readCombatFlag(state, "resonantChimeUsedThisTurn")
   ) {
     const afterMana = gainManaWithCombatText(state, resonantChimeMana, combatTexts);
     if (afterMana.mana <= state.mana) return state;
@@ -188,4 +188,13 @@ function applyNatureCardPlayGearRewards(
     nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnNatureCard, combatTexts);
   }
   return nextState;
+}
+
+export function resolveCardEffectChain(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  options: CardEffectChainOptions = {},
+): ReturnType<typeof resolveCardEffectChainCore> {
+  return resolveReactionAction(state, (current) => resolveCardEffectChainCore(current, card, combatTexts, options));
 }

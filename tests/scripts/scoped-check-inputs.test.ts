@@ -1,18 +1,14 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { resolveSelectedPaths, parseChangedPathsArgs } from "../../scripts/lib/verification/changed-paths.mjs";
 import { captureSourceDigest } from "../../scripts/check.mjs";
 
-const roots: string[] = [];
-afterEach(() => {
-  for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
-});
 function fixture() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "scoped-check-"));
-  roots.push(root);
+  const root = createTemporaryDirectory("scoped-check-");
+
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
   git("init");
   git("config", "user.name", "Test");
@@ -26,6 +22,8 @@ function fixture() {
   const digest = () => captureSourceDigest({ rootDir: root, paths: ["owned"], inputs: ["harness.ts"] }).hash;
   return { root, git, digest };
 }
+const createTemporaryDirectory = temporaryDirectories();
+
 it("accepts unrelated edits and identical content while guarding owned membership, modes and dependencies", () => {
   const { root, digest } = fixture();
   const before = digest();
@@ -41,9 +39,10 @@ it("accepts unrelated edits and identical content while guarding owned membershi
   expect(digest()).not.toBe(before);
   fs.renameSync(path.join(root, "owned/moved.ts"), path.join(root, "owned/a.ts"));
   expect(digest()).toBe(before);
-  fs.chmodSync(path.join(root, "owned/a.ts"), 0o755);
+  const originalMode = fs.statSync(path.join(root, "owned/a.ts")).mode & 0o777;
+  fs.chmodSync(path.join(root, "owned/a.ts"), originalMode ^ 0o100);
   expect(digest()).not.toBe(before);
-  fs.chmodSync(path.join(root, "owned/a.ts"), 0o644);
+  fs.chmodSync(path.join(root, "owned/a.ts"), originalMode);
   expect(digest()).toBe(before);
   fs.writeFileSync(path.join(root, "harness.ts"), "changed harness");
   expect(digest()).not.toBe(before);

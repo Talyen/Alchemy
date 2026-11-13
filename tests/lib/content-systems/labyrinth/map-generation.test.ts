@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import { createSeededRng } from "@/lib/rng";
 import {
   expandBeyondBoss,
@@ -99,9 +100,34 @@ describe("Open Field generation", () => {
     expect(starts.size).toBe(4);
   });
 
-  it("is deterministic per seed and varies across seeds", () => {
-    expect(generateLabyrinthMap(createSeededRng(42))).toEqual(generateLabyrinthMap(createSeededRng(42)));
-    expect(generateLabyrinthMap(createSeededRng(42))).not.toEqual(generateLabyrinthMap(createSeededRng(7)));
+  it("preserves generated floors and subsequent random draws", () => {
+    const results = [7, 42, 99].map((seed) => {
+      const rng = createSeededRng(seed);
+      const first = generateLabyrinthMap(rng);
+      const boss = floorNodes(first, 1).find((node) => node.type === "boss")!;
+      const completed = { ...first, nodes: { ...first.nodes, [boss.id]: { ...boss, cleared: true } } };
+      const second = expandBeyondBoss(completed, boss.id, rng);
+      return { seed, digest: createHash("sha256").update(JSON.stringify(second)).digest("hex"), nextRandom: rng() };
+    });
+    expect(results).toMatchInlineSnapshot(`
+      [
+        {
+          "digest": "4a2121b09194e986f0cecaff5d295ffc39eb5d7cf0e4dbab31bfba41a498d5c4",
+          "nextRandom": 0.6917003141716123,
+          "seed": 7,
+        },
+        {
+          "digest": "bede5a3de265d584418b54a9a05d24d5b1aa78fc6625f7cd9880729fe8c7730e",
+          "nextRandom": 0.4529963228851557,
+          "seed": 42,
+        },
+        {
+          "digest": "655629468259e9059ae717b608e0212f685c0cd349095deb69efdabb3f388221",
+          "nextRandom": 0.33086434262804687,
+          "seed": 99,
+        },
+      ]
+    `);
   });
 
   it("allows a five-to-six-step boss route, retains detours, and descends only once", () => {

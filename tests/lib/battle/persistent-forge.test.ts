@@ -126,10 +126,10 @@ describe("persistent Forge", () => {
     expect(next.playerStatuses).toMatchObject({ forge: 4, block: 1 });
   });
 
-  it("Purge removes every Forge stack and cannot reward Forged Bulwark", () => {
-    const forged = battle({ playerStatuses: { forge: 20 }, talentEffects: { forgeOnBlockDepleted: 1 } });
-    expect(purgeOnePlayerBenefit(forged, []).state.playerStatuses.forge).toBe(0);
-    const blocked = battle({ playerStatuses: { block: 4 }, talentEffects: { forgeOnBlockDepleted: 1 } });
+  it("Purge removes Forge without triggering its gain reward", () => {
+    const forged = battle({ playerStatuses: { forge: 20 }, talentEffects: { blockOnForgeGain: 1 } });
+    expect(purgeOnePlayerBenefit(forged, []).state.playerStatuses).toMatchObject({ forge: 0, block: 0 });
+    const blocked = battle({ playerStatuses: { block: 4 }, talentEffects: { blockOnForgeGain: 1 } });
     expect(purgeOnePlayerBenefit(blocked, []).state.playerStatuses.forge).toBe(0);
   });
 

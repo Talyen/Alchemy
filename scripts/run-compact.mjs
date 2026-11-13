@@ -5,7 +5,6 @@ import { failureSummary, completionCounts } from "./lib/compact-output.mjs";
 import { runCommandAsync, runStreamCommand } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 import { unitSelection } from "./lib/verification/unit-selection.mjs";
-import { assertLocalTestAllowed } from "./lib/verification/local-execution-policy.mjs";
 import {
   acquireTestResources,
   isInteractiveTestCommand,
@@ -28,17 +27,23 @@ export async function runCompact(argv, rootDir = ROOT) {
   if (live) argv = argv.slice(1);
   const [command, ...args] = argv;
   if (!command || command.startsWith("--")) throw new UsageError(USAGE);
-  if (path.basename(command).replace(/\.(?:cmd|exe)$/u, "") === "vitest") {
-    if (args[0] === "run") unitSelection(args, rootDir);
+  const viaNpx =
+    command
+      .split(/[\\/]/u)
+      .at(-1)
+      .replace(/\.(?:cmd|exe)$/u, "") === "npx";
+  const testCommand = viaNpx ? args[0] : command;
+  const testArgs = viaNpx ? args.slice(1) : args;
+  if (path.basename(testCommand ?? "").replace(/\.(?:cmd|exe)$/u, "") === "vitest") {
+    if (testArgs[0] === "run") unitSelection(testArgs, rootDir);
     const scope =
-      args[0] === "related"
+      testArgs[0] === "related"
         ? "dependency-related unit tests"
-        : args.length === 1 && args[0] === "run"
+        : testArgs.length === 1 && testArgs[0] === "run"
           ? "complete unit suite"
           : "filtered/configured unit tests";
     console.log(`Scope: ${process.env.npm_lifecycle_event ?? "vitest"}: ${scope}; no builds or browser acceptance.`);
   }
-  assertLocalTestAllowed(command, args);
   const lane = usesLocalTestLane(command, args) ? await acquireTestResources(command, args, rootDir) : null;
   if (lane) console.log(`Scheduling: ${lane.kind} test lane${lane.kind === "focused" ? "; one worker" : ""}.`);
   if (lane?.kind === "focused") {

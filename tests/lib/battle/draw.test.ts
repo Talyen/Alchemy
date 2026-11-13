@@ -5,6 +5,7 @@ import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
   addCardToHandOrQueue,
+  applyDrawResult,
   deliverPendingHandCards,
   drawCards,
   drawKeywordCard,
@@ -261,6 +262,30 @@ it.each(["deck", "discard"] as const)("takeRandomCardFromDeck preserves the %s i
   expect(result.uniqueGear.lastArcheryUid).toBe(pile === "discard" ? 40 : 2);
   expect(rng).toHaveBeenCalledTimes(pile === "deck" ? 1 : 3);
   expect(cards.map((card) => card.id)).toEqual(["a", "b", "c"]);
+});
+
+it("remaps every drawn card benefit while preserving untouched UIDs and input state", () => {
+  const rng = vi.fn(() => 0.5);
+  const state = patchBattleState({
+    deck: [makeCard("a", { uid: 1 }), makeCard("b", { uid: 2 })],
+    discard: [],
+    hand: [],
+    pendingHandCards: [],
+    nextCardUid: 100,
+    uniqueGear: { returningFlightUids: [1, 2, 999], lastArcheryUid: 2 },
+    rng,
+  });
+  const before = structuredClone(state.uniqueGear);
+  const drawn = drawCards(state.deck, state.discard, state.hand, 2, state.nextCardUid, rng);
+  const result = applyDrawResult(state, drawn);
+  expect(result.hand.map(({ id, uid }) => ({ id, uid }))).toEqual([
+    { id: "b", uid: 100 },
+    { id: "a", uid: 101 },
+  ]);
+  expect(result.uniqueGear.returningFlightUids).toEqual([101, 100, 999]);
+  expect(result.uniqueGear.lastArcheryUid).toBe(100);
+  expect(state.uniqueGear).toEqual(before);
+  expect(rng).not.toHaveBeenCalled();
 });
 
 describe("player turn transition", () => {

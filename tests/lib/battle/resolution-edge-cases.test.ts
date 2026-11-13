@@ -8,7 +8,7 @@ import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 it("a skipped enemy turn stops Burn ticks after Counterplate defeats a Crimson Pulse enemy", () => {
   const state = regressionBattle({
-    turn: 2,
+    turn: 3,
     playerHealth: 20,
     playerMaxHealth: 30,
     playerStatuses: { armor: 1, burn: 5 },
@@ -26,7 +26,7 @@ it("a skipped enemy turn stops Burn ticks after Counterplate defeats a Crimson P
 
 it("turn-start retaliation can defeat the enemy before any ability is performed", () => {
   const state = regressionBattle({
-    turn: 2,
+    turn: 3,
     playerHealth: 20,
     playerMaxHealth: 30,
     playerStatuses: { armor: 1 },
@@ -45,7 +45,7 @@ it("turn-start retaliation can defeat the enemy before any ability is performed"
 
 it("turn-start retaliation can Stun the enemy before it chooses an ability", () => {
   const state = regressionBattle({
-    turn: 2,
+    turn: 3,
     playerHealth: 20,
     playerMaxHealth: 30,
     playerStatuses: { armor: 1 },

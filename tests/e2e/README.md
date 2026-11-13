@@ -35,83 +35,18 @@ reading intermediate geometry from a requestAnimationFrame callback.
 Responsive functional coverage uses five boundary viewports (narrow, minimum
 height, standard, ultrawide and 4K), plus focused maximum-size and DPR journeys.
 It protects containment, reachable actions and resize continuity rather than
-exact decorative gaps, colors or scale ratios. Trait tooltips exercise the
-maximum-size/minimum-height boundary in both Collection and Battle. The layout
-review gallery owns the wider visual matrix.
-Options checks its shared shell at all five boundaries and each remaining tab at
-minimum height and 4K; the narrow-window journey checks tab reachability separately.
-Labyrinth checks grid and tooltip containment at each selected viewport, resizing
-one mounted map across the standard and narrow boundaries. Keyboard entry uses
-the minimum-height boundary; touch has a separate journey.
-
-Collection discovery and authored card tooltip wiring live in the Collection DOM
-suite; Bestiary retains the real pointer/keyboard inspection journey. Card Shop
-removal combines resize continuity with cancellation, exact deck/Gold settlement,
-repeat-input protection and fresh-page resume. It also crosses full and short
-picker pages at maximum sizing, checks stable action geometry, and removes a
-distinct card from the final page. Its DOM counterpart uses the real
-picker for rejected-command recovery and pending-save admission.
-
-Corruption combines resize-history capacity and selection with the actual
-mutation/resume journey: the chosen card identity must survive both boundaries.
-Keyboard consecutive plays and held-confirm rejection share one real-timing
-battle through focus recovery to End Turn. Talent announcements are checked
-through the real screen's last-point purchase; reward DOM fixtures need no live
-run store. Decorative shadow/icon classes and twelve-decimal density constants
-are not functional acceptance contracts; containment, readable descriptions,
-accessible states and the reviewed visual baselines remain protected.
-
-Responsive checks resize each mounted screen across the viewport boundaries
-before navigating onward; Options checks keep the full tab/viewport matrix without
-repeating menu navigation. The shop shelf DOM suite owns Gear/Trinket inspection
-without Gold, exact offered identities and repeat-purchase blocking through their
-real screens; the card tile keeps its distinct focus-preserving purchase journey.
-Keep short discard/badge observations in the renderer before input, including the
-stunned-enemy hand-flash canary, rather than polling after those phases can finish.
-Route completeness is enforced by the typed registry; real journeys protect
-navigation. Route DOM tests focus on preserving committed offers through remounts
-and passing the correct command authority, rather than mounting named stubs for
-every screen.
+exact decorative gaps, colors or scale ratios. The layout review gallery owns the
+wider visual matrix. Resize mounted screens across boundaries when continuity is
+the behavior being tested. For short discard or badge feedback, capture observations
+in the renderer before input so assertions do not race transient DOM states.
 
 Battle resume shares the real End Turn/SFX canary in
 `specs/battle-end-turn-canary.spec.ts`: spend a card, accept one turn despite
 repeated input, then restore Health, enemy Health, hand and turn on an unseeded
 page and play again. The `save` route and `test:ship:e2e` both include that owner.
-The other save specs retain current-format destination/reward recovery, cold
-boot, corrupt JSON and future-version protection.
-
-Wildwood's final draft pick also verifies the live deck viewer before and after
-selection and the committed modified battle. The empty viewer stays in the
-inspection DOM suite. One connected Wildwood journey wins a battle, checks no
-Health recovery, resumes its actual reward offers, and skips into the next boss
-without changing the deck. The menu/meta-detour journey owns open-menu resize
-reachability without another battle boot.
-
-Options control-to-store wiring lives in `tests/app/options-screen-route.test.tsx`
-with the real screen. It protects independent audio/size settings, gameplay
-preferences, reset and clear-save cancellation/confirmation; separate callback-only
-screen renders and a stubbed route no longer duplicate that protection.
-
-Options keyboard navigation, minimum-height confirmation reachability and saved
-volume share the menu journey. The fresh-profile cold start also checks progression
-locks and Armory availability before entering mode selection.
-
-Armory combat locking, editing another hero, reservation persistence and release
-share one journey seeded with one complete checkpoint; it checks exact saved
-loadout identities as well as rejection feedback. Talent allocation spends the
-last point through the keyboard, checks stable tree geometry, then verifies both
-purchases on a fresh page. Separate
-boots for those same states add no distinct protection. Tooltip movement, content
-resize, coalescing and disposal share one DOM lifecycle; asynchronous placement
-races retain their own focused cases. The startup skip-flag unit uses Node because
-it needs a storage seam, not rendered DOM.
-
-Hand inspection combines edge targeting, raised-card hit testing, draw/reflow,
-and pointer-to-keyboard switching in one live journey. Size-boundary journeys
-retain crowded maximum-size and ultrawide minimum-size hands; the standard-size
-journey owns normal timing. Armory DOM tests retain mutation admission, failed
-commands, transfer/selection lifetime and pagination, while exact empty-slot
-filler counts and development-only spawn buttons have no permanent coverage.
+The other save specs cover current-format recovery, cold boot, corrupt JSON and
+future-version protection. Inspect the relevant specs and DOM tests before adding
+coverage; their assertions, rather than a separate inventory, define what they protect.
 
 Real opening-deal, pile-inspection admission, hand-dock stability, sequential
 discard motion and transfer-color checks share the normal-timing journey in
@@ -148,11 +83,14 @@ remains the tool for manual review across viewport sizes.
 
 ### Local execution policy
 
-[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns local execution permissions and the task gate. Use [visual review](../../Docs/UI_VISUAL_REVIEW.md) for affected player-facing flows; prefer development mode for current-source UI checks.
+[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns local resource coordination and the task gate. Use [visual review](../../Docs/UI_VISUAL_REVIEW.md) for affected player-facing flows; prefer development mode for current-source UI checks.
 [Browser and Electron commands](#browser-and-electron-commands) own invocation,
 ports, build edition and concurrency details for focused local execution.
 
 ### Browser and Electron commands
+
+These automated suites may run locally without a separate permission request. Use the shared Mac host lane under [Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change). Development mode changes the source being served; it does not bypass resource coordination. Ordinary
+interactive visual review uses the [managed preview](../../CONTRIBUTING.md#agent-preview-ownership).
 
 Install browser-test Chromium once before the first run:
 
@@ -324,17 +262,13 @@ keeps assertions and browser failure screenshots without encoding passing PNGs.
 The production demo push job runs all five core demo journeys and one German
 localized ending via `@critical|@localization-smoke`. Native Chinese/Russian and
 Japanese/French quit/relaunch journeys remain on pushes. Nightly/release keep
-all seven browser demo locales, including each localized marketing image; six
-languages' full demo journeys no longer repeat on every push.
+all seven browser demo locales, including each localized marketing image.
 
 CI traces the first retry rather than every passing browser journey. CI retains critical and localization JSON results for seven days on every run and failure diagnostics on failed or flaky
 runs, including tests that pass on retry. A retry remains permitted; flakes do
 not create an additional gate.
 
-Critical Chromium coverage runs in one CI job with two workers, avoiding repeated
-dependency/browser setup and artifact downloads. Nightly keeps its four shards
-until three successful hosted comparisons establish that consolidation lowers
-combined runner time without extending CI completion or adding retries.
+The [CI workflows](../../.github/workflows/) own job and shard configuration.
 
 All retained save specs are critical and run once in the every-push/pull-request browser gate. Local `test:ship:e2e` remains an explicit opt-in; release and nightly include the complete retained suite.
 

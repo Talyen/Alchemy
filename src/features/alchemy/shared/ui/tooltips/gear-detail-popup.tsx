@@ -4,32 +4,35 @@ import { type GearDefinition, type GearInstance } from "@/lib/gear";
 import { GearTooltipContent } from "./gear-tooltip-content";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { getPlasmaColorPairForGear } from "../../config";
+import type { PortaledTooltipPlacement } from "./portaled-tooltip-placement";
 
 export function GearDetailPopup({
   definition,
   instance,
-  triggerRef,
-  visible,
-  padding,
+  craftingChanges,
   notice,
+  padding,
+  ...tooltipProps
 }: {
   definition: GearDefinition | undefined;
   instance: GearInstance;
+  craftingChanges?: Record<string, "new" | "modified"> | undefined;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   padding?: number | undefined;
   notice?: string | undefined;
+  placement?: PortaledTooltipPlacement;
+  preservePlacementOnResize?: boolean;
 }) {
   if (!definition) return null;
   return (
     <PortaledTooltip
-      triggerRef={triggerRef}
-      visible={visible}
+      {...tooltipProps}
+      {...(padding !== undefined ? { padding } : {})}
       className="rounded-shell-tooltip"
       plasmaColorPair={getPlasmaColorPairForGear(instance)}
-      {...(padding !== undefined ? { padding } : {})}
     >
-      <GearTooltipContent definition={definition} instance={instance} />
+      <GearTooltipContent definition={definition} instance={instance} craftingChanges={craftingChanges} />
       {notice ? <p className="mt-3 text-sm text-warning">{notice}</p> : null}
     </PortaledTooltip>
   );

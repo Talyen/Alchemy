@@ -36,14 +36,18 @@ it("shared Talent defaults cannot grant unearned bonuses to later manifests", ()
 it("shared Homestead defaults cannot grant buildings or Companion Bonds to a new career", () => {
   const original = structuredClone(defaultHomesteadEffects);
   try {
-    Reflect.set(defaultHomesteadEffects, "startBlock", 99);
+    Reflect.set(defaultHomesteadEffects, "homesteadPhysicalCritDamagePercent", 99);
     Reflect.set(defaultHomesteadEffects.companionBondLevels, "wolf", 3);
     expect(computeHomesteadEffects({}, {}, {})).toEqual(original);
     const owned = computeHomesteadEffects({}, {}, {});
     owned.companionBondLevels.wolf = 2;
     expect(computeHomesteadEffects({}, {}, {})).toEqual(original);
   } finally {
-    Reflect.set(defaultHomesteadEffects, "startBlock", original.startBlock);
+    Reflect.set(
+      defaultHomesteadEffects,
+      "homesteadPhysicalCritDamagePercent",
+      original.homesteadPhysicalCritDamagePercent,
+    );
     Reflect.set(defaultHomesteadEffects.companionBondLevels, "wolf", original.companionBondLevels.wolf);
   }
 });

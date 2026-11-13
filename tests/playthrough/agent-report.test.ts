@@ -109,7 +109,7 @@ describe("agent playthrough reports", () => {
         { enemy: "living-armor", boss: true, outcome: "victory", turns: 8, run: 0, room: 3 },
         { enemy: "forge-golem", boss: false, outcome: "defeat", turns: 10, run: 0, room: 4 },
       ],
-      milestones: { "talent:a": 3, "talent:b": 1, "equip-trinket:x": 0 },
+      milestones: { "talent:a": 3, "talent:b": 1, "equip-trinket:x": 0, "talentless:x": 0, talent: 0 },
     };
     const careers = [first, second];
     const { battles, metrics } = buildBattles(careers);
@@ -127,6 +127,11 @@ describe("agent playthrough reports", () => {
       { run: 1, runs: 2, defeats: 2, meanRooms: 10 },
       { run: 2, runs: 2, defeats: 2, meanRooms: 18 },
     ]);
+    const shorter = career({ outcomes: [{ outcome: "victory", rooms: 2, gold: 0, steps: 1 }] }) as CompletedCareer;
+    expect(buildRunOutcomes([first, shorter, career({ outcomes: [] }) as CompletedCareer])).toEqual([
+      { run: 1, runs: 2, victories: 1, defeats: 1, victoryRate: 50, meanRooms: 6 },
+      { run: 2, runs: 1, victories: 0, defeats: 1, victoryRate: 0, meanRooms: 18 },
+    ]);
     const runs = careers.flatMap((entry) =>
       entry.outcomes.map((outcome, run) => ({ ...outcome, run, seed: entry.config.seed })),
     );
@@ -141,6 +146,23 @@ describe("agent playthrough reports", () => {
       reached: 2,
       meanFirstRunAmongReached: 1.5,
     });
+  });
+
+  it("aggregates large completed cohorts without exceeding the argument limit", () => {
+    const count = 250_000;
+    const values = Array<number>(count).fill(1);
+    expect(distribution(values)).toEqual({ count, min: 1, q25: 1, median: 1, mean: 1, q75: 1, max: 1 });
+    const outcome = { outcome: "defeat" as const, rooms: 1, gold: 0, steps: 1 };
+    const runs = Array.from({ length: count }, (_, run) => ({ ...outcome, run, seed: 1 }));
+    expect(buildSurvival(runs)).toEqual([
+      { room: 0, reached: count, defeats: 0, denominator: count, rate: 100 },
+      { room: 1, reached: count, defeats: count, denominator: count, rate: 100 },
+    ]);
+    const [progress] = summarizeProgress([career({ outcomes: Array(count).fill(outcome) })]);
+    expect(progress?.mortality).toEqual([
+      { room: 0, reached: count, defeats: 0, denominator: count },
+      { room: 1, reached: count, defeats: count, denominator: count },
+    ]);
   });
 
   it("preserves brewing exposure and paired battle matching in reports", () => {
@@ -217,5 +239,26 @@ describe("agent playthrough reports", () => {
     expect(summary.incomplete).toBe(0);
     expect(summary.findings[0]?.id).toBe("worker-failures");
     expect(summary.findings[0]?.evidence.failure1).toContain("timed out");
+  });
+
+  it("excludes careers without paired battle health evidence from that metric", () => {
+    const snapshot = (stage: "start" | "settle", playerHealth: number) =>
+      ({ stage, run: 0, room: 1, playerHealth }) as CareerResult["telemetry"]["battleSnapshots"][number];
+    const baseline = [career(), career({ config: { ...config, seed: 2 } })];
+    const current = [career(), career({ config: { ...config, seed: 2 } })];
+    baseline[0]!.telemetry.battleSnapshots = [snapshot("start", 100), snapshot("settle", 80)];
+    current[0]!.telemetry.battleSnapshots = [snapshot("start", 100), snapshot("settle", 70)];
+    current[1]!.telemetry.battleSnapshots = [snapshot("start", 100), snapshot("settle", 50)];
+
+    const metric = comparePlaythroughReports(baseline, current)[0]!.metrics.find(
+      ({ metric }) => metric === "netHealthLostPerBattle",
+    );
+    expect(metric).toMatchObject({ careers: 1, meanDelta: 10, standardError: null });
+
+    baseline[0]!.telemetry.battleSnapshots = [];
+    const missing = comparePlaythroughReports(baseline, current)[0]!.metrics.find(
+      ({ metric }) => metric === "netHealthLostPerBattle",
+    );
+    expect(missing).toMatchObject({ careers: 0, meanDelta: null, standardError: null });
   });
 });

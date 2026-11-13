@@ -45,6 +45,8 @@ test.describe("combat-feedback-burst", () => {
             playerHealth: 25,
             playerStatuses: { burn: 1, poison: 1, bleed: 1 },
             enemyStatuses: { burn: 1, poison: 1, bleed: 1 },
+            // Caustic Jab can then remove real Armor and produce its authored feedback.
+            enemyMitigation: { armor: 20 },
           }),
           { runDeck: [...hand, ...deck], autoEndTurn: false },
         );

@@ -14,6 +14,15 @@ const EXTRA_IMPACT_SIDES = [-1, 0, 1] as const;
 
 export function combatTextLane(event: CombatTextEvent): Exclude<CombatTextLane, "announcement"> {
   if (event.kind === "damage" && event.reactionId) return "impact";
+  // A triggered hit is still resolved damage; secondary intent must not hide it with status changes.
+  if (
+    event.kind === "damage" &&
+    event.amount > 0 &&
+    event.impact !== false &&
+    event.periodic !== true &&
+    DAMAGE_TYPES.some((type) => type === event.stat)
+  )
+    return "impact";
   if (event.feedback === "primary") return "impact";
   if (event.feedback !== "secondary" && (event.kind === "heal" || (event.kind === "notice" && event.stat === "dodge")))
     return "impact";

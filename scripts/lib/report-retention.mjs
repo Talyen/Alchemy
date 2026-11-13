@@ -3,6 +3,11 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 
 const day = 86_400_000;
+// These are caller-owned even when accidentally written into a diagnostic run.
+const protectedOutput = (relative) =>
+  /(?:^|\/)(?:sources?|originals?|art|assets?|saves?|backups?|finals?|masters?|trailers?)(?:\/|$)/iu.test(relative) ||
+  /\.(?:sqlite(?:-wal|-shm)?|save|db|mp4|mov|mkv|ipa|xcarchive|patch|diff|swift|tsx?|jsx?|mjs)$/iu.test(relative) ||
+  /(?:^|\/)(?:\.retention-(?:keep|distributed)|[^/]*\.lock)(?:\/|$)/u.test(relative);
 const legacyToolPaths = [".cache/lyrics/venv", ".cache/font-tools", "reports/boss-lyrics/venv"];
 
 function legacyToolEnvironments(rootDir) {
@@ -73,6 +78,7 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
       if (item.isSymbolicLink()) throw new Error("Symlink evidence is caller-owned");
       if (path.basename(file) === ".retention-keep" || path.basename(file).endsWith(".retention-owner.json"))
         pinned = true;
+      if (protectedOutput(path.relative(directory, file))) pinned = true;
       if (item.isDirectory()) for (const name of fs.readdirSync(file)) pending.push(path.join(file, name));
       else if (item.isFile()) {
         bytes += item.size;
@@ -117,12 +123,12 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
         status: receipt.status,
         expiring: receipt.retention === "expiring-v1",
         finished: Date.parse(receipt.generatedAt),
+        dependencies: (receipt.artifacts ?? []).flatMap((artifact) => {
+          const match = /^reports\/runs\/([^/]+)(?:\/|$)/u.exec(artifact.path ?? "");
+          return match ? [match[1]] : [];
+        }),
         ...info,
       });
-      for (const artifact of receipt.artifacts ?? []) {
-        const match = /^reports\/runs\/([^/]+)(?:\/|$)/u.exec(artifact.path ?? "");
-        if (match) references.add(match[1]);
-      }
     } catch (error) {
       plan.protected++;
       plan.incomplete = "Unknown run ownership or references; evidence preserved";
@@ -154,6 +160,31 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
     const key = JSON.stringify([record.family, record.status]);
     if (!latest.has(key) || latest.get(key).newest < record.newest) latest.set(key, record);
   }
+  // Expiring reports must not keep each other's old baselines alive forever.
+  // Retain dependencies reachable from useful/retained results, including recent
+  // non-latest runs; legacy and caller-owned evidence stays a reference root.
+  const retained = new Set(references);
+  for (const record of records) {
+    const minimum = record.status === "passed" || plan.allocatedFileBytes > budget ? day : 3 * day;
+    if (
+      !record.expiring ||
+      record.pinned ||
+      !Number.isFinite(record.finished) ||
+      now - Math.max(record.newest, record.finished) < minimum ||
+      latest.get(JSON.stringify([record.family, record.status])) === record
+    )
+      retained.add(record.id);
+  }
+  const byId = new Map(records.map((record) => [record.id, record]));
+  const pending = [...retained];
+  while (pending.length) {
+    const record = byId.get(pending.pop());
+    for (const id of record?.dependencies ?? []) {
+      if (references.has(id)) continue;
+      references.add(id);
+      pending.push(id);
+    }
+  }
   let considered = plan.allocatedFileBytes;
   for (const record of records.sort((a, b) => a.newest - b.newest)) {
     if (
@@ -180,7 +211,11 @@ export function reportRetentionPlan(rootDir, { now = Date.now(), budget = 1024 *
         : "Not verified restorable; explicit approval required",
       action: record.expiring ? "expire by policy" : "review-only",
       ...(record.expiring
-        ? { expireAfter: Math.max(record.newest, record.finished) + (record.status === "passed" ? 30 : 90) * day }
+        ? {
+            expireAfter:
+              Math.max(record.newest, record.finished) +
+              (considered > budget ? day : record.status === "passed" ? day : 3 * day),
+          }
         : {}),
     };
     if (record.expiring && candidate.expireAfter <= now && plan.expiringCandidates.length < 64)

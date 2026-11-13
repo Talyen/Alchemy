@@ -95,6 +95,8 @@ const traitIcons: Record<string, LucideIcon> = {
   "blood-countess": HeartCrack,
   regeneration: Sprout,
   "brittle-bones": Bone,
+  "brittle-bark": Split,
+  "cracked-halo": Split,
   "gold-trove": Coins,
   amorphous: Droplet,
   "cinder-skin": Flame,

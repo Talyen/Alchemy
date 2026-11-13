@@ -8,7 +8,7 @@ import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { setPlayerStatus } from "./status-state";
-import { mergeCombatText } from "./combat-text-events";
+import { emitNoticeText, emitDamageText } from "./combat-text-events";
 
 const CC_STATUSES = ["stun", "freeze"] as const;
 const DAMAGE_OVER_TIME_STATUSES = ["burn", "poison", "bleed"] as const;
@@ -40,7 +40,7 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     const removed = Number(nextState.playerStatuses.stun > 0) + Number(nextState.playerStatuses.freeze > 0);
     for (const status of CC_STATUSES) {
       if (nextState.playerStatuses[status] > 0) {
-        mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
+        emitNoticeText(combatTexts, "player", status, "", { signal: "cleanse" });
       }
     }
     nextState = applyCleanseHeals(
@@ -58,15 +58,9 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     nextState = setPlayerStatus(nextState, status, Math.max(0, previous - amount));
     if (previous > 0 && nextState.playerStatuses[status] === 0) {
       removedStatuses += 1;
-      mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
+      emitNoticeText(combatTexts, "player", status, "", { signal: "cleanse" });
     } else if (nextState.playerStatuses[status] < previous) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "damage",
-        stat: status,
-        amount: previous - nextState.playerStatuses[status],
-        impact: false,
-      });
+      emitDamageText(combatTexts, "player", status, previous - nextState.playerStatuses[status], { impact: false });
     }
   }
   return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, 1) : nextState;

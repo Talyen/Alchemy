@@ -127,6 +127,7 @@ export type CombatTextStat =
   | "playNextCardTwice"
   | "nextArcheryCardFree"
   | "dodgeNextAttack"
+  | "dodgeNextAttackChance"
   | "draw"
   | "companion"
   | "wish"
@@ -137,6 +138,8 @@ export type CombatTextStat =
 interface CombatTextIntent {
   /** Display intent only: authored card outcomes versus costs, riders and triggered rewards. */
   feedback?: "primary" | "secondary";
+  /** Resolved Companion action owns playback; never merged with another action. */
+  companionActionId?: number;
 }
 
 export interface NumericCombatTextEvent extends CombatTextIntent {
@@ -151,6 +154,8 @@ export interface NumericCombatTextEvent extends CombatTextIntent {
   absorbedDamage?: number;
   critical?: boolean;
   periodic?: boolean;
+  /** Actual consumed DoT payoff, distinct from a natural tick or direct hit. */
+  detonation?: true;
   /** Exact earned payoff origin; distinct from its single output damage type and card intent. */
   reactionId?: ReactionId;
 }
@@ -179,9 +184,27 @@ export interface BattleResolution {
   combatTexts: CombatTextEvent[];
 }
 
+/** Resolved presentation facts, never part of a saved battle or another RNG draw. */
+export interface CompanionActionCue {
+  companionId: CompanionDefinition["id"];
+  kind: "attack" | "cast";
+  resolution?: {
+    id: number;
+    texts: CombatTextEvent[];
+    before: Pick<BattleSnapshot, "playerHealth" | "enemyHealth">;
+    after: Pick<BattleSnapshot, "playerHealth" | "enemyHealth">;
+  };
+}
+
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
+  /** Shared by a complete card action and its nested automatic effects. Never saved. */
+  reactionSpent?: boolean;
   rng: Rng;
+  /** Fresh deck draws, not created cards or later overflow delivery. Never persisted. */
+  onCardsDrawn?: (uids: readonly number[]) => void;
+  onCompanionAction?: (cue: CompanionActionCue) => void;
+  companionActionSequence?: { current: number };
   observer?: BattleResolutionObserver;
   /** A deferred offer has pending choices but no identities until external input. */
   sampleWishOptions?: (sample: () => BattleCard[]) => { cards: BattleCard[]; deferred: boolean };

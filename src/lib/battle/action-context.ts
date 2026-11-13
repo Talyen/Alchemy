@@ -57,3 +57,15 @@ export function resolveSecondaryAction(
   const { action: _action, ...completed } = result;
   return completed;
 }
+
+export function resolveReactionAction<Result extends { state: BattleState }>(
+  state: BattleState,
+  resolve: (state: BattleState) => Result,
+): Result {
+  if (state.reactionSpent !== undefined) return resolve(state);
+  const scoped = { ...state, reactionSpent: false };
+  const result = resolve(scoped);
+  if (result.state === scoped) return { ...result, state };
+  const { reactionSpent: _spent, ...completed } = result.state;
+  return { ...result, state: completed };
+}

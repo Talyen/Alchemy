@@ -180,6 +180,7 @@ export const BOUNDARY_CONFIGS = [
           group: [
             "./*",
             "!./card-play",
+            "!./companion",
             "!./battle-snapshot",
             "!./enemy-turn-attack",
             "!./enemy-description",
@@ -189,7 +190,7 @@ export const BOUNDARY_CONFIGS = [
             "!./types",
           ],
           message:
-            "Inspection observes production card and enemy actions; combat rules belong to their execution owners.",
+            "Inspection observes production card, Companion and enemy actions; combat rules belong to their execution owners.",
         },
       ],
     ],

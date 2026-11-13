@@ -1,5 +1,4 @@
-import { applyElementalReactionDamage } from "./elemental-reactions";
-import { getReactionBonus, recordWildfireTick } from "./elemental-reaction-state";
+import { recordNaturalReactionTick } from "./elemental-reaction-state";
 import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence } from "./battle-sequence";
 import { checkHealthThresholds } from "./status-player";
@@ -17,10 +16,10 @@ import {
 } from "./status-helpers";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";
+import { resolvePoisonBleedFollowUp, tryPoisonStunProc } from "./follow-up-hit-resolution";
 import { payPendingBleedLeech } from "./stun-leech-resolution";
 import { dealEnemyDotTick, projectEnemyDotDamage } from "./dot-resolve";
 import { processContagion } from "./enemy-healing";
@@ -34,17 +33,13 @@ function emitDotCombatText(
   amount: number,
   healthLost = amount,
 ) {
-  mergeCombatText(combatTexts, {
-    target,
-    kind: "damage",
-    stat,
-    amount,
+  emitDamageText(combatTexts, target, stat, amount, {
     periodic: true,
     ...(healthLost !== amount ? { healthLost } : {}),
   });
 }
 
-function tickBurn(state: BattleState, combatTexts: CombatTextEvent[], recordDamage: (amount: number) => void) {
+function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
   if (damage <= 0) return state;
 
@@ -58,12 +53,11 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[], recordDama
     nextBurn = decayHalvedStatus(nextBurn);
   }
   return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts, (next, hit) => {
-    recordDamage(hit.healthDamage);
-    return recordWildfireTick(next, hit.healthDamage);
+    return recordNaturalReactionTick(next, "burn", hit.healthDamage);
   });
 }
 
-export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
+export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent[], natural = false) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
   const finalDamage = projectEnemyDotDamage(state, "poison");
@@ -79,19 +73,13 @@ export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent
     );
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState, hit) => {
-    const afterRiders = applyPoisonTalentRiders(
-      nextState,
-      hit.healthDamage,
-      combatTexts,
-      true,
-      (current, damage, texts) =>
-        resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
-    );
+    const recorded = natural ? recordNaturalReactionTick(nextState, "poison", hit.healthDamage) : nextState;
+    const afterRiders = applyPoisonTalentRiders(recorded, hit.healthDamage, combatTexts, resolvePoisonBleedFollowUp);
     return tryPoisonStunProc(afterRiders, finalDamage, combatTexts);
   });
 }
 
-function tickBleed(state: BattleState, combatTexts: CombatTextEvent[], recordDamage: (amount: number) => void) {
+function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) {
     if (state.pendingBleedLeechHealing === 0 && state.pendingCardBleedLeechHealing === 0) return state;
@@ -104,8 +92,8 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[], recordDam
   const healthBeforeBleed = state.enemyHealth;
   const nextBleed = state.gearEffects.bleedDecaysByHalf > 0 ? decayHalvedStatus(damage) : 0;
   return dealEnemyDotTick(state, "bleed", finalDamage, nextBleed, combatTexts, (nextState, hit) => {
-    recordDamage(hit.healthDamage);
-    const afterLeech = payPendingBleedLeech(healthBeforeBleed, nextState, combatTexts, true, hit.healthDamage);
+    const recorded = recordNaturalReactionTick(nextState, "bleed", hit.healthDamage);
+    const afterLeech = payPendingBleedLeech(healthBeforeBleed, recorded, combatTexts, true, hit.healthDamage);
     const retainedLeech = {
       ...afterLeech,
       pendingBleedLeechHealing: Math.min(nextBleed, decayHalvedStatus(state.pendingBleedLeechHealing)),
@@ -121,47 +109,18 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
     if (state.pendingBleedLeechHealing === 0 && state.pendingCardBleedLeechHealing === 0) return state;
     return { ...state, pendingBleedLeechHealing: 0, pendingCardBleedLeechHealing: 0 };
   }
-  let burnDamage = 0;
-  let bleedDamage = 0;
-  let consecrated = false;
-  const next = resolveBattleSequence(
+  return resolveBattleSequence(
     state,
     ["burn", "poison", "bleed"] as const,
     combatTexts,
     (current, stat) => {
-      if (stat === "burn")
-        return tickBurn(current, combatTexts, (amount) => {
-          burnDamage = amount;
-        });
-      if (stat === "poison") return tickEnemyPoison(current, combatTexts);
-      // Capture the mark before the tick clears Bleed and before ordinary riders settle.
-      consecrated = current.reactions.consecrated;
-      const unmarked = consecrated ? { ...current, reactions: { ...current.reactions, consecrated: false } } : current;
-      return tickBleed(unmarked, combatTexts, (amount) => {
-        bleedDamage = amount;
-      });
+      if (stat === "burn") return tickBurn(current, combatTexts);
+      if (stat === "poison") return tickEnemyPoison(current, combatTexts, true);
+      return tickBleed(current, combatTexts);
     },
     { kind: "each-step", settle: resolvePendingBattleReactions },
     "either-defeated",
   );
-  let result = next;
-  if (consecrated && bleedDamage > 0) {
-    result = resolvePendingBattleReactions(
-      applyElementalReactionDamage(result, { id: "consecration", damage: getReactionBonus(bleedDamage) }, combatTexts),
-      combatTexts,
-    );
-  }
-  if (burnDamage > 0 && bleedDamage > 0) {
-    result = resolvePendingBattleReactions(
-      applyElementalReactionDamage(
-        result,
-        { id: "bloodboil", damage: getReactionBonus(burnDamage, bleedDamage) },
-        combatTexts,
-      ),
-      combatTexts,
-    );
-  }
-  return result;
 }
 
 function dealPlayerDotTick(

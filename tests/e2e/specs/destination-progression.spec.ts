@@ -1,7 +1,6 @@
 import { savedActivityFixture } from "../../fixtures/run-activity";
 import { controllerInput } from "../controller-input";
-import { expect } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
+import { expect, test } from "../../fixtures/e2e";
 import {
   injectSaveState,
   makeStartingDeck,

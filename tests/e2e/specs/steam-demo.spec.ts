@@ -144,7 +144,7 @@ test.describe("Steam demo edition", critical, () => {
   });
 
   test("fresh demo profile plays real starter cards and earns the three-hero chain", async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(process.env.CI ? 0 : 90_000);
     await page.addInitScript(() => localStorage.clear());
     await page.goto("/");
     const menu = new MenuPage(page);

@@ -6,13 +6,11 @@ import {
   type RewardState,
 } from "@/lib/active-run-session";
 import type { BattleSnapshot } from "@/lib/battle";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { ENEMY_TYPES, type BattleCard } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { LootProgress } from "@/lib/loot";
 import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
-import { createRewardOffer } from "./reward-offers";
+import { createRewardOffer, type RewardOfferInput } from "./reward-offers";
 
 export { getCompanionCardChoices, getRandomPotionCard } from "./reward-offers";
 
@@ -29,17 +27,9 @@ export interface FinalizeRewardResult {
   route: RewardRoute;
 }
 
-interface RewardPayoutInput {
-  lootProgress: LootProgress;
+interface RewardPayoutInput extends Omit<RewardOfferInput, "source"> {
   goldPayout: number;
   materials: MaterialInventory;
-  rng: () => number;
-  createInstanceId?: (() => string) | undefined;
-  excludedBoonIds?: string[];
-  gearAstralChanceBonus?: number;
-  ownedTrinketIds?: string[];
-  ownedUniqueIds?: ReadonlySet<string>;
-  rewardModifiers?: readonly EncounterRewardTraitId[];
 }
 
 export type BossRewardInput = RewardPayoutInput;
@@ -87,48 +77,34 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   };
 }
 
-export function createBossRewardState(input: BossRewardInput): RewardState {
-  return {
-    ...createEmptyRewardState(),
-    ...createRewardOffer({ ...input, source: "boss" }),
-    gold: input.goldPayout,
-    materials: input.materials,
-  };
-}
-
-export interface WildwoodRewardInput {
-  runDeck: BattleCard[];
-  rng: () => number;
-  createInstanceId?: (() => string) | undefined;
-  lootProgress: LootProgress;
-  goldPayout?: number;
-  materials?: MaterialInventory;
-  gearAstralChanceBonus?: number;
-  excludedBoonIds?: readonly string[];
-  ownedTrinketIds?: readonly string[];
-  ownedUniqueIds?: ReadonlySet<string>;
-}
-
-export function createWildwoodRewardState(input: WildwoodRewardInput): RewardState {
+function createRewardState(
+  input: RewardOfferInput & { goldPayout?: number; materials?: MaterialInventory },
+): RewardState {
   const empty = createEmptyRewardState();
-  const { goldPayout = 0 } = input;
   return {
     ...empty,
-    // Wildwood's victory input may carry encounter traits for other reward
-    // effects, but its offer is not a Labyrinth Hoard.
-    ...createRewardOffer({ ...input, source: "wildwood", rewardModifiers: [] }),
-    gold: goldPayout,
+    ...createRewardOffer(input),
+    gold: input.goldPayout ?? 0,
     materials: input.materials ?? empty.materials,
   };
 }
 
+export function createBossRewardState(input: BossRewardInput): RewardState {
+  return createRewardState({ ...input, source: "boss" });
+}
+
+export interface WildwoodRewardInput extends Omit<RewardOfferInput, "source" | "rewardModifiers"> {
+  runDeck: BattleCard[];
+  goldPayout?: number;
+  materials?: MaterialInventory;
+}
+
+export function createWildwoodRewardState(input: WildwoodRewardInput): RewardState {
+  // Encounter traits can arrive through a wider victory input, but Wildwood never offers a Labyrinth Hoard.
+  return createRewardState({ ...input, source: "wildwood", rewardModifiers: [] });
+}
+
 export function createCombatRewardState(input: CombatRewardInput): RewardState {
   const source = input.battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? "elite" : "normal";
-  return {
-    ...createEmptyRewardState(),
-    ...createRewardOffer({ ...input, source }),
-    gold: input.goldPayout,
-    materials: input.materials,
-    destinations: input.destinations,
-  };
+  return { ...createRewardState({ ...input, source }), destinations: input.destinations };
 }

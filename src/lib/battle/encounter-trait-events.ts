@@ -3,7 +3,7 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { isNatureCard } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText, emitDamageText } from "./combat-text-events";
 import { processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { scaleByRoomMultiplier } from "./amount-helpers";
@@ -39,7 +39,7 @@ export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEve
     "thorns",
     state.enemyStatuses.thorns + 1,
   );
-  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "thorns", amount: 1 });
+  emitStatusText(combatTexts, "enemy", "thorns", 1);
   return nextState;
 }
 
@@ -97,13 +97,7 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
       armorLost = amount;
     });
     if (armorLost > 0) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "damage",
-        stat: "armor",
-        amount: armorLost,
-        impact: false,
-      });
+      emitDamageText(combatTexts, "player", "armor", armorLost, { impact: false });
     }
     nextState = resolvePendingBattleReactions(
       applyArmorLossAttackRetaliation(nextState, armorLost, combatTexts),
@@ -136,17 +130,19 @@ export function processEncounterTraitCardAction(
   options: { cardPlayed?: boolean } = {},
 ): BattleState {
   let nextState = state;
-  const scale = (amount: number) => scaleByRoomMultiplier(nextState, amount);
   if (card.consume && hasEnemyTrait(nextState, "insatiable")) {
     nextState = recordEnemyAbilityActivation(nextState, "insatiable");
-    nextState = { ...nextState, enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scale(1) };
+    nextState = {
+      ...nextState,
+      enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scaleByRoomMultiplier(nextState, 1),
+    };
   }
   if (options.cardPlayed !== false && hasEnemyTrait(nextState, "rooted") && isNatureCard(card)) {
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
-    nextState = addEnemyMitigationWithCombatText(nextState, "block", scale(1), combatTexts);
+    nextState = addEnemyMitigationWithCombatText(nextState, "block", scaleByRoomMultiplier(nextState, 1), combatTexts);
   }
   if (attackAttempted && nextState.enemyHealth > 0) {
-    if (hasEnemyTrait(nextState, "thorns") && nextState.flags.legacyEnemyThornsReady) {
+    if (nextState.flags.legacyEnemyThornsReady && hasEnemyTrait(nextState, "thorns")) {
       nextState = recordEnemyAbilityActivation(nextState, "thorns");
       nextState = setEnemyStatus(
         setFlag(nextState, "legacyEnemyThornsReady", false),
@@ -155,7 +151,7 @@ export function processEncounterTraitCardAction(
       );
       nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
     }
-    if (hasEnemyTrait(nextState, "holy-retribution") && !readCombatFlag(nextState, "holyRetributionUsedThisTurn"))
+    if (!readCombatFlag(nextState, "holyRetributionUsedThisTurn") && hasEnemyTrait(nextState, "holy-retribution"))
       nextState = dealTraitDamage(
         setFlag(recordEnemyAbilityActivation(nextState, "holy-retribution"), "holyRetributionUsedThisTurn", true),
         "holy",
@@ -176,21 +172,27 @@ export function processEncounterTraitsForCardCopies(
   const next = processEncounterTraitCardAction(state, card, combatTexts, attackAttempted);
   return repeatAttackAttempted === undefined
     ? next
-    : processEncounterTraitCardAction(next, { ...card, consume: false }, combatTexts, repeatAttackAttempted, {
-        cardPlayed: false,
-      });
+    : processEncounterTraitCardAction(
+        next,
+        card.consume ? { ...card, consume: false } : card,
+        combatTexts,
+        repeatAttackAttempted,
+        {
+          cardPlayed: false,
+        },
+      );
 }
 
 export function applyEncounterThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.enemyHealth <= 0 || state.enemyStatuses.thorns <= 0) return state;
+  const legacyThorns = state.flags.legacyEnemyThornsReady ? 1 : 0;
+  const amount = Math.max(0, state.enemyStatuses.thorns - legacyThorns);
+  if (amount === 0) return state;
   const id = hasEnemyTrait(state, "briar-crown")
     ? "briar-crown"
     : hasEnemyTrait(state, "thornhide")
       ? "thornhide"
       : null;
-  const legacyThorns = state.flags.legacyEnemyThornsReady ? 1 : 0;
-  const amount = Math.max(0, state.enemyStatuses.thorns - legacyThorns);
-  if (amount === 0) return state;
   return processEnemyDamageEffect(
     setEnemyStatus(id ? recordEnemyAbilityActivation(state, id) : state, "thorns", legacyThorns),
     { kind: "damage", damageType: "nature", amount },

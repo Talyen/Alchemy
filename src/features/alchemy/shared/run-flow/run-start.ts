@@ -8,22 +8,13 @@ import {
   type TalentXP,
 } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { Destination } from "@/lib/routing";
+import type { PersistedRunProgress } from "@/lib/active-run-session";
 
-export interface RunStartSnapshot {
-  characterId: CharacterId;
-  contentSystemType: ContentSystemId;
-  freshDeck: BattleCard[];
-  selectedDifficulty: DifficultyId | null;
-  runPlayerHealth: number;
-  runMaxHealth: number;
-  roomsEncountered: number;
-  currentAct: number;
-  destinationIndexInAct: number;
-  completedDestinations: Destination[];
-  runBoons: string[];
-  hasActiveRun: boolean;
-}
+/** Only the selected starting loadout belongs here; progress defaults have one owner. */
+export type RunStartSnapshot = Pick<
+  PersistedRunProgress,
+  "characterId" | "contentSystemType" | "runDeck" | "selectedDifficulty" | "runPlayerHealth" | "runMaxHealth"
+>;
 
 export interface RunStartInput {
   characterId: CharacterId;
@@ -49,15 +40,9 @@ export function createRunStartSnapshot({
   return {
     characterId,
     contentSystemType,
-    freshDeck: (draftedDeck ?? getStartingDeck(characterId)).map(cloneBattleCard),
+    runDeck: (draftedDeck ?? getStartingDeck(characterId)).map(cloneBattleCard),
     selectedDifficulty: contentSystemType === "campaign" ? difficultyId : null,
     runPlayerHealth: runMaxHealth,
     runMaxHealth,
-    roomsEncountered: 0,
-    currentAct: 1,
-    destinationIndexInAct: 0,
-    completedDestinations: [],
-    runBoons: [],
-    hasActiveRun: true,
   };
 }

@@ -2,7 +2,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { cardHasKeyword } from "./card-classification";
 import { getBattleRng, rngInt, shuffle, takeRandomItem } from "@/lib/rng";
 import type { BattleState, CombatTextEvent } from "./types";
-import { mergeCombatText } from "./combat-text-events";
+import { emitStatusText } from "./combat-text-events";
 import { MAX_HAND_SIZE } from "../game-constants";
 
 interface CardUidChange {
@@ -18,11 +18,14 @@ function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidCha
   )
     return state.uniqueGear;
   // Echoed archery cards need no remap: echoes replay by reference, not by uid.
-  const remapUid = (uid: number | null) => {
-    if (uid === null) return null;
-    const change = changes.find((entry) => entry.previous === uid);
-    return change ? change.next : uid;
-  };
+  let remappedUids: Map<number, number> | undefined;
+  for (const { previous, next } of changes) {
+    // Match the first draw if malformed input repeats an old UID.
+    if (previous !== undefined && !remappedUids?.has(previous)) (remappedUids ??= new Map()).set(previous, next);
+  }
+  if (!remappedUids) return state.uniqueGear;
+  const uidMap = remappedUids;
+  const remapUid = (uid: number | null) => (uid === null ? null : (uidMap.get(uid) ?? uid));
   const uniqueGear = state.uniqueGear;
   let returningFlightUids = uniqueGear.returningFlightUids;
   for (let index = 0; index < uniqueGear.returningFlightUids.length; index++) {
@@ -56,27 +59,27 @@ export function refillEmptyDrawPile(state: BattleState): BattleState {
 
 function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
   const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
-  const nextHand = [...hand];
   const delivered = Math.min(slots, queued.length);
+  if (delivered === 0) return { hand, pendingHandCards: queued };
+  const nextHand = [...hand];
   for (let index = 0; index < delivered; index++) nextHand.push(queued[index]!);
   return { hand: nextHand, pendingHandCards: queued.slice(slots) };
 }
 
 export function deliverPendingHandCards(state: BattleState): BattleState {
   if (state.hand.length >= MAX_HAND_SIZE || state.pendingHandCards.length === 0) return state;
+  // The saved queue can contain draws or created cards. Delivery is hand reflow,
+  // not a new deck operation, and must not invent a deck origin after resume.
   return { ...state, ...distributeHandCards(state.hand, state.pendingHandCards) };
 }
 
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
   const received = { ...card, uid: state.nextCardUid };
-  const slots = Math.max(0, MAX_HAND_SIZE - state.hand.length);
-  const hand = [...state.hand];
-  const pendingHandCards = state.pendingHandCards.slice(slots);
-  const delivered = Math.min(slots, state.pendingHandCards.length);
-  for (let index = 0; index < delivered; index++) hand.push(state.pendingHandCards[index]!);
-  if (slots > state.pendingHandCards.length) hand.push(received);
-  else pendingHandCards.push(received);
-  return { ...state, hand, pendingHandCards, nextCardUid: state.nextCardUid + 1 };
+  return {
+    ...state,
+    ...distributeHandCards(state.hand, [...state.pendingHandCards, received]),
+    nextCardUid: state.nextCardUid + 1,
+  };
 }
 
 export function drawCards(
@@ -138,6 +141,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
   const deck = refilled.deck === state.deck ? [...refilled.deck] : refilled.deck;
   const rawCard = takeRandomItem(deck, battleRng);
   if (!rawCard) return null;
+  state.onCardsDrawn?.([state.nextCardUid]);
   const remaining = refillDeck(deck, refilled.discard, battleRng);
   return {
     card: { ...rawCard, uid: state.nextCardUid },
@@ -167,16 +171,15 @@ function reportDraw(
   combatTexts?: CombatTextEvent[],
   feedback?: CombatTextEvent["feedback"],
 ): BattleState {
+  if (nextState.nextCardUid > state.nextCardUid) {
+    state.onCardsDrawn?.(
+      Array.from({ length: nextState.nextCardUid - state.nextCardUid }, (_, index) => state.nextCardUid + index),
+    );
+  }
   const received =
     nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
   if (received > 0 && combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "draw",
-      amount: received,
-      ...(feedback ? { feedback } : {}),
-    });
+    emitStatusText(combatTexts, "player", "draw", received, { ...(feedback ? { feedback } : {}) });
   }
   return nextState;
 }

@@ -14,7 +14,7 @@ interface PopupContext {
   triggerRef: RefObject<HTMLElement | null>;
 }
 
-interface InteractiveArtTileProps {
+export interface InteractiveArtTileProps {
   id: string;
   interactionKey: string;
   title: string;
@@ -65,26 +65,18 @@ export function InteractiveArtTile({
   children,
   onHoverChange,
 }: InteractiveArtTileProps) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, id);
-  const wrappedHoverStart = onHoverChange
-    ? () => {
-        onHoverStart();
-        onHoverChange(true);
-      }
-    : onHoverStart;
-  const wrappedHoverEnd = onHoverChange
-    ? () => {
-        onHoverEnd();
-        onHoverChange(false);
-      }
-    : onHoverEnd;
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
+    interactionKey,
+    id,
+    onHoverChange,
+  );
   const { wrapperRef, showPopup, onMouseEnter, onMouseLeave, onBlurCapture } = useHoverVisible({
     holdMs: TOOLTIP_FADE_MS,
     focusWithinGuard: true,
     interactive,
     isHovered,
-    onHoverStart: wrappedHoverStart,
-    onHoverEnd: wrappedHoverEnd,
+    onHoverStart,
+    onHoverEnd,
   });
 
   const unavailable = disabled || ariaDisabled === true;

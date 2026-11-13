@@ -62,12 +62,10 @@ interpretation. Discovery metadata must reference canonical prose rather than
 copying it, and it does not own verification selection. The search fallback skips deleted
 tracked files and files removed during a search, while other read errors fail.
 
-## Release / changelog (three stages, shared `lib/release/patch-notes-core.mjs` + `lib/release/git-release.mjs`)
+## Release and patch notes
 
 | Output or operation                                          | Implementation owner                                                                    |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| Developer Unreleased history                                 | `sync-changelog.mjs`                                                                    |
-| Versioned changelog section                                  | `release-changelog.mjs`                                                                 |
 | Player notes from commits and trailers                       | `generate-patch-notes.mjs`                                                              |
 | Release orchestration (`release`, `release:hotfix --hotfix`) | `release.mjs` → `lib/release/release-runner.mjs`                                        |
 | Build version stamping                                       | `sync-version-metadata.mjs` (sequenced by `release-runner.mjs` post-bump)               |
@@ -76,7 +74,7 @@ tracked files and files removed during a search, while other read errors fail.
 | Steam upload                                                 | `steam-upload.mjs`                                                                      |
 | Verified build                                               | `build-verified.mjs`                                                                    |
 
-[RELEASE](../Docs/RELEASE.md#changelog-release-time-only) owns timing, note policy,
+[RELEASE](../Docs/RELEASE.md#patch-notes-and-commit-messages) owns timing, note policy,
 and the release decision flow.
 
 Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `electron-path.mjs`
@@ -162,9 +160,13 @@ linked dependency ancestors into another checkout's shared caches.
 `npm run prune:transient` automatically expires reproducible Git diff inventories
 after 24 hours and known expired verification-cache receipts after 24 hours. New
 managed run receipts declare their retention policy: old unpinned, unreferenced
-successful runs expire after 30 days and failed runs after 90 days. The latest
+successful runs expire after 24 hours and failed runs after 72 hours. When managed
+diagnostics exceed 1 GiB, older runs become eligible after 24 hours, oldest first.
+The budget never shortens that minimum window. The latest
 success and failure per command, current run, referenced baselines, pinned or
-owned runs, legacy runs, and unknown evidence stay protected. Other performance,
+owned or locked runs, legacy runs, and unknown evidence stay protected. Source
+files, save databases, original artwork, footage, patches and release artifacts
+also protect a run even if a producer accidentally places them there. Other performance,
 visual, integration and experimental evidence is not automatically expired.
 Automatically managed lyric and font tool environments are also removed after 30
 days without use, but only while their inherited process locks can be acquired.
@@ -400,3 +402,20 @@ without changing command success; exposure metrics remain advisory.
 ## Script declarations
 
 Keep TypeScript declarations beside the JavaScript module (the .d.mts extension beside .mjs), following the module's actual exports. Tests import those modules normally. Shared interface types belong to their implementation owner and are imported by other declarations; do not recreate wildcard ambient declarations in tests. Update the adjacent declaration when changing a script's public interface, and run source/test type checks.
+
+## Temporary dependency compatibility patches
+
+`npm ci` runs `patch-dependency-compat.mjs` after installation. The lockfile pins
+minimatch 11.0.3 and glob 14.0.3 to address GHSA-g3hv-75wg-m249 and
+GHSA-3g3m-2fjr-6pw4. Some Electron packaging and release dependencies still
+consume older minimatch APIs. The script adapts their installed copies to the
+patched API, checks both the exact package version and expected source text,
+and fails installation if either changes. It is safe to run again on an already
+patched install. Do not use `--ignore-scripts` for normal development or CI.
+
+`tests/scripts/dependency-compat.test.ts` exercises the old and new ASAR paths,
+legacy glob callback and synchronous traversal, file filtering, cleanup and
+release ignore rules. When updating these dependencies, remove each adaptation
+only after its parent uses a compatible maintained API; update the guards and
+rerun these tests, the dependency audit, release dry run, build and desktop
+packaging checks. Windows packaging and the complete CI workflow remain required.

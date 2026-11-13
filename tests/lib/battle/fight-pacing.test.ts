@@ -1,3 +1,4 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
@@ -212,11 +213,7 @@ describe("fight pacing in combat pipelines", () => {
       enemyMaxHealth: 40,
       enemyMitigation: { armor: 0, forge: 0, block: 0 },
     });
-    const stunCard = makeTestCard({
-      id: "stun-hit",
-      title: "Stun Hit",
-      effects: [{ kind: "damage", damageType: "stun", amount: 10 }],
-    });
+    const stunCard = makeDamageCard("stun", 10, { id: "stun-hit", title: "Stun Hit" });
     const next = applyCardEffects(state, stunCard, []);
     const expectedDamage = paceCombatMagnitude(state, 10, "player");
     expect(state.enemyHealth - next.enemyHealth).toBe(expectedDamage);

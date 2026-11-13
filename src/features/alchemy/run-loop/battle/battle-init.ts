@@ -3,9 +3,16 @@ import { playResolvedCombatSound, presentCombatTexts } from "./controller-utils"
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 import type { BattleStarted } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
+import { presentCompanionAction } from "./companion-presentation";
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
-  function presentBattleStart({ startingTexts, companionId, outcome, openingCardIds }: BattleStarted) {
+  function presentBattleStart({
+    startingTexts,
+    companionId,
+    companionActions,
+    outcome,
+    openingCardIds,
+  }: BattleStarted) {
     const battleState = ctx.battle.read().battleState;
     preloadBattleSounds(openingCardIds, battleState.currentEnemy.abilityIds);
     session.resetBattleSession();
@@ -18,12 +25,12 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       : battleState.deathsDoorActive
         ? playBattleEvent("deathsDoor")
         : undefined;
-    if (companionId) {
-      presentationStore.shakeCompanion();
-      presentationStore.telegraphAttack("companion");
+    if (companionActions) presentationStore.enqueueCompanionActions(companionActions);
+    else if (companionId) {
+      presentCompanionAction(presentationStore, battleState.activeCompanion);
     }
     presentCombatTexts(presentationStore, startingTexts, focalSound);
-    if (outcome) session.handleVictoryDefeat?.(outcome);
+    if (outcome) session.checkBattleEnd(battleState, ctx.playback.id);
   }
 
   return ctx.battle.createStartCommands(presentBattleStart);

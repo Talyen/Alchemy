@@ -5,17 +5,11 @@ import { CompanionPanel } from "@/features/alchemy/run-loop/battle/presentation/
 import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
+import { CompanionActionMotion } from "./ui/companion-action-motion";
 
 type ShakingArtPanelProps = Omit<
   ComponentProps<typeof ArtPanel>,
-  | "shaking"
-  | "impactCue"
-  | "attackToken"
-  | "castToken"
-  | "dodgeToken"
-  | "shimmerActive"
-  | "shimmerToken"
-  | "onHoverShimmer"
+  "impactCue" | "attackToken" | "castToken" | "dodgeToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
 > & {
   presentation: BattlePresentationStore;
   side: "player" | "enemy";
@@ -23,33 +17,25 @@ type ShakingArtPanelProps = Omit<
 };
 
 export function ShakingArtPanel({ presentation, side, shimmerId, ...props }: ShakingArtPanelProps) {
-  const { shaking, impactCue, attackToken, castToken, dodgeToken } = useStore(
+  const feedback = useStore(
     presentation,
     useShallow((s) => ({
-      shaking: side === "player" ? s.playerShaking : s.enemyShaking,
       impactCue: side === "player" ? s.playerImpactCue : s.enemyImpactCue,
       attackToken: side === "player" ? s.playerAttackToken : s.enemyAttackToken,
       castToken: side === "player" ? s.playerCastToken : s.enemyCastToken,
       dodgeToken: side === "player" ? s.playerDodgeToken : s.enemyDodgeToken,
     })),
   );
-  const { shimmerActive, shimmerToken, onHoverShimmer } = useUiStore(
-    useShallow((s) => ({
-      shimmerActive: s.shimmerState?.cardId === shimmerId,
-      shimmerToken: s.shimmerState?.cardId === shimmerId ? s.shimmerState.token : undefined,
-      onHoverShimmer: s.maybeTriggerShimmer,
-    })),
-  );
+  const shimmerActive = useUiStore((s) => s.shimmerState?.cardId === shimmerId);
+  const shimmerToken = useUiStore((s) => (s.shimmerState?.cardId === shimmerId ? s.shimmerState.token : undefined));
+  const onHoverShimmer = useUiStore((s) => s.maybeTriggerShimmer);
+
   return (
     <ArtPanel
       {...props}
       side={side}
       shimmerId={shimmerId}
-      shaking={shaking}
-      impactCue={impactCue}
-      attackToken={attackToken}
-      castToken={castToken}
-      dodgeToken={dodgeToken}
+      {...feedback}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       onHoverShimmer={onHoverShimmer}
@@ -59,8 +45,19 @@ export function ShakingArtPanel({ presentation, side, shimmerId, ...props }: Sha
 
 export function ShakingCompanionPanel({
   presentation,
+  inactive = false,
   ...props
-}: Omit<ComponentProps<typeof CompanionPanel>, "shaking"> & { presentation: BattlePresentationStore }) {
+}: Omit<ComponentProps<typeof CompanionPanel>, "shaking"> & {
+  presentation: BattlePresentationStore;
+  inactive?: boolean;
+}) {
   const shaking = useStore(presentation, (s) => s.companionShaking);
-  return <CompanionPanel {...props} shaking={shaking} />;
+  const cue = useStore(presentation, (s) =>
+    !inactive && s.companionActionCue?.companionId === props.companion.id ? s.companionActionCue : null,
+  );
+  return (
+    <CompanionActionMotion cue={cue}>
+      <CompanionPanel {...props} shaking={shaking} />
+    </CompanionActionMotion>
+  );
 }

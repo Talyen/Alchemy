@@ -8,7 +8,8 @@ Gate composition, CI tiers, and reuse policy live in
 | Concern                                   | Implementation owner                                                                                                                                                                                 |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Completion orchestration                  | `check.mjs` + `lib/verification/check-plan.mjs`                                                                                                                                                      |
-| Task and opt-in full test selection       | `verify-changed.mjs` + `run-local-tests.mjs`                                                                                                                                                         |
+| Task and opt-in full test selection       | `verify-changed.mjs` + `lib/verification/change-routes.mjs`                                                                                                                                          |
+| Fixed Node smoke                          | `run-local-tests.mjs` + `vitest.local.config.ts`                                                                                                                                                     |
 | Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                    |
 | Path parsing and classification           | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                          |
 | Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`finish-plans.mjs` shares that lib) |
@@ -28,7 +29,7 @@ single repo-relative spelling, also used by route matching) and `runGit` (the si
 stale-cache overrides); `git-safety-guard.mjs` is the deliberate exception
 because it must exec the real binary past its own shim. Release writes keep
 logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
-`resolveRoutePlan` returns both coverage commands and build/static/localization classification. `check-plan.mjs` composes the actual completion steps from that result; plan display and execution consume the same step definitions. Git path selection remains separate; the obsolete standalone classification wrapper is removed.
+`resolveRoutePlan` returns both coverage commands and build/static/localization classification. `check-plan.mjs` composes the actual completion steps from that result; plan display and execution consume the same step definitions. Git path selection remains separate.
 
 Full-repository and dependency-related selections use one worker to bound JSDOM and subprocess memory on shared hosts. Coverage and test deadlines are unchanged by that scheduling choice.
 
@@ -65,12 +66,7 @@ with compilation deferred to CI. Formatting/lint batches above 50 files or
 containing a file above 256,000 bytes are deferred to CI and reported.
 
 `check:all` selects the repository inventory and replaces overlapping unit commands
-with one complete unit run. Full gates and managed broad unit/browser runs reject
-local execution unless `ALCHEMY_ALLOW_HEAVY_LOCAL=1` is set for an explicitly
-requested local run. `local-execution-policy.mjs` recognizes hosted GitHub Actions
-via `GITHUB_ACTIONS=true`; `CI=true` alone is insufficient because local browser
-aliases also set it. One or two explicit unit files remain available with one
-worker. Policy checks precede lane acquisition and command execution.
+with one complete unit run. Full gates and managed broad unit/browser runs may run locally without a separate permission request. Managed runners retain their resource lanes and focused unit selections use one worker.
 Integration invokes the lightweight gate on the pinned combined result;
 eligible commands follow [receipt rules](#verification-receipt-rules).
 
@@ -112,13 +108,11 @@ inferred path contracts; use a Markdown link when a reference must remain valid.
 Document reachability and skill-index completeness are advisory and never fail
 the gate. Documentation contract checks share one
 per-file fact walk (explicit links and script names) plus one
-Markdown helper (`lib/agent/markdown-sections.mjs`) and one exemption owner per scope
-(`isHistoryOnlyDoc` / `isReachabilityExempt` in
-`check-documentation-contract.mjs`).
+Markdown helper (`lib/agent/markdown-sections.mjs`) and one reachability exemption owner
+(`isReachabilityExempt` in `check-documentation-contract.mjs`).
 Explicit links can protect E2E paths as well as other source references. Keep current workflow rules and unresolved issues rather than instruction histories.
-Repository-relative matching uses forward slashes on every platform. Release
-notes retain historical command-name exemptions; explicit links in maintained
-documents remain checked.
+Repository-relative matching uses forward slashes on every platform. Generated
+release notes are excluded; explicit links in maintained documents remain checked.
 
 ## Build and test selection
 
@@ -137,7 +131,7 @@ an occupied port fails before any HTTP validation. They require an application s
 
 ## Failure-first triage
 
-[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and local execution permissions. Use CI reports for complete validation.
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and local resource coordination. Use CI reports for complete validation.
 
 Verification and audit commands keep full artifacts on disk but print a bounded digest. Start with the digest when the cause is unclear; open the most relevant artifact directly when you have a specific hypothesis. Battle warnings use the `[Enemy Turn]` prefix.
 
@@ -174,8 +168,12 @@ execution policy above:
 | `verify:unit`                | Selected unit routes only                                                |
 | `verify:full`                | Selected units, documentation and broader report/asset routes            |
 
-`check:all` includes every unit suite; [local profiles](#local-verification-profiles)
-own its runner behavior. Pre-push selection and guards follow [Git hooks](#git-hook-implementation).
+The complete unit command uses [vitest.config.ts](../vitest.config.ts), which
+excludes `tests/balance/` and `tests/playthrough/`. `check:all` combines that unit
+run with applicable report/asset routes, including the separate balance report
+check; it does not run the dedicated headless-career suite. Use the
+[simulation guide](../Docs/SIMULATION.md#owners-and-verification) for that suite
+and its hosted workflow. [Local profiles](#local-verification-profiles) own gate behavior. Pre-push selection and guards follow [Git hooks](#git-hook-implementation).
 
 The compact runner rejects nonexistent path-shaped selectors before `vitest run`,
 including mixed valid/missing file selections. Legacy bare substring filters remain
@@ -291,7 +289,7 @@ Do not trade away path exceptions or diagnostic precision to reduce process coun
 
 ## Component and hook conventions
 
-Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Vitest defaults and ship suites retain the four-worker ceiling, leaving one CPU free on smaller hosts. Completion gates use one worker for full-repository and dependency-related selections. CLI worker overrides remain available for focused diagnosis.
+Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Vitest defaults and ship suites retain the four-worker ceiling, leaving one CPU free on smaller hosts. Completion gates use one worker for full-repository and dependency-related selections. Managed focused runs also force one worker, overriding supplied CLI worker counts.
 
 Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; Oxlint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
 
@@ -328,6 +326,23 @@ Vite's widely available browser baseline. Keep the desktop target aligned when
 updating Electron. Packaged Windows smoke, native Steam overlay/input and release
 signing still need their respective platform and release checks.
 
+Incremental TypeScript state lives in checkout-local `.cache/tsbuild/` so isolated
+worktrees that share `node_modules` do not overwrite each other's compiler cache.
+CI retains this directory between static-check jobs, keyed by runner OS/architecture,
+Node version file, dependency lockfile, TypeScript configs and commit. A compatible
+previous commit supplies the starting cache; TypeScript still checks current inputs
+and the static gate always runs. Cache misses run normally without reused analysis.
+Renderer and package CI checkouts exclude `assets/sources/`, matching code-only
+worktrees; they retain prepared art, audio, icons and manifests. The asset-integrity
+job still checks out source masters for freshness validation. Windows package
+uploads disable archive compression because the installer and media are already
+compressed. Release packaging retains full Git history for patch notes.
+The React Compiler Babel pass generates intermediate source maps only for development
+or when the resolved build requests maps (including CLI overrides). Ordinary web
+builds avoid that discarded mapping work; desktop hidden maps remain enabled.
+Build preflight overlaps localization and generated-output validation, waits for both
+to settle, and rejects either failure before starting Vite.
+
 TypeScript 7 owns source and test compilation. Oxlint owns linting through
 `oxlint.config.ts`, with type-aware source checks supplied by `oxlint-tsgolint`.
 Prettier continues to own formatting. The Oxc and TypeScript 7 language-server
@@ -341,7 +356,7 @@ boundaries as well as runtime imports.
 
 | Command                           | Role                                                                                                                                         |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (fast local static; no boundary subset double-run)                              |
+| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (CI or local execution; no boundary subset double-run)                          |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
 | `npm run assets:check`            | Read-only repository asset source freshness check                                                                                            |

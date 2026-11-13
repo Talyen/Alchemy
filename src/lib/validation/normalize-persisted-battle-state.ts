@@ -55,17 +55,22 @@ export function filterLiveCards<T extends Pick<BattleCard, "id" | "cost" | "effe
 function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
   const reactions = createElementalReactionState();
   if (!isRecord(saved)) return reactions;
-  const record = saved;
   for (const key of Object.keys(reactions) as Array<keyof typeof reactions>) {
-    const value = Object.hasOwn(record, key) ? record[key] : undefined;
-    if (key === "consecrated") {
-      reactions.consecrated = value === true;
-      continue;
-    }
-    const amount = typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
-    if (key === "wildfirePendingTickDamage" || key === "wildfireLastTickTurn")
-      reactions[key] = amount !== null && amount > 0 ? amount : null;
-    else reactions[key] = amount ?? 0;
+    const value = Object.hasOwn(saved, key) ? saved[key] : undefined;
+    if (key === "weakenNextAttack") reactions[key] = value === true;
+    else reactions[key] = typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+  }
+  // Current-format battles retain already-earned preparation when moving to the new roster.
+  const legacyMagnitude = (key: string): number => {
+    const value = Object.hasOwn(saved, key) ? saved[key] : undefined;
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+  };
+  if (!Object.hasOwn(saved, "ruptureDamage")) reactions.ruptureDamage = legacyMagnitude("thunderclapDamage");
+  if (!Object.hasOwn(saved, "naturalBurnDamage")) {
+    reactions.naturalBurnDamage = Math.min(
+      Number.MAX_SAFE_INTEGER,
+      legacyMagnitude("wildfireDamage") * 2 + legacyMagnitude("wildfirePendingTickDamage"),
+    );
   }
   return reactions;
 }
@@ -75,11 +80,10 @@ function normalizeGearEffects(saved: Partial<GearEffectManifest> | undefined): G
   for (const key of GEAR_NUMERIC_EFFECT_KEYS) result[key] = clampNonNegative(saved?.[key] ?? 0, 0);
   for (const key of GEAR_CHANCE_EFFECT_KEYS) {
     const values = saved?.[key];
-    result[key] = Array.isArray(values)
-      ? values.filter(
-          (value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 100,
-        )
-      : [];
+    if (!Array.isArray(values)) continue;
+    for (const value of values) {
+      if (typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 100) result[key].push(value);
+    }
   }
   return result;
 }
@@ -96,7 +100,8 @@ function normalizeManifest<T extends object>(
 ): T {
   const fields = saved as Partial<T> | undefined;
   return Object.fromEntries(
-    Object.entries(defaults).map(([key, fallback]) => {
+    Object.keys(defaults).map((key) => {
+      const fallback = defaults[key as keyof T];
       const value = ownOnly && !Object.hasOwn(fields ?? {}, key) ? undefined : fields?.[key as keyof T];
       const valid = Array.isArray(fallback)
         ? Array.isArray(value)
@@ -110,11 +115,14 @@ function normalizeManifest<T extends object>(
 
 function normalizeMagnitudeDictionary(saved: unknown): Record<string, number> {
   if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
-  return Object.fromEntries(
-    Object.entries(saved).filter(
-      ([, value]) => typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER,
-    ),
-  );
+  const entries = Object.entries(saved);
+  let kept = 0;
+  for (const entry of entries) {
+    const value: unknown = entry[1];
+    if (typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER) entries[kept++] = entry;
+  }
+  entries.length = kept;
+  return Object.fromEntries(entries);
 }
 
 function isHealthThresholdReward(value: unknown): value is { threshold: number; amount: number } {
@@ -130,21 +138,40 @@ function isHealthThresholdReward(value: unknown): value is { threshold: number; 
   );
 }
 
+function hasFormerTalentEffect(value: unknown, key: string): boolean {
+  return isRecord(value) && value[key] === 1;
+}
+
 function normalizeTalentEffects(
   defaults: TalentEffectManifest,
   saved: Partial<TalentEffectManifest> | undefined,
 ): TalentEffectManifest {
-  const knownSaved = Object.fromEntries(
-    Object.entries(saved ?? {}).filter(([key, value]) => {
-      if (!Object.hasOwn(defaults, key)) return false;
-      const fallback = defaults[key as keyof TalentEffectManifest];
-      if (typeof fallback === "number")
-        return typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER;
-      if (typeof fallback === "boolean") return typeof value === "boolean";
-      return true;
-    }),
-  ) as Partial<TalentEffectManifest>;
-  const merged = { ...defaults, ...knownSaved };
+  const merged = { ...defaults };
+  const writable = merged as Record<keyof TalentEffectManifest, unknown>;
+  for (const key of Object.keys(saved ?? {}) as Array<keyof TalentEffectManifest>) {
+    if (!Object.hasOwn(defaults, key)) continue;
+    const fallback = defaults[key];
+    const value = saved![key];
+    if (typeof fallback === "number" && !(typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER))
+      continue;
+    if (typeof fallback === "boolean" && typeof value !== "boolean") continue;
+    writable[key] = value;
+  }
+  // Existing active battles record the old Forged Bulwark effect rather than
+  // unlocked talent IDs. Carry its ownership into the new effect on resume.
+  if (saved && !Object.hasOwn(saved, "blockOnForgeGain") && hasFormerTalentEffect(saved, "forgeOnBlockDepleted"))
+    merged.blockOnForgeGain = 1;
+  // Older active battles store the former Archery effects instead of talent IDs.
+  if (saved && !Object.hasOwn(saved, "archeryArmorRemoval") && hasFormerTalentEffect(saved, "archeryArmorPiercing")) {
+    merged.archeryArmorRemoval = 1;
+    merged.archeryDamageBonus = 1;
+  }
+  if (
+    saved &&
+    !Object.hasOwn(saved, "dodgeChanceWithoutBlock") &&
+    hasFormerTalentEffect(saved, "archeryDamageWithoutBlock")
+  )
+    merged.dodgeChanceWithoutBlock = 15;
   merged.cardHealMultipliers = normalizeMagnitudeDictionary(merged.cardHealMultipliers);
   merged.companionBondLevels = normalizeNonNegativeRecord(defaults.companionBondLevels, merged.companionBondLevels);
   merged.healthThresholdArmor = Array.isArray(merged.healthThresholdArmor)
@@ -168,12 +195,11 @@ function normalizeNonNegativeRecord<K extends string>(defaults: Record<K, number
 
 // Module-level catalog snapshot for trait restore; stale under HMR/catalog
 // swaps, which is acceptable for load-time repair (fresh import per load).
-const traitMetadata = new Map(
-  [
-    ...enemyBestiary.flatMap((enemy) => enemy.traits),
-    ...Object.values(ENCOUNTER_TRAITS).map((trait) => trait.enemyTrait),
-  ].map((trait) => [trait.id, trait]),
-);
+const traitMetadata = new Map<string, EnemyTrait>();
+for (const enemy of enemyBestiary) {
+  for (const trait of enemy.traits) traitMetadata.set(trait.id, trait);
+}
+for (const trait of Object.values(ENCOUNTER_TRAITS)) traitMetadata.set(trait.enemyTrait.id, trait.enemyTrait);
 
 function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): EnemyTrait[] {
   if (!Array.isArray(value)) return enemy?.traits ?? [];
@@ -185,11 +211,11 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
     const canonical = traitMetadata.get(trait.id);
     if (canonical) traits.push(canonical);
   });
-  return [
-    ...new Map(
-      sanitizePersistedEnemyTraits([...(enemy?.traits ?? []), ...traits]).map((trait) => [trait.id, trait]),
-    ).values(),
-  ];
+  const uniqueTraits = new Map<string, EnemyTrait>();
+  for (const trait of sanitizePersistedEnemyTraits([...(enemy?.traits ?? []), ...traits])) {
+    uniqueTraits.set(trait.id, trait);
+  }
+  return [...uniqueTraits.values()];
 }
 
 function isSavedAbilityRoster(value: unknown): value is string[] {
@@ -274,20 +300,23 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
     highestCardUid + 1,
   );
   const used = new Set<number>();
-  const repaired = { ...live };
+  // filterLiveCards already gave each pile its own array; only changed cards need copies.
+  const repaired = live;
   for (const pile of piles) {
-    repaired[pile] = live[pile].map((card) => {
+    for (let index = 0; index < repaired[pile].length; index++) {
+      const card = repaired[pile][index]!;
       if (isUsableUid(card.uid) && !used.has(card.uid)) {
         used.add(card.uid);
-        return card;
+        continue;
       }
       // Undrawn cards may have no presentation identity yet; visible cards must.
-      if (card.uid === undefined && pile !== "hand" && pile !== "pendingHandCards") return card;
-      return { ...card, uid: nextCardUid++ };
-    });
+      if (card.uid === undefined && pile !== "hand" && pile !== "pendingHandCards") continue;
+      repaired[pile][index] = { ...card, uid: nextCardUid++ };
+    }
   }
   const unambiguousUid = (uid: number | null) => (uid !== null && counts.get(uid) === 1 ? uid : null);
-  const overflow = repaired.hand.slice(MAX_HAND_SIZE);
+  const pendingHandCards = repaired.hand.splice(MAX_HAND_SIZE);
+  for (const card of repaired.pendingHandCards) pendingHandCards.push(card);
   const returningFlightUids = new Set<number>();
   for (const uid of state.uniqueGear.returningFlightUids) {
     if (unambiguousUid(uid) !== null) returningFlightUids.add(uid);
@@ -303,8 +332,8 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
     },
     cardsPlayedThisTurn: toSafeNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
     nextCardUid,
-    hand: overflow.length ? repaired.hand.slice(0, MAX_HAND_SIZE) : repaired.hand,
-    pendingHandCards: [...overflow, ...repaired.pendingHandCards],
+    hand: repaired.hand,
+    pendingHandCards,
   };
 }
 
@@ -353,11 +382,11 @@ export function normalizePersistedBattleState(saved: DecodedPersistedBattle): Ba
   // Defaults own the persisted shape; retired fields and runtime dependencies
   // must not survive merely because the wire schema tolerates unknown keys.
   const defaults = battleSnapshot(defaultBattleState());
-  saved = Object.fromEntries(
-    Object.keys(defaults)
-      .filter((key) => Object.hasOwn(saved, key))
-      .map((key) => [key, saved[key as keyof BattleSnapshot]]),
-  );
+  const knownSaved: Record<string, unknown> = {};
+  for (const key of Object.keys(defaults) as Array<keyof BattleSnapshot>) {
+    if (Object.hasOwn(saved, key)) knownSaved[key] = saved[key];
+  }
+  saved = knownSaved;
   const currentEnemy = normalizeEnemy(saved.currentEnemy, defaults.currentEnemy);
   const merged: BattleSnapshot = {
     ...defaults,
@@ -400,7 +429,6 @@ export function normalizePersistedBattleState(saved: DecodedPersistedBattle): Ba
         : null,
   };
   merged.reactions = expireCcReactions(merged).reactions;
-  if (merged.enemyStatuses.bleed <= 0) merged.reactions.consecrated = false;
   // Glacial Surge is now a native flat bonus; saved growth must not stack with it.
   if (currentEnemy.traits.some((trait) => trait.id === "glacial-shell")) merged.enemyStatuses.freezeBonus = 0;
   const companion = merged.activeCompanion;

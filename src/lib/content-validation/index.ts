@@ -36,9 +36,8 @@ export function runContentValidation(): ContentValidationResult {
   validateTypography(collector);
 
   const issues = sortIssues(collector.issues);
-  return {
-    issues,
-    errors: issues.filter((issue) => issue.severity === "error"),
-    warnings: issues.filter((issue) => issue.severity === "warning"),
-  };
+  const errors: ContentValidationIssue[] = [];
+  const warnings: ContentValidationIssue[] = [];
+  for (const issue of issues) (issue.severity === "error" ? errors : warnings).push(issue);
+  return { issues, errors, warnings };
 }

@@ -27,8 +27,7 @@ export function getTrinketEffectValue<K extends keyof TrinketManifest>(
 }
 
 export function combineTrinketEffectIds(runBoons: readonly string[], equippedTrinketId: string | null): string[] {
-  if (!equippedTrinketId) return [...new Set(runBoons)];
   const ids = new Set(runBoons);
-  ids.add(equippedTrinketId);
+  if (equippedTrinketId) ids.add(equippedTrinketId);
   return [...ids];
 }

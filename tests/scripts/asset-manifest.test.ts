@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+import { readArtManifest } from "../../scripts/assets/sync-generated-helpers.mjs";
 import { describe, expect, it } from "vitest";
 import { staticAssets, validateAssetRegistry } from "../../scripts/assets/asset-manifest.mjs";
 import { ART_PRESETS } from "../../scripts/assets/asset-constants.mjs";
@@ -6,6 +8,18 @@ import { artGroup } from "../../scripts/assets/art-group.mjs";
 import { gearAssets } from "../../scripts/assets/gear-assets.mjs";
 
 describe("asset manifest", () => {
+  it("accepts prepared output manifests without weakening authoring source validation", async () => {
+    const manifestPath = fileURLToPath(new URL("../../src/assets/optimized/.asset-hashes.json", import.meta.url));
+    const manifest = await readArtManifest(manifestPath);
+    expect(Object.keys(manifest)).toContain("card-back.webp");
+    await expect(validateAssetRegistry([{ target: "card-back.webp" }])).rejects.toThrow(
+      "Asset source must be a non-empty string",
+    );
+    await expect(validateAssetRegistry([{ target: "../escape.webp" }], { allowMissingSource: true })).rejects.toThrow(
+      "Invalid target",
+    );
+  });
+
   it("preserves selected source paths, output identities and per-image transform overrides", async () => {
     const art = artGroup({ folder: "Actions", preset: ART_PRESETS.card, requiresTransparency: true }, [
       ["Haste.png", "haste.webp", ART_PRESETS.cardHaste],

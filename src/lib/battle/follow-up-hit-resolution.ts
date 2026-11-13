@@ -2,7 +2,7 @@ import { isPlayerDefeated } from "./battle-outcome";
 import { applyBlockReward } from "./player-rewards";
 import { rollBattleChance } from "./chance-roll";
 import { resolveSecondaryAction } from "./action-context";
-import type { DamageType, TalentEffectManifest } from "@/lib/game-data";
+import type { TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
   BRASS_CENSER_SPLIT_CHANCE_PERCENT,
@@ -36,35 +36,29 @@ export function resolveFollowUpHit(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (isPlayerDefeated(state)) return state;
-  switch (request.source) {
-    case "player-follow-up":
-      if (request.damageType === "stun") return resolveStunFollowUpHit(state, request.amount, combatTexts);
-      return resolveSecondaryAction(state, "reward", (current) =>
-        resolveDerivedFollowUp(
-          current,
-          request.damageType,
-          request.amount,
-          request.source,
-          combatTexts,
-          "onDamageDealt" in request ? request.onDamageDealt : undefined,
-        ),
-      );
-    case "talent-fixed":
-    case "talent-derived":
-      return resolveTalentFollowUp(state, request, combatTexts);
+  if (request.source === "player-follow-up") {
+    if (request.damageType === "stun") return resolveStunFollowUpHit(state, request.amount, combatTexts);
+    return resolveSecondaryAction(state, "reward", (current) => resolveDerivedFollowUp(current, request, combatTexts));
   }
+  return resolveDerivedFollowUp(state, request, combatTexts);
+}
+
+export function resolvePoisonBleedFollowUp(
+  state: BattleState,
+  damage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  return resolveFollowUpHit(state, { source: "talent-derived", damageType: "bleed", amount: damage }, combatTexts);
 }
 
 function resolveDerivedFollowUp(
   state: BattleState,
-  damageType: DamageType,
-  amount: number,
-  source: FollowUpHitRequest["source"],
+  request: FollowUpHitRequest,
   combatTexts: CombatTextEvent[],
-  onDamageDealt?: (amount: number) => void,
 ): BattleState {
+  const { damageType, amount } = request;
   if (amount <= 0 || state.enemyHealth <= 0) return state;
-  const isPlayer = source === "player-follow-up";
+  const isPlayer = request.source === "player-follow-up";
   const effect = { kind: "damage" as const, damageType, amount };
   let base: BattleState;
   let resolved: number;
@@ -75,19 +69,21 @@ function resolveDerivedFollowUp(
     resolved = mods.modifiedDamage;
     critical = mods.critical;
   } else {
-    const blocked = computeTalentDamageToEnemy(state, damageType, amount, source);
+    const blocked = computeTalentDamageToEnemy(state, damageType, amount, request.source);
     if (blocked.remainingDamage <= 0) return blocked.state;
     base = blocked.state;
     resolved = blocked.remainingDamage;
   }
   const hit = resolveTypedEnemyHit(base, effect, resolved, combatTexts, state, {
     critical,
-    ...(isPlayer ? {} : { allowPoisonBleedConversion: false as const }),
-    onPoisonBleedConversion: (current, damage, texts) =>
-      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
-    ...(isPlayer ? { onPoisonDamage: tryPoisonStunProc } : {}),
+    ...(isPlayer
+      ? {
+          onPoisonBleedConversion: resolvePoisonBleedFollowUp,
+          onPoisonDamage: tryPoisonStunProc,
+        }
+      : {}),
   });
-  onDamageDealt?.(hit.facts.healthDamage);
+  if (isPlayer) request.onDamageDealt?.(hit.facts.healthDamage);
   let nextState = hit.state;
   if (damageType === "nature") {
     nextState = applyFollowUpNatureRiders(nextState, resolved, hit.facts.healthDamage, state, combatTexts);
@@ -95,7 +91,7 @@ function resolveDerivedFollowUp(
   if (damageType === "holy") {
     if (resolved > 0 && nextState.gearEffects.oathkeeperHolyAndBlock > 0)
       nextState = applyBlockReward(nextState, 1, combatTexts);
-    if (!isPlayer) nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
+    if (!isPlayer) nextState = applyHolyLifesteal(nextState, resolved, combatTexts, state);
     nextState = applyHolyBlockChance(nextState, hit.facts.healthDamage, combatTexts);
     if (!isPlayer) {
       nextState = applyHolyTithe(nextState, hit.facts.healthDamage, combatTexts);
@@ -103,10 +99,8 @@ function resolveDerivedFollowUp(
       nextState = applyBrassCenser(nextState, resolved, combatTexts);
     }
   }
-  if (damageType === "burn" && (isPlayer ? hit.facts.healthDamage > 0 : true)) {
-    nextState = isPlayer
-      ? applyEmberforgedPayout(nextState, combatTexts, state.enemyStatuses.burn > 0)
-      : applyEmberforgedPayout(nextState, combatTexts, hit.facts.eligibility.enemyStatuses.burn > 0);
+  if (damageType === "burn" && (!isPlayer || hit.facts.healthDamage > 0)) {
+    nextState = applyEmberforgedPayout(nextState, combatTexts, state.enemyStatuses.burn > 0);
   }
   return nextState;
 }
@@ -119,7 +113,11 @@ function applyFollowUpNatureRiders(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = state;
-  if (eligibility.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0 && healthDamage > 0) {
+  if (
+    healthDamage > 0 &&
+    eligibility.enemyStatuses.poison > 0 &&
+    rollBattleChance(eligibility.gearEffects.natureLeechVsPoisoned, nextState)
+  ) {
     nextState = applyLeechHitHealing(nextState, healthDamage, combatTexts);
   }
   nextState = applyLuckyCloverGold(nextState, healthDamage, combatTexts);
@@ -139,14 +137,6 @@ export function applyBrassCenser(state: BattleState, damage: number, combatTexts
     return resolveFollowUpHit(state, { source: "player-follow-up", damageType: "burn", amount: damage }, combatTexts);
   }
   return applyLeechHitHealing(state, damage, combatTexts);
-}
-
-function resolveTalentFollowUp(
-  state: BattleState,
-  request: Extract<FollowUpHitRequest, { source: "talent-fixed" | "talent-derived" }>,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  return resolveDerivedFollowUp(state, request.damageType, request.amount, request.source, combatTexts);
 }
 
 export function tryTalentTypedHit(

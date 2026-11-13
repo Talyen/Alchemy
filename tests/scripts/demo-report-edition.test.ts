@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runNode } from "../helpers/script-fixtures";
 import { tmpdir } from "node:os";
 import { expect, it } from "vitest";
 
@@ -10,10 +10,9 @@ it("headless edition identity uses demo policy in SSR instead of silently runnin
         const policy = await server.ssrLoadModule('/src/lib/game-edition.ts');
         console.log(JSON.stringify({ demo: policy.IS_DEMO, acts: policy.GAME_EDITION_POLICY.campaignActs, labyrinth: policy.isEditionModeAvailable('labyrinth') }));
       });`;
-  const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], {
+  const result = runNode(["--input-type=module", "-e", source], {
     cwd: tmpdir(),
     env: { ...process.env, ALCHEMY_EDITION: "demo" },
-    encoding: "utf8",
     timeout: 20000,
   });
   expect(

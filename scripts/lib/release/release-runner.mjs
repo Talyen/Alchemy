@@ -158,7 +158,7 @@ export async function runRelease({ label, gates, bumpArgs = [], dryRun = false }
 
   // Stamp the bumped version into generated metadata and fold it into the
   // release commit before pushing. commit-and-tag-version only commits
-  // package files + CHANGELOG, so without this the tag would ship stale
+  // package files, so without this the tag would ship stale
   // CURRENT_GAME_BUILD_VERSION and fail assets:check in release CI.
   // Nothing has been pushed yet, so amending + moving the tag is local-only.
   if (await syncVersionMetadata()) {

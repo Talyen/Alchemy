@@ -45,7 +45,7 @@ it("binds visibility, clearing, teardown and timer disposal to the owning sessio
   teardownRun(firstSession);
   expect(first.getState().displayedBattle).toBeNull();
   expect(second.getState().hiddenHandCardKeys).toEqual(["second-card"]);
-  second.getState().shakeEnemy();
+  second.getState().shakeCompanion();
   const changed = vi.fn();
   const unsubscribe = second.subscribe(changed);
   await secondSession.dispose();
@@ -68,7 +68,7 @@ it("revokes actions borrowed from reads and subscriber snapshots when their sess
   });
   borrowed.setCardTransferInProgress(true);
   await session.dispose();
-  expect(() => borrowed.shakeEnemy()).toThrow(/disposed/);
+  expect(() => borrowed.shakeCompanion()).toThrow(/disposed/);
   expect(() => observed.setCardTransferInProgress(true)).toThrow(/disposed/);
   expect(vi.getTimerCount()).toBe(0);
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { affixMatchesAffinity } from "@/lib/gear/affixes";
 import { buildEligibleAffixPool, rollAffixes } from "@/lib/gear/affix-pool";
 import { gearDefinitions, type GearDefinition } from "@/lib/gear/definitions";
 import { createSeededRng } from "@/lib/rng";
@@ -16,6 +17,29 @@ describe("eligible affix pool", () => {
     expect(shield.some((affix) => affix.aspect === "defensive")).toBe(true);
     expect(ring.some((affix) => affix.aspect === "offensive")).toBe(true);
     expect(ring.some((affix) => affix.aspect === "defensive")).toBe(true);
+  });
+
+  it("gives hero-matching affixes 50% more weight without excluding other eligible affixes", () => {
+    const definition = gearDefinitions["ruby-ring-basic"]!;
+    const keywords = ["burn"] as const;
+    const pool = buildEligibleAffixPool(definition);
+    const matches = pool.filter((affix) => affixMatchesAffinity(affix, keywords));
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches.length).toBeLessThan(pool.length);
+    expect(matches.some((affix) => affix.secondaryKeywordId === "burn" && affix.keywordId !== "burn")).toBe(true);
+
+    // Half-weight bucket midpoints exhaustively sample every selection interval.
+    const halfWeights = pool.map((affix) => (affixMatchesAffinity(affix, keywords) ? 3 : 2));
+    const total = halfWeights.reduce((sum, weight) => sum + weight, 0);
+    const counts = new Map<string, number>();
+    for (let bucket = 0; bucket < total; bucket++) {
+      const [roll] = rollAffixes(definition, 1, () => (bucket + 0.5) / total, keywords);
+      counts.set(roll!.id, (counts.get(roll!.id) ?? 0) + 1);
+    }
+    for (const [index, affix] of pool.entries()) expect(counts.get(affix.id)).toBe(halfWeights[index]);
+
+    const weighted = rollAffixes(definition, pool.length, createSeededRng(17), keywords);
+    expect(new Set(weighted.map((roll) => roll.id)).size).toBe(pool.length);
   });
 
   it("rolls distinct eligible affixes without consuming randomness for zero picks", () => {

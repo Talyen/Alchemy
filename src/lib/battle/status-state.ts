@@ -1,4 +1,4 @@
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
@@ -14,7 +14,11 @@ export function blockAmountWithForge(state: BattleState, amount: number): number
   return amount + forgeBonus;
 }
 
-function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
+export function playerStatusDelta(
+  state: Pick<BattleState, "gearEffects" | "playerHealth" | "playerMaxHealth">,
+  status: PlayerStatusId,
+  delta: number,
+): number {
   if (status === "stun" && delta > 0) {
     return Math.max(0, Math.round(delta));
   }
@@ -101,13 +105,7 @@ export function addEnemyStatus(
     nextState = reduceEnemyArmor(nextState, 1);
     const removed = armorBefore - nextState.enemyMitigation.armor;
     if (removed > 0 && options.combatTexts) {
-      mergeCombatText(options.combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "armor",
-        amount: removed,
-        impact: false,
-      });
+      emitDamageText(options.combatTexts, "enemy", "armor", removed, { impact: false });
     }
   }
 
@@ -115,11 +113,6 @@ export function addEnemyStatus(
 }
 
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
-  const clearConsecration = status === "bleed" && value <= 0 && state.reactions.consecrated;
-  if (Object.is(state.enemyStatuses[status], value) && !clearConsecration) return state;
-  return {
-    ...state,
-    enemyStatuses: { ...state.enemyStatuses, [status]: value },
-    ...(clearConsecration ? { reactions: { ...state.reactions, consecrated: false } } : {}),
-  };
+  if (Object.is(state.enemyStatuses[status], value)) return state;
+  return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
 }

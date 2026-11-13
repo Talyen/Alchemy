@@ -112,7 +112,7 @@ keeping `run-setup` and `run-loop` independent under Oxlint.
 | Mode, hero and difficulty routing                | `run-setup/run/content-system-navigation.ts`                               |
 | Current-run resume                               | `run-setup/run/run-resume-navigation.ts`                                   |
 | New-run initialization and Campaign launch       | `run-setup/run/new-run-initialization.ts`                                  |
-| Run-start snapshots                              | `shared/stores/commands/run-start-command.ts`                              |
+| Run-start snapshots                              | `run-setup/run/run-start-command.ts`                                       |
 | Wildcard starter draft                           | `shared/run-flow/starter-draft.ts`                                         |
 | Wildwood post-entry progression                  | `run-loop/run/wildwood-gauntlet-flow.ts`                                   |
 | Pure destination eligibility and weighted offers | `shared/run-flow/resolve-available-destinations.ts`, `destination-flow.ts` |
@@ -222,7 +222,20 @@ gives the editing sequence.
   derives fresh defaults and field types from it and owns encoding and hydration.
   Options receives these values and named actions directly through route props.
 
-Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state); persistence follows the [codec contract](./RUN_STATE.md#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/commands/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
+Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state);
+persistence follows the [codec contract](./RUN_STATE.md#persistence-api). Run endings
+compose `settleRunEnd` in `shared/stores/commands/write/run-end.ts` through lifecycle
+commands or terminal reward claims. XP finalization and recap capture are internal
+settlement steps; callers cannot invoke them independently. Materials reach the
+stockpile during acquisition through `awardMaterialsDuringRun`; settlement only
+captures and clears their run tally. Follow [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)
+and [run teardown](./RUN_WORKFLOWS.md#run-teardown).
+
+`error-log-store.ts` is a standalone local-only error buffer with its own storage
+key and debounced persistence, outside the gameplay aggregate and its save codecs.
+`shared/stores/commands/reset.ts` owns the Options wipe, including the aggregate
+reset after acknowledged deletion. It is distinct from the audio test reset in
+`src/lib/audio/reset.ts`.
 
 ## Permanent Gear (`gear-store`)
 

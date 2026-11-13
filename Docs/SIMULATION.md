@@ -10,7 +10,7 @@ Choose the runner for the question:
 
 Both combat runners use production gameplay. Their automated policies do not
 establish human difficulty or rendered UI correctness. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
-owns execution permissions and verification requirements; commands below describe
+owns resource coordination and verification requirements; commands below describe
 runner options.
 
 ## Balance simulation
@@ -22,8 +22,7 @@ commands. Forced player skips count toward `maxTurns` and never grant an extra
 Companion action. The optional simulator budget limits resolved frames, including
 forced skips; live commands omit that limit. Combat uses the seeded `world` stream; card and Wish decisions
 use a separate policy RNG. Replaying the same decisions from the same battle
-inputs therefore preserves combat outcomes and RNG counters. Existing report
-baselines may change when rerun with these lifecycle and RNG corrections.
+inputs therefore preserves combat outcomes and RNG counters.
 
 ```sh
 npm run balance:sim
@@ -67,18 +66,17 @@ it writes the complete report in `reports/balance-batches/report/`. Set
 invocation. A group is indivisible, so this is not a time guarantee. Set
 `ALCHEMY_BALANCE_CHECKPOINT` to use a different directory. Checkpoints bind the
 source, edition and report options; changed inputs require a fresh directory.
-Interrupted groups are recomputed; completed groups remain usable. Existing
-`balance:sim` and `balance:sim:full` behavior is unchanged. Heavy local runs still
-require the admission and authorization described in Contributing.
+Interrupted groups are recomputed; completed groups remain usable. Heavy local
+runs still require the resource admission described in Contributing.
 Only one process may use a checkpoint at a time. A process killed without cleanup
 can leave `.lock`; inspect the recorded PID and remove it only after confirming its
 owner is no longer active. Never remove a live or ambiguous lock.
 
-For an explicitly authorized local full sweep, a single supervisor can acquire
+For a local full sweep, a single supervisor can acquire
 successive fair host-lane leases until the report is complete:
 
 ```sh
-ALCHEMY_ALLOW_HEAVY_LOCAL=1 ALCHEMY_BALANCE_MODE=full \
+ALCHEMY_BALANCE_MODE=full \
   ALCHEMY_BALANCE_FINDINGS_CAP=500 npm run balance:sim:supervise
 ```
 
@@ -111,17 +109,32 @@ A CI workflow
 can only run commits available to the host; dispatch and publication follow the
 repository's separate authorization rules.
 
-Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `findings-collector.ts` attaches report identity separately from metric rules and shares one sampled-median evaluator between enemy-type and class equity; candidate order remains explicit in `collectBalanceFindings`. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
+Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator.
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
 
-Report measurements share `RateCell` in `simulator-types.ts` and an
-extraction/aggregation record in `rate-statistics.ts`. Batch summaries and report
-aggregation use that record: counts always sum; rates and averages weight by
-battles or sampled enemy types. Adding a measurement to the contract and record
-updates projections and weighting automatically.
-Overgrowth and Regeneration count only successful Health restoration. Glacial
-Surge is a flat damage modifier and has no scheduled growth activations.
+The matrix also compares each fully unlocked talent tree with no tree, and each
+combat talent with the rest of its full tree. Results are paired on the same
+hero, deck, enemy and seeds, with talent-point HP held fixed. They cover every
+shipped tree at all three tiers across the boon gauntlet, Frostwarden, Blight
+Treant and configured deck seeds. Scenarios are equally weighted per hero.
+Affinity heroes use their class decks; otherwise a Wildcard deck receives
+up to five keyword cards. The full-tree setup is a hypothetical sensitivity
+probe, particularly at Early: it does not model earning points. Tree sizes and
+hero/deck contexts differ, so the tree ranking does not isolate keyword power.
+Economic-only talents are excluded from individual combat rankings; their
+out-of-combat value needs career simulations. Within-tree findings compare
+talents to their own tree's median; they are screening heuristics, not tests of
+significance against that median. Paired standard errors are conditional on the
+sampled scenarios and do not measure uncertainty across decks or enemies. Inspect
+the baseline and treatment win rates, sample counts and turn deltas, confirm candidates with more seeds, policies and
+targeted mechanics tests, and investigate inactive triggers or saturated win
+rates before interpreting near-zero results as weak talents. Turn deltas include
+defeats and timeouts. Full-tree and per-talent results are not additive.
+
+Report counts sum across batches; rates and averages weight by battles or sampled
+enemy types. Overgrowth and Regeneration count only successful Health restoration.
+Glacial Surge is a flat damage modifier and has no scheduled growth activations.
 
 Paired sweeps describe reference fights and variants in `report-sweeps.ts`.
 `report-sweep-runner.ts` manages batch configuration, matched-fight checks, reference
@@ -136,7 +149,7 @@ summary findings cap (default: 100).
 `balance:sim` and `balance:sim:full` generate reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance
 implementation is protected by the focused unit suite and this report check;
-[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution permissions.
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution and resource coordination.
 
 ## Headless careers
 
@@ -145,8 +158,7 @@ shops, mysteries, corruption, homestead, talents, and Armory operations. It neve
 mounts React or renders the game. Each career owns an independent game session,
 including its settings, deterministic inputs, persistence, and subscriptions. The
 CLI runs each career in a fresh child process;
-progress persists between that career's runs. The parent watchdog also terminates
-synchronous hangs.
+progress persists between that career's runs. The local parent watchdog also terminates synchronous hangs. GitHub Actions runs do not apply that execution deadline.
 
 ### Commands
 
@@ -177,7 +189,7 @@ Options include `--hero`, `--mode` (campaign, labyrinth, wildwood), `--difficult
 `--horizon` (rooms for endless modes), `--max-steps`, `--max-turns`, `--timeout`
 (seconds per child), and `--resume-at` (load acknowledged bytes after this action).
 Default budgets are two runs, 12 rooms for endless observations, 10,000 actions,
-100 battle turns, a 120-second external watchdog, and 32 MiB of journal evidence.
+100 battle turns, a 120-second local external watchdog, and 32 MiB of journal evidence. GitHub Actions has no repository-defined worker deadline.
 Budget exhaustion and unsupported decisions fail as incomplete; neither counts
 as a gameplay defeat. Reaching an endless horizon invokes production End Run
 and is recorded separately from defeat and victory.
@@ -236,6 +248,9 @@ differ. It requires the same code/content identity and ordered scenario manifest
 including starting saves, seeds, budgets and policies. Normal comparisons remain
 strict. An incomplete career cannot enter a balance comparison. Results use
 paired career means and standard errors; battles within careers are correlated.
+For net Health lost per battle, a career pair contributes only when both sides
+have matching start and settlement snapshots. The metric reports its contributing
+career count and a null mean when no pair has that evidence.
 The `firstVictoryRunCensored` metric records careers without a victory as
 `runs + 1`, not as a measured later victory. Treatment decisions can change
 routes, spending and RNG consumption: matched seeds do not guarantee matched
@@ -315,8 +330,11 @@ combat records and maxima, bounded run/deck keyword snapshots, battle-start and
 pre-settlement state snapshots, and first reached spending milestones. The
 agent-facing summary also reports first-victory timing, run-by-run victory rates,
 hero variance when multiple cohorts are supplied, and deck/archetype cohesion.
-`progress-telemetry.ts` owns the shared cohort grouping, battle counts, first
-milestone observations and room mortality used by both reports. The detailed
+Battle deck profiles include the draw pile, hand, queued hand cards, discard and
+exhausted cards at the sampled moment, including cards created during combat.
+Hero-keyword share excludes samples from heroes without fixed keywords, such as
+Wildcard; dominant-keyword share still includes their decks. Existing recorded
+snapshots retain the measurement produced by their original source revision. The detailed
 report retains every room and unrounded milestone means; the agent summary bounds
 large room tables and rounds its means and rates.
 Observed-card

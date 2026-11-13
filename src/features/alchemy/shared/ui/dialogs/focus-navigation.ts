@@ -9,6 +9,7 @@ export function focusPreviousControl(): void {
   enableFocusNavigation();
   const root = activeFocusRoot();
   const controls = focusableControls(root);
+  if (controls.length === 0) return;
   const current = controls.indexOf(document.activeElement as HTMLElement);
   focusControl(controls[(current <= 0 ? controls.length : current) - 1]);
 }

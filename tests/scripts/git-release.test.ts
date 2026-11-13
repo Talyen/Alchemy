@@ -1,30 +1,24 @@
+import { temporaryDirectories } from "../helpers/script-fixtures";
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   getCommitsSinceTag,
   latestVersionTag,
   previousVersionTag,
   resolvePatchNoteRange,
+  assertValidSemver,
+  assertValidTag,
 } from "../../scripts/lib/release/git-release.mjs";
-
-const tempDirs: string[] = [];
-
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
 
 function git(root: string, command: string) {
   execSync(command, { cwd: root, shell: "/bin/sh" });
 }
 
 function gitRepo() {
-  const root = mkdtempSync(join(tmpdir(), "alchemy-git-release-"));
-  tempDirs.push(root);
+  const root = createTemporaryDirectory("alchemy-git-release-");
+
   git(root, "git init -q");
   git(root, "git config user.email test@example.com && git config user.name test");
   return root;
@@ -45,7 +39,20 @@ function commitFile(root: string, relativePath: string, message: string, body = 
   rmSync(msgFile);
 }
 
+const createTemporaryDirectory = temporaryDirectories();
+
 describe("git-release", () => {
+  it("accepts complete semantic versions and rejects malformed identifiers in versions and tags", () => {
+    for (const version of ["0.1.0", "1.2.3-rc.0+build.01", "1.2.3-alpha-1"]) {
+      expect(() => assertValidSemver(version)).not.toThrow();
+      expect(() => assertValidTag(`v${version}`)).not.toThrow();
+    }
+    for (const version of ["01.2.3", "1.02.3", "1.2.3-01", "1.2.3-rc..1", "1.2.3+build."]) {
+      expect(() => assertValidSemver(version)).toThrow("Invalid semantic version");
+      expect(() => assertValidTag(`v${version}`)).toThrow("Invalid tag revision");
+    }
+    expect(() => assertValidTag("HEAD")).not.toThrow();
+  });
   it("returns subject, body, and changed paths for commits since a tag", () => {
     const root = gitRepo();
     commitFile(root, "seed.txt", "chore: seed");
@@ -92,8 +99,8 @@ describe("git-release", () => {
   });
 
   it("returns null when git log cannot run", () => {
-    const root = mkdtempSync(join(tmpdir(), "alchemy-git-release-nogit-"));
-    tempDirs.push(root);
+    const root = createTemporaryDirectory("alchemy-git-release-nogit-");
+
     expect(getCommitsSinceTag(root, null)).toBeNull();
   });
 

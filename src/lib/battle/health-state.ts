@@ -31,9 +31,9 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
   const survivedHealthLoss = enemyHealth > 0 && enemyHealth < previousHealth;
   const triggersCinderSkin =
     survivedHealthLoss &&
-    hasEnemyTrait(state, "cinder-skin") &&
     state.turn % 2 === 1 &&
-    !state.flags.cinderSkinUsedThisTurn;
+    !state.flags.cinderSkinUsedThisTurn &&
+    hasEnemyTrait(state, "cinder-skin");
   const weakensAttack =
     survivedHealthLoss && (hasEnemyTrait(state, "flickering") || hasEnemyTrait(state, "loose-rubble"));
   return {
@@ -156,7 +156,10 @@ export function playerHealthLostToDamage(before: BattleState, after: BattleState
   return phoenixTriggered ? before.playerHealth : Math.max(0, before.playerHealth - after.playerHealth);
 }
 
-export function effectivePlayerHealingAmount(state: BattleState, amount: number): number {
+export function effectivePlayerHealingAmount(
+  state: Pick<BattleState, "talentEffects" | "gearEffects" | "playerHealth" | "playerMaxHealth">,
+  amount: number,
+): number {
   const bonus =
     amount > 0
       ? (state.talentEffects.homesteadHealing ?? 0) +

@@ -1,7 +1,7 @@
 import { cloneBattleCard, getStandardPotionPoolView, isPotionCard, type BattleCard } from "@/lib/game-data";
 import { CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
-import { doublePotionPotency } from ".";
+import { doublePotionPotency } from "./potion-scaling";
 import type { EncounterRewardTraitId } from "../content-systems/encounter-traits";
 
 export { strengthenPotion } from "./potion-scaling";
@@ -21,9 +21,14 @@ const DEFENSIVE_POTION_IDS: ReadonlySet<string> = new Set(["health-potion", "sto
 export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
   const pool = shuffle(getStandardPotionPoolView(), rng);
   const defensiveIndex = pool.findIndex((card) => DEFENSIVE_POTION_IDS.has(card.id));
-  if (defensiveIndex > 0) pool.unshift(...pool.splice(defensiveIndex, 1));
+  if (defensiveIndex > 0) {
+    const defensive = pool[defensiveIndex]!;
+    pool.copyWithin(1, 0, defensiveIndex);
+    pool[0] = defensive;
+  }
   pool.length = Math.min(pool.length, CAMPFIRE_POTION_OFFERS);
-  return pool.map(cloneBattleCard);
+  for (let index = 0; index < pool.length; index++) pool[index] = cloneBattleCard(pool[index]!);
+  return pool;
 }
 
 export function applyStrongSpiritsToPotions(

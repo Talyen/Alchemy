@@ -16,10 +16,12 @@ export type UnlockTalentResult = { ok: true } | { ok: false; reason: UnlockTalen
 
 /** A menu/indicator predicate; spending a point still goes through canUnlockTalent. */
 export function hasUnspentTalentPoint(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
-  const normalized = normalizeUnlockedTalents(unlockedTalents);
+  let normalized: UnlockedTalents | undefined;
   return getTalentTreeKeywordView().some((keywordId) => {
     const points = Math.min(computeTalentPoints(talentXP[keywordId] ?? 0), countImplementedTalents(keywordId));
-    return points > (normalized[keywordId] ?? []).length;
+    if (points === 0) return false;
+    normalized ??= normalizeUnlockedTalents(unlockedTalents);
+    return points > (normalized[keywordId]?.length ?? 0);
   });
 }
 

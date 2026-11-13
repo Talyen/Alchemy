@@ -19,14 +19,17 @@ export class MysteryPage {
   }
 
   async handleCardOutcome() {
-    const cardChoiceText = this.page.getByText("Choose a Card");
-    const hasPicker = await cardChoiceText.isVisible().catch(() => false);
-
+    const hasPicker = await this.cardGrid.isVisible().catch(() => false);
     if (!hasPicker) return;
 
-    const cardChoice = this.page.locator("button[aria-label^='Select']").first();
+    const cardChoice = this.cardGrid.locator("button[aria-label^='Select']").first();
     await expect(cardChoice).toBeVisible({ timeout: 5000 });
+    await expect(cardChoice).toBeEnabled({ timeout: 3000 });
+    await expect.poll(() => cardChoice.evaluate((element) => !element.closest("[inert]"))).toBe(true);
     await cardChoice.click();
-    await this.page.getByRole("button", { name: "Add Card" }).click();
+    const addCardBtn = this.page.getByRole("button", { name: "Add Card" });
+    await expect(addCardBtn).toBeVisible({ timeout: 3000 });
+    await expect(addCardBtn).toBeEnabled({ timeout: 3000 });
+    await addCardBtn.click();
   }
 }

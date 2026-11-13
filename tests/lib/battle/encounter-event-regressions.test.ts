@@ -1,5 +1,6 @@
+import { makeDamageCard } from "../../fixtures/cards";
 import { describe, expect, it, vi } from "vitest";
-import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
+import { cardById, computeTalentEffects, type BattleCard, BattleCardEffectSchema } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveCardEffectChain } from "@/lib/battle/card-play-effects";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
@@ -8,7 +9,6 @@ import { drawOpeningHand } from "@/lib/battle/battle-setup";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { applyEmergencyWishForEmptyDraw, upgradeWishCard } from "@/lib/battle/wish";
-import { BattleCardEffectSchema } from "@/lib/game-data";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
@@ -50,10 +50,7 @@ describe("encounter event regressions", () => {
   });
 
   it.each(["manual", "automatic"] as const)("%s repeated cards trigger play and Consume reactions once", (source) => {
-    const played = makeTestCard({
-      consume: true,
-      effects: [{ kind: "damage", damageType: "nature", amount: 1 }],
-    });
+    const played = makeDamageCard("nature", 1, { consume: true });
     const state = regressionBattle({
       currentEnemy: { traits: ["insatiable", "rooted"].map((id) => ({ id, title: id, description: "" })) },
       enemyHealth: 100,
@@ -76,10 +73,7 @@ describe("encounter event regressions", () => {
   });
 
   it("automatic cards do not reuse Follow-through from the previous manual card", () => {
-    const arrow = makeTestCard({
-      tags: ["archery"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
+    const arrow = makeDamageCard("physical", 4, { tags: ["archery"] });
     const followState = patchBattleState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
@@ -226,10 +220,7 @@ describe("encounter event regressions", () => {
   });
 
   it("lethal hits skip subsequent Stun and Archery rolls", () => {
-    const lethalCard = makeTestCard({
-      tags: ["archery"],
-      effects: [{ kind: "damage", damageType: "poison", amount: 4 }],
-    });
+    const lethalCard = makeDamageCard("poison", 4, { tags: ["archery"] });
     const rng = vi.fn(() => 0.99);
     playBattleCardResolved(
       patchBattleState({

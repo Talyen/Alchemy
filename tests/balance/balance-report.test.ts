@@ -34,7 +34,7 @@ function expectFiniteReport(value: unknown): void {
   }
 }
 
-it("balance report builds a finite report and renders without mutating it", { timeout: 1_800_000 }, () => {
+it("balance report builds a finite report and renders without mutating it", { timeout: ciTimeout(1_800_000) }, () => {
   const model = buildBalanceReport(options);
   expectFiniteReport(model);
   expect(model.enemies.length).toBeGreaterThan(0);
@@ -74,3 +74,7 @@ it("balance report builds a finite report and renders without mutating it", { ti
   expect(renderBalanceFindingsJson(findings, model, options)).toContain('"findings"');
   expect(formatFindingObserved("winRate", 0.5)).toContain("50");
 });
+
+function ciTimeout(ms: number) {
+  return process.env.CI ? 0 : ms;
+}

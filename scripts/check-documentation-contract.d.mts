@@ -12,8 +12,6 @@ export function checkSkillIndexCompleteness(): string[];
 
 export function checkDocumentationContracts(): string[];
 
-export function isHistoryOnlyDoc(relativePath: string): boolean;
-
 export function isReachabilityExempt(relativePath: string): boolean;
 
 export function reportDocumentationContracts(): boolean;

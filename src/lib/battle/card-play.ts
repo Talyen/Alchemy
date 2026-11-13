@@ -1,7 +1,7 @@
 import { applyEmergencyWishForEmptyDraw } from "./wish";
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { mergeCombatText } from "./combat-text-events";
+import { emitDamageText } from "./combat-text-events";
 import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, CombatTextEvent } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
@@ -11,7 +11,7 @@ import { getBattleRng, rollPercent } from "@/lib/rng";
 import { finishUniqueCardDamage, prepareUniqueCardPlay } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
 import { countRemovableHarmfulStatuses } from "./status-player";
-import { isCcControlled } from "./status-cc";
+import { isCcControlled } from "./crowd-control-policy";
 import { applyResonantChimeTrinket, resolveCardEffectChain, shouldElementalTalentRepeat } from "./card-play-effects";
 import { cardHasKeyword } from "./card-classification";
 import { applyBlockReward, gainManaWithCombatText } from "./player-rewards";
@@ -25,7 +25,8 @@ function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof com
     consumedFlags.size === 0 &&
     disarmedFlags.size === 0 &&
     !spentArmedDiscount &&
-    Object.keys(uniqueDiscounts).length === 0
+    uniqueDiscounts.knightsAnswerReady === undefined &&
+    uniqueDiscounts.returningFlightUids === undefined
   ) {
     return state;
   }
@@ -218,8 +219,7 @@ function resolveCardPlay(
     },
   };
   const manaSpent = Math.min(paymentState.mana, effectiveCost);
-  if (blockCost > 0)
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost, impact: false });
+  if (blockCost > 0) emitDamageText(combatTexts, "player", "block", blockCost, { impact: false });
   let stripped: BattleState = {
     ...paymentState,
     hand: paymentState.hand.filter((_, handIndex) => handIndex !== index),

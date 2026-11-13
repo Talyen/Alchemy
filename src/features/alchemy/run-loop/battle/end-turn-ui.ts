@@ -13,6 +13,7 @@ import type { BattleControllerContext } from "./battle-context";
 import { commitEndTurn } from "./battle-session";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 import type { BattlePresentationPort } from "./battle-presentation-store";
+import { presentCompanionAction } from "./companion-presentation";
 
 export interface PlayTurnFramesOptions {
   onHandDrawn?: () => void;
@@ -21,6 +22,7 @@ export interface PlayTurnFramesOptions {
 
 function presentTurnResolution(frame: BattleTurnFrame, presentation: BattlePresentationPort) {
   const { before, turn } = frame;
+  presentation.enqueueCompanionActions(frame.companionActions ?? []);
   const texts = turn.kind === "haste" ? turn.combatTexts : turn.enemyResolutionCombatTexts;
   const sound = playResolvedCombatSound(
     turn.kind === "haste"
@@ -43,8 +45,8 @@ function presentCompanionResolution(frame: BattleTurnFrame, presentation: Battle
     !turn.state.deathsDoorActive && companion.state.deathsDoorActive,
   );
   if (animate) {
-    presentation.shakeCompanion();
-    presentation.telegraphAttack("companion");
+    if (companion.actions) presentation.enqueueCompanionActions(companion.actions);
+    else presentCompanionAction(presentation, turn.state.activeCompanion);
   }
   presentCombatTexts(presentation, companion.texts, sound);
 }
@@ -79,11 +81,13 @@ export async function playTurnFrames(
       }
       presentation.setDisplayedBattle({ ...(turn.afterAbilityState ?? turn.state), hand: [], turnPhase: "enemy" });
       presentTurnResolution(frame, presentation);
+      await presentation.waitForCompanionActions();
       if (!(await deps.playback.waitForDelay(sessionNum, ENEMY_ATTACK_RECOVERY_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
       markBattleStage("enemy-end");
     } else {
       presentTurnResolution(frame, presentation);
+      await presentation.waitForCompanionActions();
     }
     await runHandDrawSequence(
       before.hand,
@@ -91,16 +95,29 @@ export async function playTurnFrames(
       () => presentation.setDisplayedBattle(turn.state),
       sessionNum,
       deps,
+      frame.drawnCardUids,
     );
     if (!deps.isSessionActive(sessionNum)) return;
-    if (!turn.playerTurnSkipped) options?.onHandDrawn?.();
+    if (!turn.playerTurnSkipped && !companion) options?.onHandDrawn?.();
     if (companion) {
       if (!(await deps.playback.waitForDelay(sessionNum, COMPANION_ATTACK_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
-      if (!options?.isCardPlayInProgress?.()) {
-        presentation.setDisplayedBattle(companion.state);
-      }
-      presentCompanionResolution(frame, presentation, true);
+      if (options?.isCardPlayInProgress?.()) presentCompanionResolution(frame, presentation, true);
+      else
+        await runHandDrawSequence(
+          turn.state.hand,
+          companion.state,
+          () => {
+            presentation.setDisplayedBattle(companion.state);
+            presentCompanionResolution(frame, presentation, true);
+          },
+          sessionNum,
+          deps,
+          companion.drawnCardUids,
+        );
+      await presentation.waitForCompanionActions();
+      if (!deps.isSessionActive(sessionNum)) return;
+      if (!turn.playerTurnSkipped) options?.onHandDrawn?.();
     }
   }
 }
@@ -117,6 +134,7 @@ export function createBattleEndTurnUi(
     if (
       expected !== currentState ||
       !ctx.playback.canEndTurn() ||
+      !!presentation.companionActionCue ||
       isBattlePlaybackBlocked({
         screen: ctx.screen,
         battleState: currentState,
@@ -142,12 +160,16 @@ export function createBattleEndTurnUi(
           presentCombatTexts(presentation, frame.turn.enemyTurnStartCombatTexts);
         }
         presentTurnResolution(frame, presentation);
-        presentCompanionResolution(frame, presentation);
+        presentCompanionResolution(frame, presentation, true);
       }
       presentation.setDisplayedBattle(null);
       presentation.resetHandTransferUi();
-      ctx.playback.completeAction(sessionNum);
-      session.checkBattleEnd(result.state, sessionNum);
+      void presentation.waitForCompanionActions().then(() => {
+        session.runIfSessionActive(sessionNum, () => {
+          ctx.playback.completeAction(sessionNum);
+          session.checkBattleEnd(result.state, sessionNum);
+        });
+      });
       return;
     }
     presentation.setDisplayedBattle(currentState);
@@ -178,7 +200,9 @@ export function createBattleEndTurnUi(
                 ctx.playback.completeAction(sessionNum);
               });
             },
-            isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
+            // The end-turn action itself owns the playing phase. Only a newer
+            // card draw owns the hand and must prevent a stale frame reveal.
+            isCardPlayInProgress: () => ctx.playback.pendingCardDraws > 0,
           },
         );
       } catch (error) {
