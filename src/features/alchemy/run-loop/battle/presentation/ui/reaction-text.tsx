@@ -26,9 +26,10 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
         if (!glyphs || glyphs.offsetWidth <= 0) continue;
         const current = Number.parseFloat(getComputedStyle(name).fontSize);
         const row = name.parentElement!;
-        const bonus = row.querySelector<HTMLElement>("[data-reaction-payoff]");
-        const available = rail.clientWidth - (bonus?.offsetWidth ?? 0) - 12;
-        fitted = Math.min(fitted, ((current * available) / (glyphs.offsetWidth * 1.08)) * 0.98);
+        const payoff = row.querySelector<HTMLElement>("[data-reaction-payoff]");
+        const gap = Number.parseFloat(getComputedStyle(row).columnGap) || 0;
+        const contentWidth = glyphs.offsetWidth + (payoff?.offsetWidth ?? 0);
+        fitted = Math.min(fitted, (current * Math.max(0, rail.clientWidth - gap) * 0.95) / contentWidth);
       }
       setFontSize((previous) => (previous !== undefined && Math.abs(previous - fitted) < 0.2 ? previous : fitted));
     };
@@ -36,6 +37,10 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(fit);
     observer?.observe(rail);
     if (rail.parentElement) observer?.observe(rail.parentElement);
+    for (const name of rail.querySelectorAll<HTMLElement>("[data-reaction]")) {
+      observer?.observe(name);
+      if (name.firstElementChild) observer?.observe(name.firstElementChild);
+    }
     document.fonts?.addEventListener("loadingdone", fit);
     return () => {
       observer?.disconnect();

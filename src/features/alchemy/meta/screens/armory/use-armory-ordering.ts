@@ -106,7 +106,7 @@ export function useArmoryOrdering({
   const [stored, setStored] = useState<Record<string, StoredCategory>>({});
   const [placeholderIndex, setPlaceholderIndex] = useState<number | null>(null);
 
-  const pool = useMemo(
+  const pool = useMemo<Array<ArmoryOrderRow & { item: GearInstance | TrinketEntry }>>(
     () =>
       isTrinket
         ? ownedTrinkets.map((item) => ({ ...trinketOrderRow(item), item }))
