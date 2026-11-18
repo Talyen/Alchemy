@@ -28,7 +28,7 @@ jobs:
   produce:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - name: Install media tools and Chromium
         run: |
@@ -51,7 +51,7 @@ jobs:
           args=(make --recipe "$TRAILER_RECIPE" --format "$TRAILER_FORMAT" --bundle output/trailers/production)
           if [[ "$TRAILER_DRAFT" == true ]]; then args+=(--draft); fi
           npm run trailer -- "${args[@]}"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: alchemy-trailer-${{ inputs.format }}-${{ github.sha }}
